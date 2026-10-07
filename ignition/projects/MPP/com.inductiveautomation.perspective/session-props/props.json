@@ -67,6 +67,7 @@
       "locationId": null,
       "model": ""
     },
+    "selectedFinishedGoodItemId": null,
     "terminal": {
       "defaultScreen": "/shop-floor/die-cast",
       "isFallback": false,

@@ -1,0 +1,338 @@
+{
+  "custom": {
+    "lock": {
+      "short": false,
+      "itemId": null,
+      "description": "",
+      "partNumber": "",
+      "available": 0,
+      "traysLeft": 0,
+      "piecesPerTray": 0,
+      "boxQuantity": null,
+      "shortCount": 0,
+      "thresholdTrays": 0,
+      "finishedGoodItemId": null
+    },
+    "refreshToken": 0
+  },
+  "params": {
+    "locationId": null,
+    "finishedGoodItemId": null,
+    "closureMethod": ""
+  },
+  "propConfig": {
+    "custom.lock": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.Assembly.getLowInventoryLock\", 30000, {view.params.locationId}, {view.params.finishedGoodItemId}, {view.params.closureMethod}, {view.custom.refreshToken})"
+        }
+      }
+    },
+    "params.locationId": {
+      "paramDirection": "input"
+    },
+    "params.finishedGoodItemId": {
+      "paramDirection": "input"
+    },
+    "params.closureMethod": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 800,
+      "width": 1600
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "style": {
+        "classes": "pf-lock-root",
+        "height": "100%",
+        "overflow": "auto"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Alarm"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-lock-alarm",
+            "minWidth": "0"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Kicker"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-lock-kicker"
+              },
+              "text": "Purchased part running out"
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Headline"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-lock-headline"
+              },
+              "text": "ADD INVENTORY"
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Part"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-lock-part"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.lock.description}"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PartNo"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-lock-partno"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.lock.partNumber}"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Stat"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-lock-stat"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "numberFormat({view.custom.lock.available}, \"#,##0\") + \" pcs on hand  |  \" + toStr({view.custom.lock.traysLeft}) + if({view.custom.lock.traysLeft} = 1, \" tray left\", \" trays left\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "More"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-lock-note"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"+\" + toStr({view.custom.lock.shortCount} - 1) + if({view.custom.lock.shortCount} = 2, \" more part is also short\", \" more parts are also short\")"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.lock.shortCount} > 1"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {}
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Note"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-lock-note"
+              },
+              "text": "This terminal is locked until a box of this part is added. Scan or type the supplier lot, enter the quantity, and tap Add."
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "Release"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Supervisor release",
+              "style": {
+                "classes": "pf-lock-release"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"LowInventoryRelease\", \"Release low-inventory lock\", {\"cellLocationId\": self.view.params.locationId})"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "AddForm"
+        },
+        "position": {
+          "basis": "860px",
+          "shrink": 0
+        },
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/AddLotBox",
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false,
+          "params": {
+            "itemId": null,
+            "description": "",
+            "locationId": null,
+            "boxQuantity": null,
+            "embedded": true
+          }
+        },
+        "propConfig": {
+          "props.params.itemId": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.lock.itemId"
+              }
+            }
+          },
+          "props.params.description": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.lock.description"
+              }
+            }
+          },
+          "props.params.boxQuantity": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.lock.boxQuantity"
+              }
+            }
+          },
+          "props.params.locationId": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.locationId"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

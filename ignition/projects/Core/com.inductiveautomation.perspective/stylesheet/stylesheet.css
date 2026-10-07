@@ -3130,3 +3130,69 @@ button {
     border-radius: var(--mpp-radius-md);
     padding: 7px 10px;
 }
+
+/* ---- Assembly OUT low-inventory lock (Components/Popups/LowInventoryLock) ----
+   Full-screen, undismissable. The red side is meant to be read from across the
+   line; the add-inventory form sits beside it. */
+@keyframes pf-lock-pulse {
+    0%, 100% { background: #B91C1C; }
+    50%      { background: #7F1D1D; }
+}
+.psc-pf-lock-root {
+    background: var(--mpp-surface-base, #0F1419);
+    gap: 16px;
+    padding: 16px;
+}
+.psc-pf-lock-alarm {
+    animation: pf-lock-pulse 1.6s ease-in-out infinite;
+    border: 4px solid #F05252;
+    border-radius: var(--mpp-radius-md);
+    padding: 28px 32px;
+    gap: 14px;
+    color: #FFFFFF;
+}
+.psc-pf-lock-headline {
+    font-size: 84px;
+    line-height: 1.0;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: #FFFFFF;
+}
+.psc-pf-lock-kicker {
+    font-size: 26px;
+    font-weight: 600;
+    color: #FECACA;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.psc-pf-lock-part {
+    font-size: 54px;
+    line-height: 1.1;
+    font-weight: 700;
+    color: #FFFFFF;
+    white-space: normal;
+}
+.psc-pf-lock-partno {
+    font-size: 26px;
+    font-family: var(--mpp-font-mono, monospace);
+    color: #FECACA;
+}
+.psc-pf-lock-stat {
+    font-size: 34px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.psc-pf-lock-note {
+    font-size: 22px;
+    color: #FEE2E2;
+    white-space: normal;
+}
+.psc-pf-lock-release {
+    min-height: 64px;
+    font-size: 22px;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.35);
+    color: #FFFFFF;
+    border: 2px solid #FECACA;
+    border-radius: var(--mpp-radius-md);
+}

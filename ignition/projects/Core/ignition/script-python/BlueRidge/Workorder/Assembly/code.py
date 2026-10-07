@@ -339,3 +339,138 @@ def completeBoxToPrinter(containerId, terminalLocationId, printerLocationId, app
         return {"Status": 1, "Message": "Box completed; shipping label sent to printer."}
     # Box IS complete; only the print missed -> surface the print message, not a hard failure.
     return {"Status": 1, "Message": "Box completed. " + ((disp or {}).get("Message") or "Label not printed - use Reprint.")}
+
+
+# ---------------------------------------------------------------------------
+# Assembly OUT low-inventory lock
+# (docs/superpowers/specs/2026-10-06-assembly-out-low-inventory-lock-design.md)
+# ---------------------------------------------------------------------------
+
+_LOW_INV_REASON_CODE = "MA-LOWINV"     # Oee.DowntimeReasonCode, migration 0106
+_LOW_INV_SOURCE_CODE = "System"
+
+_EMPTY_LOW_INV_LOCK = {"short": False, "itemId": None, "description": "", "partNumber": "",
+                       "available": 0, "traysLeft": 0, "piecesPerTray": 0,
+                       "boxQuantity": None, "shortCount": 0, "thresholdTrays": 0,
+                       "finishedGoodItemId": None}
+
+# Lazily-resolved code-table ids (cached for the life of the script module).
+_lowInvIds = {}
+
+
+def getTraysRemaining(cellLocationId, finishedGoodItemId, closureMethod):
+    """Workorder.Assembly_GetTraysRemaining rows: one per purchased part the
+       finished good draws on, shortest first -- ItemId, PartNumber, Description,
+       BoxQuantity, PiecesPerTray, Available, TraysLeft, IsShort, ThresholdTrays.
+       [] when there is nothing to calculate. The proc decides IsShort."""
+    cell = _asId(cellLocationId)
+    fg = _asId(finishedGoodItemId)
+    method = BlueRidge.Common.Util.extractQualifiedValues(closureMethod)
+    if cell is None or fg is None or not method:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "workorder/Assembly_GetTraysRemaining",
+        {"cellLocationId": cell, "finishedGoodItemId": fg, "closureMethod": method}) or []
+
+
+def getLowInventoryLock(cellLocationId, finishedGoodItemId, closureMethod, _refreshToken=None):
+    """Binding reader for the low-inventory lock. ALWAYS returns the full
+       _EMPTY_LOW_INV_LOCK shape (bindings traverse it). 'short' is True when the
+       proc flags any part; the part reported is the worst one (the proc's first
+       row). Display shaping only. `_refreshToken` is the ignored re-read arg."""
+    out = dict(_EMPTY_LOW_INV_LOCK)
+    out["finishedGoodItemId"] = _asId(finishedGoodItemId)
+    try:
+        rows = getTraysRemaining(cellLocationId, finishedGoodItemId, closureMethod)
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("getLowInventoryLock failed: %s" % e, level="warn")
+        return out
+    short = [r for r in rows if (r or {}).get("IsShort")]
+    if not short:
+        return out
+    r = short[0]
+    out.update({
+        "short":          True,
+        "itemId":         r.get("ItemId"),
+        "description":    r.get("Description") or "",
+        "partNumber":     r.get("PartNumber") or "",
+        "available":      r.get("Available") or 0,
+        "traysLeft":      r.get("TraysLeft") or 0,
+        "piecesPerTray":  r.get("PiecesPerTray") or 0,
+        "boxQuantity":    r.get("BoxQuantity"),
+        "shortCount":     len(short),
+        "thresholdTrays": r.get("ThresholdTrays") or 0,
+    })
+    return out
+
+
+def _lowInvId(kind):
+    """'source' -> the System DowntimeSourceCode id; 'reason' -> the MA-LOWINV
+       DowntimeReasonCode id. None when the row is missing (migration 0106 not
+       applied) -- the caller then records nothing instead of a wrong reason."""
+    if _lowInvIds.get(kind) is None:
+        if kind == "source":
+            for r in (BlueRidge.Common.Db.execList("oee/DowntimeSourceCode_List") or []):
+                if r.get("Code") == _LOW_INV_SOURCE_CODE:
+                    _lowInvIds[kind] = r.get("Id")
+                    break
+        else:
+            rows = BlueRidge.Common.Db.execList(
+                "oee/DowntimeReasonCode_List",
+                {"operationCategoryId": None, "operationTypeCode": None,
+                 "operationCategoryCode": "MachiningAssembly",
+                 "downtimeReasonTypeId": None, "includeDeprecated": 0}) or []
+            for r in rows:
+                if r.get("Code") == _LOW_INV_REASON_CODE:
+                    _lowInvIds[kind] = r.get("Id")
+                    break
+    return _lowInvIds.get(kind)
+
+
+def syncLowInventoryDowntime(cellLocationId, short, partDescription=None, appUserId=None,
+                             terminalLocationId=None):
+    """Keep the line's Low Inventory downtime event in step with the lock.
+
+       short=True  -> open a System / Low Inventory event at the terminal's downtime
+                      unit, unless ANY event is already open there (then nothing
+                      starts: one open event per location, and an operator's or the
+                      PLC's event is left as it is).
+       short=False -> end the open event at the unit, but ONLY one this function
+                      opened (source System AND reason MA-LOWINV).
+
+       Same shape as Oee.DowntimePlc.tickWatcher. The caller passes appUserId (the
+       signed-in operator, else Common.Util.systemAppUserId()). Never raises: a
+       downtime miss must not break the screen. Returns the start/end status dict,
+       or None when there was nothing to do."""
+    cell = _asId(cellLocationId)
+    if cell is None:
+        return None
+    try:
+        unit = BlueRidge.Oee.Downtime.resolveScope(cell)
+        if unit is None:
+            return None
+        openRows = BlueRidge.Oee.DowntimeEvent.getOpenByLocation(unit) or []
+        if BlueRidge.Common.Util.extractQualifiedValues(short):
+            if openRows:
+                return None
+            sourceId = _lowInvId("source")
+            reasonId = _lowInvId("reason")
+            if sourceId is None or reasonId is None:
+                BlueRidge.Common.Util.log(
+                    "Low Inventory downtime not started: source/reason code missing", level="warn")
+                return None
+            return BlueRidge.Oee.DowntimeEvent.start(
+                unit, downtimeSourceCodeId=sourceId, downtimeReasonCodeId=reasonId,
+                appUserId=appUserId, terminalLocationId=_asId(terminalLocationId))
+        for ev in openRows:
+            if ev.get("SourceCode") == _LOW_INV_SOURCE_CODE and ev.get("ReasonCode") == _LOW_INV_REASON_CODE:
+                remarks = "Low inventory cleared"
+                if partDescription:
+                    remarks = ("Low inventory: %s" % partDescription)[:500]
+                return BlueRidge.Oee.DowntimeEvent.end(
+                    ev.get("DowntimeEventId"), remarks=remarks,
+                    appUserId=appUserId, terminalLocationId=_asId(terminalLocationId))
+        return None
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("syncLowInventoryDowntime failed: %s" % e, level="warn")
+        return None

@@ -64,6 +64,7 @@
             "show": "visible",
             "size": 320,
             "viewParams": {
+              "lockEnabled": true,
               "terminalRole": "AssemblyOut"
             },
             "viewPath": "BlueRidge/Components/PlantFloor/LineInventory"

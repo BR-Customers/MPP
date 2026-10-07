@@ -306,6 +306,7 @@ _ELEVATED_REPLAY_MESSAGES = {
     "CrtToggle":          "crtToggleRequested",         # LOT Detail - apply/release a Controlled Run Tag
     "DieMount":           "dieMountRequested",          # Die Cast - open the Die Mount popup, then mount / release
     "DieCastReconcile":   "dieCastReconcileRequested",  # Die Cast - enter the shift reconciliation screen
+    "LowInventoryRelease": "lowInventoryReleaseRequested",  # Assembly OUT - supervisor release of the low-inventory lock
 }
 
 # NOTE on "DieMount": it is the first replay whose handler is NOT on an already

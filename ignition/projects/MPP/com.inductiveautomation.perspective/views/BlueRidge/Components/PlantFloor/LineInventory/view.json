@@ -1,11 +1,29 @@
 {
   "custom": {
+    "lastShortPart": "",
     "lineWide": false,
     "locationId": null,
-    "refreshToken": 0
+    "lock": {
+      "available": 0,
+      "boxQuantity": null,
+      "description": "",
+      "finishedGoodItemId": null,
+      "itemId": null,
+      "partNumber": "",
+      "piecesPerTray": 0,
+      "short": false,
+      "shortCount": 0,
+      "thresholdTrays": 0,
+      "traysLeft": 0
+    },
+    "lockShort": false,
+    "refreshToken": 0,
+    "released": false,
+    "showLock": false
   },
   "params": {
     "locationId": null,
+    "lockEnabled": false,
     "terminalRole": ""
   },
   "propConfig": {
@@ -25,7 +43,42 @@
         "type": "expr"
       }
     },
+    "custom.lock": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.Assembly.getLowInventoryLock\", 30000, if({view.params.lockEnabled}, {view.custom.locationId}, null), {session.custom.selectedFinishedGoodItemId}, {session.custom.closureMethod}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.lockShort": {
+      "binding": {
+        "config": {
+          "expression": "{view.custom.lock.short}"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Low-inventory lock -\u003e downtime. Start when a part goes short; end only on a\n\t# real short -\u003e clear transition seen by THIS terminal (never on first load, so\n\t# another station\u0027s page opening cannot end an event that is still warranted).\n\tnow \u003d bool(currentValue.value) if currentValue is not None else False\n\twas \u003d bool(previousValue.value) if previousValue is not None else False\n\tif now \u003d\u003d was or not self.params.lockEnabled:\n\t\treturn\n\tif now:\n\t\tself.custom.lastShortPart \u003d self.custom.lock.description\n\tuid \u003d BlueRidge.Common.Session.currentAppUserId(self.session) or BlueRidge.Common.Util.systemAppUserId()\n\ttid \u003d None\n\ttry:\n\t\ttid \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttid \u003d None\n\tBlueRidge.Workorder.Assembly.syncLowInventoryDowntime(self.custom.locationId, now, self.custom.lastShortPart, uid, tid)"
+      }
+    },
+    "custom.showLock": {
+      "binding": {
+        "config": {
+          "expression": "{view.custom.lock.short} \u0026\u0026 !{view.custom.released}"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Open / close the full-screen low-inventory lock.\n\tnow \u003d bool(currentValue.value) if currentValue is not None else False\n\twas \u003d bool(previousValue.value) if previousValue is not None else False\n\tif now and not was:\n\t\tsystem.perspective.openPopup(\"mpp-low-inventory-lock\", \"BlueRidge/Components/Popups/LowInventoryLock\", params\u003d{\"locationId\": self.custom.locationId, \"finishedGoodItemId\": self.session.custom.selectedFinishedGoodItemId, \"closureMethod\": self.session.custom.closureMethod}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse, draggable\u003dFalse, resizable\u003dFalse, position\u003d{\"left\": 0, \"top\": 0, \"width\": \"100%\", \"height\": \"100%\"})\n\telif was and not now:\n\t\tsystem.perspective.closePopup(\"mpp-low-inventory-lock\")"
+      }
+    },
     "params.locationId": {
+      "paramDirection": "input"
+    },
+    "params.lockEnabled": {
       "paramDirection": "input"
     },
     "params.terminalRole": {
@@ -291,7 +344,14 @@
         {
           "messageType": "inventoryChanged",
           "pageScope": true,
-          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t# A supervisor release of the low-inventory lock lasts until stock next changes\n\t# at THIS line (a tray closed, a box added). A gateway broadcast for another\n\t# line carries its own cellLocationId and is ignored here.\n\tcell \u003d (payload or {}).get(\"cellLocationId\")\n\tif cell is None or cell \u003d\u003d self.view.custom.locationId:\n\t\tself.view.custom.released \u003d False",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "lowInventoryReleaseRequested",
+          "pageScope": true,
+          "script": "\t# Replayed by Common.Session.dispatchElevatedAction once a supervisor has\n\t# authenticated. Re-test the window: a page message alone is not authority.\n\tif not self.view.params.lockEnabled:\n\t\treturn\n\tif BlueRidge.Common.Session.isElevated(self.session):\n\t\tself.view.custom.released \u003d True",
           "sessionScope": false,
           "viewScope": false
         }

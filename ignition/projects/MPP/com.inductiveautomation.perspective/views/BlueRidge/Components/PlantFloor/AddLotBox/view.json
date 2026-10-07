@@ -10,13 +10,15 @@
     "description": "",
     "itemId": null,
     "locationId": null,
-    "boxQuantity": null
+    "boxQuantity": null,
+    "embedded": false
   },
   "propConfig": {
     "params.description": {"paramDirection": "input"},
-    "params.itemId": {"paramDirection": "input"},
+    "params.itemId": {"paramDirection": "input", "onChange": {"enabled": null, "script": "\tif self.params.embedded:\n\t\tself.getChild(\"root\").resetForm()"}},
     "params.locationId": {"paramDirection": "input"},
-    "params.boxQuantity": {"paramDirection": "input"}
+    "params.boxQuantity": {"paramDirection": "input", "onChange": {"enabled": null, "script": "\tif self.params.embedded:\n\t\tself.getChild(\"root\").resetForm()"}},
+    "params.embedded": {"paramDirection": "input"}
   },
   "props": {
     "defaultSize": {"height": 740, "width": 840}
@@ -44,7 +46,12 @@
         {
           "name": "submit",
           "params": [],
-          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tlot = (\"%s\" % (self.view.custom.vendorLot or \"\")).strip()\n\tabsent = bool(self.view.custom.absent) and lot == \"\"\n\tif lot == \"\" and not absent:\n\t\tself.view.custom.activeField = \"lot\"\n\t\tBlueRidge.Common.Notify.toast(\"Supplier lot required\", \"Scan or type the supplier lot, or tap No lot on box.\", \"warning\")\n\t\treturn\n\traw = (\"%s\" % (self.view.custom.qty or \"\")).strip()\n\tif not raw.isdigit() or int(raw) <= 0:\n\t\tself.view.custom.activeField = \"qty\"\n\t\tBlueRidge.Common.Notify.toast(\"Quantity required\", \"Enter how many pieces are in the box.\", \"warning\")\n\t\treturn\n\t# double-tap guard: the button stays disabled for 2 s\n\tself.view.custom.busyUntil = nowMs + 2000\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tappUserId = BlueRidge.Common.Session.currentAppUserId(self.session)\n\tres = BlueRidge.Lots.Lot.checkInAndNotify(self.view.params.itemId, self.view.params.locationId, int(raw), self.view.params.description, appUserId, termId, lot or None, absent, True)\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-add-lot-box\")"
+          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tlot = (\"%s\" % (self.view.custom.vendorLot or \"\")).strip()\n\tabsent = bool(self.view.custom.absent) and lot == \"\"\n\tif lot == \"\" and not absent:\n\t\tself.view.custom.activeField = \"lot\"\n\t\tBlueRidge.Common.Notify.toast(\"Supplier lot required\", \"Scan or type the supplier lot, or tap No lot on box.\", \"warning\")\n\t\treturn\n\traw = (\"%s\" % (self.view.custom.qty or \"\")).strip()\n\tif not raw.isdigit() or int(raw) <= 0:\n\t\tself.view.custom.activeField = \"qty\"\n\t\tBlueRidge.Common.Notify.toast(\"Quantity required\", \"Enter how many pieces are in the box.\", \"warning\")\n\t\treturn\n\t# double-tap guard: the button stays disabled for 2 s\n\tself.view.custom.busyUntil = nowMs + 2000\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tappUserId = BlueRidge.Common.Session.currentAppUserId(self.session)\n\tres = BlueRidge.Lots.Lot.checkInAndNotify(self.view.params.itemId, self.view.params.locationId, int(raw), self.view.params.description, appUserId, termId, lot or None, absent, True)\n\tif res and res.get(\"Status\"):\n\t\t# embedded (low-inventory lock): the host owns the popup -- clear for the next box\n\t\tif self.view.params.embedded:\n\t\t\tself.resetForm()\n\t\telse:\n\t\t\tsystem.perspective.closePopup(\"mpp-add-lot-box\")"
+        },
+        {
+          "name": "resetForm",
+          "params": [],
+          "script": "\tself.view.custom.vendorLot = \"\"\n\tself.view.custom.absent = False\n\tbq = self.view.params.boxQuantity\n\ttry:\n\t\tself.view.custom.qty = (\"%d\" % int(bq)) if bq is not None else \"\"\n\texcept:\n\t\tself.view.custom.qty = \"\"\n\tself.view.custom.activeField = \"lot\"\n\tself.view.custom.busyUntil = 0"
         }
       ],
       "extensionFunctions": null,
@@ -211,6 +218,9 @@
             "type": "ia.input.button",
             "meta": {"name": "Cancel"},
             "position": {"basis": "0", "grow": 1},
+            "propConfig": {
+              "position.display": {"binding": {"type": "expr", "config": {"expression": "!{view.params.embedded}"}}}
+            },
             "props": {"text": "Cancel", "style": {"classes": "pf-btn pf-btn-secondary", "minHeight": "44px"}},
             "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
               "config": {"script": "\tsystem.perspective.closePopup(\"mpp-add-lot-box\")"}}}}
