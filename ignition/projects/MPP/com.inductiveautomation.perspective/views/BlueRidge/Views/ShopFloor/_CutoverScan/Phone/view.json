@@ -1590,7 +1590,6 @@
                                   "formattedValue": "Tue, Oct 6 2026",
                                   "pickerMode": "date",
                                   "style": {
-                                    "classes": "pf-field-select",
                                     "fontSize": "15px",
                                     "fontWeight": 600,
                                     "minHeight": "38px",
