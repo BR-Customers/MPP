@@ -648,6 +648,47 @@ def getLineInventoryByPart(locationId, _refreshToken=None, excludeFinishedGoods=
          "excludeFinishedGoods": 1 if _u(excludeFinishedGoods) else 0})
 
 
+def getScrappableParts(locationId):
+    """Scrap Entry popup (Assembly + Machining terminals). One row per part with
+       scrappable stock at a line: ItemId, PartNumber, Description,
+       QuantityAvailable, LotCount. Held LOTs are not counted -- the stock rule
+       lives in Lots.Lot_GetScrappablePartsByLocation and is mirrored by
+       Workorder.RejectEvent_RecordByPartFifo, which consumes it FIFO."""
+    locationId = _u(locationId)
+    if locationId is None:
+        return []
+    BlueRidge.Common.Util.log("getScrappableParts locationId=%s" % locationId)
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetScrappablePartsByLocation", {"locationId": locationId})
+
+
+def getScrapPartInstances(locationId, selectedItemId=None, _refreshToken=None):
+    """Binding-only: getScrappableParts shaped as flex-repeater instances for
+       Popups/_ScrapEntry/PartRow, with the selected part flagged. Always a list.
+       _refreshToken is unused server-side; bumping it re-runs the read."""
+    selectedItemId = _u(selectedItemId)
+    return [{"itemId": r.get("ItemId"),
+             "partNumber": r.get("PartNumber") or "",
+             "description": r.get("Description") or "",
+             "quantity": r.get("QuantityAvailable") or 0,
+             "lotCount": r.get("LotCount") or 0,
+             "selected": selectedItemId is not None and r.get("ItemId") == selectedItemId}
+            for r in getScrappableParts(locationId)]
+
+
+def getScrappableStock(locationId, itemId):
+    """What the Scrap Entry popup can charge to ONE part right now, read fresh at
+       submit so the shortfall prompt quotes current numbers. Always
+       {"available": int, "partNumber": str}; available is 0 when the part has
+       nothing scrappable at the line."""
+    itemId = _u(itemId)
+    for r in getScrappableParts(locationId):
+        if r.get("ItemId") == itemId:
+            return {"available": r.get("QuantityAvailable") or 0,
+                    "partNumber": r.get("PartNumber") or ""}
+    return {"available": 0, "partNumber": ""}
+
+
 _LINE_INV_VISIBLE_ROWS = 12
 _SCOPE_TEXT = {"Castings": "Castings at this line",
                "Purchased": "Bought parts at this line",

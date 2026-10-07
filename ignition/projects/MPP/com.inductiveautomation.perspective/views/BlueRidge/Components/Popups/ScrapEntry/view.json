@@ -2,9 +2,19 @@
   "custom": {
     "draft": {
       "defectCodeId": null,
-      "lotId": null,
+      "itemId": null,
       "quantity": 0,
-      "remarks": null
+      "remarks": ""
+    },
+    "defectOptions": [],
+    "partInstances": [],
+    "refreshToken": 0,
+    "shortfall": {
+      "active": false,
+      "requested": 0,
+      "available": 0,
+      "short": 0,
+      "partNumber": ""
     }
   },
   "params": {
@@ -38,32 +48,50 @@
         }
       }
     },
-    "custom.lotOptions": {
+    "custom.partInstances": {
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "if(isNull({view.params.cellLocationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getLineInventoryByPart\", 0, {view.params.cellLocationId}))"
-        },
-        "transforms": [
-          {
-            "type": "script",
-            "code": "\trows = value or []\n\treturn [{\"label\": (r.get(\"LotName\") or \"?\") + \" - \" + (r.get(\"PartNumber\") or \"?\") + \" (\" + str(r.get(\"InventoryAvailable\") or 0) + \" pcs)\", \"value\": r.get(\"LotId\")} for r in rows]"
-          }
-        ]
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getScrapPartInstances\", 0, {view.params.cellLocationId}, {view.custom.draft.itemId}, {view.custom.refreshToken})"
+        }
       }
     }
   },
   "props": {
     "defaultSize": {
-      "height": 560,
-      "width": 480
+      "height": 680,
+      "width": 520
     }
   },
   "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-panel",
+        "gap": "12px",
+        "overflow": "hidden",
+        "padding": "16px"
+      }
+    },
     "children": [
       {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "HeaderRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center"
+        },
         "children": [
           {
+            "type": "ia.display.label",
             "meta": {
               "name": "PanelHeader"
             },
@@ -77,21 +105,10 @@
                 "fontWeight": 700
               },
               "text": "Record Scrap"
-            },
-            "type": "ia.display.label"
+            }
           },
           {
-            "events": {
-              "dom": {
-                "onClick": {
-                  "config": {
-                    "script": "\tsystem.perspective.openPopup(\u0027scrapEntryHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/ScrapEntryHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027scrapEntryHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
+            "type": "ia.display.icon",
             "meta": {
               "name": "HowToButton",
               "tooltip": {
@@ -101,6 +118,17 @@
             "position": {
               "shrink": 0
             },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup('scrapEntryHowTo',\n\t\t'BlueRidge/Components/Popups/ScrapEntryHowTo',\n\t\tparams={'popupId': 'scrapEntryHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "props": {
               "path": "material/help_outline",
               "style": {
@@ -108,363 +136,592 @@
                 "height": "35px",
                 "width": "35px"
               }
-            },
-            "type": "ia.display.icon"
+            }
           }
-        ],
-        "props": {
-          "alignItems": "center"
-        },
-        "type": "ia.container.flex"
+        ]
       },
       {
+        "type": "ia.container.flex",
         "meta": {
-          "name": "NoLotsHint"
+          "name": "FormBody"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
         },
         "propConfig": {
           "position.display": {
             "binding": {
+              "type": "expr",
               "config": {
-                "expression": "len({view.custom.lotOptions}) = 0"
-              },
-              "type": "expr"
+                "expression": "!{view.custom.shortfall.active}"
+              }
             }
           }
         },
         "props": {
-          "style": {
-            "classes": "pf-kpi-sub"
-          },
-          "text": "No LOTs are currently at this line."
-        },
-        "type": "ia.display.label"
-      },
-      {
-        "children": [
-          {
-            "meta": {
-              "name": "LotLabel"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-label"
-              },
-              "text": "LOT"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "LotDropdown"
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.lotOptions"
-                  },
-                  "type": "property"
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "config": {
-                    "bidirectional": true,
-                    "path": "view.custom.draft.lotId"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "placeholder": {
-                "text": "Select the LOT to charge"
-              },
-              "style": {
-                "classes": "pf-field-select",
-                "fontSize": "16px"
-              }
-            },
-            "type": "ia.input.dropdown"
-          }
-        ],
-        "meta": {
-          "name": "LotField"
-        },
-        "props": {
           "direction": "column",
           "style": {
-            "classes": "pf-field",
-            "gap": "4px",
-            "overflow": "visible"
-          }
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
-          {
-            "meta": {
-              "name": "DefectLabel"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-label"
-              },
-              "text": "Defect Code"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "DefectDropdown"
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.defectOptions"
-                  },
-                  "type": "property"
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "config": {
-                    "bidirectional": true,
-                    "path": "view.custom.draft.defectCodeId"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "placeholder": {
-                "text": "Select a defect code"
-              },
-              "style": {
-                "classes": "pf-field-select",
-                "fontSize": "16px"
-              }
-            },
-            "type": "ia.input.dropdown"
-          }
-        ],
-        "meta": {
-          "name": "DefectField"
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "classes": "pf-field",
-            "gap": "4px",
-            "overflow": "visible"
-          }
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
-          {
-            "meta": {
-              "name": "QuantityLabel"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-label"
-              },
-              "text": "Quantity"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "QuantityInput"
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "config": {
-                    "bidirectional": true,
-                    "path": "view.custom.draft.quantity"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-input"
-              }
-            },
-            "type": "ia.input.text-field"
-          }
-        ],
-        "meta": {
-          "name": "QuantityField"
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "classes": "pf-field",
-            "gap": "4px",
-            "overflow": "visible"
-          }
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
-          {
-            "meta": {
-              "name": "RemarksLabel"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-label"
-              },
-              "text": "Remarks (optional)"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "RemarksInput"
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "config": {
-                    "bidirectional": true,
-                    "path": "view.custom.draft.remarks"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "placeholder": "Optional",
-              "style": {
-                "classes": "pf-field-input"
-              }
-            },
-            "type": "ia.input.text-field"
-          }
-        ],
-        "meta": {
-          "name": "RemarksField"
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "classes": "pf-field",
-            "gap": "4px",
-            "overflow": "visible"
-          }
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "CancelButton"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-btn pf-btn-secondary",
-                "fontSize": "16px",
-                "minHeight": "48px",
-                "minWidth": "110px"
-              },
-              "text": "Cancel"
-            },
-            "type": "ia.input.button"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.rootContainer.submitScrap()"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "SubmitButton"
-            },
-            "propConfig": {
-              "props.enabled": {
-                "binding": {
-                  "config": {
-                    "expression": "!isNull({view.custom.draft.lotId}) && !isNull({view.custom.draft.defectCodeId}) && {view.custom.draft.quantity} > 0"
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-btn pf-btn-primary",
-                "fontSize": "16px",
-                "minHeight": "48px",
-                "minWidth": "150px"
-              },
-              "text": "Record Scrap"
-            },
-            "type": "ia.input.button"
-          }
-        ],
-        "meta": {
-          "name": "ButtonRow"
-        },
-        "props": {
-          "justify": "flex-end",
-          "style": {
-            "gap": "8px",
+            "gap": "12px",
             "overflow": "hidden"
           }
         },
-        "type": "ia.container.flex"
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PartLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "Part"
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "NoPartsHint"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.partInstances}) = 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "Nothing on hand at this line to scrap."
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "PartRepeater"
+            },
+            "position": {
+              "basis": "120px",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Lots.Lot.getScrapPartInstances\", 0, {view.params.cellLocationId}, {view.custom.draft.itemId}, {view.custom.refreshToken})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "useDefaultViewHeight": false,
+              "elementPosition": {
+                "basis": "56px",
+                "shrink": 0
+              },
+              "elementStyle": {
+                "overflow": "hidden",
+                "marginBottom": "6px"
+              },
+              "instances": [],
+              "path": "BlueRidge/Components/Popups/_ScrapEntry/PartRow",
+              "style": {
+                "overflowY": "auto",
+                "overflowX": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "DefectField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "DefectFieldLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Defect Code"
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": {
+                  "name": "DefectDropdown"
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.defectOptions"
+                      }
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.defectCodeId",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": {
+                    "text": "Select a defect code"
+                  },
+                  "style": {
+                    "classes": "pf-field-select",
+                    "fontSize": "16px"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "QuantityField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "QuantityFieldLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Quantity"
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "QuantityInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.quantity",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "RemarksField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "RemarksFieldLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Remarks (optional)"
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "RemarksInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.remarks",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "Optional",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ButtonRow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "justify": "flex-end",
+              "style": {
+                "gap": "8px",
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "CancelButton"
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary",
+                    "fontSize": "16px",
+                    "minHeight": "48px",
+                    "minWidth": "110px"
+                  },
+                  "text": "Cancel"
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "SubmitButton"
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.submitScrap()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary",
+                    "fontSize": "16px",
+                    "minHeight": "48px",
+                    "minWidth": "150px"
+                  },
+                  "text": "Record Scrap"
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.draft.itemId}) && !isNull({view.custom.draft.defectCodeId}) && {view.custom.draft.quantity} > 0"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ShortfallBody"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.shortfall.active}"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "justify": "center",
+          "style": {
+            "gap": "16px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ShortHeadline"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Inventory is \" + toStr({view.custom.shortfall.short}) + if({view.custom.shortfall.short} = 1, \" part short.\", \" parts short.\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "22px",
+                "fontWeight": 700,
+                "color": "var(--mpp-text-primary)",
+                "textAlign": "center"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ShortDetail"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"You entered \" + toStr({view.custom.shortfall.requested}) + \", but only \" + toStr({view.custom.shortfall.available}) + \" of \" + {view.custom.shortfall.partNumber} + \" can be scrapped at this line.\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "15px",
+                "color": "var(--mpp-text-secondary)",
+                "textAlign": "center",
+                "whiteSpace": "normal"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ShortQuestion"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Submit \" + toStr({view.custom.shortfall.available}) + \" instead?\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": 700,
+                "color": "var(--mpp-text-primary)",
+                "textAlign": "center"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ShortButtonRow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "justify": "center",
+              "style": {
+                "gap": "12px",
+                "overflow": "hidden",
+                "marginTop": "8px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "GoBackButton"
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.custom.shortfall = {\"active\": False, \"requested\": 0, \"available\": 0, \"short\": 0, \"partNumber\": \"\"}"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary",
+                    "fontSize": "16px",
+                    "minHeight": "48px",
+                    "minWidth": "140px"
+                  },
+                  "text": "Go back"
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "YesButton"
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.commitScrap(self.view.custom.shortfall.available)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary",
+                    "fontSize": "16px",
+                    "minHeight": "48px",
+                    "minWidth": "140px"
+                  },
+                  "text": "Yes"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "\"Yes, submit \" + toStr({view.custom.shortfall.available})"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
       }
     ],
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "pf-panel",
-        "gap": "12px",
-        "overflow": "hidden",
-        "padding": "16px"
-      }
-    },
     "scripts": {
       "customMethods": [
         {
           "name": "submitScrap",
           "params": [],
-          "script": "\tdraft = dict(self.view.custom.draft)\n\tif draft.get(\"lotId\") is None:\n\t\tBlueRidge.Common.Notify.toast(\"LOT required\", \"Select which LOT to charge the scrap to.\", \"warning\")\n\t\treturn\n\tdraft[\"quantity\"] = BlueRidge.Common.Util.toIntOrNone(draft.get(\"quantity\"))\n\tdraft[\"operationTypeCode\"] = self.view.params.operationTypeCode\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.record(draft, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Scrap recorded\")\n\tif result and result.get(\"Status\"):\n\t\tlotId = draft.get(\"lotId\")\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lotId, \"cellLocationId\": self.view.params.cellLocationId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+          "script": "\tdraft = dict(self.view.custom.draft)\n\titemId = draft.get(\"itemId\")\n\tif itemId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Part required\", \"Select which part to scrap.\", \"warning\")\n\t\treturn\n\tqty = BlueRidge.Common.Util.toIntOrNone(draft.get(\"quantity\"))\n\tif qty is None or qty <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"Quantity required\", \"Enter how many pieces to scrap.\", \"warning\")\n\t\treturn\n\t# Fresh read: the list on screen may be stale. The proc is still the guard.\n\tstock = BlueRidge.Lots.Lot.getScrappableStock(self.view.params.cellLocationId, itemId)\n\tavailable = stock.get(\"available\") or 0\n\tif available <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"None on hand\", \"That part has nothing on hand at this line to scrap.\", \"warning\")\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\treturn\n\tif qty > available:\n\t\tself.view.custom.shortfall = {\"active\": True, \"requested\": qty, \"available\": available, \"short\": qty - available, \"partNumber\": stock.get(\"partNumber\") or \"\"}\n\t\treturn\n\tself.commitScrap(qty)"
+        },
+        {
+          "name": "commitScrap",
+          "params": [
+            "quantity"
+          ],
+          "script": "\tdraft = dict(self.view.custom.draft)\n\tremarks = draft.get(\"remarks\")\n\tif remarks is not None and unicode(remarks).strip() == \"\":\n\t\tremarks = None\n\tdata = {\"itemId\": draft.get(\"itemId\"), \"locationId\": self.view.params.cellLocationId, \"defectCodeId\": draft.get(\"defectCodeId\"), \"quantity\": quantity, \"remarks\": remarks, \"operationTypeCode\": self.view.params.operationTypeCode}\n\tappUserId = BlueRidge.Common.Session.currentAppUserId(self.session)\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.recordByPartFifo(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Scrap recorded\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": None, \"cellLocationId\": self.view.params.cellLocationId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)\n\telse:\n\t\t# Refused (e.g. inventory moved since the prompt): back to the form with fresh numbers.\n\t\tself.view.custom.shortfall = {\"active\": False, \"requested\": 0, \"available\": 0, \"short\": 0, \"partNumber\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": null
-    },
-    "type": "ia.container.flex"
+      "messageHandlers": [
+        {
+          "messageType": "scrapEntryPartSelected",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.draft.itemId = (payload or {}).get(\"itemId\")"
+        }
+      ]
+    }
   }
 }

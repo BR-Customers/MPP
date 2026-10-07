@@ -34,3 +34,29 @@ def record(data, appUserId=None, terminalLocationId=None, allowHeldLot=False):
         "allowHeldLot":       (1 if allowHeldLot else 0),
     }
     return BlueRidge.Common.Db.execMutation("workorder/RejectEvent_Record", params)
+
+
+def recordByPartFifo(data, appUserId=None, terminalLocationId=None):
+    """Scrap by PART at a line, consumed FIFO (Scrap Entry popup, Assembly +
+       Machining terminals). data: {itemId, locationId, defectCodeId, quantity,
+       remarks, operationTypeCode}. The proc charges the oldest LOT of the part
+       first, spills into the next, writes one reject row per LOT touched, and
+       REFUSES (recording nothing) when quantity exceeds what is on hand.
+       Returns {Status, Message, NewId}."""
+    BlueRidge.Common.Util.log(
+        "recordByPartFifo data=%s appUserId=%s terminalLocationId=%s"
+        % (data, appUserId, terminalLocationId)
+    )
+    d = _u(data) or {}
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
+    params = {
+        "itemId":             d.get("itemId"),
+        "locationId":         d.get("locationId"),
+        "defectCodeId":       d.get("defectCodeId"),
+        "quantity":           d.get("quantity"),
+        "remarks":            d.get("remarks"),
+        "appUserId":          appUserId,
+        "terminalLocationId": terminalLocationId,
+        "operationTypeCode":  d.get("operationTypeCode"),
+    }
+    return BlueRidge.Common.Db.execMutation("workorder/RejectEvent_RecordByPartFifo", params)

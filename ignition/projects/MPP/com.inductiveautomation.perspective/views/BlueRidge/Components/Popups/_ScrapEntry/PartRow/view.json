@@ -1,0 +1,193 @@
+{
+  "custom": {},
+  "params": {
+    "itemId": null,
+    "partNumber": "",
+    "description": "",
+    "quantity": 0,
+    "lotCount": 0,
+    "selected": false
+  },
+  "propConfig": {
+    "params.itemId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.partNumber": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.description": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.quantity": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.lotCount": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.selected": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 56,
+      "width": 480
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"scrapEntryPartSelected\", payload={\"itemId\": self.view.params.itemId}, scope=\"page\")"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "propConfig": {
+      "props.style.backgroundColor": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.selected}, \"var(--mpp-accent-20)\", \"var(--mpp-surface-raised)\")"
+          }
+        }
+      },
+      "props.style.borderColor": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.selected}, \"var(--mpp-accent-60)\", \"var(--mpp-border-subtle)\")"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "cursor": "pointer",
+        "gap": "12px",
+        "backgroundColor": "var(--mpp-surface-raised)",
+        "borderColor": "var(--mpp-border-subtle)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Info"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PartNumber"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.partNumber"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "16px",
+                "fontWeight": 700,
+                "color": "var(--mpp-text-primary)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Description"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.description"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-secondary)",
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Quantity"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "numberFormat({view.params.quantity}, \"#,##0\") + \" pcs\""
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "16px",
+            "fontWeight": 700,
+            "color": "var(--mpp-text-primary)"
+          }
+        }
+      }
+    ]
+  }
+}
