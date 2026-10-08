@@ -18,7 +18,8 @@
 
    Success detection is EXACT, not a length heuristic:
      nextSerial  -> trimmed reply is exactly 9 digits
-     postSerial  -> trimmed reply EQUALS the serial we sent
+     postSerial  -> trimmed reply EQUALS the serial we sent (the POSTED form:
+                    '0' + last 8 digits of the issued serial - see _wireSerial)
    A reply beginning 'POST ' is the listener's unrecognized-request echo = rejected.
 
    Neither function raises. Both return an outcome dict. Bounded timeouts: a container
@@ -222,6 +223,25 @@ def _normalizeSerial(value):
     return s
 
 
+def _wireSerial(value):
+    """The serial as it must be POSTED: '0' + the last 8 digits of the issued serial.
+
+       nextserial.csv issues 9 digits (company 99 is at 113,9xx,xxx), but the shipping
+       label only carries the last 8 (Lots.ufn_ShippingLabelZpl: '13218001' +
+       RIGHT(@Aim, 8)), and AIM must hold the label under the number printed on the
+       box. So 113906404 is posted as 013906404 - the numbering scheme the legacy
+       MES used, confirmed by AIM 2026-10-08. Posting the issued 9 digits verbatim is
+       ACCEPTED by AIM (it echoes them back) and creates a label record no box matches.
+
+       The pool keeps the serial exactly as AIM issued it; this applies at post time
+       only. Anything that is not 9 digits after zero-padding is returned unchanged so
+       a malformed serial fails the reply comparison loudly."""
+    s = _normalizeSerial(value)
+    if _NINE_DIGITS.match(s):
+        return "0" + s[-8:]
+    return s
+
+
 def nextSerial():
     """Fetch the next AIM shipper ID for the configured company code.
        Returns {ok, serial, error}. Never raises.
@@ -249,10 +269,11 @@ def nextSerial():
 
 def postSerial(serial, customerPart, qty, lot):
     """Bind content to an issued serial. Returns {ok, error}. Never raises.
-       Success is an EXACT match: AIM echoes back the serial it accepted. `serial`
-       is normally the zero-padded 9-digit string nextSerial() returned, but a bare
-       int is also accepted - both are zero-padded via _normalizeSerial() before
-       comparison against AIM's echo.
+       `serial` is the serial AS ISSUED (normally the zero-padded 9-digit string
+       nextSerial() returned; a bare int is also accepted). What is POSTED is
+       _wireSerial(serial) - '0' + its last 8 digits - see that function for why.
+       Success is an EXACT match: AIM echoes back the serial it accepted, which is
+       the posted form, not the issued one.
 
        Checks AimPostingEnabled FIRST - no network call is made when it is false,
        regardless of whether the connection settings are otherwise complete."""
@@ -261,14 +282,15 @@ def postSerial(serial, customerPart, qty, lot):
         return {"ok": False, "error": _POSTING_DISABLED_ERROR}
     if not base or not company or not token:
         return {"ok": False, "error": _configError(base, company, token)}
-    query = _buildPostQuery(serial, customerPart, qty, lot)
+    wireSerial = _wireSerial(serial)
+    query = _buildPostQuery(wireSerial, customerPart, qty, lot)
     url = "%s/mes/floor/%s/%s/postserial.csv?%s" % (base, company, token, query)
     ok, reply, err = _post(url, "")
     if not ok:
         _logAim("postserial", url, False, err)
         return {"ok": False, "error": err}
     got = (reply or "").strip()
-    if got == _normalizeSerial(serial):
+    if got == wireSerial:
         _logAim("postserial", url, True)
         return {"ok": True, "error": None}
     # A reply starting 'POST ' is the listener echoing an unrecognized request.
