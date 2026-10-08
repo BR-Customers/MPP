@@ -1,0 +1,129 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {
+    "defaultSize": {
+      "width": 420,
+      "height": 800
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "height": "100%",
+        "overflow": "hidden",
+        "classes": "canvas"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "TopBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "10px",
+            "padding": "8px 12px",
+            "borderBottom": "1px solid var(--mpp-border-subtle)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BackButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Back",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "nav",
+                  "scope": "C",
+                  "config": {
+                    "page": "/shop-floor/terminal-selector"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1,
+              "basis": "0"
+            },
+            "props": {
+              "text": "Terminal Onboarding",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": 700,
+                "color": "var(--mpp-text-primary)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "center",
+          "style": {
+            "overflowY": "auto",
+            "overflowX": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.markdown",
+            "meta": {
+              "name": "Guide"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "source": "Bring one shop-floor terminal PC into the MES, with its label printer.\n\n**One visit per terminal.** Do the parts in order — each one depends on\nthe one before it.\n\n1. Collect two facts at the PC\n2. Configure the Terminal in the MES Config app\n3. Add its Printer\n4. Install the Zebra Bridge on the PC\n5. Test the printer\n6. Launch the workstation\n\nNo printer at this terminal? Do parts 1, 2 and 6 only.\n\n---\n\n## Before you start\n\nYou need:\n\n- An AD login for the **MES Config** app\n- Local administrator rights on the terminal PC\n- The bridge flash drive, with **both** files:\n  - `MesZebraBridge.exe`\n  - `MesZebraBridge.conf`\n- The Zebra printer plugged in by USB and powered on\n\n---\n\n## 1. At the PC: collect two facts\n\nOpen PowerShell on the terminal PC.\n\n**The PC's IP address:**\n\n```\nipconfig\n```\n\nWrite down the IPv4 address, for example `172.17.21.45`.\n\n**The printer's queue name:**\n\n```\nGet-Printer | Select-Object Name, PortName\n```\n\nWrite down the Zebra's `Name` **exactly** as shown — spacing and\nbrackets included. You will check against it in part 4.\n\nIf no Zebra is listed, install the Zebra driver first, then run the\ncommand again.\n\n---\n\n## 2. Config app: set up the Terminal\n\nOpen the **MES Config** app and sign in.\n\n1. In the sidebar choose **Plant → Plant Hierarchy**.\n2. Find the terminal in the tree. Use **Search locations…** and type\n   part of its name or code.\n3. Click it. Its details open on the right.\n\n> Terminal not in the tree yet? Click the line or area it belongs to,\n> press **+ Add Location**, set **Type** = `Cell` and\n> **Definition** = `Terminal`, then fill in **Name** and **Code**.\n\n### The settings that matter\n\nUnder **Attributes**:\n\n**IpAddress** — the address from part 1.\n\n- Digits and dots only: `172.17.21.45`\n- No `http://`, no port, no trailing slash\n- This is how the MES recognises the PC, **and** how it finds the\n  printer. Get this wrong and both break.\n\n**DefaultScreen** — the screen this terminal opens to. Pick from the\nlist (Die Cast Entry, Trim Station, Machining IN, Assembly, Shipping\nDock, …).\n\n**HasBarcodeScanner** — on if a scanner is attached.\n\n### Leave these alone unless told otherwise\n\n- **CurrentClosureMethod**, **VisionAppIp**, **CrtEnabled** —\n  assembly-out terminals only\n- **SuppressAimAndLabel** — parallel-run only. When on, this terminal\n  prints **no** shipping labels.\n- **RequiresCompletionConfirm**\n- **DefaultPrinter** — not used to pick the printer. The printer is\n  the Printer location you add in part 3.\n\nPress **Save**.\n\n---\n\n## 3. Config app: add the Printer\n\nSkip this part if the terminal has no printer.\n\nFirst check: expand the terminal in the tree. If a Printer is already\nunder it, click it and just confirm the settings below.\n\nTo add one:\n\n1. Click the **Terminal** in the tree, so it is selected.\n2. Press **+ Add Location**.\n3. **Type** = `Cell`\n4. **Definition** = `Printer`\n5. **Name** and **Code** — follow the terminal's code, for example\n   `MA2-6MACH-AOUT3-PRN`.\n\nUnder **Attributes**:\n\n**ConnectionKind** = `UsbBridge`\n\n**Endpoint** — **leave blank.** The MES works it out from the\nTerminal's IpAddress. Nobody types a printer address.\n\n**Model** — the printer model, for example `ZD421`.\n\nPress **Save**.\n\n> **Other connection kinds** (rare):\n> - `Networked` — a printer with its own network port. Endpoint is\n>   `ip:port`, for example `172.17.20.228:9100`. No bridge needed.\n> - `Hardwired` — a Windows print queue on the Gateway server.\n\n---\n\n## 4. At the PC: install the Zebra Bridge\n\nThe bridge is a small Windows service. It receives labels from the MES\nGateway and hands them to the USB printer.\n\n1. Copy **both** files from the flash drive into:\n\n   ```\n   C:\\BlueRidge\\\n   ```\n\n2. Open a Command Prompt **as administrator**.\n\n3. Run:\n\n   ```\n   cd C:\\BlueRidge\n   MesZebraBridge.exe install\n   ```\n\n4. Read the last line. It should say:\n\n   ```\n   BOUND QUEUE: <your printer name>\n   ```\n\n   **Check it matches the name from part 1.**\n\nThat is the whole install. The service starts by itself now and after\nevery reboot, and the firewall rule is already added.\n\n### If install asks a question\n\n**More than one Zebra, or none found** — it installs nothing and lists\nwhat it sees. Run it again with the exact name:\n\n```\nMesZebraBridge.exe install --queue \"ZDesigner ZD421\"\n```\n\n**`no GatewayAddress`** — the `.conf` file is not beside the `.exe`.\nCopy it and run install again.\n\n**Windows SmartScreen warning** — the program is not signed. Choose\n**More info → Run anyway**.\n\n### Check it any time\n\n```\nMesZebraBridge.exe status\n```\n\nShows the queue it is using, whether Windows has that queue, and\nwhether the service is running.\n\n---\n\n## 5. Test the printer\n\n### Step A — Test printer (uses no label)\n\nBack in the Config app:\n\n1. **Plant → Plant Hierarchy**\n2. Click the **Printer** you added\n3. Press **Test printer**\n\nA green **Printer ready** message means the network, the firewall, the\nservice and the printer queue are all good.\n\nIf it says **Save first** or **Unsaved changes**, press **Save** and\ntest again — the test reads the saved settings.\n\n### Step B — one real label\n\n*Printer ready* proves the path. It cannot prove paper comes out.\nPrint one real label from the terminal's own screen during its first\nproduction action and confirm it is readable and scans.\n\n### What the messages mean\n\n**Bridge unreachable — Connection refused**\nThe service is not running. At the PC: `MesZebraBridge.exe status`.\n\n**Bridge unreachable — Connect timed out**\nThe firewall is blocking it, or the IpAddress is wrong. Recheck part\n2, then run `MesZebraBridge.exe install` again.\n\n**Bridge refused — queue unconfigured**\nThe bridge is running but was never given a printer. Run\n`MesZebraBridge.exe install` at the PC.\n\n**Bridge refused — queue not found**\nThe printer name is wrong or the printer was swapped. The message\nlists the names it can see. At the PC:\n\n```\nMesZebraBridge.exe set-queue \"<exact name>\"\n```\n\n**Queue not ready**\nThe printer is offline, paused or in error. Check the printer itself.\n\n**Queue not draining**\nLabels are waiting and not printing. The printer is almost always\nunplugged or switched off. Fix it and test again — a healthy printer\nshows 0 waiting.\n\n**Not the bridge**\nSomething else answered on that address. Check the Terminal's\nIpAddress belongs to this PC.\n\n**No endpoint / endpoint unresolved**\nThe Terminal has no IpAddress, or it contains `http://`. Fix part 2.\n\n---\n\n## 6. Launch the workstation — last\n\nStart Perspective Workstation on the terminal PC **after** everything\nabove is saved and tested.\n\nThe terminal looks up its screen and printer **once, at startup**. A\nsession that was already open will not see your changes.\n\nConfirm:\n\n- It opens on the DefaultScreen you chose\n- The header shows this terminal's name — not *Madison Facility*\n  (that name means the PC's IP was not recognised; recheck part 2)\n\n---\n\n## Later: swapping a printer\n\nAt the PC:\n\n```\nMesZebraBridge.exe detect\nMesZebraBridge.exe set-queue \"<exact new name>\"\n```\n\nThen:\n\n1. Config app → **Test printer**\n2. **Restart the workstation session** — otherwise it keeps printing\n   to the old printer\n\n---\n\n## Checklist\n\n- ☐ IP address and printer name written down\n- ☐ Terminal **IpAddress** saved — digits and dots only\n- ☐ Terminal **DefaultScreen** saved\n- ☐ Printer added under the Terminal — `UsbBridge`, Endpoint blank\n- ☐ Both bridge files in `C:\\BlueRidge\\`\n- ☐ `install` printed the correct **BOUND QUEUE**\n- ☐ **Test printer** shows *Printer ready*\n- ☐ Workstation launched last, opens on the right screen\n- ☐ First real label printed and scanned\n\n---\n\n## Where the logs are\n\nOn the terminal PC:\n\n```\nC:\\ProgramData\\BlueRidge\\MesZebraBridge\\logs\\\n```\n\nOne file per day, kept for 14 days.\n",
+              "style": {
+                "classes": "pf-doc",
+                "width": "100%",
+                "maxWidth": "760px",
+                "padding": "4px 16px 48px 16px",
+                "overflow": "visible"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

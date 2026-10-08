@@ -275,30 +275,77 @@
             }
           },
           {
-            "type": "ia.input.button",
+            "type": "ia.container.flex",
             "meta": {
-              "name": "CutoverScanButton"
+              "name": "ToolButtons"
             },
             "position": {
               "shrink": 0
             },
             "props": {
-              "text": "Inventory Cutover Scan",
+              "direction": "row",
+              "wrap": "wrap",
+              "alignItems": "center",
+              "justify": "center",
               "style": {
-                "classes": "pf-btn pf-btn-primary pf-btn-large"
+                "gap": "10px",
+                "overflow": "visible"
               }
             },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "nav",
-                  "scope": "C",
-                  "config": {
-                    "page": "/shop-floor/cutover-scan"
+            "children": [
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "CutoverScanButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Inventory Cutover Scan",
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary pf-btn-large"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "nav",
+                      "scope": "C",
+                      "config": {
+                        "page": "/shop-floor/cutover-scan"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "TerminalOnboardingButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Terminal Onboarding Guide",
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary pf-btn-large"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "nav",
+                      "scope": "C",
+                      "config": {
+                        "page": "/shop-floor/terminal-onboarding"
+                      }
+                    }
                   }
                 }
               }
-            }
+            ]
           }
         ]
       },

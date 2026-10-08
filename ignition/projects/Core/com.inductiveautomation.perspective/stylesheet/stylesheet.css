@@ -3196,3 +3196,80 @@ button {
     border: 2px solid #FECACA;
     border-radius: var(--mpp-radius-md);
 }
+
+/* --- Long-form document pages (ia.display.markdown) ----------------------
+   Terminal Onboarding (/shop-floor/terminal-onboarding). Phone-first: one
+   column, 16px body, code blocks scroll sideways instead of widening the page. */
+.psc-pf-doc {
+    color: var(--mpp-text-primary);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+.psc-pf-doc h1,
+.psc-pf-doc h2,
+.psc-pf-doc h3 {
+    color: var(--mpp-text-primary);
+    line-height: 1.25;
+    font-weight: 700;
+}
+.psc-pf-doc h2 {
+    font-size: 22px;
+    margin: 28px 0 10px 0;
+    color: var(--mpp-accent-80);
+}
+.psc-pf-doc h3 {
+    font-size: 17px;
+    margin: 22px 0 8px 0;
+}
+.psc-pf-doc p {
+    margin: 0 0 12px 0;
+}
+.psc-pf-doc ul,
+.psc-pf-doc ol {
+    margin: 0 0 12px 0;
+    padding-left: 24px;
+}
+.psc-pf-doc li {
+    margin: 0 0 6px 0;
+}
+.psc-pf-doc strong {
+    color: #FFFFFF;
+}
+.psc-pf-doc hr {
+    border: 0;
+    border-top: 1px solid var(--mpp-border-subtle);
+    margin: 24px 0;
+}
+.psc-pf-doc code {
+    font-family: var(--mpp-font-mono);
+    font-size: 14px;
+    background: var(--mpp-surface-card);
+    color: var(--mpp-accent-90);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+.psc-pf-doc pre {
+    background: var(--mpp-surface-card);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin: 0 0 12px 0;
+    overflow-x: auto;
+    white-space: pre;
+}
+.psc-pf-doc pre code {
+    background: transparent;
+    padding: 0;
+    overflow-wrap: normal;
+}
+.psc-pf-doc blockquote {
+    margin: 0 0 12px 0;
+    padding: 10px 12px;
+    border-left: 3px solid var(--mpp-accent-60);
+    background: var(--mpp-accent-tint-10);
+    border-radius: 0 6px 6px 0;
+}
+.psc-pf-doc blockquote p:last-child {
+    margin-bottom: 0;
+}
