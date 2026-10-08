@@ -362,8 +362,8 @@ preview will list it as CHANGED -- revert `81b0fa21` in git as well, or expect i
 > logic was not read before the design was chosen, and check 6.2 (never observed) is exactly where it failed.
 >
 > **Rollback as actually done:** `sql/scratch/2026-10-08_ROLLBACK_ufn_CavityShotWatermark_v3.sql` (the v3.0
-> function from `0647dc97`) run with `sqlcmd` against prod; no output, no error. The `v3.0` check in 6.1 was
-> not seen by the author of this note. Repo reverted in `caa6b458`; Dev put back on v3.0.
+> function from `0647dc97`) run with `sqlcmd` against prod; no output, no error. The version check then
+> printed `v3.0 - rolled back` (Jacques, 2026-10-08). Repo reverted in `caa6b458`; Dev put back on v3.0.
 >
 > **What the next attempt must do first:** replay old vs new against prod's recent rows
 > (`sql/scratch/2026-10-08_watermark_v4_exposure.sql` is that check for this change) and see the screen on
