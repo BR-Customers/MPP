@@ -1059,7 +1059,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "numberFormat({view.params.creditedWithoutReading}, \"#,##0\") + \" pc already released on this cavity this shift without a counter reading\" + if({view.params.creditedWithoutReading} \u003e if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}), \". That is more than the \" + numberFormat(if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}), \"#,##0\") + \" this shift cast - say why in Variance.\", if({view.params.isOpen}, \" - already taken off Good.\", \".\"))"
+                        "expression": "if({view.params.creditedWithoutReading} \u003e 0, numberFormat({view.params.creditedWithoutReading}, \"#,##0\") + \" pc already released on this cavity this shift without a counter reading\" + if({view.params.creditedWithoutReading} \u003e if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}), \". That is more than the \" + numberFormat(if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}), \"#,##0\") + \" this shift cast - say why in Variance.\", if({view.params.isOpen}, \" - already taken off Good.\", \".\")), \"No basket is open on this cavity.\") + if(!{view.params.isOpen} \u0026\u0026 {view.params.creditedWithoutReading} \u003c\u003d if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}), \" If castings are in a basket at the press, open it and Compute again to book them.\", \"\")"
                       },
                       "type": "expr"
                     }
@@ -1076,6 +1076,42 @@
                 "props": {
                   "style": {}
                 }
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.requestOpenBasket()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "OpenNextBasketButton"
+                },
+                "type": "ia.input.button",
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  },
+                  "text": "Open basket"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "!{view.params.isOpen}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                }
               }
             ],
             "position": {
@@ -1085,7 +1121,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isCarrier} \u0026\u0026 {view.params.creditedWithoutReading} \u003e 0"
+                    "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isCarrier} \u0026\u0026 ({view.params.creditedWithoutReading} \u003e 0 || !{view.params.isOpen})"
                   },
                   "type": "expr"
                 }
