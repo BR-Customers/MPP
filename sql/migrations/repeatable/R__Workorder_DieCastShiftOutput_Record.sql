@@ -1,8 +1,44 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-25
--- Version:     3.2
+-- Modified:    2026-10-08
+-- Version:     3.3
+-- Change:      v3.3 (2026-10-08) -- THE SHIFT-END READING IS ALWAYS RECORDED.
+--              The reading lives on Workorder.DieCastContribution rows, and
+--              until now a row was written only for a line with pieceDelta > 0.
+--              A die whose baskets were all released before shift end (the
+--              ordinary case where operators release by count) therefore had
+--              nowhere to put the reading: Submit saved the scrap and lost the
+--              number, the shift stayed "Released, no shift-end number", and
+--              any variance disposition typed for such a cavity was dropped.
+--              When @CounterReading is supplied, zero-piece rows are now
+--              written (through Workorder.DieCastCredit_Write, @ApplyToLot = 0
+--              -- nothing about the LOT moves, which matters because it may be
+--              released and already downstream) in exactly three cases:
+--                (a) a cavity whose OPEN basket takes no pieces on this entry:
+--                    one row on that basket, WITH its cavity, when the reading
+--                    is past the cavity watermark or the line carries a
+--                    variance disposition. The operator has said "this basket
+--                    got nothing from these shots", so the cavity is settled
+--                    through the reading -- the same thing
+--                    Lots.DieCastLot_Release v2.0 does with its zero-delta row.
+--                (b) a cavity whose baskets are ALL released, when its line
+--                    carries a variance disposition: one row on its most
+--                    recent basket, with the cavity OMITTED (@OmitCavity = 1).
+--                    The disposition and the reading go on record at DIE
+--                    level; the CAVITY watermark does not move, because the
+--                    castings made since the last release are in whichever
+--                    basket opens next and must still credit to it (spec 3.6).
+--                (c) if, after the credits and (a) and (b), no row of this
+--                    entry carries the reading and it is past the die
+--                    watermark: one cavity-less row, so the shift has its
+--                    shift-end number.
+--              Nothing is written when the reading adds nothing new and there
+--              is no disposition, so a scrap-only re-submit at the same reading
+--              does not pile up rows. Basketless cavities still get nothing --
+--              LotId stays NOT NULL (spec 3.6). No validation changed; a
+--              disposition on a released basket line was already accepted,
+--              just never stored.
 -- Change:      v3.2 (2026-09-25) -- pre-transaction validation of a scrap
 --              line's approvedByUserId. The check exists because v3.1 made
 --              the column WRITABLE from operator JSON: the inline scrap
@@ -360,6 +396,72 @@ BEGIN
             FETCH NEXT FROM cur INTO @LotId, @Delta, @VReasonId, @VNote;
         END
         CLOSE cur; DEALLOCATE cur;
+
+        -- v3.3: put the shift-end reading (and any variance disposition) on
+        -- record where this entry credited nothing. Cases (a) (b) (c) in the header.
+        IF @CounterReading IS NOT NULL
+        BEGIN
+            DECLARE @Zero INT = 0, @LeaveLot BIT = 0, @WithCavity BIT = 0, @NoCavity BIT = 1;
+            DECLARE @AnchorSuffix NVARCHAR(100) = N' (shift-end reading ' + CAST(@CounterReading AS NVARCHAR(20)) + N')';
+            DECLARE @ReadingWritten BIT =
+                CASE WHEN EXISTS (SELECT 1 FROM @Lines WHERE LotId IS NOT NULL AND ISNULL(PieceDelta, 0) > 0) THEN 1 ELSE 0 END;
+
+            -- one candidate line per cavity that took no pieces: its open basket
+            -- if it has one, else the line with a disposition, else its most
+            -- recent basket
+            DECLARE @Cand TABLE (LotId BIGINT PRIMARY KEY, ToolCavityId BIGINT, IsOpen BIT,
+                                 VarianceReasonId BIGINT NULL, VarianceNote NVARCHAR(500) NULL);
+            INSERT INTO @Cand (LotId, ToolCavityId, IsOpen, VarianceReasonId, VarianceNote)
+            SELECT x.LotId, x.ToolCavityId, x.IsOpen, x.VarianceReasonId, x.VarianceNote
+            FROM (SELECT ln.LotId, l.ToolCavityId, ln.VarianceReasonId, ln.VarianceNote,
+                         CASE WHEN sc.Code = N'Open' THEN 1 ELSE 0 END AS IsOpen,
+                         ROW_NUMBER() OVER (PARTITION BY l.ToolCavityId
+                             ORDER BY CASE WHEN sc.Code = N'Open' THEN 0 ELSE 1 END,
+                                      CASE WHEN ln.VarianceReasonId IS NOT NULL THEN 0 ELSE 1 END,
+                                      ln.LotId DESC) AS rn
+                  FROM @Lines ln
+                  INNER JOIN Lots.Lot l            ON l.Id  = ln.LotId
+                  INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
+                  WHERE l.ToolCavityId IS NOT NULL
+                    AND NOT EXISTS (SELECT 1 FROM @Lines p
+                                    INNER JOIN Lots.Lot pl ON pl.Id = p.LotId
+                                    WHERE pl.ToolCavityId = l.ToolCavityId
+                                      AND ISNULL(p.PieceDelta, 0) > 0)) x
+            WHERE x.rn = 1;
+
+            DECLARE @ALot BIGINT, @ACav BIGINT, @AOpen BIT, @AReason BIGINT, @ANote NVARCHAR(500), @AOmit BIT;
+            DECLARE acur CURSOR LOCAL FAST_FORWARD FOR
+                SELECT LotId, ToolCavityId, IsOpen, VarianceReasonId, VarianceNote FROM @Cand ORDER BY IsOpen DESC, LotId;
+            OPEN acur; FETCH NEXT FROM acur INTO @ALot, @ACav, @AOpen, @AReason, @ANote;
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                IF (@AOpen = 1 AND (@AReason IS NOT NULL
+                                    OR @CounterReading > Workorder.ufn_CavityShotWatermark(@ACav, @ShiftId, @ResolvedCellLocationId)))
+                   OR (@AOpen = 0 AND @AReason IS NOT NULL)
+                BEGIN
+                    SET @AOmit = CASE WHEN @AOpen = 1 THEN @WithCavity ELSE @NoCavity END;
+                    EXEC Workorder.DieCastCredit_Write @LotId = @ALot, @ShiftId = @ShiftId, @PieceDelta = @Zero,
+                        @CounterReading = @CounterReading, @CellLocationId = @ResolvedCellLocationId, @ApplyToLot = @LeaveLot,
+                        @VarianceReasonId = @AReason, @VarianceNote = @ANote, @AuditLocationId = @CellLocationId,
+                        @AuditSuffix = @AnchorSuffix,
+                        @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @OmitCavity = @AOmit;
+                    SET @ReadingWritten = 1;
+                END
+                FETCH NEXT FROM acur INTO @ALot, @ACav, @AOpen, @AReason, @ANote;
+            END
+            CLOSE acur; DEALLOCATE acur;
+
+            -- (c) nothing above carried the reading, and it is new for the die
+            IF @ReadingWritten = 0 AND @CounterReading > @DieWatermark
+            BEGIN
+                SET @ALot = (SELECT TOP 1 LotId FROM @Cand ORDER BY LotId DESC);
+                IF @ALot IS NOT NULL
+                    EXEC Workorder.DieCastCredit_Write @LotId = @ALot, @ShiftId = @ShiftId, @PieceDelta = @Zero,
+                        @CounterReading = @CounterReading, @CellLocationId = @ResolvedCellLocationId, @ApplyToLot = @LeaveLot,
+                        @AuditLocationId = @CellLocationId, @AuditSuffix = @AnchorSuffix,
+                        @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @OmitCavity = @NoCavity;
+            END
+        END
 
         -- per-LOT, per-cavity and die-wide scrap, additive (record only)
         EXEC Workorder.DieCastScrap_Write @ToolId = @ToolId, @ShiftId = @ShiftId, @CellLocationId = @ResolvedCellLocationId,

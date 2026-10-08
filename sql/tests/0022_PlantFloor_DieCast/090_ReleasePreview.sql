@@ -414,7 +414,8 @@ DECLARE @B TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, Lot
                   IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT,
                   ItemId BIGINT, CavityDescription NVARCHAR(500), CreditedThrough INT, NewShots INT,
                   CavityStatusCode NVARCHAR(50), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(100),
-                  PriorScrapThisShift INT, DieWideShots INT, IsPending BIT);
+                  PriorScrapThisShift INT, DieWideShots INT, IsPending BIT,
+    CreditedWithoutReading INT, IsCavityCarrier BIT);
 INSERT INTO @B EXEC Workorder.DieCast_GetShiftOutputBreakdown
     @ToolId = @ToolId, @ShiftId = @ShiftId, @CounterReading = 200,
     @CellLocationId = @PressA, @DieWideShots = 0;

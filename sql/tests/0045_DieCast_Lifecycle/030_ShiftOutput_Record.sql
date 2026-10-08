@@ -148,7 +148,8 @@ DECLARE @B TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, Lot
     CreditedThrough INT, NewShots INT,
     CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50),
     -- v3.0 appended trailing columns (0084 / task 4).
-    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT);
+    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT,
+    CreditedWithoutReading INT, IsCavityCarrier BIT);
 INSERT INTO @B EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=100;
 
 DECLARE @rowCount NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @B);
@@ -335,6 +336,7 @@ EXEC test.Assert_IsEqual @TestName=N'[Approver] a deprecated approvedByUserId is
 -- that occupied one cavity during the shift window -- the one released
 -- mid-shift and the one open now -- with the right ProposedGood on each.
 --
+-- SUPERSEDED 2026-10-08 (breakdown v3.2) -- the paragraph below is the history, not the rule; see the dated notes at the assertions.
 -- ADDITIVE MODEL (proc v1.3, 2026-08-19). @GrossShots is the shots SINCE THE
 -- OPERATOR'S LAST ENTRY, not a climbing shift total, so the open lot proposes
 -- the entered number VERBATIM and no prior claim on the cavity is subtracted
@@ -399,7 +401,8 @@ DECLARE @B2 TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, Lo
     CreditedThrough INT, NewShots INT,
     CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50),
     -- v3.0 appended trailing columns (0084 / task 4).
-    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT);
+    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT,
+    CreditedWithoutReading INT, IsCavityCarrier BIT);
 INSERT INTO @B2 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=100;
 
 -- scoped to @Cavity2 -- the tool-wide result also includes @Lot's own
@@ -418,16 +421,25 @@ EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A ProposedGood=0 (released: 
 
 DECLARE @bIsOpen NVARCHAR(10)  = (SELECT CAST(IsOpen AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotB);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B row IsOpen=1 (still open)', @Expected=N'1', @Actual=@bIsOpen;
--- ADDITIVE: lot B gets the ENTERED shots verbatim. Lot A's 40 on the same
--- cavity is NOT subtracted (was 60 under the removed cumulative model).
+-- 2026-10-08 (breakdown v3.2): lot A's 40 was credited WITHOUT a counter
+-- reading, so it comes out of lot B's proposal -- 60 of a reading of 100.
+-- Until v3.2 this asserted 100, which on prod credited the same castings
+-- twice (Machine 11, 2026-10-07). The 2026-08-19 "additive" ruling this block
+-- was written for predates the reading model (v2.0, 2026-09-09): the number
+-- entered is a press-counter READING now, not an increment. The SHOT count is
+-- untouched -- only the proposal moves -- and the 40 is returned as its own
+-- column so the screen can show it.
 DECLARE @bProp NVARCHAR(10)    = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotB);
-EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood=100 (entered shots, lot A''s 40 NOT subtracted)', @Expected=N'100', @Actual=@bProp;
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood=60 (reading 100 less lot A''s 40 credited without a reading)', @Expected=N'60', @Actual=@bProp;
+DECLARE @bShots NVARCHAR(30)   = (SELECT CAST(NewShots AS NVARCHAR(10)) + N'/' + CAST(CreditedWithoutReading AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotB);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B still shows 100 shots, with 40 already released beside it', @Expected=N'100/40', @Actual=@bShots;
 
--- REGRESSION (additive model, 2026-08-19): an entry SMALLER than what was
--- already claimed on the cavity this shift must propose that entry, NOT 0.
--- Under the removed cumulative model these both floored at 0 -- the real-world
--- symptom was a cavity already carrying thousands of pieces showing
--- ProposedGood = 0 for every realistic entry, which looks like a dead binding.
+-- A READING SMALLER than what the cavity already released by count proposes 0
+-- good (v3.2, 2026-10-08) -- but, unlike the removed cumulative model, it does
+-- NOT look like a dead binding: the row still shows the shots the counter saw
+-- and the pieces already released, and the difference is a negative
+-- unaccounted the operator gives a reason for. (2026-08-19's symptom was a
+-- cavity showing 0 with nothing beside it to say why.)
 DECLARE @B3 TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
@@ -437,16 +449,19 @@ DECLARE @B3 TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, Lo
     CreditedThrough INT, NewShots INT,
     CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50),
     -- v3.0 appended trailing columns (0084 / task 4).
-    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT);
+    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT,
+    CreditedWithoutReading INT, IsCavityCarrier BIT);
 INSERT INTO @B3 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=30;
 DECLARE @bProp30 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B3 WHERE LotId=@LotB);
-EXEC test.Assert_IsEqual @TestName=N'[MultiLot] entry (30) below lot A''s prior claim (40) still proposes 30, not 0', @Expected=N'30', @Actual=@bProp30;
--- @Lot itself carries a 95-piece claim on @Cavity this same shift; a 30-shot
--- entry against its own still-open basket must likewise propose 30.
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] reading (30) below lot A''s 40 released by count proposes 0 good', @Expected=N'0', @Actual=@bProp30;
+DECLARE @bShots30 NVARCHAR(30) = (SELECT CAST(NewShots AS NVARCHAR(10)) + N'/' + CAST(CreditedWithoutReading AS NVARCHAR(10)) FROM @B3 WHERE LotId=@LotB);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] ...and still reports 30 shots against 40 released', @Expected=N'30/40', @Actual=@bShots30;
+-- @Lot itself carries a 95-piece reading-less credit on @Cavity this same
+-- shift; a reading of 30 against its own still-open basket likewise proposes 0.
 DECLARE @lotProp30 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B3 WHERE LotId=@Lot);
-EXEC test.Assert_IsEqual @TestName=N'[MultiLot] entry (30) below the lot''s OWN prior claim (95) still proposes 30', @Expected=N'30', @Actual=@lotProp30;
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] reading (30) below the lot''s OWN 95 credited without a reading proposes 0', @Expected=N'0', @Actual=@lotProp30;
 
--- and a deliberately tiny entry against those same large prior claims
+-- and a deliberately tiny reading against those same credits
 DECLARE @B4 TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
@@ -456,10 +471,11 @@ DECLARE @B4 TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, Lo
     CreditedThrough INT, NewShots INT,
     CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50),
     -- v3.0 appended trailing columns (0084 / task 4).
-    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT);
+    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT,
+    CreditedWithoutReading INT, IsCavityCarrier BIT);
 INSERT INTO @B4 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=5;
 DECLARE @bProp5 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B4 WHERE LotId=@LotB);
-EXEC test.Assert_IsEqual @TestName=N'[MultiLot] small entry (5) against a large prior claim proposes 5, not 0', @Expected=N'5', @Actual=@bProp5;
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] small reading (5) below what was released by count proposes 0 good', @Expected=N'0', @Actual=@bProp5;
 -- the released lot A is unaffected by the entered number -- it proposes 0
 -- whatever is entered, and its 40 stays in PriorGoodThisShift
 DECLARE @aProp5 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B4 WHERE LotId=@LotA);

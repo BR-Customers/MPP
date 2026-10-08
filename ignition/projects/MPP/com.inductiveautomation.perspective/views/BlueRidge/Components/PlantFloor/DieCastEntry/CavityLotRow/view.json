@@ -10,7 +10,8 @@
     "reasonOpen": false,
     "varianceReasonId": null,
     "varianceNote": "",
-    "reasonRequiresNote": false
+    "reasonRequiresNote": false,
+    "siblingScrap": 0
   },
   "params": {
     "rowKind": "cavity",
@@ -37,7 +38,9 @@
     "newShots": 0,
     "dieWideShots": 0,
     "defectOptions": [],
-    "varianceReasonOptions": []
+    "varianceReasonOptions": [],
+    "creditedWithoutReading": 0,
+    "isCarrier": false
   },
   "propConfig": {
     "params.rowKind": {
@@ -125,6 +128,20 @@
       }
     },
     "params.isPending": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.recompute()"
+      }
+    },
+    "params.creditedWithoutReading": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.recompute()"
+      }
+    },
+    "params.isCarrier": {
       "paramDirection": "input",
       "onChange": {
         "enabled": true,
@@ -474,7 +491,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr(if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}))"
+                            "expression": "if({view.params.hasBasket} \u0026\u0026 !{view.params.isCarrier}, \"-\", toStr(if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots})))"
                           },
                           "type": "expr"
                         }
@@ -505,7 +522,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "{view.params.dieWideShots} \u003e 0"
+                            "expression": "{view.params.dieWideShots} \u003e 0 \u0026\u0026 (!{view.params.hasBasket} || {view.params.isCarrier})"
                           },
                           "type": "expr"
                         }
@@ -591,7 +608,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "!{view.params.isPending} && {view.params.isOpen}"
+                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen}"
                           },
                           "type": "expr"
                         }
@@ -732,7 +749,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "{view.params.isPending} || !{view.params.isOpen}"
+                            "expression": "{view.params.isPending} || !{view.params.isCarrier}"
                           },
                           "type": "expr"
                         }
@@ -754,7 +771,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen} \u0026\u0026 {view.custom.variance} \u003d 0"
+                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isCarrier} \u0026\u0026 {view.custom.variance} \u003d 0"
                           },
                           "type": "expr"
                         }
@@ -805,7 +822,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen} \u0026\u0026 {view.custom.variance} !\u003d 0"
+                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isCarrier} \u0026\u0026 {view.custom.variance} !\u003d 0"
                           },
                           "type": "expr"
                         }
@@ -849,7 +866,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen} \u0026\u0026 {view.custom.variance} !\u003d 0"
+                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isCarrier} \u0026\u0026 {view.custom.variance} !\u003d 0"
                           },
                           "type": "expr"
                         }
@@ -1010,6 +1027,122 @@
                     "path": "view.params.isPending"
                   },
                   "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "paddingLeft": "10px",
+                "gap": "10px",
+                "overflow": "visible"
+              },
+              "alignItems": "center"
+            }
+          },
+          {
+            "meta": {
+              "name": "ReleasedStrip"
+            },
+            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "ReleasedText"
+                },
+                "type": "ia.display.label",
+                "position": {
+                  "basis": "0",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "numberFormat({view.params.creditedWithoutReading}, \"#,##0\") + \" pc already released on this cavity this shift without a counter reading\" + if({view.params.creditedWithoutReading} \u003e if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}), \". That is more than the \" + numberFormat(if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}), \"#,##0\") + \" this shift cast - say why in Variance.\", if({view.params.isOpen}, \" - already taken off Good.\", \".\"))"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.style.color": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.params.creditedWithoutReading} \u003e if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}), \"var(--pf-status-warn-fg, #F4B343)\", \"var(--mpp-text-secondary, #A9B6CC)\")"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {}
+                }
+              }
+            ],
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isCarrier} \u0026\u0026 {view.params.creditedWithoutReading} \u003e 0"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "paddingLeft": "10px",
+                "gap": "10px",
+                "overflow": "visible"
+              },
+              "alignItems": "center"
+            }
+          },
+          {
+            "meta": {
+              "name": "CavityScrapStrip"
+            },
+            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "CavityScrapText"
+                },
+                "type": "ia.display.label",
+                "position": {
+                  "basis": "0",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr({view.custom.siblingScrap}) + \" scrap entered on this cavity\u0027s earlier baskets is counted in this row\u0027s variance.\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary, #A9B6CC)"
+                  }
+                }
+              }
+            ],
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isCarrier} \u0026\u0026 {view.custom.siblingScrap} \u003e 0"
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -1318,7 +1451,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen} \u0026\u0026 {view.custom.variance} !\u003d 0 \u0026\u0026 {view.custom.reasonOpen}"
+                    "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isCarrier} \u0026\u0026 {view.custom.variance} !\u003d 0 \u0026\u0026 {view.custom.reasonOpen}"
                   },
                   "type": "expr"
                 }
@@ -1385,7 +1518,7 @@
         {
           "name": "recompute",
           "params": [],
-          "script": "\t# Display arithmetic for the reconciliation identity (spec 3.2):\n\t#     netShots \u003d NewShots - DieWideShots\n\t#     variance \u003d netShots - good - cavityScrap\n\t# NOT a domain rule: Workorder.DieCastShiftOutput_Record recomputes\n\t# everything at submit and its Message is what the operator sees. This\n\t# is the preview the operator reconciles against, and ProposedGood (from\n\t# the proc, already net of die-wide) is the proposal Good auto-follows.\n\ttotal \u003d 0\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\tif r.get(\"defectCodeId\") is None:\n\t\t\tcontinue\n\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif q:\n\t\t\ttotal +\u003d q\n\tself.view.custom.scrapTotal \u003d total\n\tpending \u003d bool(self.view.params.isPending)\n\tscrapOnly \u003d (not pending) and (not self.view.params.isOpen)\n\tif pending or scrapOnly:\n\t\t# A cavity with NO basket cannot be credited on this entry (spec 3.5);\n\t\t# a basket released earlier in the shift takes scrap only. Neither is\n\t\t# inside the identity, so neither can carry a variance.\n\t\tif self.view.custom.goodValue !\u003d 0:\n\t\t\tself.view.custom.goodValue \u003d 0\n\t\tself.view.custom.variance \u003d 0\n\t\tself.view.custom.overHeadroom \u003d False\n\t\tself.emitRowChanged()\n\t\treturn\n\tbase \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.proposedGood) or 0\n\tif self.view.custom.goodOverride:\n\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.goodValue) or 0\n\telse:\n\t\tgood \u003d base - total\n\t\tif good \u003c 0:\n\t\t\tgood \u003d 0\n\t\tif good !\u003d self.view.custom.goodValue:\n\t\t\tself.view.custom.goodValue \u003d good\n\tnewShots \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.newShots) or 0\n\tdieWide \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.dieWideShots) or 0\n\tnet \u003d newShots - dieWide\n\tif net \u003c 0:\n\t\tnet \u003d 0\n\tself.view.custom.variance \u003d net - good - total\n\tmaxH \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.maxHeadroom)\n\tself.view.custom.overHeadroom \u003d (maxH is not None and good \u003e maxH)\n\tself.emitRowChanged()"
+          "script": "\t# Display arithmetic for the reconciliation identity (spec 3.2, widened\n\t# 2026-10-08):\n\t#     netShots \u003d NewShots - DieWideShots\n\t#     variance \u003d netShots - alreadyReleased - good - cavityScrap\n\t# cavityScrap is the scrap typed on EVERY basket row of this cavity, not\n\t# just this one: scrap booked against a basket released at 10am explains\n\t# shots exactly as well as scrap booked against the open one. This row\u0027s\n\t# own lines are in scrapLines; the other rows\u0027 total arrives from\n\t# DieCastBody as custom.siblingScrap (message dieCastCavityScrap).\n\t# alreadyReleased is what this CAVITY was credited without a counter\n\t# reading this shift (baskets released by count). It is the cavity\u0027s\n\t# figure, so exactly ONE row per cavity carries the arithmetic: its open\n\t# basket, or its most recent basket when every one is released\n\t# (isCarrier, decided by the proc). A negative variance is real -- the\n\t# released baskets hold more than this shift cast -- and is shown.\n\t# NOT a domain rule: Workorder.DieCastShiftOutput_Record recomputes\n\t# everything at submit and its Message is what the operator sees. This\n\t# is the preview the operator reconciles against, and ProposedGood (from\n\t# the proc, already net of die-wide) is the proposal Good auto-follows.\n\ttotal \u003d 0\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\tif r.get(\"defectCodeId\") is None:\n\t\t\tcontinue\n\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif q:\n\t\t\ttotal +\u003d q\n\tself.view.custom.scrapTotal \u003d total\n\tpending \u003d bool(self.view.params.isPending)\n\tcarrier \u003d bool(self.view.params.isCarrier)\n\tisOpen \u003d bool(self.view.params.isOpen)\n\tif pending or not carrier:\n\t\t# A cavity with NO basket cannot be credited on this entry (spec 3.5).\n\t\t# A released basket that is NOT the cavity\u0027s carrier takes scrap only;\n\t\t# the cavity\u0027s arithmetic is on the carrier row.\n\t\tif self.view.custom.goodValue !\u003d 0:\n\t\t\tself.view.custom.goodValue \u003d 0\n\t\tself.view.custom.variance \u003d 0\n\t\tself.view.custom.overHeadroom \u003d False\n\t\tself.emitRowChanged()\n\t\treturn\n\treleased \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.creditedWithoutReading) or 0\n\tsibling \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.siblingScrap) or 0\n\tif not isOpen:\n\t\t# Every basket on this cavity is released: nothing to credit, but the\n\t\t# cavity\u0027s shots still have to be accounted for.\n\t\tns \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.newShots) or 0\n\t\tdwc \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.dieWideShots) or 0\n\t\tnetc \u003d ns - dwc\n\t\tif netc \u003c 0:\n\t\t\tnetc \u003d 0\n\t\tif self.view.custom.goodValue !\u003d 0:\n\t\t\tself.view.custom.goodValue \u003d 0\n\t\tself.view.custom.variance \u003d netc - released - total - sibling\n\t\tself.view.custom.overHeadroom \u003d False\n\t\tself.emitRowChanged()\n\t\treturn\n\tbase \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.proposedGood) or 0\n\tif self.view.custom.goodOverride:\n\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.goodValue) or 0\n\telse:\n\t\tgood \u003d base - total - sibling\n\t\tif good \u003c 0:\n\t\t\tgood \u003d 0\n\t\tif good !\u003d self.view.custom.goodValue:\n\t\t\tself.view.custom.goodValue \u003d good\n\tnewShots \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.newShots) or 0\n\tdieWide \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.dieWideShots) or 0\n\tnet \u003d newShots - dieWide\n\tif net \u003c 0:\n\t\tnet \u003d 0\n\tself.view.custom.variance \u003d net - released - good - total - sibling\n\tmaxH \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.maxHeadroom)\n\tself.view.custom.overHeadroom \u003d (maxH is not None and good \u003e maxH)\n\tself.emitRowChanged()"
         },
         {
           "name": "emitRowChanged",
@@ -1469,6 +1602,13 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tif self._isMine(payload):\n\t\tself.removeScrapLine(payload.get(\"index\"))"
+        },
+        {
+          "messageType": "dieCastCavityScrap",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# DieCastBody broadcasts the scrap typed per cavity across ALL of its\n\t# basket rows. Only the row that carries the cavity\u0027s arithmetic uses it,\n\t# and only the part that is not its own.\n\tif self.view.params.rowKind \u003d\u003d \"group\" or not self.view.params.isCarrier:\n\t\treturn\n\tm \u003d BlueRidge.Common.Util.extractQualifiedValues((payload or {}).get(\"scrap\")) or {}\n\ttot \u003d BlueRidge.Common.Util.toIntOrNone(m.get(\"%s\" % self.view.params.toolCavityId)) or 0\n\tsib \u003d tot - (BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapTotal) or 0)\n\tif sib \u003c 0:\n\t\tsib \u003d 0\n\tif sib !\u003d (BlueRidge.Common.Util.toIntOrNone(self.view.custom.siblingScrap) or 0):\n\t\tself.view.custom.siblingScrap \u003d sib\n\t\tself.recompute()"
         }
       ]
     },

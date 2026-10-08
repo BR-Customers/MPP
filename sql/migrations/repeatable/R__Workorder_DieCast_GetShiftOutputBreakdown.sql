@@ -1,9 +1,35 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCast_GetShiftOutputBreakdown.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-17
--- Version:     3.1
--- Changelog:   3.1 (2026-09-17) ProposedGood for a basket RELEASED earlier
+-- Modified:    2026-10-08
+-- Version:     3.2
+-- Changelog:   3.2 (2026-10-08) "ALREADY RELEASED THIS SHIFT" becomes its own
+--              term. A basket released by typing the pieces, with no counter
+--              reading, never moved the cavity watermark -- so the open basket
+--              was proposed the whole reading again (prod, Machine 11,
+--              2026-10-07: 515 released, then 1,038 proposed where 523 was
+--              cast). Two columns APPENDED LAST:
+--                * CreditedWithoutReading -- per CAVITY, repeated on each of
+--                  its rows: Workorder.ufn_CavityCreditedWithoutReading.
+--                * IsCavityCarrier -- the ONE row per cavity that carries the
+--                  cavity's arithmetic on screen: its open basket, or, when
+--                  every basket on the cavity is released, the most recent of
+--                  them. Until now the totals counted open rows only, so a
+--                  cavity whose baskets were all released (Machine 304,
+--                  10-07 Third Shift) contributed nothing -- PARTS, GOOD and
+--                  UNACCOUNTED all read 0 for a shift that cast 325.
+--              ProposedGood for an open lot is now ALSO net of
+--              CreditedWithoutReading (floored at 0). NewShots and
+--              CreditedThrough are deliberately UNTOUCHED: the shot count is a
+--              fact about the counter. Folding these pieces into it (the
+--              watermark v4.0 attempt, rolled back 2026-10-08) zeroed the
+--              screen whenever a carried-over basket's typed total exceeded
+--              the shift's castings -- which is every shift. The identity the
+--              screen now closes is
+--                  (NewShots - DieWide) - CreditedWithoutReading - good - scrap
+--                      = unaccounted
+--              and a negative result is shown and takes a disposition.
+--              3.1 (2026-09-17) ProposedGood for a basket RELEASED earlier
 --              this shift is now 0, not PriorGoodThisShift. ProposedGood
 --              means one thing on every row: what THIS entry would credit to
 --              the basket. A released basket is settled -- it takes scrap
@@ -205,15 +231,19 @@ BEGIN
         -- 3.2/3.3), floored at 0. A pending (no-basket) row stays 0.
         -- v3.1: an already-closed-out row also proposes 0 -- it takes scrap
         -- only; its shift credit is PriorGoodThisShift above.
+        -- v3.2: ...and is net of what this cavity was already credited WITHOUT
+        -- a reading since its last reading (the baskets released by count).
         CASE WHEN lo.LotId IS NULL   THEN 0
              WHEN lo.IsOpen = 0      THEN 0
              ELSE CASE WHEN ISNULL(@CounterReading, 0)
                           - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId)
-                          - ISNULL(@DieWideShots, 0) < 0
+                          - ISNULL(@DieWideShots, 0)
+                          - Workorder.ufn_CavityCreditedWithoutReading(tc.Id, @ShiftId, @CellLocationId) < 0
                        THEN 0
                        ELSE ISNULL(@CounterReading, 0)
                           - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId)
                           - ISNULL(@DieWideShots, 0)
+                          - Workorder.ufn_CavityCreditedWithoutReading(tc.Id, @ShiftId, @CellLocationId)
                   END
         END AS ProposedGood,
         CASE WHEN lo.LotId IS NULL        THEN 0
@@ -239,7 +269,16 @@ BEGIN
         ISNULL((SELECT SUM(re.Quantity) FROM Workorder.RejectEvent re
                 WHERE re.ShiftId = @ShiftId AND re.ToolCavityId = tc.Id), 0) AS PriorScrapThisShift,
         @DieWideShots AS DieWideShots,
-        CAST(CASE WHEN lo.LotId IS NULL THEN 1 ELSE 0 END AS BIT) AS IsPending
+        CAST(CASE WHEN lo.LotId IS NULL THEN 1 ELSE 0 END AS BIT) AS IsPending,
+        -- APPENDED (v3.2). Per CAVITY, so every row of the cavity repeats it.
+        Workorder.ufn_CavityCreditedWithoutReading(tc.Id, @ShiftId, @CellLocationId) AS CreditedWithoutReading,
+        -- The one row that carries the cavity's arithmetic: the open basket
+        -- first, else the most recent released one. A basketless cavity has
+        -- none -- it is Pending, outside the identity (spec 3.5).
+        CAST(CASE WHEN lo.LotId IS NULL THEN 0
+                  WHEN ROW_NUMBER() OVER (PARTITION BY tc.Id
+                                          ORDER BY ISNULL(lo.IsOpen, 0) DESC, lo.LotId DESC) = 1 THEN 1
+                  ELSE 0 END AS BIT) AS IsCavityCarrier
     FROM Tools.ToolCavity tc
     INNER JOIN Tools.ToolCavityStatusCode csc ON csc.Id = tc.StatusCodeId
     LEFT  JOIN Relevant  lo ON lo.ToolCavityId = tc.Id

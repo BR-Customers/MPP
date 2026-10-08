@@ -495,6 +495,13 @@ def mapBreakdownInstances(rows):
             "priorScrapThisShift": r.get("PriorScrapThisShift") or 0,
             "dieWideShots":         r.get("DieWideShots") or 0,
             "isPending":            bool(r.get("IsPending")),
+            # v3.2 (2026-10-08): what this CAVITY was already credited this
+            # shift without a counter reading, and whether THIS row carries
+            # the cavity's arithmetic. A proc that predates v3.2 returns
+            # neither: nothing released, and the open basket carries.
+            "creditedWithoutReading": r.get("CreditedWithoutReading") or 0,
+            "isCarrier": (bool(r.get("IsCavityCarrier")) if r.get("IsCavityCarrier") is not None
+                          else bool(r.get("IsOpen"))),
         })
     return out
 

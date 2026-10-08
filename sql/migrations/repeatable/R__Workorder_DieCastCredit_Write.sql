@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastCredit_Write.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.1
+-- Version:     1.2
 -- Description: INTERNAL WORKER -- writes ONE die cast credit: a
 --              Workorder.DieCastContribution row and, when @ApplyToLot = 1,
 --              the matching move of the LOT's materialized PieceCount /
@@ -32,6 +32,18 @@
 --   2026-09-25 - 1.1 - Stamps ShiftAttributionSourceId (migration 0099). See
 --                      the comment at the INSERT for why it is derived from
 --                      @ReconciliationId here rather than passed in.
+--   2026-10-08 - 1.2 - New @OmitCavity BIT = 0. Every existing caller is
+--                      unchanged (default 0 stamps the LOT's cavity as before).
+--                      1 writes the row with ToolCavityId NULL: a DIE-level row.
+--                      Workorder.DieCastShiftOutput_Record v3.3 uses it to put
+--                      the shift-end reading on record for a cavity whose
+--                      baskets are ALL released, without advancing that
+--                      cavity's watermark -- Workorder.ufn_CavityShotWatermark
+--                      reads rows by ToolCavityId, Workorder.ufn_DieShotWatermark
+--                      reads them by the LOT's die. Advancing the cavity there
+--                      would strand the castings made since the last release
+--                      behind the watermark and under-credit the next basket,
+--                      which is exactly what spec 3.6 forbids.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastCredit_Write
     @LotId              BIGINT,
@@ -47,7 +59,8 @@ CREATE OR ALTER PROCEDURE Workorder.DieCastCredit_Write
     @AuditLocationId    BIGINT         = NULL,
     @AuditSuffix        NVARCHAR(100)  = N'',
     @AppUserId          BIGINT,
-    @TerminalLocationId BIGINT         = NULL
+    @TerminalLocationId BIGINT         = NULL,
+    @OmitCavity         BIT            = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -71,7 +84,8 @@ BEGIN
          ShotCounterReading, ToolCavityId, VarianceReasonId, VarianceNote, ReconciliationId,
          ShiftAttributionSourceId)
     SELECT @LotId, @ShiftId, @PieceDelta, @AppUserId, @TerminalLocationId, @At, @CellLocationId,
-           @CounterReading, l.ToolCavityId, @VarianceReasonId, @VarianceNote, @ReconciliationId,
+           @CounterReading, CASE WHEN @OmitCavity = 1 THEN NULL ELSE l.ToolCavityId END,
+           @VarianceReasonId, @VarianceNote, @ReconciliationId,
            @SourceId
     FROM Lots.Lot l
     WHERE l.Id = @LotId;

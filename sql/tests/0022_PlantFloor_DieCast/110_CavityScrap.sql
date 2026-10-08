@@ -438,7 +438,8 @@ CREATE TABLE #Breakdown (
     CavityDescription NVARCHAR(500), CreditedThrough INT, NewShots INT,
     CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50),
     -- v3.0 appended trailing columns (0084 / task 4).
-    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT);
+    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT,
+    CreditedWithoutReading INT, IsCavityCarrier BIT);
 INSERT INTO #Breakdown EXEC Workorder.DieCast_GetShiftOutputBreakdown
     @ToolId = @ToolId, @ShiftId = @ShiftId, @CounterReading = 862,
     @CellLocationId = @CellId, @DieWideShots = 20;
