@@ -1,7 +1,8 @@
 # AIM serials issued to the MES start with `1`; the shipping tablet looks them up with `0` -- "Not On File"
 
 **Date:** 2026-10-06 (found onsite by Jacques, about 16:42 ET, at the shipping dock)
-**Status:** OPEN. Cause located, fix not decided. Question sent to MPP IT (text in section 6).
+**Status:** ANSWERED by AIM 2026-10-08; fix committed (`6023e7f9`), packaged for prod, not yet deployed --
+see section 8. Original status: OPEN, cause located, fix not decided, question sent to MPP IT (section 6).
 **Not caused by** the same-day Code 128 label release (`0106`): the 16 digits in the serial are composed
 exactly as before, and the tablet stripped the new `1S` prefix and read them correctly.
 
@@ -121,3 +122,25 @@ with the `113906404` example, and three questions:
   post a serial AIM never issued to us, into a range the legacy system is still drawing from.
 - **Standing gap, unchanged:** the `nextserial` success log does not record the serial returned and the
   pool row carries no `FetchedInterfaceLogId`, so provenance was proven here only by timestamp proximity.
+
+## 8. Answered 2026-10-08 (AIM, by email)
+
+AIM's reply: "you reserve a 113906404 using nextserial, but are supposed to print an 013906404 ... this is
+not our design, just a requirement of the numbering scheme Flexware was using." Their log of the legacy MES
+on 2026-06-30 shows `nextserial` returning `113803604` and the legacy client posting `013803604`, with AIM
+replying `013803604`.
+
+What that settles:
+
+- **The `1` is not special to our interface.** Section 4's reading ("a `1` in front of the values handed to
+  our interface") was wrong: the legacy MES receives the same `1...` serials and shortens them itself. There
+  is one counter, at about 113.9 million.
+- **The caution in section 7 is retired.** Posting `0` + the last 8 digits is not "a serial AIM never issued
+  us"; it is the form AIM expects, and the last 8 digits come from the same counter legacy draws on, so
+  there is no second range to collide with.
+- **Fix:** `BlueRidge.Lots.AimHttp.postSerial` posts `0` + the last 8 digits and expects that echoed back
+  (commit `6023e7f9`). The pool and the label are unchanged. Runbook:
+  `notes/2026-10-08_prod-release-runbook-aim-post-serial.md`.
+- **The boxes already posted in the `1...` form** were pulled and relabelled with AIM batch labels
+  (Jacques, 2026-10-08). Their AIM records remain; whether to void them is AIM's call.
+- AIM called this "the first problem", so more may follow in that thread.

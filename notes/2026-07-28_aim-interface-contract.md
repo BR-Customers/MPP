@@ -5,6 +5,23 @@
 **Supporting:** `AIM_docs/customer_docs/` (AIM Vision help system, ©2023, ~1,700 topics)
 **Supersedes:** the "⛔ BLOCKED pending customer input" framing in the PROJECT_STATUS 2026-07-16 AIM section — 3 of its 5 blockers are answered below.
 
+> ### Correction 2026-10-08 -- the serial POSTED is `0` + the last 8 digits of the serial ISSUED
+>
+> Everything below that says the serial from `nextserial.csv` is posted back unchanged is wrong for
+> company `99`. There, `nextserial.csv` issues `1xxxxxxxx` (`113906404`); the shipping label carries only
+> the last 8 digits; the AIM shipping tablet looks the box up as `0` + those 8. So `postserial.csv` must
+> carry `013906404`, and AIM echoes that form back. AIM confirmed this by email on 2026-10-08 with a log of
+> the legacy MES doing it on 2026-06-30 (`nextserial` -> `113803604`, `postserial` sent `013803604`, reply
+> `013803604`): "not our design, just a requirement of the numbering scheme Flexware was using."
+>
+> - AIM **accepts** a post of the issued 9 digits and echoes them, which is why this was invisible until a
+>   box was scanned at the dock (`notes/2026-10-06_aim-serial-leading-1-shipping-scan.md`).
+> - Company `01` never showed it: its counter starts at `000000001`, where both forms are the same.
+> - The "company `99` counter is at ~13.84 million" statement further down was read from legacy **post**
+>   traffic (`013843444`), already the shortened form. The counter itself is about 113.9 million.
+> - Implemented in `BlueRidge.Lots.AimHttp._wireSerial` (commit `6023e7f9`), applied at post time only; the
+>   pool stores the serial as issued. Runbook: `notes/2026-10-08_prod-release-runbook-aim-post-serial.md`.
+
 ---
 
 ## 1. The contract
