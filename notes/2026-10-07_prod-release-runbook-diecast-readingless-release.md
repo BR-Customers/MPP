@@ -348,18 +348,37 @@ preview will list it as CHANGED -- revert `81b0fa21` in git as well, or expect i
 
 ## 9. Outcome -- filled in after the release
 
-_(still to fill in)_
+> **ROLLED BACK 2026-10-08 morning. This release was wrong and is no longer on prod.**
+>
+> It executed cleanly and then broke the shift-end Compute. First seen on Machine 304 (64A Oil Pan-H),
+> reporting 10-07 Third Shift at reading 367 with 42 die-wide shots: SHOTS read `8 - 42` = 0 and PARTS read 0,
+> because cavity a was treated as already credited through 359 by baskets released without a reading.
+>
+> **Why it was wrong, not just unlucky.** (1) Typed release counts are basket totals, not this-shift counts:
+> that shift had at most 325 castings on the cavity and 359 released pieces, so a carried-over basket alone
+> pushes the subtraction past the counter. Section 3 called that "the case to warn the floor about"; on prod
+> it is the ordinary case. (2) The subtraction was folded into the shot count, which zeroes the SHOTS column
+> and the PARTS total -- the screen's arithmetic has no term for "already released this shift". The screen
+> logic was not read before the design was chosen, and check 6.2 (never observed) is exactly where it failed.
+>
+> **Rollback as actually done:** `sql/scratch/2026-10-08_ROLLBACK_ufn_CavityShotWatermark_v3.sql` (the v3.0
+> function from `0647dc97`) run with `sqlcmd` against prod; no output, no error. The `v3.0` check in 6.1 was
+> not seen by the author of this note. Repo reverted in `caa6b458`; Dev put back on v3.0.
+>
+> **What the next attempt must do first:** replay old vs new against prod's recent rows
+> (`sql/scratch/2026-10-08_watermark_v4_exposure.sql` is that check for this change) and see the screen on
+> Dev, before any Execute.
 
 | | |
 |---|---|
-| Executed at | |
+| Executed at | 2026-10-07 16:32 ET, from `8d7a73f5` |
 | Prod before | SQL `0108`, 107 migrations |
-| Plan fingerprint | |
-| Backup path | |
-| Preview `[4]` | |
-| Live activity `[6]` | |
-| Prod rehearsal lock window | |
-| Report folder | |
+| Plan fingerprint | `166b571e9e9c` |
+| Backup path | `...\MSSQL\Backup\MPP_MES_Prod_pre-release_0108_20261007_163222.bak` |
+| Preview `[4]` | 506 identical, 1 changed, 0 new -- as expected |
+| Live activity `[6]` | 29 open baskets, 1 running shift; no long transactions |
+| Prod rehearsal lock window | Execute transaction 0.3s |
+| Report folder | `dist\deploy-reports\MPP_MES_Prod_Execute_20261007_163222` |
 | Step 3: cavities listed before | |
 | 6.1 function version / CreditedThrough moved | |
 | 6.2 Reconcile Shift offer seen on | |
