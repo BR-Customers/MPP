@@ -54,6 +54,7 @@
     },
     "props": {
       "direction": "column",
+      "alignItems": "stretch",
       "style": {
         "classes": "canvas",
         "overflow": "hidden"
@@ -162,11 +163,12 @@
               "name": "Left"
             },
             "position": {
-              "basis": "540px",
+              "basis": "440px",
               "shrink": 0
             },
             "props": {
               "direction": "column",
+              "alignItems": "stretch",
               "style": {
                 "gap": "12px",
                 "padding": "16px",
@@ -437,6 +439,8 @@
                 },
                 "props": {
                   "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
                   "useDefaultViewHeight": true,
                   "elementPosition": {
                     "basis": "112px",
@@ -491,6 +495,7 @@
             },
             "props": {
               "direction": "column",
+              "alignItems": "stretch",
               "style": {
                 "gap": "12px",
                 "padding": "16px 22px",
@@ -525,6 +530,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "gap": "4px",
                         "overflow": "hidden"
@@ -620,7 +626,7 @@
                                 "binding": {
                                   "type": "expr",
                                   "config": {
-                                    "expression": "{view.custom.run.StatusCode} = 'Open'"
+                                    "expression": "{view.custom.run.StatusCode} = 'Open' && ({view.custom.run.AutoJoinEnabled} || !isNull({view.custom.run.AutoJoinEndedAt}))"
                                   }
                                 }
                               },
@@ -711,6 +717,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-kpi"
                       }
@@ -762,6 +769,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-kpi"
                       }
@@ -813,6 +821,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-kpi"
                       }
@@ -967,7 +976,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tuid = BlueRidge.Common.Session.currentAppUserId(self.session)\n\ttid = self.session.custom.terminal.terminalLocationId\n\tres = BlueRidge.Quality.ControlledRun.printLabels(self.view.custom.selectedRunId, uid, tid)\n\tBlueRidge.Common.Ui.notifyPrintResult(res, \"Super-lot labels\")"
+                            "script": "\tuid = BlueRidge.Common.Session.currentAppUserId(self.session)\n\ttid = self.session.custom.terminal.terminalLocationId\n\tres = BlueRidge.Quality.ControlledRun.printLabels(self.view.custom.selectedRunId, uid, tid)\n\tif res and res.get(\"NewId\") is None and not res.get(\"Status\"):\n\t\tBlueRidge.Common.Notify.toast(\"Not printed\", res.get(\"Message\") or \"\", \"warning\")   # refused before anything was sent\n\telse:\n\t\tBlueRidge.Common.Ui.notifyPrintResult(res, \"Super-lot labels\")"
                           }
                         }
                       }
@@ -1157,7 +1166,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "len(if({view.custom.run.StatusCode} != 'Open', if(len({view.custom.run.CloseRemarks}) > 0, 'Remarks: ' + {view.custom.run.CloseRemarks}, ''), if({view.custom.run.AutoJoinEnabled}, 'Close is unavailable: the window is still open.', if({view.custom.run.ClearedCount} < {view.custom.run.MemberCount}, 'Close is unavailable: ' + toStr({view.custom.run.MemberCount} - {view.custom.run.ClearedCount}) + ' members are still CRT-tagged.', 'Every member is cleared and the window has ended. This super-lot can be closed.')))) > 0"
+                        "expression": "len(if({view.custom.run.StatusCode} != 'Open', if(len({view.custom.run.CloseRemarks}) > 0, 'Remarks: ' + {view.custom.run.CloseRemarks}, ''), if({view.custom.run.AutoJoinEnabled}, 'Close is unavailable: the window is still open.', if({view.custom.run.ClearedCount} < {view.custom.run.MemberCount}, 'Close is unavailable: ' + toStr({view.custom.run.MemberCount} - {view.custom.run.ClearedCount}) + ' members are still CRT-tagged.', 'Every member is cleared. This super-lot can be closed.')))) > 0"
                       }
                     }
                   },
@@ -1173,7 +1182,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "if({view.custom.run.StatusCode} != 'Open', if(len({view.custom.run.CloseRemarks}) > 0, 'Remarks: ' + {view.custom.run.CloseRemarks}, ''), if({view.custom.run.AutoJoinEnabled}, 'Close is unavailable: the window is still open.', if({view.custom.run.ClearedCount} < {view.custom.run.MemberCount}, 'Close is unavailable: ' + toStr({view.custom.run.MemberCount} - {view.custom.run.ClearedCount}) + ' members are still CRT-tagged.', 'Every member is cleared and the window has ended. This super-lot can be closed.')))"
+                        "expression": "if({view.custom.run.StatusCode} != 'Open', if(len({view.custom.run.CloseRemarks}) > 0, 'Remarks: ' + {view.custom.run.CloseRemarks}, ''), if({view.custom.run.AutoJoinEnabled}, 'Close is unavailable: the window is still open.', if({view.custom.run.ClearedCount} < {view.custom.run.MemberCount}, 'Close is unavailable: ' + toStr({view.custom.run.MemberCount} - {view.custom.run.ClearedCount}) + ' members are still CRT-tagged.', 'Every member is cleared. This super-lot can be closed.')))"
                       }
                     }
                   }
@@ -1400,8 +1409,8 @@
                       "name": "Hdr0"
                     },
                     "position": {
-                      "basis": "96px",
-                      "shrink": 0
+                      "basis": "84px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Kind"
@@ -1414,7 +1423,8 @@
                     },
                     "position": {
                       "grow": 1,
-                      "basis": "0"
+                      "basis": "150px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Member"
@@ -1426,8 +1436,8 @@
                       "name": "Hdr2"
                     },
                     "position": {
-                      "basis": "210px",
-                      "shrink": 0
+                      "basis": "150px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Part"
@@ -1439,8 +1449,8 @@
                       "name": "Hdr3"
                     },
                     "position": {
-                      "basis": "230px",
-                      "shrink": 0
+                      "basis": "190px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Where it is now"
@@ -1452,8 +1462,8 @@
                       "name": "Hdr4"
                     },
                     "position": {
-                      "basis": "90px",
-                      "shrink": 0
+                      "basis": "60px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Pieces"
@@ -1465,8 +1475,8 @@
                       "name": "Hdr5"
                     },
                     "position": {
-                      "basis": "110px",
-                      "shrink": 0
+                      "basis": "92px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Tag"
@@ -1478,8 +1488,8 @@
                       "name": "Hdr6"
                     },
                     "position": {
-                      "basis": "210px",
-                      "shrink": 0
+                      "basis": "150px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": "How it joined"
@@ -1491,8 +1501,8 @@
                       "name": "Hdr7"
                     },
                     "position": {
-                      "basis": "110px",
-                      "shrink": 0
+                      "basis": "84px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Added"
@@ -1504,8 +1514,8 @@
                       "name": "Hdr8"
                     },
                     "position": {
-                      "basis": "56px",
-                      "shrink": 0
+                      "basis": "40px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": ""
@@ -1534,6 +1544,8 @@
                 },
                 "props": {
                   "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
                   "useDefaultViewHeight": true,
                   "elementPosition": {
                     "basis": "48px",

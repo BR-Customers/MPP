@@ -2,7 +2,9 @@
 -- Repeatable:  R__Quality_ControlledRun_SyncInternal.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.0
+-- Version:     1.1
+-- Change Log:  2026-10-12 - 1.1 - Never re-adds a unit that was REMOVED from this
+--                                 super-lot by hand (final-review finding).
 -- Description: SILENT INTERNAL HELPER -- not called from Ignition. For ONE open
 --              super-lot, records the membership of material that is ALREADY
 --              CRT-tagged:
@@ -46,6 +48,16 @@ BEGIN
 
     DECLARE @Json NVARCHAR(MAX);
 
+    -- Units Quality took OUT of this super-lot by hand. D6 leaves their tag on, so
+    -- without this the very next sync would put them straight back (as AutoJoined or
+    -- Descendant) and Remove would do nothing. A deliberate scan-in (AddMembers)
+    -- can still bring one back.
+    DECLARE @Removed TABLE (LotId BIGINT NULL, ContainerId BIGINT NULL);
+    INSERT INTO @Removed (LotId, ContainerId)
+    SELECT m.LotId, m.ContainerId
+    FROM Quality.ControlledRunMember m
+    WHERE m.ControlledRunId = @ControlledRunId AND m.ControlledRunMemberEndReasonId = 1 /* Removed */;
+
     BEGIN TRANSACTION;
 
     -- (a) new production: only while the window is, or was, open
@@ -64,6 +76,10 @@ BEGIN
               AND l.CreatedAt >= @OpenedAt
               AND (@EndedAt IS NULL OR l.CreatedAt < @EndedAt)
               AND (@LocationId IS NULL OR l.CreatedAtTerminalId IN (SELECT Id FROM Descendants))
+              -- never bring back a unit Quality REMOVED from this super-lot (v1.1)
+              AND NOT EXISTS (SELECT 1 FROM @Removed x WHERE x.LotId = l.Id)
+              AND NOT EXISTS (SELECT 1 FROM Lots.ContainerTray t JOIN @Removed x ON x.ContainerId = t.ContainerId
+                              WHERE t.FinishedGoodLotId = l.Id)
             FOR JSON PATH)
         OPTION (MAXRECURSION 8);
 
@@ -83,6 +99,9 @@ BEGIN
             INNER JOIN Lots.Lot d ON d.Id = gc.DescendantLotId
             WHERE m.ControlledRunId = @ControlledRunId AND m.EndedAt IS NULL AND m.LotId IS NOT NULL
               AND d.CrtActive = 1
+              AND NOT EXISTS (SELECT 1 FROM @Removed x WHERE x.LotId = d.Id)
+              AND NOT EXISTS (SELECT 1 FROM Lots.ContainerTray t JOIN @Removed x ON x.ContainerId = t.ContainerId
+                              WHERE t.FinishedGoodLotId = d.Id)
             FOR JSON PATH);
 
         IF @Json IS NOT NULL

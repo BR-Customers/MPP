@@ -2,7 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_Open.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.0
+-- Version:     1.1
 -- Description: Opens a super-lot: header + members in ONE call (bundled save, as
 --              Location.LocationTypeDefinition_SaveAll). All or nothing.
 --
@@ -22,6 +22,11 @@
 --
 --              @SelectionFromAtEastern / @SelectionToAtEastern are WALL-CLOCK EASTERN and
 --              are stored UTC. Returns Status, Message, NewId.
+--
+--              Only ONE open rolling window may cover a part at a place (v1.1): a second
+--              auto-join super-lot for the same part whose line is the same, above, below
+--              or unset is refused, because the mint resolver tags a LOT once and which
+--              super-lot then took it would depend on which synced first.
 --
 --              FDS-11-011: no OUTPUT params; one result set; every rejecting
 --              validation runs before BEGIN TRANSACTION; CATCH is the only
@@ -61,7 +66,7 @@ BEGIN
 
     DECLARE @FromUtc DATETIME2(3) = CAST(@SelectionFromAtEastern AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
     DECLARE @ToUtc   DATETIME2(3) = CAST(@SelectionToAtEastern   AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
-    DECLARE @MemberCount INT, @Bad NVARCHAR(400);
+    DECLARE @MemberCount INT, @Bad NVARCHAR(400), @Conflict NVARCHAR(15);
     SET @IncludeDescendants = ISNULL(@IncludeDescendants, 0);
     SET @AutoJoinEnabled    = ISNULL(@AutoJoinEnabled, 0);
 
@@ -150,8 +155,23 @@ BEGIN
             RETURN;
         END
 
-        SELECT @MemberCount = COUNT(*) FROM Quality.ufn_ControlledRunResolveMembers(@MembersJson);
+        IF @AutoJoinEnabled = 1 SELECT @Conflict = RunNumber FROM Quality.ufn_ControlledRunWindowConflict(@SelectionItemId, @SelectionLocationId, NULL);
         -- ---- 7. ----
+        IF @Conflict IS NOT NULL
+        BEGIN
+            SET @Message = N'Super-lot ' + @Conflict + N' is already adding new production of this part here. End its window first.';
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'ControlledRun',
+                    @EntityId = NULL, @LogEventTypeCode = N'ControlledRunOpened',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        SELECT @MemberCount = COUNT(*) FROM Quality.ufn_ControlledRunResolveMembers(@MembersJson);
+        -- ---- 8. ----
         IF @MemberCount = 0 AND @AutoJoinEnabled = 0
         BEGIN
             SET @Message = N'A super-lot needs at least one member.';
@@ -170,7 +190,7 @@ BEGIN
               FROM Quality.ufn_ControlledRunResolveMembers(@MembersJson) r
               WHERE r.IneligibleReason IS NOT NULL
               ORDER BY r.DisplayName) x;
-        -- ---- 8. ----
+        -- ---- 9. ----
         IF @Bad IS NOT NULL
         BEGIN
             SET @Message = N'Cannot open: ' + @Bad;
@@ -229,6 +249,11 @@ BEGIN
             @ControlledRunId = @NewId, @MembersJson = @MembersJson, @JoinMethodCode = N'Selected',
             @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
+        -- All-or-nothing: the helper SKIPS a unit that became ineligible after the check above
+        -- (another super-lot took it). A short count means exactly that - undo everything.
+        IF (SELECT COUNT(*) FROM Quality.ControlledRunMember WHERE ControlledRunId = @NewId) <> @MemberCount
+            RAISERROR(N'SUPERLOT_RACE: a unit was taken by another super-lot between the check and the write.', 16, 1);
+
         DECLARE @Lots INT = (SELECT COUNT(*) FROM Quality.ControlledRunMember WHERE ControlledRunId = @NewId AND LotId IS NOT NULL);
         DECLARE @Cons INT = (SELECT COUNT(*) FROM Quality.ControlledRunMember WHERE ControlledRunId = @NewId AND ContainerId IS NOT NULL);
 
@@ -278,6 +303,15 @@ BEGIN
 
         SET @Status  = 0;
         SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
+
+        -- EXPECTED, not unexpected: another super-lot took one of these units between the
+        -- pre-transaction check and the write (validations run before BEGIN TRANSACTION
+        -- by rule, so there is a window). Either the helper skipped the unit (the count
+        -- check raised SUPERLOT_RACE) or the one-open-membership unique index fired
+        -- (2601 / 2627). Everything has been rolled back; say so plainly, do not re-raise.
+        DECLARE @Race BIT = CASE WHEN ERROR_NUMBER() IN (2601, 2627) OR @ErrMsg LIKE N'SUPERLOT_RACE%' THEN 1 ELSE 0 END;
+        IF @Race = 1
+            SET @Message = N'One of these was just added to another super-lot. Nothing was changed - preview again.';
         SET @NewId   = NULL;
 
         BEGIN TRY
@@ -292,7 +326,8 @@ BEGIN
         END CATCH
 
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
-        RAISERROR(@ErrMsg, @ErrSev, @ErrState);
+        IF @Race = 0
+            RAISERROR(@ErrMsg, @ErrSev, @ErrState);
     END CATCH
 END;
 GO

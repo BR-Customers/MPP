@@ -2,7 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_SetAutoJoin.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.0
+-- Version:     1.1
 -- Description: Ends (@Enabled = 0) or resumes (@Enabled = 1) a super-lot's rolling
 --              window -- whether new production of its part keeps being tagged and
 --              added (D7, D9). Ending the window does NOT close the super-lot: 'stop
@@ -41,8 +41,8 @@ BEGIN
         SELECT @Id AS Id, @Enabled AS Enabled, @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
-    DECLARE @RunNumber NVARCHAR(15), @StatusId BIGINT, @ItemId BIGINT, @Current BIT;
-    SELECT @RunNumber = RunNumber, @StatusId = ControlledRunStatusId, @ItemId = SelectionItemId, @Current = AutoJoinEnabled
+    DECLARE @RunNumber NVARCHAR(15), @StatusId BIGINT, @ItemId BIGINT, @LocationId BIGINT, @Current BIT, @Conflict NVARCHAR(15);
+    SELECT @RunNumber = RunNumber, @StatusId = ControlledRunStatusId, @ItemId = SelectionItemId, @LocationId = SelectionLocationId, @Current = AutoJoinEnabled
     FROM Quality.ControlledRun WHERE Id = @Id;
 
     BEGIN TRY
@@ -106,6 +106,21 @@ BEGIN
         IF @Enabled = @Current
         BEGIN
             SET @Message = N'Automatic adding is already ' + CASE WHEN @Enabled = 1 THEN N'on.' ELSE N'off.' END;
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'ControlledRun',
+                    @EntityId = @Id, @LogEventTypeCode = N'ControlledRunWindowChanged',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        IF @Enabled = 1 SELECT @Conflict = RunNumber FROM Quality.ufn_ControlledRunWindowConflict(@ItemId, @LocationId, @Id);
+        -- ---- 6. ----
+        IF @Conflict IS NOT NULL
+        BEGIN
+            SET @Message = N'Super-lot ' + @Conflict + N' is already adding new production of this part here. End its window first.';
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'ControlledRun',

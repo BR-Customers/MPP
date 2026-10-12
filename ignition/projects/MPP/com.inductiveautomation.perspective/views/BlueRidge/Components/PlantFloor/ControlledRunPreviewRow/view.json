@@ -138,7 +138,7 @@
         },
         "position": {
           "basis": "96px",
-          "shrink": 0
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -166,7 +166,8 @@
         },
         "position": {
           "grow": 1,
-          "basis": "0"
+          "basis": "150px",
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -191,7 +192,7 @@
         },
         "position": {
           "basis": "190px",
-          "shrink": 0
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -216,7 +217,7 @@
         },
         "position": {
           "basis": "200px",
-          "shrink": 0
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -241,7 +242,7 @@
         },
         "position": {
           "basis": "100px",
-          "shrink": 0
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -266,7 +267,7 @@
         },
         "position": {
           "basis": "80px",
-          "shrink": 0
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -291,7 +292,7 @@
         },
         "position": {
           "basis": "110px",
-          "shrink": 0
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -316,7 +317,7 @@
         },
         "position": {
           "basis": "200px",
-          "shrink": 0
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {

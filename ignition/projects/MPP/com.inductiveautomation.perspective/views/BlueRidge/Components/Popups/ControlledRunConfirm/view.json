@@ -45,6 +45,7 @@
     },
     "props": {
       "direction": "column",
+      "alignItems": "stretch",
       "style": {
         "classes": "canvas"
       }
@@ -105,6 +106,7 @@
         },
         "props": {
           "direction": "column",
+          "alignItems": "stretch",
           "style": {
             "classes": "modal-body",
             "gap": "12px"
@@ -156,6 +158,7 @@
             },
             "props": {
               "direction": "column",
+              "alignItems": "stretch",
               "style": {
                 "classes": "pf-field",
                 "overflow": "visible"
@@ -224,6 +227,7 @@
             },
             "props": {
               "direction": "column",
+              "alignItems": "stretch",
               "style": {
                 "classes": "pf-field",
                 "overflow": "visible"
@@ -290,6 +294,7 @@
             },
             "props": {
               "direction": "column",
+              "alignItems": "stretch",
               "style": {
                 "classes": "pf-field",
                 "overflow": "visible"
@@ -348,6 +353,7 @@
             },
             "props": {
               "direction": "column",
+              "alignItems": "stretch",
               "style": {
                 "classes": "pf-field",
                 "overflow": "visible"
@@ -474,7 +480,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tel = BlueRidge.Location.AppUser.elevate(v.custom.adAccount, v.custom.password, \"ControlledRun\", tid)\n\t\tv.custom.password = \"\"   # credentials are not retained\n\t\tif not el or not el.get(\"success\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Not authorised\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")\n\t\t\treturn\n\t\tuid = el.get(\"appUserId\")\n\t\tCR = BlueRidge.Quality.ControlledRun\n\t\ta = v.params.action\n\t\tif a == \"add\":\n\t\t\tres = CR.addByScan(v.params.runId, v.custom.scanText, uid, tid)\n\t\telif a == \"remove\":\n\t\t\tres = CR.removeMember(v.params.memberId, v.custom.remarks, uid, tid)\n\t\telif a == \"endWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, False, uid, tid)\n\t\telif a == \"resumeWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, True, uid, tid)\n\t\telif a == \"close\":\n\t\t\tres = CR.close(v.params.runId, v.custom.remarks, uid, tid)\n\t\telif a == \"cancel\":\n\t\t\tres = CR.cancel(v.params.runId, v.custom.remarks, uid, tid)\n\t\telse:\n\t\t\tres = {\"Status\": 0, \"Message\": \"Unknown action.\"}\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot %s\" % v.params.runNumber)\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"runId\": v.params.runId}, scope=\"page\")\n\t\t\tif a == \"add\":\n\t\t\t\tv.custom.scanText = \"\"   # stay open: scan the next one (password is asked again by design)\n\t\t\telse:\n\t\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
+                    "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tpw = v.custom.password\n\t\tv.custom.password = \"\"   # cleared BEFORE the call: nothing below can leave it in the view\n\t\tel = BlueRidge.Location.AppUser.elevate(v.custom.adAccount, pw, \"ControlledRun\", tid)\n\t\tpw = None\n\t\tif not el or not el.get(\"success\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Not authorised\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")\n\t\t\treturn\n\t\tuid = el.get(\"appUserId\")\n\t\tCR = BlueRidge.Quality.ControlledRun\n\t\ta = v.params.action\n\t\tif a == \"add\":\n\t\t\tres = CR.addByScan(v.params.runId, v.custom.scanText, uid, tid)\n\t\telif a == \"remove\":\n\t\t\tres = CR.removeMember(v.params.memberId, v.custom.remarks, uid, tid)\n\t\telif a == \"endWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, False, uid, tid)\n\t\telif a == \"resumeWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, True, uid, tid)\n\t\telif a == \"close\":\n\t\t\tres = CR.close(v.params.runId, v.custom.remarks, uid, tid)\n\t\telif a == \"cancel\":\n\t\t\tres = CR.cancel(v.params.runId, v.custom.remarks, uid, tid)\n\t\telse:\n\t\t\tres = {\"Status\": 0, \"Message\": \"Unknown action.\"}\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot %s\" % v.params.runNumber)\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"runId\": v.params.runId}, scope=\"page\")\n\t\t\tif a == \"add\":\n\t\t\t\tv.custom.scanText = \"\"   # stay open: scan the next one (password is asked again by design)\n\t\t\telse:\n\t\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
                   }
                 }
               }

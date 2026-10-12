@@ -2,7 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_AddMembers.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.0
+-- Version:     1.1
 -- Description: Adds LOTs and/or containers to an OPEN super-lot (the scan-in path; join
 --              method 'Manual'). @MembersJson = [{"lotId":n} | {"containerId":n}, ...].
 --
@@ -133,6 +133,10 @@ BEGIN
 
         DECLARE @Added INT = (SELECT COUNT(*) FROM Quality.ControlledRunMember WHERE ControlledRunId = @Id) - @Before;
 
+        -- All-or-nothing: a short count means another super-lot took a unit after the check above.
+        IF @Added <> @MemberCount
+            RAISERROR(N'SUPERLOT_RACE: a unit was taken by another super-lot between the check and the write.', 16, 1);
+
         DECLARE @ActivityRaw NVARCHAR(MAX) = @RunNumber + N' ' + Audit.ufn_MidDot() + N' Members ' + Audit.ufn_MidDot() + N' ' + @Names;
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
         DECLARE @NewValue NVARCHAR(MAX) = (
@@ -169,6 +173,15 @@ BEGIN
         SET @Status  = 0;
         SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
 
+        -- EXPECTED, not unexpected: another super-lot took one of these units between the
+        -- pre-transaction check and the write (validations run before BEGIN TRANSACTION
+        -- by rule, so there is a window). Either the helper skipped the unit (the count
+        -- check raised SUPERLOT_RACE) or the one-open-membership unique index fired
+        -- (2601 / 2627). Everything has been rolled back; say so plainly, do not re-raise.
+        DECLARE @Race BIT = CASE WHEN ERROR_NUMBER() IN (2601, 2627) OR @ErrMsg LIKE N'SUPERLOT_RACE%' THEN 1 ELSE 0 END;
+        IF @Race = 1
+            SET @Message = N'One of these was just added to another super-lot. Nothing was changed - preview again.';
+
         BEGIN TRY
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
@@ -181,7 +194,8 @@ BEGIN
         END CATCH
 
         SELECT @Status AS Status, @Message AS Message;
-        RAISERROR(@ErrMsg, @ErrSev, @ErrState);
+        IF @Race = 0
+            RAISERROR(@ErrMsg, @ErrSev, @ErrState);
     END CATCH
 END;
 GO

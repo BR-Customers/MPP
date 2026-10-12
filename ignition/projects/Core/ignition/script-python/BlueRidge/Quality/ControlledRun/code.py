@@ -257,23 +257,28 @@ def syncTick():
 def printLabels(runId, appUserId, terminalLocationId):
     """Render four super-lot labels and send them to this terminal's printer.
        Same transport as LTT labels (BlueRidge.Lots.LabelTransport - the one
-       place ZPL leaves the gateway). A failed print never undoes anything:
-       the request is logged and the operator presses Print again.
-       Returns {Status, Message, NewId}."""
+       place ZPL leaves the gateway).
+
+       The two things that make a print impossible - nobody signed in, no
+       printer on this terminal - are checked BEFORE the proc runs, so a print
+       that could never happen is not logged as a print request. A failed send
+       never undoes anything: the request is logged and the operator presses
+       Print again. Returns {Status, Message, NewId}."""
     BlueRidge.Common.Util.log("printLabels runId=%s terminalLocationId=%s" % (runId, terminalLocationId))
+    if not _u(appUserId):
+        return {"Status": 0, "Message": "Sign in at this terminal before printing super-lot labels.", "NewId": None}
     appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     tid = _u(terminalLocationId)
     printer = (BlueRidge.Location.Terminal.getPrinter(tid) or {}) if tid is not None else {}
+    endpoint = (printer.get("endpoint") or "").strip()
+    BlueRidge.Lots.LabelTransport.logResolve(endpoint, "terminal-printer", "SUPERLOT")
+    if not endpoint:
+        return {"Status": 0, "Message": "This terminal has no printer configured.", "NewId": None}
     res = BlueRidge.Common.Db.execMutation("quality/ControlledRunLabel_Print", {
         "id": _u(runId), "appUserId": appUserId, "terminalLocationId": tid,
         "printerName": printer.get("code") or None})
     if not res or not res.get("Status"):
         return res
-    endpoint = (printer.get("endpoint") or "").strip()
-    BlueRidge.Lots.LabelTransport.logResolve(endpoint, "terminal-printer", "SUPERLOT")
-    if not endpoint:
-        return {"Status": 0, "Message": "This terminal has no printer configured.",
-                "NewId": res.get("NewId")}
     zpl = res.get("ZplContent") or ""
     outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
     BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "SUPERLOT")

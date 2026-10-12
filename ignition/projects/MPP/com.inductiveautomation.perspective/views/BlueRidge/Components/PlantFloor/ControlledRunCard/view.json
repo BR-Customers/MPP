@@ -65,6 +65,7 @@
     },
     "props": {
       "direction": "column",
+      "alignItems": "stretch",
       "style": {
         "gap": "6px",
         "padding": "12px 14px",
@@ -148,11 +149,19 @@
                   }
                 }
               },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.statusCode} != 'Open' || {view.params.windowOpen}"
+                  }
+                }
+              },
               "props.text": {
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.params.statusCode} != 'Open', upper({view.params.statusCode}), if({view.params.windowOpen}, 'WINDOW OPEN', 'WINDOW ENDED'))"
+                    "expression": "if({view.params.statusCode} != 'Open', upper({view.params.statusCode}), if({view.params.windowOpen}, 'WINDOW OPEN', ''))"
                   }
                 }
               }

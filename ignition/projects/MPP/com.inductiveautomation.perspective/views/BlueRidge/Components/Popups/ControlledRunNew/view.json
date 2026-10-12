@@ -71,6 +71,7 @@
     },
     "props": {
       "direction": "column",
+      "alignItems": "stretch",
       "style": {
         "classes": "canvas"
       }
@@ -206,7 +207,8 @@
           }
         },
         "props": {
-          "direction": "column"
+          "direction": "column",
+          "alignItems": "stretch"
         },
         "children": [
           {
@@ -220,6 +222,7 @@
             },
             "props": {
               "direction": "column",
+              "alignItems": "stretch",
               "style": {
                 "classes": "modal-body",
                 "gap": "14px"
@@ -236,6 +239,7 @@
                 },
                 "props": {
                   "direction": "column",
+                  "alignItems": "stretch",
                   "style": {
                     "classes": "pf-field",
                     "overflow": "visible"
@@ -312,6 +316,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-field",
                         "overflow": "visible"
@@ -442,6 +447,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-field",
                         "overflow": "visible"
@@ -512,6 +518,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-field",
                         "overflow": "visible"
@@ -582,6 +589,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-field",
                         "overflow": "visible"
@@ -642,6 +650,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-field",
                         "overflow": "visible"
@@ -719,6 +728,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "gap": "4px",
                         "padding": "10px 14px",
@@ -783,6 +793,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "gap": "4px",
                         "padding": "10px 14px",
@@ -948,7 +959,8 @@
           }
         },
         "props": {
-          "direction": "column"
+          "direction": "column",
+          "alignItems": "stretch"
         },
         "children": [
           {
@@ -962,6 +974,7 @@
             },
             "props": {
               "direction": "column",
+              "alignItems": "stretch",
               "style": {
                 "classes": "modal-body",
                 "gap": "8px"
@@ -995,6 +1008,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-kpi"
                       }
@@ -1046,6 +1060,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-kpi"
                       }
@@ -1097,6 +1112,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-kpi"
                       }
@@ -1148,6 +1164,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "alignItems": "stretch",
                       "style": {
                         "classes": "pf-kpi"
                       }
@@ -1281,7 +1298,7 @@
                     },
                     "position": {
                       "basis": "44px",
-                      "shrink": 0
+                      "shrink": 1
                     },
                     "props": {
                       "text": ""
@@ -1294,7 +1311,7 @@
                     },
                     "position": {
                       "basis": "96px",
-                      "shrink": 0
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Kind"
@@ -1307,7 +1324,8 @@
                     },
                     "position": {
                       "grow": 1,
-                      "basis": "0"
+                      "basis": "150px",
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Candidate"
@@ -1320,7 +1338,7 @@
                     },
                     "position": {
                       "basis": "190px",
-                      "shrink": 0
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Part"
@@ -1333,7 +1351,7 @@
                     },
                     "position": {
                       "basis": "200px",
-                      "shrink": 0
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Where it is now"
@@ -1346,7 +1364,7 @@
                     },
                     "position": {
                       "basis": "100px",
-                      "shrink": 0
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Status"
@@ -1359,7 +1377,7 @@
                     },
                     "position": {
                       "basis": "80px",
-                      "shrink": 0
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Pieces"
@@ -1372,7 +1390,7 @@
                     },
                     "position": {
                       "basis": "110px",
-                      "shrink": 0
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Made"
@@ -1385,7 +1403,7 @@
                     },
                     "position": {
                       "basis": "200px",
-                      "shrink": 0
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Found by"
@@ -1398,7 +1416,7 @@
                     },
                     "position": {
                       "basis": "210px",
-                      "shrink": 0
+                      "shrink": 1
                     },
                     "props": {
                       "text": "Note"
@@ -1452,6 +1470,8 @@
                 },
                 "props": {
                   "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
                   "useDefaultViewHeight": true,
                   "elementPosition": {
                     "basis": "48px",
@@ -1617,7 +1637,8 @@
           }
         },
         "props": {
-          "direction": "column"
+          "direction": "column",
+          "alignItems": "stretch"
         },
         "children": [
           {
@@ -1631,6 +1652,7 @@
             },
             "props": {
               "direction": "column",
+              "alignItems": "stretch",
               "style": {
                 "classes": "modal-body",
                 "gap": "14px"
@@ -1697,6 +1719,7 @@
                 },
                 "props": {
                   "direction": "column",
+                  "alignItems": "stretch",
                   "style": {
                     "classes": "pf-field",
                     "overflow": "visible"
@@ -1755,6 +1778,7 @@
                 },
                 "props": {
                   "direction": "column",
+                  "alignItems": "stretch",
                   "style": {
                     "classes": "pf-field",
                     "overflow": "visible"
@@ -1893,7 +1917,7 @@
                       "type": "script",
                       "scope": "G",
                       "config": {
-                        "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tel = BlueRidge.Location.AppUser.elevate(v.custom.adAccount, v.custom.password, \"ControlledRun\", tid)\n\t\tv.custom.password = \"\"   # credentials are not retained\n\t\tif not el or not el.get(\"success\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Not authorised\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")\n\t\t\treturn\n\t\tCR = BlueRidge.Quality.ControlledRun\n\t\tres = CR.open(v.custom.draft, CR.previewTicked(v.custom.rowsJson), el.get(\"appUserId\"), tid)\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot\")\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunSelect\", payload={\"runId\": res.get(\"NewId\")}, scope=\"page\")\n\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
+                        "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tpw = v.custom.password\n\t\tv.custom.password = \"\"   # cleared BEFORE the call: nothing below can leave it in the view\n\t\tel = BlueRidge.Location.AppUser.elevate(v.custom.adAccount, pw, \"ControlledRun\", tid)\n\t\tpw = None\n\t\tif not el or not el.get(\"success\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Not authorised\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")\n\t\t\treturn\n\t\tCR = BlueRidge.Quality.ControlledRun\n\t\tres = CR.open(v.custom.draft, CR.previewTicked(v.custom.rowsJson), el.get(\"appUserId\"), tid)\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot\")\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunSelect\", payload={\"runId\": res.get(\"NewId\")}, scope=\"page\")\n\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
                       }
                     }
                   }

@@ -2,7 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_Cancel.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.0
+-- Version:     1.1
 -- Description: Cancels a super-lot that should not have been opened. A reason is
 --              required. Ends every open membership (reason RunCancelled) and switches
 --              the window off, so the mint resolver stops tagging the part at once.
@@ -42,9 +42,6 @@ BEGIN
     DECLARE @RunNumber NVARCHAR(15), @StatusId BIGINT, @Total INT, @StillTagged INT;
     SELECT @RunNumber = RunNumber, @StatusId = ControlledRunStatusId FROM Quality.ControlledRun WHERE Id = @Id;
     SET @Remarks = NULLIF(LTRIM(RTRIM(@Remarks)), N'');
-    SELECT @Total = COUNT(*), @StillTagged = ISNULL(SUM(CASE WHEN ms.CrtActive = 1 THEN 1 ELSE 0 END), 0)
-    FROM Quality.ufn_ControlledRunMemberState(@Id) ms
-    WHERE ms.EndedAt IS NULL;
 
     BEGIN TRY
         -- ---- 1. ----
@@ -102,6 +99,16 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
         END
+
+        -- Final sync BEFORE counting (as ControlledRun_Close does): material the mint resolver
+        -- tagged for this window but that no sync has listed yet must be IN the count below.
+        -- That count is the only pointer to it once the super-lot is gone. Idempotent and
+        -- self-contained; if the cancel then failed, the sync having happened is still correct.
+        EXEC Quality.ControlledRun_SyncInternal @ControlledRunId = @Id, @AppUserId = @AppUserId;
+
+        SELECT @Total = COUNT(*), @StillTagged = ISNULL(SUM(CASE WHEN ms.CrtActive = 1 THEN 1 ELSE 0 END), 0)
+        FROM Quality.ufn_ControlledRunMemberState(@Id) ms
+        WHERE ms.EndedAt IS NULL;
 
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;

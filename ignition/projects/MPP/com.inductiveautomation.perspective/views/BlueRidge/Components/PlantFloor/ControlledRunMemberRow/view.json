@@ -94,8 +94,8 @@
           "name": "Kind"
         },
         "position": {
-          "basis": "96px",
-          "shrink": 0
+          "basis": "84px",
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -123,7 +123,8 @@
         },
         "position": {
           "grow": 1,
-          "basis": "0"
+          "basis": "150px",
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -147,8 +148,8 @@
           "name": "Part"
         },
         "position": {
-          "basis": "210px",
-          "shrink": 0
+          "basis": "150px",
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -172,8 +173,8 @@
           "name": "Where"
         },
         "position": {
-          "basis": "230px",
-          "shrink": 0
+          "basis": "190px",
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -197,8 +198,8 @@
           "name": "Pieces"
         },
         "position": {
-          "basis": "90px",
-          "shrink": 0
+          "basis": "60px",
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -222,8 +223,8 @@
           "name": "Tag"
         },
         "position": {
-          "basis": "110px",
-          "shrink": 0
+          "basis": "92px",
+          "shrink": 1
         },
         "propConfig": {
           "props.style.classes": {
@@ -255,8 +256,8 @@
           "name": "Joined"
         },
         "position": {
-          "basis": "210px",
-          "shrink": 0
+          "basis": "150px",
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -280,8 +281,8 @@
           "name": "Added"
         },
         "position": {
-          "basis": "110px",
-          "shrink": 0
+          "basis": "84px",
+          "shrink": 1
         },
         "propConfig": {
           "props.text": {
@@ -305,7 +306,7 @@
           "name": "OpenCell"
         },
         "position": {
-          "basis": "56px",
+          "basis": "40px",
           "shrink": 0
         },
         "props": {
