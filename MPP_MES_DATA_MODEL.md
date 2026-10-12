@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 3.3 | 2026-10-12 | Blue Ridge Automation | **Super-lot (Controlled Run)** (migration `0109_controlled_run`, spec `docs/superpowers/specs/2026-10-12-controlled-run-super-lot-design.md`) - CHANGE-ORDER ADDITION, outside the accepted baseline; piece 1 of 6 and not deployable on its own. Section 5 Quality gains `ControlledRun` (the case: run number, reason, selection criteria, rolling-window state), `ControlledRunMember` (a LOT XOR a container, one open membership per unit), `ControlledRunLabel` (append-only print log) and three read-only code tables (`ControlledRunStatusCode`, `ControlledRunJoinMethod`, `ControlledRunMemberEndReason`). Membership never blocks by itself: joining sets the existing `Lots.Lot.CrtActive`, so every CRT block applies unchanged. `Lots.ufn_CrtForMint` gains a fourth arm (an open super-lot window tags new production of its part). No existing table changed. |
 | 3.2 | 2026-10-06 | Blue Ridge Automation | **`Lots.LotNote`** (migration `0107_lot_note`) — append-only free-text notes against a LOT, written from the LOT Detail *Notes* tab. Any signed-in user may add one; there is no edit and no delete. Each row carries the author, the terminal, whether an elevation window was open, a **snapshot of the LOT at write time** (status, location, piece count, stamped by `Lots.LotNote_Add` itself) and a `ContextJson` blob of the session the note came from. No `Audit.*` rows: the table is the record. Procs `Lots.LotNote_Add` v1.0, `Lots.LotNote_ListByLot` v1.0. Also this session, no schema change: `Lots.Lot_SearchAdvanced` v1.3 returns `ItemDescription`, matches free text against it, and takes `@ExcludeFinishedGoods BIT = 0`. |
 | 3.1 | 2026-09-22 | Blue Ridge Automation | **Die cast shift reconciliation** (migration `0097`, spec `docs/superpowers/specs/2026-09-21-diecast-shift-reconciliation-design.md`). A team lead settles one past `(Shift, Press, Die)` against its press sheet: production that was never entered, entries filed against the wrong shift, and numbers that disagree — in either direction. New `Workorder.DieCastShiftReconciliation` (header), `DieCastReconciliationMove` (what was re-filed) and `DieCastReconciliationReason`; `ReconciliationId` on `DieCastContribution`, `RejectEvent` and `DieCastCounterAnchor`; `RejectEvent.ApprovedByUserId` (the sheet's QAS). `CK_DieCastContribution_DeltaNonNeg` relaxed so a **reconciliation row, and only a reconciliation row**, may carry a negative delta — corrections are compensating rows, never edits to recorded history. |
 | 3.0 | 2026-09-22 | Blue Ridge Automation | **Trim partial checkpoint (migration `0096`).** `Workorder.ProductionEvent.ShiftId` added. A blast operator can record the total trimmed so far on the LOT at shift end (`Workorder.TrimPartial_Record`, route `TrimIn` template, LOT does not move); Trim OUT is unchanged for the operator and now stamps the shift. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. |
@@ -1475,6 +1476,97 @@ A hold placed on a LOT. Same lifecycle pattern as `DowntimeEvent` — created on
 | ReleasedByUserId | BIGINT | FK → AppUser.Id, NULL | |
 | ReleasedAt | DATETIME2(3) | NULL | NULL while hold is active |
 | ReleaseRemarks | NVARCHAR(500) | NULL | |
+
+### ControlledRunStatusCode
+
+Read-only code table. Change-order addition (super-lot), not MVP.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | Open, Closed, Cancelled |
+| Name | NVARCHAR(100) | NOT NULL | |
+
+### ControlledRunJoinMethod
+
+Read-only code table. How a member came to be in a super-lot.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | Selected (from the preview), Manual (scanned in), AutoJoined (new production in the window), Descendant (made from a member) |
+| Name | NVARCHAR(100) | NOT NULL | |
+
+### ControlledRunMemberEndReason
+
+Read-only code table. Why a membership ended.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | Removed, RunClosed, RunCancelled |
+| Name | NVARCHAR(100) | NOT NULL | |
+
+### ControlledRun
+
+A super-lot: one quality case grouping LOTs and containers placed on a Controlled Run Tag for the same reason. Change-order addition, not MVP. The run is a stored member list, not a rule; the selection columns record how the members were chosen. Membership never blocks by itself - joining sets `Lots.Lot.CrtActive`.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| RunNumber | NVARCHAR(15) | NOT NULL, UNIQUE | Human-facing number (CR000123), minted from Lots.IdentifierSequence code ControlledRun. Also the barcode on the super-lot label |
+| ControlledRunStatusId | BIGINT | FK -> ControlledRunStatusCode.Id, NOT NULL | Open, Closed or Cancelled |
+| Reason | NVARCHAR(500) | NOT NULL | Why the super-lot was opened. Printed on the label |
+| AnchorLotId | BIGINT | FK -> Lot.Id, NULL | The suspect LOT the selection started from, if any |
+| SelectionItemId | BIGINT | FK -> Item.Id, NULL | Part the selection covered. Required for the rolling window |
+| SelectionLocationId | BIGINT | FK -> Location.Id, NULL | Line or press the material was MINTED at (not where it is now) |
+| SelectionFromAt | DATETIME2(3) | NULL | Start of the selection window (UTC) |
+| SelectionToAt | DATETIME2(3) | NULL | End of the selection window (UTC). NULL = up to when it was opened |
+| IncludeDescendants | BIT | NOT NULL, DEFAULT 0 | 1 = everything made from the suspect LOT (and, later, CRT descendants of members) belongs to the run |
+| AutoJoinEnabled | BIT | NOT NULL, DEFAULT 0 | 1 = the rolling window is open: new LOTs of SelectionItemId minted at SelectionLocationId are tagged CRT at mint and added. Read by Lots.ufn_CrtForMint on every mint |
+| AutoJoinEndedAt | DATETIME2(3) | NULL | When the rolling window was ended (UTC). Cleared if it is resumed |
+| AutoJoinEndedByUserId | BIGINT | FK -> AppUser.Id, NULL | Who ended the rolling window |
+| OpenedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
+| OpenedAt | DATETIME2(3) | NOT NULL | UTC |
+| OpenedAtTerminalId | BIGINT | FK -> Location.Id (Terminal), NULL | Terminal where the super-lot was opened |
+| ClosedByUserId | BIGINT | FK -> AppUser.Id, NULL | Who closed or cancelled it |
+| ClosedAt | DATETIME2(3) | NULL | When it was closed or cancelled (UTC) |
+| CloseRemarks | NVARCHAR(500) | NULL | Close remarks, or the cancel reason |
+| RowVersion | ROWVERSION | NOT NULL | Optimistic-lock token |
+
+### ControlledRunMember
+
+One LOT or one container in a super-lot (never both). WIP is listed as LOTs; packed finished goods as the container, whose tray LOTs are implied. A unit has at most one open membership across all super-lots (two filtered unique indexes).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunId | BIGINT | FK -> ControlledRun.Id, NOT NULL | |
+| LotId | BIGINT | FK -> Lot.Id, NULL | Set for a LOT member. Exactly one of LotId / ContainerId is set |
+| ContainerId | BIGINT | FK -> Container.Id, NULL | Set for a container member |
+| ControlledRunJoinMethodId | BIGINT | FK -> ControlledRunJoinMethod.Id, NOT NULL | How it joined |
+| CrtSetByRun | BIT | NOT NULL | 1 = joining set the Controlled Run Tag; 0 = it was already tagged, or (a completed container) could not be tagged by this piece |
+| AddedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The system user for members added by the background sync |
+| AddedAt | DATETIME2(3) | NOT NULL | UTC |
+| EndedAt | DATETIME2(3) | NULL | NULL = currently a member. Set when removed, or when the run closes or is cancelled |
+| EndedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| ControlledRunMemberEndReasonId | BIGINT | FK -> ControlledRunMemberEndReason.Id, NULL | |
+| EndRemarks | NVARCHAR(500) | NULL | The reason given when a member was removed by hand |
+
+### ControlledRunLabel
+
+Append-only log of super-lot label print requests. The label belongs to the super-lot, not to a member: one row per request, Copies labels each.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunId | BIGINT | FK -> ControlledRun.Id, NOT NULL | |
+| Copies | INT | NOT NULL | Labels in the request (4) |
+| ZplContent | NVARCHAR(MAX) | NOT NULL | The rendered ZPL that was sent |
+| PrinterName | NVARCHAR(100) | NULL | |
+| PrintedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | Terminal where the print was requested |
+| PrintedAt | DATETIME2(3) | NOT NULL | UTC |
 
 ---
 
