@@ -3,7 +3,7 @@
 -- Object:      Lots.ufn_CrtForMint
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-20
--- Version:     1.0
+-- Version:     1.1
 -- Description: THE single place the CRT-at-mint decision is made (design D1).
 --              A newly minted LOT is CRT-active if ANY of:
 --                1. its part carries Parts.Item.CrtEnabled = 1, OR
@@ -13,7 +13,15 @@
 --                   Location.LocationAttributeDefinition; an absent row
 --                   reads as '0', same convention as HasBarcodeScanner), OR
 --                3. any consumed input LOT is already Lots.Lot.CrtActive = 1
---                   (D2 propagation -- CRT is sticky once assigned upstream).
+--                   (D2 propagation -- CRT is sticky once assigned upstream), OR
+--                4. an OPEN super-lot (Quality.ControlledRun, migration 0109)
+--                   with "keep adding new production" on covers this part,
+--                   and either names no line or names a location at/above
+--                   the minting terminal. This is the super-lot's rolling
+--                   window: it tags the LOT here, in the mint transaction;
+--                   Quality.ControlledRun_SyncInternal records the
+--                   membership afterwards. A window that names a line
+--                   cannot match a mint with no @TerminalLocationId.
 --
 --              Evaluated at MINT TIME ONLY (D3) -- nothing re-derives this
 --              later; callers persist the result onto the new LOT's
@@ -64,11 +72,15 @@
 --   CrtActive BIT - 1 if any of the three conditions above holds, else 0.
 --
 -- Dependencies:
---   Tables: Parts.Item, Location.LocationAttribute,
---           Location.LocationAttributeDefinition, Lots.Lot
+--   Tables: Parts.Item, Location.Location, Location.LocationAttribute,
+--           Location.LocationAttributeDefinition, Lots.Lot,
+--           Quality.ControlledRun (index IX_ControlledRun_AutoJoin)
 --
 -- Change Log:
 --   2026-08-20 - 1.0 - Initial version (part-scoped CRT, Task 2).
+--   2026-10-12 - 1.1 - Arm 4: an open super-lot window tags new production
+--                      of its part (and line). Arms 1-3 are unchanged; with
+--                      no open window the result is identical to v1.0.
 -- ============================================================
 CREATE OR ALTER FUNCTION Lots.ufn_CrtForMint
 (
@@ -80,6 +92,11 @@ RETURNS TABLE
 AS
 RETURN
 (
+    WITH Anc AS (   -- @TerminalLocationId and every location above it (<= ~6 rows)
+        SELECT l.Id, l.ParentLocationId FROM Location.Location l WHERE l.Id = @TerminalLocationId
+        UNION ALL
+        SELECT p.Id, p.ParentLocationId FROM Location.Location p INNER JOIN Anc a ON p.Id = a.ParentLocationId
+    )
     SELECT CONVERT(BIT, CASE WHEN
         -- (1) Part flag.
         EXISTS (SELECT 1 FROM Parts.Item i
@@ -98,6 +115,17 @@ RETURN
                   FROM STRING_SPLIT(ISNULL(@InputLotIdsCsv, N''), N',') s
                   JOIN Lots.Lot l ON l.Id = TRY_CAST(s.value AS BIGINT)
                  WHERE l.CrtActive = 1)
+        -- (4) Super-lot rolling window (Quality.ControlledRun, migration 0109):
+        --     an OPEN run with "keep adding new production" on covers this part,
+        --     and either names no line or names one at/above the minting terminal.
+        --     Seeks IX_ControlledRun_AutoJoin, which is normally empty.
+     OR EXISTS (SELECT 1
+                  FROM Quality.ControlledRun r
+                 WHERE r.ControlledRunStatusId = 1
+                   AND r.AutoJoinEnabled = 1
+                   AND r.SelectionItemId = @ItemId
+                   AND (r.SelectionLocationId IS NULL
+                        OR r.SelectionLocationId IN (SELECT a.Id FROM Anc a)))
         THEN 1 ELSE 0 END) AS CrtActive
 );
 GO
