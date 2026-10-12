@@ -1,8 +1,13 @@
 # Super-lot piece 2 — Controlled Run Tag on completed containers
 
 > **Status: DRAFT 2026-10-12. NOT APPROVED. NOT BUILT.** Written as a handoff: another
-> agent will take this to a plan and build it. Section 8 lists what is still Jacques's to
-> decide; **do not build past an open decision.** Second of six pieces.
+> agent will take this to a plan and build it. Second of six pieces.
+>
+> **Decisions were answered on 2026-10-12 — read section 8a first; it overrides the
+> proposals in sections 4 and 5.** In short: AIM is told nothing when a container is
+> tagged; there is no interim Validate button; a tagged container can move anywhere; and
+> **this piece is built together with piece 3**, because without piece 3's bulk release a
+> tagged warehouse container has no way out. No decisions remain open.
 
 **Read first, in this order:**
 
@@ -221,7 +226,37 @@ regenerate extended properties with `node sql/scripts/gen_extended_properties.js
   browser cannot type into Perspective inputs; anything needing typed text or a
   credential needs a person.
 
-## 8. Decisions for Jacques
+## 8a. Decisions answered by Jacques, 2026-10-12
+
+These override the "(proposed)" text and the options in section 8 below.
+
+1. **AIM when an already-posted container is tagged: nothing (option a).** The MES
+   blocks shipping; AIM is not told. Jacques added: *no AIM action when a container
+   joins a super-lot — only on a new finished container completion.* So AIM hears about
+   a reworked container when it completes again with its new serial (piece 4), and not
+   before. Section 4.2's `PlaceOnHold` / `ReleaseFromHold` idea is **dropped**.
+2. **No interim Validate action. Wait for piece 3.** Section 4.3's per-container Validate
+   button is **dropped**; a tagged warehouse container is released by piece 3's signed
+   bulk release. Consequence: on its own this piece would leave such a container tagged
+   with no way out, so **pieces 2 and 3 are built as one unit** (see the note at the top
+   of the piece 3 spec). The wrong removal message in 4.3 still needs fixing.
+3. **A tagged container may be moved anywhere.** Shipping is the only block. Section 4.4
+   reduces to a check that no existing container-move path refuses a tagged container.
+4. **`AimWasPostedAtJoin` is dropped** — with no AIM action at join there is nothing for
+   it to drive. *(This is my reading of Jacques's answer, which restated the AIM rule
+   rather than addressing the columns.)* **`WasCompleteAtJoin` is KEPT** (Jacques,
+   2026-10-12): once piece 4 reopens a container nothing else records that it was pulled
+   back from finished stock. So section 5's migration adds that ONE column, set by the
+   member helper when the container's status is `Complete` at the moment it joins.
+5. **A container may be on a real hold and on a super-lot at once.** Neither refuses the
+   other. Test that both blocks apply and that releasing one does not release the other.
+
+One thing these answers leave to verify: on release, the existing
+`BlueRidge.Lots.Container.validateCrt` calls `AimPost.postOne`. For a container whose
+serial was posted before it was tagged, that must be a no-op, never a second post. Piece
+3's bulk release inherits this — check it there.
+
+## 8. Decisions for Jacques (as originally asked — see 8a for the answers)
 
 Ask these in plain language before planning. Each has a recommendation.
 
