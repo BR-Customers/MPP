@@ -11,7 +11,7 @@
 --     - Lots.ContainerStatusCode        (5 seeded rows)
 --     - Lots.GenealogyRelationshipType  (3 seeded rows)
 --     - Lots.PrintReasonCode            (5 seeded rows)
---     - Lots.LabelTypeCode              (5 seeded rows -- 4 from 0004, +CrtBanner from 0065)
+--     - Lots.LabelTypeCode              (6 seeded rows -- 4 from 0004, +CrtBanner from 0065, +ControlledRun from 0109)
 --
 --   For each table:
 --     - _List returns the expected seeded row count (via INSERT-EXEC)
@@ -206,8 +206,8 @@ INSERT INTO #R EXEC Lots.LabelTypeCode_List;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'LabelTypeCode_List: 5 rows returned by proc',
-    @ExpectedCount = 5,
+    @TestName      = N'LabelTypeCode_List: 6 rows returned by proc',
+    @ExpectedCount = 6,
     @ActualCount   = @Count;
 GO
 
