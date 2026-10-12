@@ -134,6 +134,10 @@
       "title": "Genealogy",
       "viewPath": "BlueRidge/Views/ShopFloor/GenealogyViewer"
     },
+    "/shop-floor/controlled-runs": {
+      "title": "Super-lots",
+      "viewPath": "BlueRidge/Views/ShopFloor/ControlledRuns"
+    },
     "/shop-floor/hold-management": {
       "title": "Hold Management",
       "viewPath": "BlueRidge/Views/ShopFloor/HoldManagement"

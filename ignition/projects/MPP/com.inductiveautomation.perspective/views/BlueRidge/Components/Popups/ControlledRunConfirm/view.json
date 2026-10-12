@@ -1,0 +1,493 @@
+{
+  "custom": {
+    "adAccount": "",
+    "password": "",
+    "remarks": "",
+    "scanText": "",
+    "busy": false
+  },
+  "params": {
+    "popupId": "mpp-controlled-run-confirm",
+    "action": "",
+    "runId": null,
+    "runNumber": "",
+    "memberId": null,
+    "memberName": "",
+    "terminalLocationId": null
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.action": {
+      "paramDirection": "input"
+    },
+    "params.runId": {
+      "paramDirection": "input"
+    },
+    "params.runNumber": {
+      "paramDirection": "input"
+    },
+    "params.memberId": {
+      "paramDirection": "input"
+    },
+    "params.memberName": {
+      "paramDirection": "input"
+    },
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.action} = 'add', 'Add to ' + {view.params.runNumber}, if({view.params.action} = 'remove', 'Remove ' + {view.params.memberName}, if({view.params.action} = 'endWindow', 'End window - ' + {view.params.runNumber}, if({view.params.action} = 'resumeWindow', 'Resume adding new production - ' + {view.params.runNumber}, if({view.params.action} = 'close', 'Close super-lot ' + {view.params.runNumber}, if({view.params.action} = 'cancel', 'Cancel super-lot ' + {view.params.runNumber}, 'Confirm'))))))"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Blurb"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.action} = 'add', 'Scan or type a LOT ticket or a container label. It is tagged CRT and added to this super-lot.', if({view.params.action} = 'remove', 'Removing a member does NOT release it. If it is still CRT-tagged it stays tagged until it is cleared.', if({view.params.action} = 'endWindow', 'New production will stop being tagged and added. The super-lot stays open for inspection and release.', if({view.params.action} = 'resumeWindow', 'New production of this part will be tagged CRT and added to this super-lot again.', if({view.params.action} = 'close', 'Closing states that every member has been dealt with. It is only possible once every member is cleared.', if({view.params.action} = 'cancel', 'Cancelling ends the grouping. It does NOT release the material: members that are CRT-tagged stay tagged.', ''))))))"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "14px"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ScanField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.action} = 'add'"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ScanFieldLabel"
+                },
+                "props": {
+                  "text": "LOT ticket or container label",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "ScanInput"
+                },
+                "position": {
+                  "basis": "45px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.scanText",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "Scan or type",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "RemarksField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.action} = 'remove' || {view.params.action} = 'close' || {view.params.action} = 'cancel'"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "RemarksLabel"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.params.action} = 'close', 'Remarks (optional)', 'Reason (required)')"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-area",
+                "meta": {
+                  "name": "RemarksInput"
+                },
+                "position": {
+                  "basis": "90px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.remarks",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "AccountField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "AccountFieldLabel"
+                },
+                "props": {
+                  "text": "Your network user name",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "AccountInput"
+                },
+                "position": {
+                  "basis": "45px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.adAccount",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "domain\\username",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PasswordField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PasswordFieldLabel"
+                },
+                "props": {
+                  "text": "Password",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.password-field",
+                "meta": {
+                  "name": "PasswordInput"
+                },
+                "position": {
+                  "basis": "45px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.password",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "Password",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "basis": "110px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Cancel",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ConfirmButton"
+            },
+            "position": {
+              "basis": "160px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!{view.custom.busy}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Confirm",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tel = BlueRidge.Location.AppUser.elevate(v.custom.adAccount, v.custom.password, \"ControlledRun\", tid)\n\t\tv.custom.password = \"\"   # credentials are not retained\n\t\tif not el or not el.get(\"success\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Not authorised\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")\n\t\t\treturn\n\t\tuid = el.get(\"appUserId\")\n\t\tCR = BlueRidge.Quality.ControlledRun\n\t\ta = v.params.action\n\t\tif a == \"add\":\n\t\t\tres = CR.addByScan(v.params.runId, v.custom.scanText, uid, tid)\n\t\telif a == \"remove\":\n\t\t\tres = CR.removeMember(v.params.memberId, v.custom.remarks, uid, tid)\n\t\telif a == \"endWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, False, uid, tid)\n\t\telif a == \"resumeWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, True, uid, tid)\n\t\telif a == \"close\":\n\t\t\tres = CR.close(v.params.runId, v.custom.remarks, uid, tid)\n\t\telif a == \"cancel\":\n\t\t\tres = CR.cancel(v.params.runId, v.custom.remarks, uid, tid)\n\t\telse:\n\t\t\tres = {\"Status\": 0, \"Message\": \"Unknown action.\"}\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot %s\" % v.params.runNumber)\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"runId\": v.params.runId}, scope=\"page\")\n\t\t\tif a == \"add\":\n\t\t\t\tv.custom.scanText = \"\"   # stay open: scan the next one (password is asked again by design)\n\t\t\telse:\n\t\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 640
+    }
+  }
+}

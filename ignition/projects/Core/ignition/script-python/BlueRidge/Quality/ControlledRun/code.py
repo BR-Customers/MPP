@@ -29,7 +29,15 @@
      close(runId, remarks, appUserId, terminalLocationId)
      cancel(runId, remarks, appUserId, terminalLocationId)
      sync(runId, appUserId) / syncTick()
-     printLabels(runId, appUserId, terminalLocationId)"""
+     printLabels(runId, appUserId, terminalLocationId)
+
+   Display shaping for the Quality view (no rules - rows SQL already judged):
+     partOptions() / locationOptions()
+     cardInstances(statusCode, text, selectedRunId, _refreshToken=None)
+     memberInstances(runId, selectedMemberId, _refreshToken=None)
+     previewEncode(rows) / previewInstances(rowsJson) / previewTotals(rowsJson)
+     previewToggle(rowsJson, index) / previewSetAll(rowsJson, ticked)
+     previewTicked(rowsJson)"""
 
 _EMPTY_RUN = {
     "Id": None, "RunNumber": "", "StatusCode": "", "Reason": "",
@@ -54,7 +62,9 @@ def _toEastern(value):
     if isinstance(v, basestring):
         return v
     from java.text import SimpleDateFormat
-    from java.util import TimeZone
+    from java.util import TimeZone, Date
+    if isinstance(v, (int, long, float)):
+        v = Date(long(v))      # a date-time input can hand over epoch millis
     fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     fmt.setTimeZone(TimeZone.getTimeZone("America/New_York"))
     return fmt.format(v)
@@ -272,3 +282,189 @@ def printLabels(runId, appUserId, terminalLocationId):
     return {"Status": 0,
             "Message": "Print failed: %s. Press Print again to retry." % (outcome.get("error") or "unknown"),
             "NewId": res.get("NewId")}
+
+
+# =============================================================================
+# Display shaping for the Quality view. Nothing below decides anything: every
+# row was already resolved, folded and judged eligible in SQL. These only turn
+# rows into flex-repeater instances and count what the operator has ticked.
+#
+# The wizard keeps its preview rows as a JSON STRING in a view custom property.
+# A list of dicts held in view.custom and fed to a repeater transform renders
+# nothing, and a list passed to runScript arrives as a QualifiedValue[] and
+# throws - a scalar string avoids both.
+# =============================================================================
+
+_EMPTY_TOTALS = {"lots": 0, "containers": 0, "pieces": 0, "ineligible": 0, "ticked": 0}
+
+
+def _fmt(value, pattern):
+    """Format a timestamp the procs already returned in Eastern. '' for None."""
+    v = _u(value)
+    if v is None or v == "":
+        return ""
+    try:
+        return system.date.format(v, pattern)
+    except:
+        return "%s" % v
+
+
+def partOptions():
+    """[{label, value}] of parts for the wizard's Part dropdown."""
+    return [{"label": o.get("label"), "value": o.get("value")}
+            for o in (BlueRidge.Parts.Item.getForDropdown() or [])]
+
+
+def locationOptions():
+    """[{label, value}] for 'Made at': production lines, then die cast presses.
+       (A Cell-tier location is a terminal here, not a line - see
+       Location.getProductionLinesForDropdown.)"""
+    out, seen = [], set()
+    lines = BlueRidge.Location.Location.getProductionLinesForDropdown() or []
+    presses = BlueRidge.Location.Location.getDieCastPressDropdown() or []
+    for o in list(lines) + list(presses):
+        v = o.get("value")
+        if v is None or v in seen:
+            continue
+        seen.add(v)
+        out.append({"label": o.get("label"), "value": v})
+    return out
+
+
+def cardInstances(statusCode, text, selectedRunId, _refreshToken=None):
+    """Flex-repeater instances for the left-hand super-lot list."""
+    sel = _u(selectedRunId)
+    out = []
+    for r in listRuns(statusCode, text):
+        members = int(r.get("MemberCount") or 0)
+        cleared = int(r.get("ClearedCount") or 0)
+        where = " - ".join([x for x in (r.get("PartNumber"), r.get("LocationName")) if x]) or "Hand-picked"
+        out.append({
+            "runId":       r.get("Id"),
+            "runNumber":   r.get("RunNumber") or "",
+            "reason":      r.get("Reason") or "",
+            "where":       where,
+            "statusCode":  r.get("StatusCode") or "",
+            "windowOpen":  bool(r.get("WindowOpen")),
+            "progress":    "%d of %d cleared" % (cleared, members),
+            "pct":         (100.0 * cleared / members) if members else 0.0,
+            "selected":    r.get("Id") == sel,
+        })
+    return out
+
+
+def memberInstances(runId, selectedMemberId, _refreshToken=None):
+    """Flex-repeater instances for the member table."""
+    sel = _u(selectedMemberId)
+    out = []
+    for r in listMembers(runId):
+        out.append({
+            "memberId": r.get("MemberId"),
+            "kind":     (r.get("Kind") or "").upper(),
+            "lotId":    r.get("LotId"),
+            "name":     r.get("DisplayName") or "",
+            "part":     r.get("PartNumber") or "",
+            "where":    r.get("CurrentLocationName") or "",
+            "pieces":   int(r.get("PieceCount") or 0),
+            "tagged":   bool(r.get("CrtActive")),
+            "joined":   r.get("JoinMethodName") or "",
+            "added":    _fmt(r.get("AddedAt"), "EEE HH:mm"),
+            "selected": r.get("MemberId") == sel,
+        })
+    return out
+
+
+def previewEncode(rows):
+    """Preview rows -> the JSON string the wizard keeps. Every eligible row
+       starts ticked."""
+    out = []
+    for r in (_u(rows) or []):
+        out.append({
+            "LotId":            r.get("LotId"),
+            "ContainerId":      r.get("ContainerId"),
+            "Kind":             r.get("Kind") or "",
+            "DisplayName":      r.get("DisplayName") or "",
+            "PartNumber":       r.get("PartNumber") or "",
+            "Where":            r.get("CurrentLocationName") or "",
+            "StatusCode":       r.get("StatusCode") or "",
+            "PieceCount":       int(r.get("PieceCount") or 0),
+            "Made":             _fmt(r.get("ProducedAt"), "EEE HH:mm"),
+            "FoundBy":          r.get("FoundBy") or "",
+            "Eligible":         bool(r.get("Eligible")),
+            "IneligibleReason": r.get("IneligibleReason") or "",
+            "Ticked":           bool(r.get("Eligible")),
+        })
+    return system.util.jsonEncode(out)
+
+
+def _previewRows(rowsJson):
+    t = _u(rowsJson)
+    if not t:
+        return []
+    try:
+        return list(system.util.jsonDecode(t) or [])
+    except:
+        return []
+
+
+def previewInstances(rowsJson):
+    """Flex-repeater instances for the wizard's preview list."""
+    out = []
+    for i, r in enumerate(_previewRows(rowsJson)):
+        out.append({
+            "index":    i,
+            "ticked":   bool(r.get("Ticked")),
+            "eligible": bool(r.get("Eligible")),
+            "kind":     (r.get("Kind") or "").upper(),
+            "name":     r.get("DisplayName") or "",
+            "part":     r.get("PartNumber") or "",
+            "where":    r.get("Where") or "",
+            "status":   r.get("StatusCode") or "",
+            "pieces":   int(r.get("PieceCount") or 0),
+            "made":     r.get("Made") or "",
+            "foundBy":  r.get("FoundBy") or "",
+            "note":     r.get("IneligibleReason") or "",
+        })
+    return out
+
+
+def previewTotals(rowsJson):
+    """Counts of what is ticked. Always the full shape."""
+    t = dict(_EMPTY_TOTALS)
+    for r in _previewRows(rowsJson):
+        if not r.get("Eligible"):
+            t["ineligible"] += 1
+            continue
+        if not r.get("Ticked"):
+            continue
+        t["ticked"] += 1
+        t["pieces"] += int(r.get("PieceCount") or 0)
+        if r.get("Kind") == "Container":
+            t["containers"] += 1
+        else:
+            t["lots"] += 1
+    return t
+
+
+def previewToggle(rowsJson, index):
+    """Flip one row's tick (eligible rows only). Returns the new JSON string."""
+    rows = _previewRows(rowsJson)
+    i = BlueRidge.Common.Util.toIntOrNone(_u(index))
+    if i is not None and 0 <= i < len(rows) and rows[i].get("Eligible"):
+        rows[i]["Ticked"] = not rows[i].get("Ticked")
+    return system.util.jsonEncode(rows)
+
+
+def previewSetAll(rowsJson, ticked):
+    """Tick or untick every eligible row. Returns the new JSON string."""
+    rows = _previewRows(rowsJson)
+    want = bool(_u(ticked))
+    for r in rows:
+        if r.get("Eligible"):
+            r["Ticked"] = want
+    return system.util.jsonEncode(rows)
+
+
+def previewTicked(rowsJson):
+    """The rows to send to open(): ticked AND eligible."""
+    return [r for r in _previewRows(rowsJson) if r.get("Ticked") and r.get("Eligible")]

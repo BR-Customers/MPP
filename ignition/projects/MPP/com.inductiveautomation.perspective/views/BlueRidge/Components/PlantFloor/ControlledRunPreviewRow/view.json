@@ -1,0 +1,396 @@
+{
+  "custom": {},
+  "params": {
+    "index": 0,
+    "ticked": false,
+    "eligible": false,
+    "kind": "",
+    "name": "",
+    "part": "",
+    "where": "",
+    "status": "",
+    "pieces": 0,
+    "made": "",
+    "foundBy": "",
+    "note": ""
+  },
+  "propConfig": {
+    "params.index": {
+      "paramDirection": "input"
+    },
+    "params.ticked": {
+      "paramDirection": "input"
+    },
+    "params.eligible": {
+      "paramDirection": "input"
+    },
+    "params.kind": {
+      "paramDirection": "input"
+    },
+    "params.name": {
+      "paramDirection": "input"
+    },
+    "params.part": {
+      "paramDirection": "input"
+    },
+    "params.where": {
+      "paramDirection": "input"
+    },
+    "params.status": {
+      "paramDirection": "input"
+    },
+    "params.pieces": {
+      "paramDirection": "input"
+    },
+    "params.made": {
+      "paramDirection": "input"
+    },
+    "params.foundBy": {
+      "paramDirection": "input"
+    },
+    "params.note": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.opacity": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.eligible}, '1', '0.55')"
+          }
+        }
+      },
+      "props.style.cursor": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.eligible}, 'pointer', 'default')"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "crt-row",
+        "gap": "12px",
+        "overflow": "hidden"
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tif self.view.params.eligible:\n\t\tsystem.perspective.sendMessage(\"controlledRunPreviewToggle\",\n\t\t\tpayload={\"index\": self.view.params.index}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.icon",
+        "meta": {
+          "name": "Tick"
+        },
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.path": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.ticked}, 'material/check_box', if({view.params.eligible}, 'material/check_box_outline_blank', 'material/block'))"
+              }
+            }
+          },
+          "props.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.ticked}, 'var(--mpp-interactive-primary)', 'var(--mpp-text-tertiary)')"
+              }
+            }
+          }
+        },
+        "props": {
+          "path": "material/check_box_outline_blank",
+          "style": {
+            "height": "30px",
+            "width": "30px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Kind"
+        },
+        "position": {
+          "basis": "96px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.kind"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "12px",
+            "fontWeight": "700",
+            "letterSpacing": "0.05em",
+            "color": "var(--mpp-text-tertiary)"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Name"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.name"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-part crt-mono"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Part"
+        },
+        "position": {
+          "basis": "190px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.part"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Where"
+        },
+        "position": {
+          "basis": "200px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.where"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Status"
+        },
+        "position": {
+          "basis": "100px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.status"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Pieces"
+        },
+        "position": {
+          "basis": "80px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.pieces})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Made"
+        },
+        "position": {
+          "basis": "110px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.made"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "FoundBy"
+        },
+        "position": {
+          "basis": "200px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.foundBy"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "NoteCell"
+        },
+        "position": {
+          "basis": "210px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Note"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.params.note}) > 0"
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.note"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-pill pf-pill-bad"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 48,
+      "width": 1400
+    }
+  }
+}
