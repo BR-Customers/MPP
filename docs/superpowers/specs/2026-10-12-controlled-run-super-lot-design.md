@@ -2,7 +2,7 @@
 
 > **Status: DRAFT 2026-10-12. NOT APPROVED. NOT BUILT.** First of six pieces; context and
 > the other five are in `notes/2026-10-12_crt-super-lot-and-nonconformance-overview.md`.
-> Section 9 records Jacques's answers of 2026-10-12 and the one decision still open.
+> Section 9 records Jacques's answers of 2026-10-12; no decisions remain open.
 > **All six pieces ship together** -- nothing here is released on its own. Mockups come
 > before the plan: `mockup/controlled_run_super_lot_mock.html`.
 
@@ -76,7 +76,7 @@ way. That makes piece 1 usable on its own and leaves the release redesign to pie
 | **D4** | **A LOT or container is in at most one OPEN run.** Enforced by a filtered unique index. | One physical unit, one open quality case. Two would mean two labels, two releases and an argument about which wins. History is unaffected: a unit can be in many runs over time. |
 | **D5** | **Joining a run sets `CrtActive` if it is not already set.** The set is an inlined mirror of `Lots.Lot_SetCrt`, with its own per-LOT `CrtActivated` audit row. | A member that is not blocked is a list entry with no teeth. Inlined, not `EXEC`'d, per the INSERT-EXEC / single-result-set rule. |
 | **D6** | **Leaving a run does NOT clear `CrtActive`.** Removing a member is a correction to the list; releasing material is a separate, deliberate act. | Otherwise "remove from run" becomes an unaudited back door around release. |
-| **D7** | **Auto-join is two steps: the resolver makes new production CRT at mint; a sync proc records the membership.** `Lots.ufn_CrtForMint` gains a fourth arm: an open auto-join run matches this part (and, when the run names one, this line). `Quality.ControlledRun_SyncAutoJoin` then adds the rows. | Every mint proc already calls the resolver, so one function edit covers all seven mint points with no proc edits. A function cannot insert, hence the second step. The gap between mint and membership is harmless because the block is the bit, which is set in the mint transaction. **(still open — see section 9, item 3)** |
+| **D7** | **Auto-join is two steps: the resolver makes new production CRT at mint; a sync proc records the membership.** `Lots.ufn_CrtForMint` gains a fourth arm: an open auto-join run matches this part (and, when the run names one, this line). `Quality.ControlledRun_SyncAutoJoin` then adds the rows. | Every mint proc already calls the resolver, so one function edit covers all seven mint points with no proc edits. A function cannot insert, hence the second step. The gap between mint and membership is harmless because the block is the bit, which is set in the mint transaction. (Confirmed by Jacques 2026-10-12, section 9 item 3.) |
 | **D8** | **Sync also pulls in CRT-active descendants of current members** when the run was opened with genealogy on. | CRT already propagates through consumption. Without this a tagged casting's sub-assembly is blocked but belongs to no case. |
 | **D9** | **Ending the window is explicit.** `ControlledRun_SetAutoJoin(@Enabled = 0)` stamps `AutoJoinEndedAt`. The run stays open for inspection and release. | "Stop adding to it" and "we are finished with it" are different moments on the floor. |
 | **D10** | **A run closes only when no member is still CRT-active.** `ControlledRun_Close` refuses otherwise and says how many are outstanding. | In this piece release is per member. Close is the statement that all of it has been dealt with. Piece 3 replaces this with the signed release. |
@@ -421,22 +421,14 @@ all displayed times Eastern.
    `LotLabel_Print` changes.
 6. **"Produced at a line" means where the LOT was minted**, not where it is now.
 
-### Still open
+3. **Auto-join: option A.** While a super-lot is open with "keep adding new production"
+   ticked, every new LOT of that part made on that line is tagged CRT as it is made and
+   added to the super-lot automatically, until Quality press **End window**. Scoped to
+   one part on one line. Built as D7: a fourth arm in `Lots.ufn_CrtForMint` plus
+   `ControlledRun_SyncAutoJoin`. (Rejected: switching the part's plant-wide
+   `Parts.Item.CrtEnabled` flag on and off with the run; and no automatic adding.)
 
-3. **How new production gets into a super-lot that has been left open.** This is the
-   "rolling" part of the window. Two ways to do it:
-
-   - **A (written into this spec as D7).** While a super-lot is open with "keep adding
-     new production" ticked, every new LOT of that part made on that line is tagged CRT
-     as it is made and added to the super-lot automatically. It stops when Quality press
-     **End window**. Scoped to one part on one line.
-   - **B.** Opening the super-lot switches on the part's existing CRT flag
-     (`Parts.Item.CrtEnabled`), and closing switches it off. Simpler to build, but the
-     flag is plant-wide for that part: it cannot be limited to one line, and two
-     super-lots on the same part would each try to own it.
-
-   A is recommended. The question for Jacques is whether the automatic adding is wanted
-   at all, and if so whether "one part on one line" is the right reach.
+No decisions remain open in this piece.
 
 ## 10. Known limitations
 
@@ -497,3 +489,4 @@ end the window, clear the members, close the run.
 |---|---|
 | 2026-10-12 | Initial draft from the exploration session. Not approved. |
 | 2026-10-12 | Jacques's answers recorded (section 9): run number 15 chars; all pieces ship together, so completed containers are eligible members; label is per super-lot, 4 copies, scan opens the run; banner still prints; line = mint location. Decision 3 (auto-join) restated and still open. |
+| 2026-10-12 | Decision 3 answered: option A (resolver arm + sync, one part on one line). No open decisions. |
