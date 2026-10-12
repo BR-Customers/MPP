@@ -27,7 +27,7 @@
     ],
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-10-07T03:00:00Z"
+      "timestamp": "2026-10-12T12:00:00Z"
     },
     "parameters": [
       {
@@ -68,6 +68,11 @@
       {
         "type": "Parameter",
         "identifier": "operationTypeCode",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "linesJson",
         "sqlType": 7
       }
     ]

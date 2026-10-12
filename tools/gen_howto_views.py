@@ -1946,26 +1946,35 @@ def inventory_manager_source():
 
 
 # ------------------------------------------------------------ scrap entry --
-# Verified against ScrapEntry view.json. Quantity is a plain text field, not
-# a numeric one - the Record Scrap button stays disabled until LOT, Defect
-# Code, and a positive Quantity are all set.
+# Verified against ScrapEntry view.json (2026-10-12, tile entry). Three columns:
+# Part, reason tiles, Entered. Nothing is typed with the built-in keyboard -
+# quantities use the keypad pane, the remark uses the on-screen keyboard pane.
+# Record Scrap stays disabled until a part is picked and at least one reason
+# has a count.
 def scrap_entry_source():
     parts = []
     parts.append(_lead(
-        'Record scrap against a LOT at this cell.'))
+        'Record scrap against a part at this line. The oldest LOT of that '
+        'part is charged first.'))
 
-    parts.append(_step(1, 'Pick the LOT',
-        'Choose the %s.' % _b('LOT')))
+    parts.append(_step(1, 'Pick the part',
+        'Tap the %s on the left. If the line has only one part on hand it is '
+        'already picked.' % _b('Part')))
 
-    parts.append(_step(2, 'Pick the reason',
-        'Choose the %s.' % _b('Defect Code')))
+    parts.append(_step(2, 'Tap the reason',
+        'Tap a reason tile once for each scrapped part. The tile shows its '
+        'count. The reasons used most on this line come first; %s shows the '
+        'rest.' % _b('More reasons')))
 
-    parts.append(_step(3, 'Enter the amount',
-        'Enter the %s.' % _b('Quantity')))
+    parts.append(_step(3, 'Fix a count',
+        'Under %s, use %s and %s, or tap the number to key it in. The red '
+        'button removes that reason.' % (_b('Entered'), _b('-'), _b('+'))))
 
-    parts.append(_step(4, 'Submit',
-        'Add a %s if it helps, then press %s.'
-        % (_b('Remarks'), _b('Record Scrap'))))
+    parts.append(_step(4, 'Record it',
+        'Open %s if a note helps, then press %s. Every reason is recorded '
+        'together.' % (_b('Remark'), _b('Record Scrap'))))
+    parts.append(_note(
+        'You cannot enter more than the line has on hand for that part.'))
 
     return ''.join(parts)
 
@@ -2695,7 +2704,7 @@ GUIDES = [
     {
         "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "ScrapEntryHowTo"),
         "source": scrap_entry_source,
-        "defaultSize": {"width": 560, "height": 340},
+        "defaultSize": {"width": 560, "height": 460},
         "title": "How to record scrap",
         "popupId": "scrapEntryHowTo",
     },

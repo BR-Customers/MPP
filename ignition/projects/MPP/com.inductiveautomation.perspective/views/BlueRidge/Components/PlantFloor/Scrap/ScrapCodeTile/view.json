@@ -7,6 +7,7 @@
     "description": "",
     "isPrimary": false,
     "isSelected": false,
+    "messageName": "trimScrapChanged",
     "quantity": 0
   },
   "propConfig": {
@@ -26,6 +27,9 @@
       "paramDirection": "input"
     },
     "params.isSelected": {
+      "paramDirection": "input"
+    },
+    "params.messageName": {
       "paramDirection": "input"
     },
     "params.quantity": {
@@ -156,7 +160,7 @@
       "dom": {
         "onClick": {
           "config": {
-            "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"delta\": 1}, scope\u003d\"page\")"
+            "script": "\tsystem.perspective.sendMessage(self.view.params.messageName or \"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"delta\": 1}, scope\u003d\"page\")"
           },
           "scope": "G",
           "type": "script"

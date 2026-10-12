@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_RejectEvent_RecordByPartFifo.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-06
--- Version:     1.0
+-- Modified:    2026-10-12
+-- Version:     1.1
 -- Description: Scrap by PART at a line, consumed FIFO. The Scrap Entry popup
 --              on the Assembly + Machining terminals names a part and a
 --              quantity; this proc charges that quantity to the part's LOTs at
@@ -40,20 +40,38 @@
 --              rejecting validations run BEFORE BEGIN TRANSACTION (Msg 3915);
 --              the CATCH is the only ROLLBACK site.
 --
---              @TerminalLocationId is audit-only. @NewId is the FIRST
---              RejectEvent row written (the oldest LOT's).
---              Single terminal row: Status, Message, NewId. @Status BIT.
+--              @NewId is the FIRST RejectEvent row written (the oldest
+--              LOT's). Single terminal row: Status, Message, NewId. @Status BIT.
+--
+--              v1.1 (2026-10-12) -- several reasons in one entry, and the
+--              terminal is stamped:
+--                * @LinesJson = [{"defectCodeId": n, "quantity": n}, ...] lets
+--                  the tile-entry popup record every reason the operator tapped
+--                  in ONE call and ONE transaction. When it is supplied
+--                  @DefectCodeId / @Quantity are ignored. The lines are laid
+--                  end to end, in array order, along the same FIFO run of LOTs:
+--                  ONE reject row per (LOT, reason) touched. SHORT = REFUSE is
+--                  judged on the TOTAL, so an entry is recorded whole or not at
+--                  all. A reason may appear once only; every line needs a
+--                  quantity above zero. A single-reason call (no @LinesJson)
+--                  behaves exactly as v1.0.
+--                * @TerminalLocationId is now STAMPED on the reject row
+--                  (Workorder.RejectEvent.TerminalLocationId, migration 0067)
+--                  as well as audited -- Workorder.MachiningOut_Mint already
+--                  does this. Quality.DefectCode_ListRankedForLocation reads it
+--                  to rank a line's most-used reasons.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Workorder.RejectEvent_RecordByPartFifo
     @ItemId              BIGINT,
     @LocationId          BIGINT,
-    @DefectCodeId        BIGINT,
-    @Quantity            INT,
+    @DefectCodeId        BIGINT         = NULL,  -- single-reason call
+    @Quantity            INT            = NULL,  -- single-reason call
     @Remarks             NVARCHAR(500)  = NULL,
     @AppUserId           BIGINT,
     @TerminalLocationId  BIGINT         = NULL,  -- audit-only
-    @OperationTypeCode   NVARCHAR(20)   = NULL
+    @OperationTypeCode   NVARCHAR(20)   = NULL,
+    @LinesJson           NVARCHAR(MAX)  = NULL   -- [{"defectCodeId":n,"quantity":n},...]; wins over @DefectCodeId/@Quantity
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -67,7 +85,8 @@ BEGIN
     DECLARE @Params   NVARCHAR(MAX) = (
         SELECT @ItemId AS ItemId, @LocationId AS LocationId, @DefectCodeId AS DefectCodeId,
                @Quantity AS Quantity, @AppUserId AS AppUserId,
-               @TerminalLocationId AS TerminalLocationId, @OperationTypeCode AS OperationTypeCode
+               @TerminalLocationId AS TerminalLocationId, @OperationTypeCode AS OperationTypeCode,
+               @LinesJson AS LinesJson
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @GoodStatusId   BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
@@ -79,19 +98,32 @@ BEGIN
     DECLARE @PartNumber NVARCHAR(50);
     DECLARE @Available  INT;
 
-    -- The FIFO plan: one row per LOT the scrap will touch, in consumption order.
+    -- The reasons being recorded, in entry order. A single-reason call is one row.
+    DECLARE @Lines TABLE (
+        LineSeq       INT IDENTITY(1,1) PRIMARY KEY,
+        DefectCodeId  BIGINT        NULL,
+        Quantity      INT           NULL,
+        DefCode       NVARCHAR(50)  NULL
+    );
+    DECLARE @MultiLine BIT = CASE WHEN @LinesJson IS NOT NULL THEN 1 ELSE 0 END;
+    DECLARE @LineCount INT = 0;
+
+    -- The FIFO plan: one row per (LOT, reason) the scrap will touch, in
+    -- consumption order.
     DECLARE @Alloc TABLE (
         Seq           INT IDENTITY(1,1) PRIMARY KEY,
         LotId         BIGINT        NOT NULL,
         LotName       NVARCHAR(50)  NOT NULL,
         ToolId        BIGINT        NULL,
+        DefectCodeId  BIGINT        NOT NULL,
+        DefCode       NVARCHAR(50)  NULL,
         Take          INT           NOT NULL
     );
 
     BEGIN TRY
         -- ---- 1. Required parameters ----
-        IF @ItemId IS NULL OR @LocationId IS NULL OR @DefectCodeId IS NULL
-           OR @Quantity IS NULL OR @AppUserId IS NULL
+        IF @ItemId IS NULL OR @LocationId IS NULL OR @AppUserId IS NULL
+           OR (@MultiLine = 0 AND (@DefectCodeId IS NULL OR @Quantity IS NULL))
         BEGIN
             SET @Message = N'Required parameter missing (ItemId, LocationId, DefectCodeId, Quantity, AppUserId).';
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
@@ -112,10 +144,35 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 3. Quantity sanity ----
-        IF @Quantity <= 0
+        -- ---- 3. The scrap lines ----
+        IF @MultiLine = 1
         BEGIN
-            SET @Message = N'Quantity must be greater than zero.';
+            IF ISJSON(@LinesJson) = 0
+            BEGIN
+                SET @Message = N'The scrap lines could not be read.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
+                    @EntityId = NULL, @LogEventTypeCode = N'RejectEventRecorded',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+                RETURN;
+            END
+
+            INSERT INTO @Lines (DefectCodeId, Quantity)
+            SELECT CASE WHEN j.[type] = 5 THEN TRY_CAST(JSON_VALUE(j.[value], N'$.defectCodeId') AS BIGINT) END,
+                   CASE WHEN j.[type] = 5 THEN TRY_CAST(JSON_VALUE(j.[value], N'$.quantity') AS INT) END
+            FROM OPENJSON(@LinesJson) j
+            ORDER BY TRY_CAST(j.[key] AS INT);
+        END
+        ELSE
+            INSERT INTO @Lines (DefectCodeId, Quantity) VALUES (@DefectCodeId, @Quantity);
+
+        SELECT @LineCount = COUNT(*) FROM @Lines;
+
+        IF @LineCount = 0
+        BEGIN
+            SET @Message = N'At least one scrap reason is required.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
                 @EntityId = NULL, @LogEventTypeCode = N'RejectEventRecorded',
@@ -124,6 +181,35 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
+
+        IF EXISTS (SELECT 1 FROM @Lines WHERE DefectCodeId IS NULL OR Quantity IS NULL OR Quantity <= 0)
+        BEGIN
+            SET @Message = CASE WHEN @MultiLine = 1
+                                THEN N'Each scrap reason needs a quantity greater than zero.'
+                                ELSE N'Quantity must be greater than zero.' END;
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
+                @EntityId = NULL, @LogEventTypeCode = N'RejectEventRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        IF EXISTS (SELECT 1 FROM @Lines GROUP BY DefectCodeId HAVING COUNT(*) > 1)
+        BEGIN
+            SET @Message = N'A scrap reason appears more than once. Enter each reason on one line.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
+                @EntityId = NULL, @LogEventTypeCode = N'RejectEventRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- From here on @Quantity is the TOTAL across every line.
+        SELECT @Quantity = SUM(Quantity) FROM @Lines;
 
         -- ---- 4. Subtractive only ----
         IF @Additive = 1
@@ -163,7 +249,9 @@ BEGIN
             RETURN;
         END
 
-        IF NOT EXISTS (SELECT 1 FROM Quality.DefectCode WHERE Id = @DefectCodeId AND DeprecatedAt IS NULL)
+        IF EXISTS (SELECT 1 FROM @Lines ln
+                   WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc
+                                     WHERE dc.Id = ln.DefectCodeId AND dc.DeprecatedAt IS NULL))
         BEGIN
             SET @Message = N'DefectCode not found or deprecated.';
             EXEC Audit.Audit_LogFailure
@@ -175,7 +263,10 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 5. Enough scrappable stock (SHORT = REFUSE) ----
+        UPDATE ln SET ln.DefCode = dc.Code
+        FROM @Lines ln INNER JOIN Quality.DefectCode dc ON dc.Id = ln.DefectCodeId;
+
+        -- ---- 5. Enough scrappable stock (SHORT = REFUSE, judged on the total) ----
         -- Stock predicate: mirror of Lots.Lot_GetScrappablePartsByLocation.
         SELECT @Available = ISNULL(SUM(CASE WHEN l.PieceCount < l.InventoryAvailable
                                             THEN l.PieceCount ELSE l.InventoryAvailable END), 0)
@@ -229,24 +320,36 @@ BEGIN
                    SUM(s.Avail) OVER (ORDER BY s.ArrivedAtUtc, s.LotId
                                       ROWS UNBOUNDED PRECEDING) - s.Avail AS TakenBefore
             FROM Stock s
+        ),
+        -- The lines laid end to end: line N covers pieces [LineBefore, LineBefore + Quantity).
+        LineRun AS (
+            SELECT ln.LineSeq, ln.DefectCodeId, ln.DefCode, ln.Quantity,
+                   SUM(ln.Quantity) OVER (ORDER BY ln.LineSeq
+                                          ROWS UNBOUNDED PRECEDING) - ln.Quantity AS LineBefore
+            FROM @Lines ln
         )
-        INSERT INTO @Alloc (LotId, LotName, ToolId, Take)
-        SELECT r.LotId, r.LotName, r.ToolId,
-               CASE WHEN r.TakenBefore + r.Avail <= @Quantity
-                    THEN r.Avail ELSE @Quantity - r.TakenBefore END
+        -- A LOT covers pieces [TakenBefore, TakenBefore + Avail). Each overlap
+        -- of a LOT's span with a line's span is one reject row.
+        INSERT INTO @Alloc (LotId, LotName, ToolId, DefectCodeId, DefCode, Take)
+        SELECT r.LotId, r.LotName, r.ToolId, lr.DefectCodeId, lr.DefCode,
+               CASE WHEN r.TakenBefore + r.Avail < lr.LineBefore + lr.Quantity
+                    THEN r.TakenBefore + r.Avail ELSE lr.LineBefore + lr.Quantity END
+             - CASE WHEN r.TakenBefore > lr.LineBefore
+                    THEN r.TakenBefore ELSE lr.LineBefore END
         FROM Running r
-        WHERE r.TakenBefore < @Quantity
-        ORDER BY r.ArrivedAtUtc, r.LotId;
+        INNER JOIN LineRun lr
+                ON r.TakenBefore < lr.LineBefore + lr.Quantity
+               AND lr.LineBefore < r.TakenBefore + r.Avail
+        ORDER BY r.ArrivedAtUtc, r.LotId, lr.LineSeq;
 
         -- Concurrency guard (TOCTOU): step 5 read the total UNLOCKED. Re-check
         -- under the lock. RAISERROR -> CATCH (the only legal ROLLBACK site).
         IF ISNULL((SELECT SUM(Take) FROM @Alloc), 0) <> @Quantity
             RAISERROR(N'Line inventory changed while the scrap was being recorded. Reload and retry.', 16, 1);
 
-        DECLARE @DefCode NVARCHAR(50) = (SELECT Code FROM Quality.DefectCode WHERE Id = @DefectCodeId);
-
         DECLARE @Seq INT = 1, @MaxSeq INT = (SELECT MAX(Seq) FROM @Alloc);
-        DECLARE @LotCount INT = @MaxSeq, @ClosedCount INT = 0;
+        DECLARE @LotCount INT = (SELECT COUNT(DISTINCT LotId) FROM @Alloc), @ClosedCount INT = 0;
+        DECLARE @RowDefectCodeId BIGINT, @DefCode NVARCHAR(50);
         DECLARE @LotId BIGINT, @LotName NVARCHAR(50), @ToolId BIGINT, @Take INT;
         DECLARE @RejectId BIGINT, @NewPieceCount INT;
         DECLARE @ActivityRaw NVARCHAR(MAX), @Activity NVARCHAR(500), @NewValue NVARCHAR(MAX);
@@ -255,19 +358,22 @@ BEGIN
 
         WHILE @Seq <= @MaxSeq
         BEGIN
-            SELECT @LotId = LotId, @LotName = LotName, @ToolId = ToolId, @Take = Take
+            SELECT @LotId = LotId, @LotName = LotName, @ToolId = ToolId, @Take = Take,
+                   @RowDefectCodeId = DefectCodeId, @DefCode = DefCode
             FROM @Alloc WHERE Seq = @Seq;
 
             -- ----- Reject row (mirror of RejectEvent_Record; identity STAMPED) -----
             INSERT INTO Workorder.RejectEvent (
                 ProductionEventId, LotId, DefectCodeId, Quantity,
                 ChargeToArea, Remarks, AppUserId, RecordedAt,
-                ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId
+                ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId,
+                TerminalLocationId
             )
             VALUES (
-                NULL, @LotId, @DefectCodeId, @Take,
+                NULL, @LotId, @RowDefectCodeId, @Take,
                 NULL, @Remarks, @AppUserId, SYSUTCDATETIME(),
-                @ItemId, @ToolId, NULL, NULL, NULL
+                @ItemId, @ToolId, NULL, NULL, NULL,
+                @TerminalLocationId
             );
             SET @RejectId = CAST(SCOPE_IDENTITY() AS BIGINT);
             IF @NewId IS NULL SET @NewId = @RejectId;
@@ -287,8 +393,8 @@ BEGIN
                 @LotName + N' ' + Audit.ufn_MidDot() + N' Reject ' + Audit.ufn_MidDot()
                 + N' ' + CAST(@Take AS NVARCHAR(20)) + N' pcs (' + ISNULL(@DefCode, N'?') + N')'
                 + N'; remaining ' + CAST(@NewPieceCount AS NVARCHAR(20))
-                + CASE WHEN @LotCount > 1
-                       THEN N'; FIFO ' + CAST(@Seq AS NVARCHAR(10)) + N' of ' + CAST(@LotCount AS NVARCHAR(10))
+                + CASE WHEN @MaxSeq > 1
+                       THEN N'; FIFO ' + CAST(@Seq AS NVARCHAR(10)) + N' of ' + CAST(@MaxSeq AS NVARCHAR(10))
                             + N' for ' + CAST(@Quantity AS NVARCHAR(20)) + N' pcs of ' + @PartNumber
                        ELSE N'' END;
             SET @Activity = Audit.ufn_TruncateActivity(@ActivityRaw);
@@ -368,6 +474,9 @@ BEGIN
 
         SET @Status  = 1;
         SET @Message = N'Scrap recorded: ' + CAST(@Quantity AS NVARCHAR(20)) + N' pcs of ' + @PartNumber
+                     + CASE WHEN @LineCount > 1
+                            THEN N' across ' + CAST(@LineCount AS NVARCHAR(10)) + N' reasons'
+                            ELSE N'' END
                      + N' from ' + CAST(@LotCount AS NVARCHAR(10))
                      + CASE WHEN @LotCount = 1 THEN N' LOT' ELSE N' LOTs' END
                      + CASE WHEN @ClosedCount > 0

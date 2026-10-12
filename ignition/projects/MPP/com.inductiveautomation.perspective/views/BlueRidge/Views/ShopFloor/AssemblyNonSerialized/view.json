@@ -383,7 +383,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-scrap-entry\", \"BlueRidge/Components/Popups/ScrapEntry\", params\u003d{\"cellLocationId\": self.session.custom.cell.locationId, \"operationTypeCode\": \"AssemblyOut\", \"popupId\": \"mpp-scrap-entry\"}, modal\u003dTrue, showCloseIcon\u003dTrue)"
+                    "script": "\tBlueRidge.Workorder.RejectEvent.openScrapEntry(self.session.custom.cell.locationId, \"AssemblyOut\")"
                   },
                   "scope": "G",
                   "type": "script"

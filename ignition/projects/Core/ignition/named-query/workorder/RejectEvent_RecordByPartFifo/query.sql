@@ -6,4 +6,5 @@ EXEC Workorder.RejectEvent_RecordByPartFifo
     @Remarks            = :remarks,
     @AppUserId          = :appUserId,
     @TerminalLocationId = :terminalLocationId,
-    @OperationTypeCode  = :operationTypeCode
+    @OperationTypeCode  = :operationTypeCode,
+    @LinesJson          = :linesJson

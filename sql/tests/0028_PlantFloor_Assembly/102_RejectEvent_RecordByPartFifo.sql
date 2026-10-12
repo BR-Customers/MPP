@@ -19,6 +19,13 @@
 --                 - exact drain -> every Good LOT closed, held LOT untouched
 --                 - divergent LOT: capped at the lesser quantity, not closed
 --                 - Quantity <= 0 and an additive operation -> refused
+--               v1.1 (@LinesJson, several reasons in one entry):
+--                 - two reasons laid along the FIFO run -> one reject row per
+--                   (LOT, reason), the drained LOT closed once, the terminal
+--                   stamped on every row
+--                 - short on the TOTAL -> refused, nothing recorded
+--                 - repeated reason / zero quantity / no lines / unknown or
+--                   deprecated reason / unreadable JSON -> refused
 --               EXEC args are pre-assigned @variables (no inline CAST).
 -- =============================================
 SET NOCOUNT ON;
@@ -32,7 +39,7 @@ DELETE FROM Lots.LotStatusHistory    WHERE LotId IN (SELECT Id FROM Lots.Lot WHE
 DELETE FROM Lots.LotMovement         WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'SFT-%');
 DELETE FROM Lots.LotEventLog         WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'SFT-%');
 DELETE FROM Lots.Lot                 WHERE LotName LIKE N'SFT-%';
-DELETE FROM Quality.DefectCode       WHERE Code = N'TEST-DEF-SF';
+DELETE FROM Quality.DefectCode       WHERE Code IN (N'TEST-DEF-SF', N'TEST-DEF-SF2', N'TEST-DEF-SFX');
 GO
 
 -- ---- fixture ----
@@ -257,13 +264,158 @@ EXEC test.Assert_IsEqual @TestName = N'[SfGuard] additive operation refused', @E
 DROP TABLE #R;
 GO
 
+-- =============================================
+-- Test 8: several reasons in one entry (@LinesJson) -- 6 of DEF then 7 of DEF2
+--         along M1 (10, older) and M2 (10): M1 = 6 DEF + 4 DEF2 (closed),
+--         M2 = 3 DEF2. One transaction, terminal stamped on every row.
+-- =============================================
+DECLARE @Now  DATETIME2(3) = SYSUTCDATETIME();
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
+DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
+DECLARE @A BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-SF-A');
+INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused, CreatedAt)
+VALUES (N'TEST-DEF-SF2', N'Scrap FIFO test defect 2', NULL, 0, @Now);
+INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused, CreatedAt, DeprecatedAt)
+VALUES (N'TEST-DEF-SFX', N'Scrap FIFO deprecated defect', NULL, 0, @Now, @Now);
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'SFT-M2', @A, 1, @Good, 10, 10, @Cell, 1, DATEADD(SECOND, 40, @Now));
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'SFT-M1', @A, 1, @Good, 10, 10, @Cell, 1, DATEADD(SECOND, 30, @Now));
+GO
+
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
+DECLARE @A BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-SF-A');
+DECLARE @Def  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'TEST-DEF-SF');
+DECLARE @Def2 BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'TEST-DEF-SF2');
+DECLARE @Term BIGINT = @Cell;
+DECLARE @Lines NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@Def AS NVARCHAR(20)) + N',"quantity":6},{"defectCodeId":'
+                             + CAST(@Def2 AS NVARCHAR(20)) + N',"quantity":7}]';
+CREATE TABLE #R (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R EXEC Workorder.RejectEvent_RecordByPartFifo
+    @ItemId = @A, @LocationId = @Cell, @Remarks = N'multi', @AppUserId = 1,
+    @TerminalLocationId = @Term, @OperationTypeCode = N'MachiningOut', @LinesJson = @Lines;
+
+DECLARE @S NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM #R);
+EXEC test.Assert_IsEqual @TestName = N'[SfMulti] Status is 1', @Expected = N'1', @Actual = @S;
+DECLARE @Split NVARCHAR(200) = (SELECT STRING_AGG(l.LotName + N'=' + CAST(re.Quantity AS NVARCHAR(10)) + N'/' + dc.Code, N',') WITHIN GROUP (ORDER BY re.Id)
+                                FROM Workorder.RejectEvent re
+                                INNER JOIN Lots.Lot l ON l.Id = re.LotId
+                                INNER JOIN Quality.DefectCode dc ON dc.Id = re.DefectCodeId
+                                WHERE re.Remarks = N'multi');
+EXEC test.Assert_IsEqual @TestName = N'[SfMulti] one reject row per (LOT, reason), FIFO then entry order',
+    @Expected = N'SFT-M1=6/TEST-DEF-SF,SFT-M1=4/TEST-DEF-SF2,SFT-M2=3/TEST-DEF-SF2', @Actual = @Split;
+DECLARE @M1 NVARCHAR(50) = (SELECT CAST(l.PieceCount AS NVARCHAR(10)) + N'/' + CAST(l.InventoryAvailable AS NVARCHAR(10)) + N'/' + sc.Code
+                            FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.LotName = N'SFT-M1');
+EXEC test.Assert_IsEqual @TestName = N'[SfMulti] M1 drained across two reasons and closed', @Expected = N'0/0/Closed', @Actual = @M1;
+DECLARE @M2 NVARCHAR(50) = (SELECT CAST(l.PieceCount AS NVARCHAR(10)) + N'/' + CAST(l.InventoryAvailable AS NVARCHAR(10)) + N'/' + sc.Code
+                            FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.LotName = N'SFT-M2');
+EXEC test.Assert_IsEqual @TestName = N'[SfMulti] M2 10 -> 7, still Good', @Expected = N'7/7/Good', @Actual = @M2;
+DECLARE @Hist NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotStatusHistory h
+                              INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName = N'SFT-M1');
+EXEC test.Assert_IsEqual @TestName = N'[SfMulti] M1 closed exactly once', @Expected = N'1', @Actual = @Hist;
+DECLARE @Stamped NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent
+                                 WHERE Remarks = N'multi' AND TerminalLocationId = @Term AND ItemId = @A);
+EXEC test.Assert_IsEqual @TestName = N'[SfMulti] terminal + part stamped on all three rows', @Expected = N'3', @Actual = @Stamped;
+DECLARE @MsgOk BIT = CASE WHEN (SELECT Message FROM #R) LIKE N'Scrap recorded: 13 pcs of P-SF-A across 2 reasons from 2 LOTs (1 closed at zero).' THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName = N'[SfMulti] message states total, reasons and LOTs', @Condition = @MsgOk;
+DECLARE @First NVARCHAR(50) = (SELECT l.LotName + N'/' + dc.Code FROM Workorder.RejectEvent re
+                               INNER JOIN Lots.Lot l ON l.Id = re.LotId
+                               INNER JOIN Quality.DefectCode dc ON dc.Id = re.DefectCodeId
+                               WHERE re.Id = (SELECT NewId FROM #R));
+EXEC test.Assert_IsEqual @TestName = N'[SfMulti] NewId is the first row written', @Expected = N'SFT-M1/TEST-DEF-SF', @Actual = @First;
+DROP TABLE #R;
+GO
+
+-- =============================================
+-- Test 9: short on the TOTAL -> refused whole (7 on hand; 5 + 3 asked)
+-- =============================================
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
+DECLARE @A BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-SF-A');
+DECLARE @Def  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'TEST-DEF-SF');
+DECLARE @Def2 BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'TEST-DEF-SF2');
+DECLARE @Lines NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@Def AS NVARCHAR(20)) + N',"quantity":5},{"defectCodeId":'
+                             + CAST(@Def2 AS NVARCHAR(20)) + N',"quantity":3}]';
+DECLARE @Before NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent re
+                                INNER JOIN Lots.Lot l ON l.Id = re.LotId WHERE l.LotName LIKE N'SFT-%');
+CREATE TABLE #R (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R EXEC Workorder.RejectEvent_RecordByPartFifo
+    @ItemId = @A, @LocationId = @Cell, @AppUserId = 1, @OperationTypeCode = N'MachiningOut', @LinesJson = @Lines;
+DECLARE @S NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM #R);
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiShort] Status is 0', @Expected = N'0', @Actual = @S;
+DECLARE @MsgOk BIT = CASE WHEN (SELECT Message FROM #R) LIKE N'Only 7 of P-SF-A%1 short%' THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName = N'[SfMultiShort] shortfall judged on the total (8 asked, 7 on hand)', @Condition = @MsgOk;
+DECLARE @After NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent re
+                               INNER JOIN Lots.Lot l ON l.Id = re.LotId WHERE l.LotName LIKE N'SFT-%');
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiShort] nothing recorded, not even the reason that fit', @Expected = @Before, @Actual = @After;
+DECLARE @M2 NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE LotName = N'SFT-M2');
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiShort] M2 still 7', @Expected = N'7', @Actual = @M2;
+DROP TABLE #R;
+GO
+
+-- =============================================
+-- Test 10: @LinesJson guards -- each refused, nothing recorded
+-- =============================================
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
+DECLARE @A BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-SF-A');
+DECLARE @Def  NVARCHAR(20) = (SELECT CAST(Id AS NVARCHAR(20)) FROM Quality.DefectCode WHERE Code = N'TEST-DEF-SF');
+DECLARE @DefX NVARCHAR(20) = (SELECT CAST(Id AS NVARCHAR(20)) FROM Quality.DefectCode WHERE Code = N'TEST-DEF-SFX');
+DECLARE @Before NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent re
+                                INNER JOIN Lots.Lot l ON l.Id = re.LotId WHERE l.LotName LIKE N'SFT-%');
+DECLARE @Lines NVARCHAR(MAX), @S NVARCHAR(10);
+CREATE TABLE #R (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+
+SET @Lines = N'[{"defectCodeId":' + @Def + N',"quantity":1},{"defectCodeId":' + @Def + N',"quantity":2}]';
+INSERT INTO #R EXEC Workorder.RejectEvent_RecordByPartFifo
+    @ItemId = @A, @LocationId = @Cell, @AppUserId = 1, @OperationTypeCode = N'MachiningOut', @LinesJson = @Lines;
+SET @S = (SELECT CAST(Status AS NVARCHAR(10)) FROM #R);
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiGuard] repeated reason refused', @Expected = N'0', @Actual = @S;
+DELETE FROM #R;
+
+SET @Lines = N'[{"defectCodeId":' + @Def + N',"quantity":0}]';
+INSERT INTO #R EXEC Workorder.RejectEvent_RecordByPartFifo
+    @ItemId = @A, @LocationId = @Cell, @AppUserId = 1, @OperationTypeCode = N'MachiningOut', @LinesJson = @Lines;
+SET @S = (SELECT CAST(Status AS NVARCHAR(10)) FROM #R);
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiGuard] zero-quantity line refused', @Expected = N'0', @Actual = @S;
+DELETE FROM #R;
+
+SET @Lines = N'[]';
+INSERT INTO #R EXEC Workorder.RejectEvent_RecordByPartFifo
+    @ItemId = @A, @LocationId = @Cell, @AppUserId = 1, @OperationTypeCode = N'MachiningOut', @LinesJson = @Lines;
+SET @S = (SELECT CAST(Status AS NVARCHAR(10)) FROM #R);
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiGuard] no lines refused', @Expected = N'0', @Actual = @S;
+DELETE FROM #R;
+
+SET @Lines = N'[{"defectCodeId":' + @DefX + N',"quantity":1}]';
+INSERT INTO #R EXEC Workorder.RejectEvent_RecordByPartFifo
+    @ItemId = @A, @LocationId = @Cell, @AppUserId = 1, @OperationTypeCode = N'MachiningOut', @LinesJson = @Lines;
+SET @S = (SELECT CAST(Status AS NVARCHAR(10)) FROM #R);
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiGuard] deprecated reason refused', @Expected = N'0', @Actual = @S;
+DELETE FROM #R;
+
+SET @Lines = N'not json';
+INSERT INTO #R EXEC Workorder.RejectEvent_RecordByPartFifo
+    @ItemId = @A, @LocationId = @Cell, @AppUserId = 1, @OperationTypeCode = N'MachiningOut', @LinesJson = @Lines;
+SET @S = (SELECT CAST(Status AS NVARCHAR(10)) FROM #R);
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiGuard] unreadable JSON refused', @Expected = N'0', @Actual = @S;
+DELETE FROM #R;
+
+SET @Lines = N'[7, "x"]';
+INSERT INTO #R EXEC Workorder.RejectEvent_RecordByPartFifo
+    @ItemId = @A, @LocationId = @Cell, @AppUserId = 1, @OperationTypeCode = N'MachiningOut', @LinesJson = @Lines;
+SET @S = (SELECT CAST(Status AS NVARCHAR(10)) FROM #R);
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiGuard] lines that are not objects refused', @Expected = N'0', @Actual = @S;
+DROP TABLE #R;
+
+DECLARE @After NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent re
+                               INNER JOIN Lots.Lot l ON l.Id = re.LotId WHERE l.LotName LIKE N'SFT-%');
+EXEC test.Assert_IsEqual @TestName = N'[SfMultiGuard] no reject row written by any refusal', @Expected = @Before, @Actual = @After;
+GO
+
 -- ---- cleanup ----
 DELETE FROM Workorder.RejectEvent    WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'SFT-%');
 DELETE FROM Lots.LotStatusHistory    WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'SFT-%');
 DELETE FROM Lots.LotMovement         WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'SFT-%');
 DELETE FROM Lots.LotEventLog         WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'SFT-%');
 DELETE FROM Lots.Lot                 WHERE LotName LIKE N'SFT-%';
-DELETE FROM Quality.DefectCode       WHERE Code = N'TEST-DEF-SF';
+DELETE FROM Quality.DefectCode       WHERE Code IN (N'TEST-DEF-SF', N'TEST-DEF-SF2', N'TEST-DEF-SFX');
 GO
 
 EXEC test.EndTestFile;

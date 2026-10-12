@@ -266,7 +266,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-scrap-entry\", \"BlueRidge/Components/Popups/ScrapEntry\", params={\"cellLocationId\": self.session.custom.cell.locationId, \"operationTypeCode\": \"MachiningIn\", \"popupId\": \"mpp-scrap-entry\"}, modal=True, showCloseIcon=True)"
+                    "script": "\tBlueRidge.Workorder.RejectEvent.openScrapEntry(self.session.custom.cell.locationId, \"MachiningIn\")"
                   },
                   "scope": "G",
                   "type": "script"

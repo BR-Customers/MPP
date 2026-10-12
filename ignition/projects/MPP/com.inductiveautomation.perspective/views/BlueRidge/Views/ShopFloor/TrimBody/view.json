@@ -1108,7 +1108,7 @@
                                 "grow": 0,
                                 "shrink": 0
                               },
-                              "path": "BlueRidge/Components/PlantFloor/TrimEntry/ScrapCodeTile",
+                              "path": "BlueRidge/Components/PlantFloor/Scrap/ScrapCodeTile",
                               "style": {
                                 "gap": "12px"
                               },
@@ -1201,7 +1201,7 @@
                                 "grow": 0,
                                 "shrink": 0
                               },
-                              "path": "BlueRidge/Components/PlantFloor/TrimEntry/ScrapLineRow",
+                              "path": "BlueRidge/Components/PlantFloor/Scrap/ScrapLineRow",
                               "style": {
                                 "gap": "6px",
                                 "overflowY": "auto"

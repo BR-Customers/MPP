@@ -4,7 +4,9 @@
     "code": "",
     "defectCodeId": null,
     "description": "",
-    "quantity": 0
+    "messageName": "trimScrapChanged",
+    "quantity": 0,
+    "useNumpad": false
   },
   "propConfig": {
     "params.code": {
@@ -16,7 +18,13 @@
     "params.description": {
       "paramDirection": "input"
     },
+    "params.messageName": {
+      "paramDirection": "input"
+    },
     "params.quantity": {
+      "paramDirection": "input"
+    },
+    "params.useNumpad": {
       "paramDirection": "input"
     }
   },
@@ -98,7 +106,7 @@
           "component": {
             "onActionPerformed": {
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"delta\": -1}, scope\u003d\"page\")"
+                "script": "\tsystem.perspective.sendMessage(self.view.params.messageName or \"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"delta\": -1}, scope\u003d\"page\")"
               },
               "scope": "G",
               "type": "script"
@@ -133,7 +141,7 @@
           "dom": {
             "onBlur": {
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": self.props.text}, scope\u003d\"page\")"
+                "script": "\tsystem.perspective.sendMessage(self.view.params.messageName or \"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": self.props.text}, scope\u003d\"page\")"
               },
               "scope": "G",
               "type": "script"
@@ -151,6 +159,14 @@
           "shrink": 0
         },
         "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.useNumpad}"
+              },
+              "type": "expr"
+            }
+          },
           "props.text": {
             "binding": {
               "config": {
@@ -179,7 +195,59 @@
           "component": {
             "onActionPerformed": {
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"delta\": 1}, scope\u003d\"page\")"
+                "script": "\tsystem.perspective.sendMessage(self.view.params.messageName or \"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"edit\": True}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "QtyButton",
+          "tooltip": {
+            "text": "Tap to key in a quantity"
+          }
+        },
+        "position": {
+          "basis": "68px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.useNumpad}"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "toStr({view.params.quantity})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "16px",
+            "fontWeight": 700,
+            "maxHeight": "32px",
+            "minHeight": "28px",
+            "padding": "0"
+          }
+        },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(self.view.params.messageName or \"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"delta\": 1}, scope\u003d\"page\")"
               },
               "scope": "G",
               "type": "script"
@@ -214,7 +282,7 @@
           "component": {
             "onActionPerformed": {
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": 0}, scope\u003d\"page\")"
+                "script": "\tsystem.perspective.sendMessage(self.view.params.messageName or \"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": 0}, scope\u003d\"page\")"
               },
               "scope": "G",
               "type": "script"

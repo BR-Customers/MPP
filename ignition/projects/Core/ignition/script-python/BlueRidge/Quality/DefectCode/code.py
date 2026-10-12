@@ -290,6 +290,47 @@ def getForTiles(operationTypeCode=None):
     return out
 
 
+# How many tiles the Scrap Entry popup shows before "More reasons": three rows
+# of six at the popup's half-screen size. Layout capacity, not a business rule.
+SCRAP_TILE_TOP_COUNT = 18
+_SCRAP_RANK_WINDOW_DAYS = 90
+
+
+def getForTilesRanked(locationId, operationTypeCode=None, topCount=SCRAP_TILE_TOP_COUNT):
+    """getForTiles() for the Scrap Entry popup (Machining + Assembly), ordered by
+    how much each reason is used AT THIS LINE (Quality.DefectCode_ListRankedForLocation:
+    pieces scrapped in the last 90 days, most first).
+
+    Same row shape as getForTiles(), so buildScrapEntryModel() takes either:
+        {defectCodeId, code, description, isPrimary, excused}
+
+    Here isPrimary means "one of the first topCount by rank" -- the tiles shown
+    before "More reasons" -- rather than "carries the operation's category".
+    The ORDER comes from SQL; this only marks where the fold falls."""
+    locationId = BlueRidge.Common.Util.toIntOrNone(_u(locationId))
+    operationTypeCode = _u(operationTypeCode)
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "quality/DefectCode_ListRankedForLocation",
+            {"locationId": locationId, "operationTypeCode": operationTypeCode,
+             "windowDays": _SCRAP_RANK_WINDOW_DAYS},
+        ) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getForTilesRanked failed: %s" % str(e), level="warn")
+        return []
+    rows.sort(key=lambda r: r.get("RankOrder") or 0)
+    out = []
+    for i, r in enumerate(rows):
+        out.append({
+            "defectCodeId": r.get("Id"),
+            "code":         r.get("Code") or "",
+            "description":  r.get("Description") or "",
+            "isPrimary":    i < topCount,
+            "excused":      bool(r.get("IsExcused")),
+        })
+    return out
+
+
 def applyScrapChange(scrapLines, defectCodeId, delta=None, quantity=None, maxTotal=None):
     """Id-keyed mutation of the running scrap lines. ONE code == ONE line, so a
     double-tap increments instead of creating a duplicate row.
@@ -367,13 +408,20 @@ def _normalizeScrapLines(scrapLines):
     return merged
 
 
-def buildScrapEntryModel(tiles, scrapLines, showAll=False):
-    """Everything the Trim OUT scrap block renders, in one pass.
+def buildScrapEntryModel(tiles, scrapLines, showAll=False, messageName=None, useNumpad=False):
+    """Everything a tile-entry scrap block renders, in one pass. Used by Trim
+    OUT (getForTiles catalog) and the Scrap Entry popup (getForTilesRanked).
 
     tiles      -- getForTiles() output (view.custom.defectCodeTiles)
     scrapLines -- the operator's running lines (view.custom.scrapLines)
-    showAll    -- False shows the operation-scoped codes only; True adds the
-                  plant-wide long tail
+    showAll    -- False shows the isPrimary codes only; True adds the rest
+    messageName-- page message the Scrap/ScrapCodeTile + Scrap/ScrapLineRow
+                  instances send their taps on. None leaves it off the
+                  instances, so the views fall back to their own default
+                  ("trimScrapChanged").
+    useNumpad  -- True makes each line's quantity a tap target that asks the
+                  host for a keypad ({defectCodeId, edit: True}) instead of a
+                  typed text field
 
     Returns a FULLY-SHAPED dict on every path (never None / partial), because
     the view's repeater + label bindings read every key:
@@ -382,13 +430,19 @@ def buildScrapEntryModel(tiles, scrapLines, showAll=False):
                         isSelected, isPrimary, badge}],
          "lines":     [{defectCodeId, code, description, quantity}],
          "total":     <int running scrap total>,
-         "moreCount": <int plant-wide codes behind the 'show all' toggle>}
+         "moreCount": <int non-primary codes behind the 'show all' toggle>}
+
+    Tiles and lines also carry "messageName" (when given) and lines carry
+    "useNumpad" -- instance params for the shared views.
 
     A long-tail code the operator has ALREADY used stays in the collapsed grid
     so its count badge never vanishes when the toggle is closed again."""
     catalog = tiles or []
     rows    = _normalizeScrapLines(scrapLines)
     showAll = bool(BlueRidge.Common.Util.extractQualifiedValues(showAll))
+    routing = {}
+    if messageName:
+        routing["messageName"] = messageName
 
     counts = {}
     for r in rows:
@@ -410,7 +464,7 @@ def buildScrapEntryModel(tiles, scrapLines, showAll=False):
         qty = counts.get(d, 0)
         if not (showAll or primary or qty > 0):
             continue
-        outTiles.append({
+        tile = {
             "defectCodeId": d,
             "code":         code,
             "description":  desc,
@@ -418,17 +472,22 @@ def buildScrapEntryModel(tiles, scrapLines, showAll=False):
             "isSelected":   qty > 0,
             "isPrimary":    primary,
             "badge":        (u"\u00d7%d" % qty) if qty > 0 else u"",
-        })
+        }
+        tile.update(routing)
+        outTiles.append(tile)
 
     outLines = []
     for r in rows:
         meta = byId.get(r["defectCodeId"]) or {}
-        outLines.append({
+        line = {
             "defectCodeId": r["defectCodeId"],
             "code":         meta.get("code") or ("#%s" % r["defectCodeId"]),
             "description":  meta.get("description") or "",
             "quantity":     r["quantity"],
-        })
+            "useNumpad":    bool(useNumpad),
+        }
+        line.update(routing)
+        outLines.append(line)
 
     return {"tiles":     outTiles,
             "lines":     outLines,

@@ -1,21 +1,27 @@
 {
   "custom": {
+    "available": 0,
+    "busyUntil": 0,
+    "defectCodeTiles": [],
     "draft": {
-      "defectCodeId": null,
       "itemId": null,
-      "quantity": 0,
       "remarks": ""
     },
-    "defectOptions": [],
+    "numpad": {
+      "defectCodeId": null,
+      "label": "",
+      "value": ""
+    },
+    "pane": "reasons",
     "partInstances": [],
+    "partNumber": "",
     "refreshToken": 0,
-    "shortfall": {
-      "active": false,
-      "requested": 0,
-      "available": 0,
-      "short": 0,
-      "partNumber": ""
-    }
+    "scrapLineRows": [],
+    "scrapLines": [],
+    "scrapMoreCount": 0,
+    "scrapShowAll": false,
+    "scrapTiles": [],
+    "scrapTotal": 0
   },
   "params": {
     "cellLocationId": null,
@@ -40,14 +46,6 @@
       "paramDirection": "input",
       "persistent": true
     },
-    "custom.defectOptions": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0, {view.params.operationTypeCode})"
-        }
-      }
-    },
     "custom.partInstances": {
       "binding": {
         "type": "expr",
@@ -59,8 +57,8 @@
   },
   "props": {
     "defaultSize": {
-      "height": 680,
-      "width": 520
+      "height": 540,
+      "width": 1920
     }
   },
   "root": {
@@ -72,10 +70,121 @@
       "direction": "column",
       "style": {
         "classes": "pf-panel",
-        "gap": "12px",
+        "gap": "8px",
         "overflow": "hidden",
-        "padding": "16px"
+        "padding": "12px 16px"
       }
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.init()"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "init",
+          "params": [],
+          "script": "\tself.view.custom.defectCodeTiles = BlueRidge.Quality.DefectCode.getForTilesRanked(self.view.params.cellLocationId, self.view.params.operationTypeCode)\n\tparts = BlueRidge.Lots.Lot.getScrappableParts(self.view.params.cellLocationId) or []\n\tif len(parts) == 1:\n\t\t# only one part on hand at this line: no reason to make the operator pick it\n\t\tself.selectPart(parts[0].get(\"ItemId\"))\n\telse:\n\t\tself.refreshScrapUi()"
+        },
+        {
+          "name": "selectPart",
+          "params": [
+            "itemId"
+          ],
+          "script": "\tstock = BlueRidge.Lots.Lot.getScrappableStock(self.view.params.cellLocationId, itemId)\n\tself.view.custom.draft.itemId = itemId\n\tself.view.custom.available = stock.get(\"available\") or 0\n\tself.view.custom.partNumber = stock.get(\"partNumber\") or \"\"\n\tself.view.custom.pane = \"reasons\"\n\tif self.refreshScrapUi() > (stock.get(\"available\") or 0):\n\t\t# what was entered against the previous part does not fit this one\n\t\tself.view.custom.scrapLines = []\n\t\tBlueRidge.Common.Notify.toast(\"Entries cleared\", \"More was entered than this part has on hand.\", \"warning\")\n\t\tself.refreshScrapUi()"
+        },
+        {
+          "name": "refreshScrapUi",
+          "params": [],
+          "script": "\t# Rebuild every derived scrap prop in ONE pass from the two sources of truth\n\t# (defectCodeTiles = the ranked catalog, scrapLines = what has been entered).\n\tm = BlueRidge.Quality.DefectCode.buildScrapEntryModel(self.view.custom.defectCodeTiles, self.view.custom.scrapLines, self.view.custom.scrapShowAll, \"scrapEntryChanged\", True)\n\tself.view.custom.scrapTiles = m[\"tiles\"]\n\tself.view.custom.scrapLineRows = m[\"lines\"]\n\tself.view.custom.scrapTotal = m[\"total\"]\n\tself.view.custom.scrapMoreCount = m[\"moreCount\"]\n\treturn m[\"total\"]"
+        },
+        {
+          "name": "changeScrap",
+          "params": [
+            "payload"
+          ],
+          "script": "\t# One entry point for every scrap interaction: tile tap / -/+ stepper\n\t# (payload.delta), keyed quantity or remove (payload.quantity), and a tap on\n\t# a line's quantity (payload.edit -> open the keypad).\n\tif self.view.custom.draft.itemId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Pick a part\", \"Select which part to scrap first.\", \"warning\")\n\t\treturn\n\tif payload.get(\"edit\"):\n\t\tself.openNumpad(payload.get(\"defectCodeId\"))\n\t\treturn\n\tavailable = self.view.custom.available\n\tres = BlueRidge.Quality.DefectCode.applyScrapChange(self.view.custom.scrapLines, payload.get(\"defectCodeId\"), payload.get(\"delta\"), payload.get(\"quantity\"), available)\n\tself.view.custom.scrapLines = res[\"lines\"]\n\tif res[\"clamped\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Scrap capped\", \"Only %s of %s on hand at this line.\" % (available, self.view.custom.partNumber), \"warning\")\n\tself.refreshScrapUi()"
+        },
+        {
+          "name": "toggleScrapShowAll",
+          "params": [],
+          "script": "\tself.view.custom.scrapShowAll = not self.view.custom.scrapShowAll\n\tself.refreshScrapUi()"
+        },
+        {
+          "name": "openNumpad",
+          "params": [
+            "defectCodeId"
+          ],
+          "script": "\ttext = \"\"\n\tfor r in (self.view.custom.scrapLineRows or []):\n\t\tif r[\"defectCodeId\"] == defectCodeId:\n\t\t\ttext = \"%s - %s\" % (r[\"code\"], r[\"description\"])\n\tself.view.custom.numpad = {\"defectCodeId\": defectCodeId, \"label\": text, \"value\": \"\"}\n\tself.view.custom.pane = \"numpad\""
+        },
+        {
+          "name": "numpadKey",
+          "params": [
+            "payload"
+          ],
+          "script": "\ta = payload.get(\"action\") if payload else None\n\tv = self.view.custom.numpad.value or \"\"\n\tif a == \"key\" and len(v) < 5:\n\t\tv = v + (\"%s\" % payload.get(\"key\"))\n\telif a == \"backspace\":\n\t\tv = v[:-1]\n\telif a == \"clear\":\n\t\tv = \"\"\n\tself.view.custom.numpad.value = v"
+        },
+        {
+          "name": "numpadOk",
+          "params": [],
+          "script": "\tdefectCodeId = self.view.custom.numpad.defectCodeId\n\tv = self.view.custom.numpad.value or \"\"\n\tself.view.custom.pane = \"reasons\"\n\tif v != \"\":\n\t\t# 0 removes the line; nothing keyed leaves it as it was\n\t\tself.changeScrap({\"defectCodeId\": defectCodeId, \"quantity\": v})"
+        },
+        {
+          "name": "toggleRemark",
+          "params": [],
+          "script": "\tself.view.custom.pane = \"reasons\" if self.view.custom.pane == \"remark\" else \"remark\""
+        },
+        {
+          "name": "remarkKey",
+          "params": [
+            "payload"
+          ],
+          "script": "\ta = payload.get(\"action\") if payload else None\n\tt = self.view.custom.draft.remarks or \"\"\n\tif a == \"key\" or a == \"space\":\n\t\tt = (t + (\" \" if a == \"space\" else (\"%s\" % payload.get(\"key\"))))[:500]\n\telif a == \"backspace\":\n\t\tt = t[:-1]\n\telif a == \"clear\":\n\t\tt = \"\"\n\telif a == \"enter\":\n\t\tself.view.custom.pane = \"reasons\"\n\tself.view.custom.draft.remarks = t"
+        },
+        {
+          "name": "submitScrap",
+          "params": [],
+          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tdata = {\"itemId\": self.view.custom.draft.itemId, \"locationId\": self.view.params.cellLocationId, \"lines\": self.view.custom.scrapLines, \"remarks\": self.view.custom.draft.remarks, \"operationTypeCode\": self.view.params.operationTypeCode}\n\tr = BlueRidge.Workorder.RejectEvent.submitScrapEntry(data, BlueRidge.Common.Session.currentAppUserId(self.session), termId)\n\tif r[\"ok\"]:\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": None, \"cellLocationId\": self.view.params.cellLocationId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)\n\telse:\n\t\t# refused (e.g. inventory moved since the entry was keyed): fresh numbers, entry kept\n\t\tself.view.custom.available = r[\"available\"]\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tself.view.custom.busyUntil = 0"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "scrapEntryPartSelected",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.selectPart((payload or {}).get(\"itemId\"))"
+        },
+        {
+          "messageType": "scrapEntryChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.changeScrap(payload)"
+        },
+        {
+          "messageType": "scrapEntryQtyKey",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.numpadKey(payload)"
+        },
+        {
+          "messageType": "scrapEntryRemarkKey",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.remarkKey(payload)"
+        }
+      ]
     },
     "children": [
       {
@@ -87,7 +196,10 @@
           "shrink": 0
         },
         "props": {
-          "alignItems": "center"
+          "alignItems": "center",
+          "style": {
+            "gap": "12px"
+          }
         },
         "children": [
           {
@@ -96,7 +208,7 @@
               "name": "PanelHeader"
             },
             "position": {
-              "grow": 1
+              "shrink": 0
             },
             "props": {
               "style": {
@@ -105,6 +217,31 @@
                 "fontWeight": 700
               },
               "text": "Record Scrap"
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "WhereLabel"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.name}), \"\", {session.custom.cell.name})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
             }
           },
           {
@@ -143,386 +280,14 @@
       {
         "type": "ia.container.flex",
         "meta": {
-          "name": "FormBody"
+          "name": "Body"
         },
         "position": {
           "basis": "0",
           "grow": 1
         },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "!{view.custom.shortfall.active}"
-              }
-            }
-          }
-        },
         "props": {
-          "direction": "column",
-          "style": {
-            "gap": "12px",
-            "overflow": "hidden"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "PartLabel"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-label"
-              },
-              "text": "Part"
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "NoPartsHint"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "len({view.custom.partInstances}) = 0"
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-kpi-sub"
-              },
-              "text": "Nothing on hand at this line to scrap."
-            }
-          },
-          {
-            "type": "ia.display.flex-repeater",
-            "meta": {
-              "name": "PartRepeater"
-            },
-            "position": {
-              "basis": "120px",
-              "grow": 1
-            },
-            "propConfig": {
-              "props.instances": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "runScript(\"BlueRidge.Lots.Lot.getScrapPartInstances\", 0, {view.params.cellLocationId}, {view.custom.draft.itemId}, {view.custom.refreshToken})"
-                  }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "useDefaultViewHeight": false,
-              "elementPosition": {
-                "basis": "56px",
-                "shrink": 0
-              },
-              "elementStyle": {
-                "overflow": "hidden",
-                "marginBottom": "6px"
-              },
-              "instances": [],
-              "path": "BlueRidge/Components/Popups/_ScrapEntry/PartRow",
-              "style": {
-                "overflowY": "auto",
-                "overflowX": "hidden"
-              }
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "DefectField"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-field",
-                "gap": "4px",
-                "overflow": "visible"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "DefectFieldLabel"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-field-label"
-                  },
-                  "text": "Defect Code"
-                }
-              },
-              {
-                "type": "ia.input.dropdown",
-                "meta": {
-                  "name": "DefectDropdown"
-                },
-                "propConfig": {
-                  "props.options": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.defectOptions"
-                      }
-                    }
-                  },
-                  "props.value": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.draft.defectCodeId",
-                        "bidirectional": true
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "placeholder": {
-                    "text": "Select a defect code"
-                  },
-                  "style": {
-                    "classes": "pf-field-select",
-                    "fontSize": "16px"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "QuantityField"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-field",
-                "gap": "4px",
-                "overflow": "visible"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "QuantityFieldLabel"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-field-label"
-                  },
-                  "text": "Quantity"
-                }
-              },
-              {
-                "type": "ia.input.text-field",
-                "meta": {
-                  "name": "QuantityInput"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.draft.quantity",
-                        "bidirectional": true
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "deferUpdates": false,
-                  "style": {
-                    "classes": "pf-field-input"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "RemarksField"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-field",
-                "gap": "4px",
-                "overflow": "visible"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "RemarksFieldLabel"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-field-label"
-                  },
-                  "text": "Remarks (optional)"
-                }
-              },
-              {
-                "type": "ia.input.text-field",
-                "meta": {
-                  "name": "RemarksInput"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.draft.remarks",
-                        "bidirectional": true
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "deferUpdates": false,
-                  "placeholder": "Optional",
-                  "style": {
-                    "classes": "pf-field-input"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "ButtonRow"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "justify": "flex-end",
-              "style": {
-                "gap": "8px",
-                "overflow": "hidden"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "CancelButton"
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "config": {
-                        "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
-                      },
-                      "scope": "G",
-                      "type": "script"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-btn pf-btn-secondary",
-                    "fontSize": "16px",
-                    "minHeight": "48px",
-                    "minWidth": "110px"
-                  },
-                  "text": "Cancel"
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "SubmitButton"
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "config": {
-                        "script": "\tself.view.rootContainer.submitScrap()"
-                      },
-                      "scope": "G",
-                      "type": "script"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-btn pf-btn-primary",
-                    "fontSize": "16px",
-                    "minHeight": "48px",
-                    "minWidth": "150px"
-                  },
-                  "text": "Record Scrap"
-                },
-                "propConfig": {
-                  "props.enabled": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "!isNull({view.custom.draft.itemId}) && !isNull({view.custom.draft.defectCodeId}) && {view.custom.draft.quantity} > 0"
-                      }
-                    }
-                  }
-                }
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "ShortfallBody"
-        },
-        "position": {
-          "basis": "0",
-          "grow": 1
-        },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.custom.shortfall.active}"
-              }
-            }
-          }
-        },
-        "props": {
-          "direction": "column",
-          "justify": "center",
+          "direction": "row",
           "style": {
             "gap": "16px",
             "overflow": "hidden"
@@ -530,198 +295,921 @@
         },
         "children": [
           {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "ShortHeadline"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"Inventory is \" + toStr({view.custom.shortfall.short}) + if({view.custom.shortfall.short} = 1, \" part short.\", \" parts short.\")"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "fontSize": "22px",
-                "fontWeight": 700,
-                "color": "var(--mpp-text-primary)",
-                "textAlign": "center"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "ShortDetail"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"You entered \" + toStr({view.custom.shortfall.requested}) + \", but only \" + toStr({view.custom.shortfall.available}) + \" of \" + {view.custom.shortfall.partNumber} + \" can be scrapped at this line.\""
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "fontSize": "15px",
-                "color": "var(--mpp-text-secondary)",
-                "textAlign": "center",
-                "whiteSpace": "normal"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "ShortQuestion"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"Submit \" + toStr({view.custom.shortfall.available}) + \" instead?\""
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "fontSize": "18px",
-                "fontWeight": 700,
-                "color": "var(--mpp-text-primary)",
-                "textAlign": "center"
-              }
-            }
-          },
-          {
             "type": "ia.container.flex",
             "meta": {
-              "name": "ShortButtonRow"
+              "name": "PartCol"
             },
             "position": {
+              "basis": "320px",
               "shrink": 0
             },
             "props": {
-              "justify": "center",
+              "direction": "column",
               "style": {
-                "gap": "12px",
-                "overflow": "hidden",
-                "marginTop": "8px"
+                "gap": "8px",
+                "overflow": "hidden"
               }
             },
             "children": [
               {
-                "type": "ia.input.button",
+                "type": "ia.display.label",
                 "meta": {
-                  "name": "GoBackButton"
+                  "name": "PartLabel"
                 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "config": {
-                        "script": "\tself.view.custom.shortfall = {\"active\": False, \"requested\": 0, \"available\": 0, \"short\": 0, \"partNumber\": \"\"}"
-                      },
-                      "scope": "G",
-                      "type": "script"
-                    }
-                  }
+                "position": {
+                  "shrink": 0
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-btn pf-btn-secondary",
-                    "fontSize": "16px",
-                    "minHeight": "48px",
-                    "minWidth": "140px"
+                    "classes": "pf-field-label"
                   },
-                  "text": "Go back"
+                  "text": "1 - Part"
                 }
               },
               {
-                "type": "ia.input.button",
+                "type": "ia.display.label",
                 "meta": {
-                  "name": "YesButton"
+                  "name": "NoPartsHint"
                 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
                       "config": {
-                        "script": "\tself.view.rootContainer.commitScrap(self.view.custom.shortfall.available)"
-                      },
-                      "scope": "G",
-                      "type": "script"
+                        "expression": "len({view.custom.partInstances}) = 0"
+                      }
                     }
                   }
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-btn pf-btn-primary",
-                    "fontSize": "16px",
-                    "minHeight": "48px",
-                    "minWidth": "140px"
+                    "classes": "pf-kpi-sub"
                   },
-                  "text": "Yes"
+                  "text": "Nothing on hand at this line to scrap."
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "PartRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
                 },
                 "propConfig": {
-                  "props.text": {
+                  "props.instances": {
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "\"Yes, submit \" + toStr({view.custom.shortfall.available})"
+                        "expression": "runScript(\"BlueRidge.Lots.Lot.getScrapPartInstances\", 0, {view.params.cellLocationId}, {view.custom.draft.itemId}, {view.custom.refreshToken})"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "useDefaultViewHeight": false,
+                  "elementPosition": {
+                    "basis": "56px",
+                    "shrink": 0
+                  },
+                  "elementStyle": {
+                    "overflow": "hidden",
+                    "marginBottom": "6px"
+                  },
+                  "instances": [],
+                  "path": "BlueRidge/Components/Popups/_ScrapEntry/PartRow",
+                  "style": {
+                    "overflowY": "auto",
+                    "overflowX": "hidden"
+                  },
+                  "useDefaultViewWidth": false
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "MidCol"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ReasonPane"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ReasonHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "2 - Reason - tap a reason to add 1"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "NoPartHint"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-help"
+                      },
+                      "text": "Pick a part on the left to record scrap against it."
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "isNull({view.custom.draft.itemId})"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "ScrapCodeGrid"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!isNull({view.custom.draft.itemId})"
+                          }
+                        }
+                      },
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.scrapTiles"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "alignContent": "flex-start",
+                      "elementPosition": {
+                        "basis": "152px",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/Scrap/ScrapCodeTile",
+                      "style": {
+                        "gap": "12px",
+                        "overflowY": "auto"
+                      },
+                      "useDefaultViewWidth": false,
+                      "wrap": "wrap"
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ScrapMoreButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.toggleScrapShowAll()"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary",
+                        "minHeight": "44px"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!isNull({view.custom.draft.itemId}) && {view.custom.scrapMoreCount} > 0"
+                          }
+                        }
+                      },
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.scrapShowAll}, \"Show most used only\", \"More reasons (\" + toStr({view.custom.scrapMoreCount}) + \")\")"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ],
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.pane} = \"reasons\""
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "NumpadPane"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "row",
+                  "justify": "center",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "28px",
+                    "overflow": "auto"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "NumpadInfo"
+                    },
+                    "position": {
+                      "basis": "340px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "justify": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "NumpadHeader"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Quantity"
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "NumpadReason"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "fontSize": "18px",
+                            "fontWeight": 600
+                          }
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.numpad.label"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "NumpadValue"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "fontSize": "40px",
+                            "padding": "6px 12px",
+                            "classes": "pf-inv-qty"
+                          }
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if(len({view.custom.numpad.value}) = 0, \"0\", {view.custom.numpad.value})"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "NumpadOnHand"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-help"
+                          }
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "toStr({view.custom.available}) + \" of \" + {view.custom.partNumber} + \" on hand at this line\""
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "NumpadButtons"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "row",
+                          "style": {
+                            "gap": "10px",
+                            "marginTop": "8px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.input.button",
+                            "meta": {
+                              "name": "NumpadCancel"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 1
+                            },
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "type": "script",
+                                  "scope": "G",
+                                  "config": {
+                                    "script": "\tself.view.custom.pane = \"reasons\""
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-btn pf-btn-secondary",
+                                "minHeight": "56px",
+                                "fontSize": "16px"
+                              },
+                              "text": "Cancel"
+                            }
+                          },
+                          {
+                            "type": "ia.input.button",
+                            "meta": {
+                              "name": "NumpadOk"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 2
+                            },
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "type": "script",
+                                  "scope": "G",
+                                  "config": {
+                                    "script": "\tself.view.rootContainer.numpadOk()"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-btn pf-btn-primary",
+                                "minHeight": "56px",
+                                "fontSize": "16px"
+                              },
+                              "text": "OK"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "NumpadHost"
+                    },
+                    "position": {
+                      "basis": "400px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/Numpad",
+                      "params": {
+                        "messageName": "scrapEntryQtyKey"
+                      },
+                      "style": {
+                        "height": "424px"
+                      }
+                    }
+                  }
+                ],
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.pane} = \"numpad\""
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "RemarkPane"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "auto"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "RemarkHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "Remark (optional) - applies to everything in this entry"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "RemarkText"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "18px",
+                        "minHeight": "44px",
+                        "width": "800px",
+                        "padding": "8px 14px",
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.draft.remarks"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "KeyboardHost"
+                    },
+                    "position": {
+                      "basis": "350px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/Keyboard",
+                      "params": {
+                        "messageName": "scrapEntryRemarkKey"
+                      },
+                      "style": {
+                        "width": "800px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
+                    }
+                  }
+                ],
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.pane} = \"remark\""
                       }
                     }
                   }
                 }
               }
             ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "EntryCol"
+            },
+            "position": {
+              "basis": "450px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "8px",
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "EnteredHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "3 - Entered"
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "EnteredEmpty"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-help"
+                  },
+                  "text": "Nothing entered yet. Tap a reason once for each scrapped part."
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len({view.custom.scrapLineRows}) = 0"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "ScrapLinesRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.scrapLineRows"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "52px",
+                    "grow": 0,
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/Scrap/ScrapLineRow",
+                  "style": {
+                    "gap": "6px",
+                    "overflowY": "auto"
+                  },
+                  "useDefaultViewWidth": false
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "TotalRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "TotalLabel"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "20px",
+                        "fontWeight": 700
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "toStr({view.custom.scrapTotal}) + \" pcs scrap\""
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "OnHandLabel"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!isNull({view.custom.draft.itemId})"
+                          }
+                        }
+                      },
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "\"of \" + toStr({view.custom.available}) + \" on hand\""
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "RemarkButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.toggleRemark()"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary",
+                    "minHeight": "44px",
+                    "justifyContent": "space-between",
+                    "overflow": "hidden"
+                  },
+                  "image": {
+                    "position": "right",
+                    "icon": {
+                      "path": "material/expand_more"
+                    }
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(len({view.custom.draft.remarks}) > 0, \"Remark: \" + {view.custom.draft.remarks}, \"Remark (optional)\")"
+                      }
+                    }
+                  },
+                  "props.image.icon.path": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.pane} = \"remark\", \"material/expand_less\", \"material/expand_more\")"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ButtonRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "style": {
+                    "gap": "10px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "CancelButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary",
+                        "fontSize": "16px",
+                        "minHeight": "56px",
+                        "minWidth": "110px"
+                      },
+                      "text": "Cancel"
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "SubmitButton"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.submitScrap()"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary",
+                        "fontSize": "16px",
+                        "minHeight": "56px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!isNull({view.custom.draft.itemId}) && {view.custom.scrapTotal} > 0"
+                          }
+                        }
+                      },
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.scrapTotal} > 0, \"Record Scrap (\" + toStr({view.custom.scrapTotal}) + \")\", \"Record Scrap\")"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
           }
         ]
       }
-    ],
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "submitScrap",
-          "params": [],
-          "script": "\tdraft = dict(self.view.custom.draft)\n\titemId = draft.get(\"itemId\")\n\tif itemId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Part required\", \"Select which part to scrap.\", \"warning\")\n\t\treturn\n\tqty = BlueRidge.Common.Util.toIntOrNone(draft.get(\"quantity\"))\n\tif qty is None or qty <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"Quantity required\", \"Enter how many pieces to scrap.\", \"warning\")\n\t\treturn\n\t# Fresh read: the list on screen may be stale. The proc is still the guard.\n\tstock = BlueRidge.Lots.Lot.getScrappableStock(self.view.params.cellLocationId, itemId)\n\tavailable = stock.get(\"available\") or 0\n\tif available <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"None on hand\", \"That part has nothing on hand at this line to scrap.\", \"warning\")\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\treturn\n\tif qty > available:\n\t\tself.view.custom.shortfall = {\"active\": True, \"requested\": qty, \"available\": available, \"short\": qty - available, \"partNumber\": stock.get(\"partNumber\") or \"\"}\n\t\treturn\n\tself.commitScrap(qty)"
-        },
-        {
-          "name": "commitScrap",
-          "params": [
-            "quantity"
-          ],
-          "script": "\tdraft = dict(self.view.custom.draft)\n\tremarks = draft.get(\"remarks\")\n\tif remarks is not None and unicode(remarks).strip() == \"\":\n\t\tremarks = None\n\tdata = {\"itemId\": draft.get(\"itemId\"), \"locationId\": self.view.params.cellLocationId, \"defectCodeId\": draft.get(\"defectCodeId\"), \"quantity\": quantity, \"remarks\": remarks, \"operationTypeCode\": self.view.params.operationTypeCode}\n\tappUserId = BlueRidge.Common.Session.currentAppUserId(self.session)\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.recordByPartFifo(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Scrap recorded\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": None, \"cellLocationId\": self.view.params.cellLocationId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)\n\telse:\n\t\t# Refused (e.g. inventory moved since the prompt): back to the form with fresh numbers.\n\t\tself.view.custom.shortfall = {\"active\": False, \"requested\": 0, \"available\": 0, \"short\": 0, \"partNumber\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
-        }
-      ],
-      "extensionFunctions": null,
-      "messageHandlers": [
-        {
-          "messageType": "scrapEntryPartSelected",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tself.view.custom.draft.itemId = (payload or {}).get(\"itemId\")"
-        }
-      ]
-    }
+    ]
   }
 }

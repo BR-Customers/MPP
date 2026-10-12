@@ -1,0 +1,221 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Record Scrap - tile entry mock</title><style>
+:root{
+  --mpp-neutral-10:#0B1220; --mpp-neutral-20:#111A2E; --mpp-neutral-30:#172238;
+  --mpp-neutral-40:#1F2C44; --mpp-neutral-50:#2C3A55; --mpp-neutral-60:#425270;
+  --mpp-neutral-70:#697A98; --mpp-neutral-80:#9AA8BF; --mpp-neutral-90:#C9D2E0;
+  --mpp-neutral-100:#F0F3F8;
+  --mpp-accent-20:#093240; --mpp-accent-40:#126680; --mpp-accent-50:#1888A8;
+  --mpp-accent-60:#22A8CC; --mpp-accent-70:#4BC2E0; --mpp-accent-90:#B0E5F3;
+  --bad:#F87171; --warn:#F4B343;
+  --card:var(--mpp-neutral-30); --raised:var(--mpp-neutral-20);
+  --border:var(--mpp-neutral-50); --t1:var(--mpp-neutral-100); --t2:var(--mpp-neutral-90); --t3:var(--mpp-neutral-80);
+  --mono:'JetBrains Mono','Roboto Mono',Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#05080f;color:var(--t1);font-family:Inter,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.4}
+button{font-family:inherit;color:inherit}
+.mockbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 16px;background:#0a0f1a;border-bottom:1px dashed var(--mpp-neutral-60);font-size:13px;color:var(--t3)}
+.mockbar b{color:var(--warn);letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.seg{display:inline-flex;border:1px solid var(--mpp-neutral-60);border-radius:8px;overflow:hidden}
+.seg button{background:none;border:0;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--t3)}
+.seg button.on{background:var(--mpp-accent-40);color:#fff}
+.stage{padding:14px;overflow:hidden}
+.scaler{transform-origin:0 0}
+.screen{width:1920px;height:1080px;position:relative;background:var(--mpp-neutral-10);border:1px solid var(--mpp-neutral-60);overflow:hidden;font-size:17px}
+.behind{position:absolute;inset:0;padding:22px 26px;display:flex;flex-direction:column;gap:16px}
+.behind .bh{display:flex;justify-content:space-between;align-items:center;font-size:26px;font-weight:700}
+.behind .bh span{font-size:15px;font-weight:600;border:1px solid var(--mpp-neutral-60);border-radius:8px;padding:10px 16px;margin-left:8px}
+.behind .bb{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.behind .bp{background:var(--mpp-neutral-20);border:1px solid var(--border);border-radius:12px;padding:16px;color:var(--t3)}
+.dim{position:absolute;inset:0;background:rgba(5,8,15,.62)}
+.half{position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--warn);color:var(--warn);font-size:13px;padding:4px 10px;pointer-events:none;z-index:1}
+.popup{position:absolute;top:0;left:0;right:0;height:50%;background:var(--raised);border-bottom:2px solid var(--mpp-accent-60);box-shadow:0 18px 60px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden;z-index:2}
+.phead{display:flex;align-items:baseline;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.phead h1{margin:0;font-size:20px;font-weight:700}
+.phead .sub{color:var(--t3);font-size:14px}
+.cols{display:grid;grid-template-columns:320px minmax(0,1fr) 450px;gap:0;flex:1;min-height:0}
+.col{padding:14px 16px;display:flex;flex-direction:column;min-height:0;min-width:0}
+.col+.col{border-left:1px solid var(--border)}
+.lbl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.parts{display:flex;flex-direction:column;gap:8px;overflow:auto}
+.part{background:var(--raised);border:2px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:64px}
+.part.on{background:var(--mpp-accent-20);border-color:var(--mpp-accent-60)}
+.part .pn{font-family:var(--mono);font-weight:700;font-size:16px}
+.part .pd{font-size:12px;color:var(--t3)}
+.part .q{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.more{min-height:48px;margin-top:8px;border-radius:10px;border:1px solid var(--mpp-neutral-60);background:var(--card);font-size:16px;font-weight:600;cursor:pointer;flex:none}
+.modes button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--mpp-neutral-60);background:var(--card);font-size:14px;font-weight:600;cursor:pointer}
+.modes button.on{background:var(--mpp-accent-40);border-color:var(--mpp-accent-60)}
+.gridwrap{display:flex;gap:8px;flex:1;min-height:0}
+.grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-content:start;padding-right:4px;scroll-behavior:smooth;position:relative}
+.tile{background:var(--card);border:2px solid var(--border);border-radius:10px;min-height:68px;padding:6px 8px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;text-align:center;user-select:none;transition:transform .06s}
+.tile:active{transform:scale(.96)}
+.tile.on{background:var(--mpp-accent-20);border-color:var(--mpp-accent-60)}
+.tile .d{font-size:16px;font-weight:600;line-height:1.2}
+.tile .m{display:flex;justify-content:space-between;font-size:11px;color:var(--t3)}
+.tile .m .x{color:var(--mpp-accent-90);font-weight:700;font-size:13px}
+.divider{grid-column:1/-1;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+.az{display:flex;flex-direction:column;gap:2px;overflow:auto;width:40px;flex:none}
+.az button{flex:1;min-height:22px;background:var(--card);border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;padding:0}
+.hint{color:var(--t3);font-size:14px;padding:24px 8px;text-align:center}
+.lines{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px;min-height:0}
+.line{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:5px 6px}
+.line .info{flex:1;min-width:0}
+.line .info .c{font-size:11px;color:var(--t3)}
+.line .info .d{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sq{width:44px;height:44px;flex:none;border-radius:8px;border:1px solid var(--mpp-neutral-60);background:var(--raised);font-size:22px;font-weight:700;cursor:pointer}
+.sq.rm{color:var(--bad);font-size:18px}
+.qty{width:58px;height:44px;flex:none;border-radius:8px;border:1px solid var(--mpp-accent-50);background:var(--mpp-neutral-10);font-size:18px;font-weight:700;cursor:pointer;font-variant-numeric:tabular-nums}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding:10px 2px 8px;border-top:1px solid var(--border);margin-top:8px}
+.total .big{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.total .of{color:var(--t3);font-size:13px}
+.remark{min-height:44px;border-radius:10px;border:1px dashed var(--mpp-neutral-60);background:none;text-align:left;padding:8px 12px;font-size:14px;color:var(--t3);cursor:pointer;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.remark.has{border-style:solid;color:var(--t1)}
+.actions{display:flex;gap:10px}
+.btn{min-height:56px;border-radius:10px;border:1px solid var(--mpp-neutral-60);background:var(--card);font-size:16px;font-weight:600;cursor:pointer;padding:0 16px}
+.btn.primary{flex:1;background:var(--mpp-accent-50);border-color:var(--mpp-accent-60);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.sheet{position:absolute;inset:0;background:rgba(5,8,15,.72);display:none;z-index:5}
+.sheet.show{display:flex}
+.pad{margin:auto 16px auto auto;width:328px;background:var(--raised);border:1px solid var(--mpp-accent-60);border-radius:14px;padding:14px}
+.pad .for{font-size:13px;color:var(--t3)}
+.pad .val{font-size:34px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;padding:4px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:10px;min-height:58px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.keys button,.kb button{min-height:60px;border-radius:10px;border:1px solid var(--mpp-neutral-60);background:var(--card);font-size:22px;font-weight:600;cursor:pointer}
+.keys .ok,.kb .ok{background:var(--mpp-accent-50);border-color:var(--mpp-accent-60);color:#fff}
+.kbwrap{margin-top:auto;width:100%;background:var(--raised);border-top:1px solid var(--mpp-accent-60);padding:12px 16px 16px}
+.kbtext{min-height:48px;border:1px solid var(--mpp-accent-50);border-radius:10px;background:var(--mpp-neutral-10);padding:10px 14px;font-size:17px;margin-bottom:10px}
+.kbtext:after{content:"";display:inline-block;width:2px;height:1em;background:var(--mpp-accent-70);vertical-align:-2px;margin-left:2px;animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+.kb{display:flex;flex-direction:column;gap:6px}
+.kb .r{display:flex;gap:6px;justify-content:center}
+.kb button{flex:1;max-width:96px;min-height:52px;font-size:18px}
+.kb .wide{max-width:none;flex:5} .kb .mid{max-width:150px;flex:2}
+.toast{position:absolute;top:14px;right:18px;background:#3a2a08;border:1px solid var(--warn);color:#ffe2a8;border-radius:10px;padding:10px 14px;font-size:14px;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none;max-width:340px}
+.toast.show{opacity:1}
+.notes{max-width:1280px;margin:0 auto;padding:0 16px 60px;color:var(--t2);font-size:14px}
+.notes h2{font-size:15px;margin:0 0 8px;color:var(--t1)} .notes li{margin:5px 0}
+.notes code{font-family:var(--mono);font-size:12.5px;color:var(--mpp-accent-90)}
+.pane{display:flex;flex-direction:column;flex:1;min-height:0}
+#remarkPane .kbtext{font-size:20px;min-height:54px}
+#remarkPane .kb{flex:1;gap:8px;min-height:0} #remarkPane .kb .r{flex:1;gap:8px}
+#remarkPane .kb button{max-width:none;min-height:0;font-size:22px}
+#remarkPane .kb .mid{flex:2} #remarkPane .kb .wide{flex:6}
+.remark{display:flex;justify-content:space-between;gap:10px}
+.remark .txt{overflow:hidden;text-overflow:ellipsis}
+.remark.open{border-style:solid;border-color:var(--mpp-accent-60);color:var(--t1)}
+</style></head><body>
+<div class="mockbar"><b>Mock controls</b>
+  <span>Opened from <span class="seg" id="segScreen"><button data-v="mo" class="on">Machining OUT</button><button data-v="mi">Machining IN</button><button data-v="as">Assembly</button></span></span>
+  <span>Nothing here is wired to the system. Part numbers and "most used" are made up; the reason codes are the real Machine Shop list.</span>
+</div>
+<div class="stage" id="stage"><div class="scaler" id="scaler"><div class="screen">
+<div class="behind"><div class="bh"><div id="behindTitle"></div><div><span>Refresh</span><span>Inventory</span><span>Scrap</span><span>Close</span></div></div><div class="bb"><div class="bp">Queue (the screen underneath, dimmed while the popup is open)</div><div class="bp">Active LOT</div></div></div>
+<div class="dim"></div><div class="half">50% of a 1920 x 1080 terminal</div>
+<div class="popup" id="popup">
+  <div class="toast" id="toast"></div>
+  <div class="phead"><h1>Record Scrap</h1><span class="sub" id="where"></span></div>
+  <div class="cols">
+    <div class="col"><div class="lbl">1 &middot; Part</div><div class="parts" id="parts"></div></div>
+    <div class="col">
+      <div class="pane" id="reasonPane">
+        <div class="lbl"><span>2 &middot; Reason - tap to add 1</span></div>
+        <div class="gridwrap"><div class="grid" id="grid"></div></div>
+        <button class="more" id="more"></button>
+      </div>
+      <div class="pane" id="remarkPane">
+        <div class="lbl"><span>Remark (optional) - applies to everything in this entry</span></div>
+        <div class="kbtext" id="kbText"></div><div class="kb" id="kb"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="lbl"><span>3 &middot; Entered</span></div>
+      <div class="lines" id="lines"></div>
+      <div class="total"><span><span class="big" id="tot">0</span> pcs scrap</span><span class="of" id="of"></span></div>
+      <button class="remark" id="remark"></button>
+      <div class="actions"><button class="btn" id="cancel">Cancel</button><button class="btn primary" id="submit">Record Scrap</button></div>
+    </div>
+  </div>
+  <div class="sheet" id="padSheet"><div class="pad">
+    <div class="for" id="padFor"></div><div class="val" id="padVal"></div>
+    <div class="keys" id="padKeys"></div>
+  </div></div>
+</div>
+</div></div></div>
+<div class="notes">
+  <h2>What changes against today's popup</h2>
+  <ul>
+    <li><b>Position</b>: the popup is pinned to the top half of the terminal, full width. Nothing in the popup needs the bottom half.</li>
+    <li><b>Reason</b>: the dropdown becomes the Trim tile grid, ordered by most used on this line. The first 18 show without scrolling; "More reasons" expands to the rest. Tap = +1; the tile lights up and shows its count.</li>
+    <li><b>Quantity</b>: the text box becomes the Trim line row (- / qty / + / remove). Tapping the number opens the project <code>Numpad</code> inside the popup, so the built-in keyboard never opens.</li>
+    <li><b>Remark</b>: collapsed to one button. Tapping it expands a remark section with its keyboard in place of the reason tiles; Done (or tapping it again) collapses it back to the tiles. Part and Entered stay visible throughout, and nothing leaves the top half.</li>
+    <li><b>Several reasons in one entry</b>, like Trim. Today the popup records one reason per open.</li>
+    <li><b>Over the on-hand count</b>: capped as you tap, with a "Scrap capped" toast (Trim's behaviour), instead of the "N parts short - submit N instead?" second screen.</li>
+  </ul>
+</div>
+<script>
+const CODES = [{"id": 146, "code": "146", "desc": "Chatter", "primary": true}, {"id": 147, "code": "147", "desc": "Cycle Stop", "primary": true}, {"id": 148, "code": "148", "desc": "Dropped", "primary": true}, {"id": 149, "code": "149", "desc": "Flatness", "primary": true}, {"id": 150, "code": "150", "desc": "Holesize", "primary": true}, {"id": 151, "code": "151", "desc": "Thickness", "primary": true}, {"id": 152, "code": "152", "desc": "Thread Damage", "primary": true}, {"id": 153, "code": "153", "desc": "Tool Break", "primary": true}, {"id": 154, "code": "154", "desc": "Tool Mark", "primary": true}, {"id": 156, "code": "156", "desc": "Hole Off Center", "primary": true}, {"id": 157, "code": "157", "desc": "Pin Damage", "primary": true}, {"id": 158, "code": "158", "desc": "Pin Height", "primary": true}, {"id": 159, "code": "159", "desc": "Pin Missing", "primary": true}, {"id": 160, "code": "160", "desc": "Low Pin Pressure", "primary": true}, {"id": 161, "code": "161", "desc": "Torque No Good", "primary": true}, {"id": 162, "code": "162", "desc": "Misset", "primary": true}, {"id": 163, "code": "163", "desc": "Chamfer No Good", "primary": true}, {"id": 164, "code": "164", "desc": "Incomplete Machining", "primary": true}, {"id": 165, "code": "165", "desc": "Contamination", "primary": true}, {"id": 166, "code": "166", "desc": "High Pin Pressure", "primary": true}, {"id": 167, "code": "167", "desc": "Clamp Marks", "primary": true}, {"id": 168, "code": "168", "desc": "Seal Damage", "primary": true}, {"id": 169, "code": "169", "desc": "Skipped Proccess", "primary": true}, {"id": 170, "code": "170", "desc": "Machine Trial", "primary": true}, {"id": 171, "code": "171", "desc": "Double Cycle", "primary": true}, {"id": 172, "code": "172", "desc": "Step Height", "primary": true}, {"id": 173, "code": "173", "desc": "Stamp No Good", "primary": true}, {"id": 174, "code": "174", "desc": "Over Machining", "primary": true}, {"id": 175, "code": "175", "desc": "Diameter", "primary": true}, {"id": 176, "code": "176", "desc": "Unidentified Part", "primary": true}, {"id": 177, "code": "177", "desc": "Roundness", "primary": true}, {"id": 178, "code": "178", "desc": "NG Face Height", "primary": true}, {"id": 179, "code": "179", "desc": "Hole Depth", "primary": true}, {"id": 180, "code": "180", "desc": "Part/Tower Height", "primary": true}, {"id": 181, "code": "181", "desc": "Doesn't Fit on Jig", "primary": true}, {"id": 182, "code": "182", "desc": "Stuck in Washer Conveyor", "primary": true}, {"id": 183, "code": "183", "desc": "Ledge", "primary": true}, {"id": 184, "code": "184", "desc": "No Cup", "primary": true}, {"id": 185, "code": "185", "desc": "No Clip Ring", "primary": true}, {"id": 186, "code": "186", "desc": "Studbolt Backward", "primary": true}, {"id": 187, "code": "187", "desc": "Concentricity", "primary": true}, {"id": 188, "code": "188", "desc": "Cylindricity", "primary": true}, {"id": 189, "code": "189", "desc": "Parallellism", "primary": true}, {"id": 190, "code": "190", "desc": "Supply Part Defect", "primary": true}, {"id": 192, "code": "192", "desc": "Tube Press Damage", "primary": true}, {"id": 194, "code": "194", "desc": "Missing Material", "primary": true}, {"id": 195, "code": "195", "desc": "Fail QA Machine", "primary": true}, {"id": 198, "code": "198", "desc": "Tide Journals", "primary": true}, {"id": 199, "code": "199", "desc": "Assembled on to NG part MS", "primary": true}, {"id": 200, "code": "200", "desc": "Fail Leak Test (Equipment Failure)", "primary": true}, {"id": 207, "code": "207", "desc": "Stripped Studbolts", "primary": true}, {"id": 208, "code": "208", "desc": "Cross Threads", "primary": true}, {"id": 209, "code": "209", "desc": "Low Studbolt", "primary": true}, {"id": 211, "code": "211", "desc": "NG Condition (MS)", "primary": true}, {"id": 213, "code": "213", "desc": "Thread Depth", "primary": true}, {"id": 223, "code": "223", "desc": "Double Cup", "primary": true}, {"id": 224, "code": "224", "desc": "Out of Sequence", "primary": true}, {"id": 227, "code": "227", "desc": "Failed Leak Test- Seal", "primary": true}, {"id": 228, "code": "228", "desc": "Failed Leak Test- Bolt", "primary": true}, {"id": 232, "code": "232", "desc": "Abnormal clamp", "primary": true}, {"id": 233, "code": "233", "desc": "Missing O-Ring", "primary": true}, {"id": 234, "code": "234", "desc": "Missing Bolt", "primary": true}, {"id": 235, "code": "235", "desc": "Unapproved Die", "primary": true}, {"id": 236, "code": "236", "desc": "Oil Hole No Good", "primary": true}, {"id": 237, "code": "237", "desc": "High Studbolt", "primary": true}, {"id": 238, "code": "238", "desc": "Bolt Hole No Good", "primary": true}, {"id": 239, "code": "239", "desc": "Steel Ball No Good", "primary": true}, {"id": 240, "code": "240", "desc": "Over Grind", "primary": true}, {"id": 241, "code": "241", "desc": "Clinch No Good", "primary": true}, {"id": 242, "code": "242", "desc": "Joint Tube Height/Dimension", "primary": true}, {"id": 243, "code": "243", "desc": "Angle Exceeded", "primary": true}, {"id": 244, "code": "244", "desc": "Dents", "primary": true}, {"id": 245, "code": "245", "desc": "No Oil Hole", "primary": true}, {"id": 246, "code": "246", "desc": "No Stud Bolt", "primary": true}, {"id": 254, "code": "254", "desc": "True Position", "primary": true}, {"id": 225, "code": "225", "desc": "Labels ( incorrect or missing )", "primary": false}, {"id": 201, "code": "201", "desc": "Returned in empty dunnage", "primary": false}, {"id": 202, "code": "202", "desc": "Damaged in Transit", "primary": false}, {"id": 203, "code": "203", "desc": "Dropped Parts", "primary": false}, {"id": 204, "code": "204", "desc": "Incorrect Scan/labels", "primary": false}, {"id": 205, "code": "205", "desc": "Missed Shipment", "primary": false}, {"id": 212, "code": "212", "desc": "ISO Audit", "primary": false}];
+const TOP = [154,148,150,152,244,165,164,153,167,227,161,151,163,175,179,187,208,233];
+const SCREENS = {
+  mo:{title:'Machining OUT - Sub-LOT Split',where:'Machining OUT &middot; 5G0 Machining Line', parts:[['5G0-C','Casting, 5G0 front cover',412],['5G0-SA','Sub-assembly, 5G0 machined',96]]},
+  mi:{title:'Machining IN',where:'Machining IN &middot; 5G0 Machining Line', parts:[['5G0-C','Casting, 5G0 front cover',412]]},
+  as:{title:'Assembly - Non-Serialized Line',where:'Assembly &middot; 6NA Line', parts:[['12270-6NA-M','Machined cam holder',240],['12270-6NA-A000','Cam holder assy (finished)',36],['90001-BOLT','Flange bolt 6x25',18]]}
+};
+let S={screen:'mo',mode:'top',remarkOpen:false,part:0,lines:[],remark:'',pad:null,padBuf:''};
+const $=id=>document.getElementById(id), byId=Object.fromEntries(CODES.map(c=>[c.id,c]));
+const onHand=()=>SCREENS[S.screen].parts[S.part][2];
+const total=()=>S.lines.reduce((a,l)=>a+l.q,0);
+const qtyOf=id=>(S.lines.find(l=>l.id===id)||{q:0}).q;
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2400)}
+function setQty(id,q){
+  const others=total()-qtyOf(id), room=Math.max(0,onHand()-others);
+  if(q>room){q=room;toast('Scrap capped - only '+onHand()+' on hand at this line.')}
+  const i=S.lines.findIndex(l=>l.id===id);
+  if(q<=0){if(i>=0)S.lines.splice(i,1)} else if(i>=0)S.lines[i].q=q; else S.lines.push({id,q});
+  render();
+}
+function tile(c){const q=qtyOf(c.id);return `<div class="tile ${q?'on':''}" data-id="${c.id}" data-l="${c.desc[0].toUpperCase()}"><div class="d">${c.desc}</div><div class="m"><span>${c.code}</span><span class="x">${q?'&times;'+q:''}</span></div></div>`}
+function render(){
+  const sc=SCREENS[S.screen];
+  $('where').innerHTML=sc.where; $('behindTitle').textContent=sc.title;
+  $('parts').innerHTML=sc.parts.map((p,i)=>`<button class="part ${i===S.part?'on':''}" data-i="${i}"><span><div class="pn">${p[0]}</div><div class="pd">${p[1]}</div></span><span class="q">${p[2]} pcs</span></button>`).join('');
+  // Order: most used first, then the rest. (Mock: the rest is alphabetical; real data would rank all of it.)
+  const rest=CODES.filter(c=>!TOP.includes(c.id)).sort((a,b)=>(b.primary-a.primary)||a.desc.localeCompare(b.desc));
+  const used=S.lines.map(l=>l.id).filter(id=>!TOP.includes(id));
+  const ids=S.mode==='all'?TOP.concat(rest.map(c=>c.id)):TOP.concat(used);
+  const g=$('grid'),st=g.scrollTop;g.innerHTML=ids.map(id=>tile(byId[id])).join('');g.scrollTop=st;
+  $('more').textContent=S.mode==='all'?'Show most used only':'More reasons ('+rest.length+')';
+  $('lines').innerHTML=S.lines.length?S.lines.map(l=>`<div class="line"><div class="info"><div class="c">${byId[l.id].code}</div><div class="d">${byId[l.id].desc}</div></div><button class="sq" data-a="-" data-id="${l.id}">&minus;</button><button class="qty" data-a="n" data-id="${l.id}">${l.q}</button><button class="sq" data-a="+" data-id="${l.id}">+</button><button class="sq rm" data-a="x" data-id="${l.id}">&#10005;</button></div>`).join(''):'<div class="hint">Nothing entered yet.<br>Tap a reason once per scrapped part.</div>';
+  $('tot').textContent=total(); $('of').textContent='of '+onHand()+' on hand';
+  $('remark').className='remark'+(S.remark?' has':'')+(S.remarkOpen?' open':'');
+  $('remark').innerHTML='<span class="txt">'+(S.remark?'Remark: '+S.remark:'Remark (optional)')+'</span><span>'+(S.remarkOpen?'&#9650;':'&#9660;')+'</span>';
+  $('reasonPane').style.display=S.remarkOpen?'none':'flex'; $('remarkPane').style.display=S.remarkOpen?'flex':'none'; $('kbText').textContent=S.remark;
+  $('submit').disabled=!total(); $('submit').textContent=total()?'Record Scrap ('+total()+')':'Record Scrap';
+}
+$('parts').onclick=e=>{const b=e.target.closest('.part');if(!b)return;S.part=+b.dataset.i;if(total()>onHand()){S.lines=[];toast('Entries cleared - more than this part has on hand.')}render()};
+$('more').onclick=()=>{S.mode=S.mode==='all'?'top':'all';$('grid').scrollTop=0;render()};
+$('grid').onclick=e=>{const t=e.target.closest('.tile');if(t){const id=+t.dataset.id;setQty(id,qtyOf(id)+1)}};
+$('lines').onclick=e=>{const b=e.target.closest('button');if(!b)return;const id=+b.dataset.id,a=b.dataset.a,q=qtyOf(id);
+  if(a==='+')setQty(id,q+1);else if(a==='-')setQty(id,q-1);else if(a==='x')setQty(id,0);else{S.pad=id;S.padBuf='';$('padFor').textContent=byId[id].code+' - '+byId[id].desc;$('padVal').textContent=q;$('padSheet').classList.add('show')}};
+$('padKeys').innerHTML=['1','2','3','4','5','6','7','8','9','BK','0','OK'].map(k=>`<button class="${k==='OK'?'ok':''}" data-k="${k}">${k==='BK'?'&#9003;':k}</button>`).join('');
+$('padKeys').onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;
+  if(k==='OK'){$('padSheet').classList.remove('show');if(S.padBuf!=='')setQty(S.pad,+S.padBuf);return}
+  if(k==='BK')S.padBuf=S.padBuf.slice(0,-1);else if(S.padBuf.length<4)S.padBuf+=k;
+  $('padVal').textContent=S.padBuf===''?'0':S.padBuf};
+$('padSheet').onclick=e=>{if(e.target===$('padSheet'))$('padSheet').classList.remove('show')};
+const KB=['1234567890','QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+$('kb').innerHTML=KB.map(r=>'<div class="r">'+r.split('').map(k=>`<button>${k}</button>`).join('')+'</div>').join('')+'<div class="r"><button class="mid" data-k="bk">&#9003;</button><button class="wide" data-k="sp">space</button><button class="mid ok" data-k="ok">Done</button></div>';
+$('remark').onclick=()=>{S.remarkOpen=!S.remarkOpen;render()};
+$('kb').onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;
+  if(k==='ok'){S.remarkOpen=false;render();return}
+  S.remark=k==='bk'?S.remark.slice(0,-1):S.remark+(k==='sp'?' ':b.textContent);$('kbText').textContent=S.remark};
+$('cancel').onclick=()=>{S.lines=[];S.remark='';S.remarkOpen=false;render()};
+$('submit').onclick=()=>{toast('Scrap recorded - '+total()+' pcs across '+S.lines.length+' reason'+(S.lines.length>1?'s':'')+'. (popup would close)');S.lines=[];S.remark='';S.remarkOpen=false;render()};
+function seg(id,key,after){$(id).onclick=e=>{const b=e.target.closest('button');if(!b)return;[...$(id).children].forEach(x=>x.classList.toggle('on',x===b));S[key]=b.dataset.v;after&&after();render()}}
+seg('segScreen','screen',()=>{S.part=0;S.lines=[];S.remark='';S.mode='top'});
+function fit(){const w=$('stage').clientWidth-28,k=Math.min(1,w/1920);$('scaler').style.transform='scale('+k+')';$('scaler').style.height=(1080*k)+'px'}
+addEventListener('resize',fit);fit();
+render();
+</script></body></html>
