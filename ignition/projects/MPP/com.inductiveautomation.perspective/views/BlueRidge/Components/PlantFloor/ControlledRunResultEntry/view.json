@@ -1,0 +1,925 @@
+{
+  "custom": {
+    "catalog": [],
+    "draftJson": "",
+    "remarks": "",
+    "showAll": false,
+    "pane": "tiles",
+    "numpad": {
+      "key": "",
+      "label": "",
+      "value": ""
+    },
+    "model": {
+      "outcomeTiles": [],
+      "reasonTiles": [],
+      "lines": [],
+      "total": 0,
+      "moreCount": 0,
+      "scrap": 0,
+      "summary": "",
+      "canSave": false
+    },
+    "busyUntil": 0
+  },
+  "params": {
+    "runId": null,
+    "memberId": null,
+    "name": "",
+    "isContainer": false,
+    "pieces": 0,
+    "leftOver": 0,
+    "rankLocationId": null,
+    "runOpen": false,
+    "token": 0
+  },
+  "propConfig": {
+    "params.runId": {
+      "paramDirection": "input"
+    },
+    "params.memberId": {
+      "paramDirection": "input"
+    },
+    "params.name": {
+      "paramDirection": "input"
+    },
+    "params.isContainer": {
+      "paramDirection": "input"
+    },
+    "params.pieces": {
+      "paramDirection": "input"
+    },
+    "params.leftOver": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.getChild(\"root\").refresh()"
+      }
+    },
+    "params.rankLocationId": {
+      "paramDirection": "input"
+    },
+    "params.runOpen": {
+      "paramDirection": "input"
+    },
+    "params.token": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.getChild(\"root\").refresh()"
+      }
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "stretch",
+      "style": {
+        "gap": "18px",
+        "overflow": "hidden",
+        "padding": "12px 14px",
+        "height": "100%",
+        "background": "var(--mpp-surface-raised)"
+      }
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.init()"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "OutcomeCol"
+        },
+        "position": {
+          "basis": "270px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "gap": "8px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "OutcomeHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "1 - Outcome",
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "700",
+                "letterSpacing": "0.06em",
+                "textTransform": "uppercase",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "OutcomeGrid"
+            },
+            "position": {
+              "basis": "150px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.model.outcomeTiles"
+                  }
+                }
+              }
+            },
+            "props": {
+              "alignContent": "flex-start",
+              "wrap": "wrap",
+              "useDefaultViewWidth": false,
+              "elementPosition": {
+                "basis": "128px",
+                "grow": 0,
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/ControlledRunEntryTile",
+              "style": {
+                "gap": "8px"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "AcceptRestButton"
+            },
+            "position": {
+              "basis": "48px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Accept the rest (' + toStr(max(0, {view.params.leftOver} - {view.custom.model.total})) + ')'"
+                  }
+                }
+              },
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.runOpen} && ({view.params.leftOver} - {view.custom.model.total}) > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.acceptRest()"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "MidCol"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "gap": "8px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ReasonPane"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.pane} = 'tiles'"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "gap": "8px",
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ReasonHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "2 - Scrap reason - tap a reason to add 1",
+                  "style": {
+                    "fontSize": "12px",
+                    "fontWeight": "700",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "ReasonGrid"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.model.reasonTiles"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "alignContent": "flex-start",
+                  "wrap": "wrap",
+                  "useDefaultViewWidth": false,
+                  "elementPosition": {
+                    "basis": "152px",
+                    "grow": 0,
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunEntryTile",
+                  "style": {
+                    "gap": "10px",
+                    "overflowY": "auto"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "MoreButton"
+                },
+                "position": {
+                  "basis": "44px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.model.moreCount} > 0"
+                      }
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.showAll}, 'Show most used only', 'More reasons (' + toStr({view.custom.model.moreCount}) + ')')"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary",
+                    "alignSelf": "flex-start",
+                    "padding": "0 16px"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tv = self.view\n\tv.custom.showAll = not v.custom.showAll\n\tv.rootContainer.refresh()"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "NumpadPane"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.pane} = 'numpad'"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "gap": "24px",
+                "overflow": "auto"
+              },
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "NumpadInfo"
+                },
+                "position": {
+                  "basis": "260px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "gap": "8px"
+                  },
+                  "justify": "center"
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "NumpadHeader"
+                    },
+                    "props": {
+                      "text": "Quantity",
+                      "style": {
+                        "fontSize": "12px",
+                        "fontWeight": "700",
+                        "letterSpacing": "0.06em",
+                        "textTransform": "uppercase",
+                        "color": "var(--mpp-text-tertiary)"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "NumpadReason"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.numpad.label"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "15px",
+                        "fontWeight": "600",
+                        "whiteSpace": "normal"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "NumpadValue"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if(len({view.custom.numpad.value}) = 0, '0', {view.custom.numpad.value})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "44px",
+                        "fontWeight": "700",
+                        "fontVariantNumeric": "tabular-nums"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "NumpadButtons"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "10px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "NumpadCancel"
+                        },
+                        "position": {
+                          "basis": "110px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary"
+                          },
+                          "text": "Cancel"
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tself.view.custom.pane = \"tiles\""
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "NumpadOk"
+                        },
+                        "position": {
+                          "basis": "110px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-btn pf-btn-primary"
+                          },
+                          "text": "OK"
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tself.view.rootContainer.numpadOk()"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "NumpadHost"
+                },
+                "position": {
+                  "basis": "400px",
+                  "shrink": 0
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/Numpad",
+                  "params": {
+                    "messageName": "crEntryQtyKey"
+                  },
+                  "style": {
+                    "height": "424px"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "EntryCol"
+        },
+        "position": {
+          "basis": "430px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "gap": "8px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "EnteredHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "3 - Entered",
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "700",
+                "letterSpacing": "0.06em",
+                "textTransform": "uppercase",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "EnteredEmpty"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.model.lines}) = 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Nothing entered yet. Tap an outcome or a scrap reason.",
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-tertiary)",
+                "whiteSpace": "normal"
+              }
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "LinesRepeater"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.model.lines"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "useDefaultViewWidth": false,
+              "elementPosition": {
+                "basis": "46px",
+                "grow": 0,
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/ControlledRunEntryLine",
+              "style": {
+                "gap": "6px",
+                "overflowY": "auto"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Summary"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.model.summary"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.model.total} > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-pill pf-pill-good",
+                "whiteSpace": "normal",
+                "borderRadius": "10px",
+                "padding": "6px 10px",
+                "fontSize": "13px",
+                "textTransform": "none",
+                "letterSpacing": "normal"
+              }
+            }
+          },
+          {
+            "type": "ia.input.text-field",
+            "meta": {
+              "name": "RemarksInput"
+            },
+            "position": {
+              "basis": "42px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.remarks",
+                    "bidirectional": true
+                  }
+                }
+              }
+            },
+            "props": {
+              "deferUpdates": false,
+              "placeholder": "Remark (optional) - applies to everything saved here",
+              "style": {
+                "classes": "pf-field-input"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ButtonRow"
+            },
+            "position": {
+              "basis": "52px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "ClearButton"
+                },
+                "position": {
+                  "basis": "110px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.model.total} > 0"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary"
+                  },
+                  "text": "Clear"
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.clearDraft()"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "SaveButton"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.params.runOpen} && {view.custom.model.canSave}"
+                      }
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.model.total} > 0, 'Save results (' + toStr({view.custom.model.total}) + ')', 'Save results')"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.save()"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "init",
+          "params": [],
+          "script": "\tself.view.custom.catalog = BlueRidge.Quality.ControlledRun.entryCatalog(self.view.params.rankLocationId)\n\tself.refresh()"
+        },
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\t# ONE pass rebuilds every derived prop from the two sources of truth: the ranked\n\t# reason catalog and the draft. Assigned whole, so no binding sees half of it.\n\tv = self.view\n\tv.custom.model = BlueRidge.Quality.ControlledRun.entryModel(v.params.memberId, v.custom.catalog, v.custom.draftJson, v.custom.showAll, v.params.leftOver, v.params.isContainer)"
+        },
+        {
+          "name": "change",
+          "params": [
+            "payload"
+          ],
+          "script": "\t# Every tile and line on the page sends crEntryChanged; each open member's form\n\t# hears all of them and acts only on its own.\n\tp = payload or {}\n\tv = self.view\n\tif p.get(\"memberId\") != v.params.memberId:\n\t\treturn\n\tif p.get(\"edit\"):\n\t\tself.openNumpad(p.get(\"key\"))\n\t\treturn\n\tv.custom.draftJson = BlueRidge.Quality.ControlledRun.entryChange(v.custom.draftJson, p.get(\"key\"), p.get(\"delta\"), p.get(\"quantity\"))\n\tself.refresh()"
+        },
+        {
+          "name": "openNumpad",
+          "params": [
+            "key"
+          ],
+          "script": "\tv = self.view\n\tv.custom.numpad = {\"key\": key, \"label\": BlueRidge.Quality.ControlledRun.entryLineLabel(v.custom.draftJson, key, v.custom.catalog), \"value\": \"\"}\n\tv.custom.pane = \"numpad\"\n\t# only one number pad on the page at a time: the others close theirs\n\tsystem.perspective.sendMessage(\"crEntryNumpadOwner\", payload={\"memberId\": v.params.memberId}, scope=\"page\")"
+        },
+        {
+          "name": "numpadKey",
+          "params": [
+            "payload"
+          ],
+          "script": "\tv = self.view\n\tif v.custom.pane != \"numpad\":\n\t\treturn\n\ta = payload.get(\"action\") if payload else None\n\tt = v.custom.numpad.value or \"\"\n\tif a == \"key\" and len(t) < 5:\n\t\tt = t + (\"%s\" % payload.get(\"key\"))\n\telif a == \"backspace\":\n\t\tt = t[:-1]\n\telif a == \"clear\":\n\t\tt = \"\"\n\tv.custom.numpad.value = t"
+        },
+        {
+          "name": "numpadOk",
+          "params": [],
+          "script": "\tv = self.view\n\tkey = v.custom.numpad.key\n\tt = v.custom.numpad.value or \"\"\n\tv.custom.pane = \"tiles\"\n\tif t != \"\":\n\t\t# 0 removes the line; nothing keyed leaves it as it was\n\t\tv.custom.draftJson = BlueRidge.Quality.ControlledRun.entryChange(v.custom.draftJson, key, None, t)\n\t\tself.refresh()"
+        },
+        {
+          "name": "acceptRest",
+          "params": [],
+          "script": "\tv = self.view\n\tv.custom.draftJson = BlueRidge.Quality.ControlledRun.entryAcceptRest(v.custom.draftJson, v.params.leftOver)\n\tself.refresh()"
+        },
+        {
+          "name": "clearDraft",
+          "params": [],
+          "script": "\tv = self.view\n\tv.custom.draftJson = \"\"\n\tv.custom.remarks = \"\"\n\tv.custom.pane = \"tiles\"\n\tself.refresh()"
+        },
+        {
+          "name": "save",
+          "params": [],
+          "script": "\tv = self.view\n\tS = BlueRidge.Common.Session\n\tif not S.isElevated(self.session):\n\t\tS.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\", {\"action\": \"signin\"})\n\t\treturn\n\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (v.custom.busyUntil or 0):\n\t\treturn\n\tv.custom.busyUntil = nowMs + 2000\n\ttid = None\n\ttry:\n\t\ttid = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttid = None\n\tentries = BlueRidge.Quality.ControlledRun.entryToResults(v.params.memberId, v.custom.draftJson, v.custom.remarks)\n\tres = BlueRidge.Quality.ControlledRun.recordResults(v.params.runId, entries, self.session.custom.appUserId, tid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Results - %s\" % v.params.name)\n\tv.custom.busyUntil = 0\n\tif res and res.get(\"Status\"):\n\t\tself.clearDraft()\n\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"runId\": v.params.runId}, scope=\"page\")"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "crEntryChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.change(payload)"
+        },
+        {
+          "messageType": "crEntryQtyKey",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.numpadKey(payload)"
+        },
+        {
+          "messageType": "crEntryNumpadOwner",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif (payload or {}).get(\"memberId\") != self.view.params.memberId and self.view.custom.pane == \"numpad\":\n\t\tself.view.custom.pane = \"tiles\""
+        }
+      ],
+      "extensionFunctions": null
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 460,
+      "width": 1280
+    }
+  }
+}

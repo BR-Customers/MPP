@@ -37,7 +37,17 @@
      memberInstances(runId, selectedMemberId, _refreshToken=None)
      previewEncode(rows) / previewInstances(rowsJson) / previewTotals(rowsJson)
      previewToggle(rowsJson, index) / previewSetAll(rowsJson, ticked)
-     previewTicked(rowsJson)"""
+     previewTicked(rowsJson)
+
+   Pieces 2 + 3 (results, signed release, deviation) - see the section at the
+   end of this module:
+     listMemberResults / listResults / listDeviations / listSignatures
+     recordResults / acceptRemaining / voidResult
+     raiseDeviation / release (both take THE SIGNER, never the session user)
+     resultItems (accordion) / resultLogInstances
+     entryCatalog / entryModel / entryChange / entryAcceptRest / entryToResults
+     releaseInstances / tickToggle / tickAllReady / tickSummary
+     deviationInstances / signatureInstances"""
 
 _EMPTY_RUN = {
     "Id": None, "RunNumber": "", "StatusCode": "", "Reason": "",
@@ -473,3 +483,504 @@ def previewSetAll(rowsJson, ticked):
 def previewTicked(rowsJson):
     """The rows to send to open(): ticked AND eligible."""
     return [r for r in _previewRows(rowsJson) if r.get("Ticked") and r.get("Eligible")]
+
+
+# =============================================================================
+# Pieces 2 + 3: inspection results, signed release, deviation.
+# Spec: docs/superpowers/specs/2026-10-12-controlled-run-results-and-signoff-design.md
+#
+# THIN WRAPPERS. What an entry does (real scrap on a LOT, recorded-only on a
+# container), what may be voided, whether a member is ready to release and why
+# not, are all decided in the Quality.ControlledRun* procs and returned as
+# columns (LeftOver, HasResult, ReleaseBlockReason, CanVoid, IsApplied).
+#
+# WHO: results / void take the Quality sign-in user (the view passes
+# session.custom.appUserId inside an elevation window). release() and
+# raiseDeviation() take THE SIGNER -- the id AppUser.elevate() just returned
+# for a password typed at that moment. Never the session user.
+# =============================================================================
+
+_OUTCOMES = [                      # (key = Quality.DispositionCode.Code, tile label)
+    ("Accepted",         "Accepted"),
+    ("Rework",           "Rework"),
+    ("ReturnToSupplier", "Return to vendor"),
+    ("UseAsIs",          "Use as is"),
+]
+_OUTCOME_LABEL = dict(_OUTCOMES)
+
+_EMPTY_ENTRY_MODEL = {"outcomeTiles": [], "reasonTiles": [], "lines": [], "total": 0,
+                      "moreCount": 0, "scrap": 0, "summary": "", "canSave": False}
+
+
+def listMemberResults(runId, _refreshToken=None):
+    """Current members with what the inspection has recorded against each."""
+    runId = _u(runId)
+    if not runId:
+        return []
+    return BlueRidge.Common.Db.execList("quality/ControlledRun_ListMemberResults", {"id": runId}) or []
+
+
+def listResults(runId, includeVoided=False, _refreshToken=None):
+    runId = _u(runId)
+    if not runId:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "quality/ControlledRunResult_ListByRun",
+        {"id": runId, "includeVoided": 1 if _u(includeVoided) else 0}) or []
+
+
+def recordResults(runId, entries, appUserId, terminalLocationId):
+    """entries: [{memberId, dispositionCode, quantity, defectCodeId, remarks}].
+       Returns {Status, Message, NewId}."""
+    BlueRidge.Common.Util.log("recordResults runId=%s entries=%s" % (runId, len(_u(entries) or [])))
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
+    return BlueRidge.Common.Db.execMutation("quality/ControlledRunResult_Record", {
+        "controlledRunId": _u(runId), "resultsJson": system.util.jsonEncode(_u(entries) or []),
+        "appUserId": appUserId, "terminalLocationId": _u(terminalLocationId)})
+
+
+def remainingCount(runId, _refreshToken=None):
+    """How many current members have nothing recorded yet (the number on the
+       'Mark the rest as all accepted' button). HasResult comes from SQL."""
+    return len([r for r in listMemberResults(runId) if not r.get("HasResult")])
+
+
+def acceptRemaining(runId, appUserId, terminalLocationId):
+    """One Accepted entry, for everything left over, on every member SQL reports
+       as having no result yet. One call, all or nothing."""
+    entries = []
+    for r in listMemberResults(runId):
+        left = int(r.get("LeftOver") or 0)
+        if not r.get("HasResult") and left > 0:
+            entries.append({"memberId": r.get("MemberId"), "dispositionCode": "Accepted", "quantity": left})
+    if not entries:
+        return {"Status": 0, "Message": "Every member already has a result.", "NewId": None}
+    return recordResults(runId, entries, appUserId, terminalLocationId)
+
+
+def voidResult(resultId, remarks, appUserId, terminalLocationId):
+    BlueRidge.Common.Util.log("voidResult resultId=%s" % resultId)
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
+    return BlueRidge.Common.Db.execMutation("quality/ControlledRunResult_Void", {
+        "resultId": _u(resultId), "remarks": _u(remarks),
+        "appUserId": appUserId, "terminalLocationId": _u(terminalLocationId)})
+
+
+def signatureStatement(meaningCode):
+    """The exact words shown before signing ('' if unknown). The signing procs
+       store this same text on Quality.Signature."""
+    row = BlueRidge.Common.Db.execOne("quality/SignatureMeaning_Get", {"code": _u(meaningCode)})
+    return (row or {}).get("Statement") or ""
+
+
+def raiseDeviation(runId, data, signerAppUserId, terminalLocationId):
+    """data: {description, justification, defectCodeId, affectedQuantity,
+       externalReference}. signerAppUserId is the user who just typed a password."""
+    BlueRidge.Common.Util.log("raiseDeviation runId=%s" % runId)
+    signerAppUserId = BlueRidge.Common.Util.requireAppUserId(signerAppUserId)
+    d = _u(data) or {}
+    return BlueRidge.Common.Db.execMutation("quality/ControlledRunDeviation_Raise", {
+        "controlledRunId":   _u(runId),
+        "description":       d.get("description"),
+        "justification":     d.get("justification"),
+        "defectCodeId":      BlueRidge.Common.Util.toIntOrNone(d.get("defectCodeId")),
+        "affectedQuantity":  BlueRidge.Common.Util.toIntOrNone(d.get("affectedQuantity")),
+        "externalReference": d.get("externalReference") or None,
+        "appUserId":         signerAppUserId,
+        "terminalLocationId": _u(terminalLocationId)})
+
+
+def release(runId, memberIds, inspectionConfirmed, remarks, signerAppUserId, terminalLocationId):
+    """Signed bulk release. memberIds: list of member ids, or the JSON string the
+       Sign-off tab keeps. No AIM call here on purpose: clearing the tags returns
+       a held serial to the owed-to-AIM list and the existing sweep posts it."""
+    BlueRidge.Common.Util.log("release runId=%s" % runId)
+    signerAppUserId = BlueRidge.Common.Util.requireAppUserId(signerAppUserId)
+    ids = _u(memberIds)
+    if isinstance(ids, basestring):
+        ids = _tickIds(ids)
+    return BlueRidge.Common.Db.execMutation("quality/ControlledRun_Release", {
+        "id": _u(runId), "memberIdsJson": system.util.jsonEncode(list(ids or [])),
+        "inspectionConfirmed": 1 if _u(inspectionConfirmed) else 0, "remarks": _u(remarks) or None,
+        "appUserId": signerAppUserId, "terminalLocationId": _u(terminalLocationId)})
+
+
+def listDeviations(runId, _refreshToken=None):
+    runId = _u(runId)
+    if not runId:
+        return []
+    return BlueRidge.Common.Db.execList("quality/ControlledRunDeviation_ListByRun", {"id": runId}) or []
+
+
+def listSignatures(runId, _refreshToken=None):
+    runId = _u(runId)
+    if not runId:
+        return []
+    return BlueRidge.Common.Db.execList("quality/ControlledRun_ListSignatures", {"id": runId}) or []
+
+
+def defectOptions():
+    """[{label, value}] of defect reasons for the deviation form."""
+    return [{"label": o.get("label"), "value": o.get("value")}
+            for o in (BlueRidge.Quality.DefectCode.getForDropdown() or [])]
+
+
+# ---- Results tab: the accordion ---------------------------------------------
+
+_RESULT_HEADER_VIEW = "BlueRidge/Components/PlantFloor/ControlledRunResultHeader"
+_RESULT_BODY_VIEW   = "BlueRidge/Components/PlantFloor/ControlledRunResultEntry"
+
+
+def _expandedIds(currentItems):
+    """Member ids whose accordion item is open right now. The component's own
+       toggle writes props.items[i].expanded; a reload must carry that over
+       instead of resetting it (spec D10). currentItems arrives as a live
+       property wrapper, so it is read defensively and never kept."""
+    out = set()
+    try:
+        for it in (currentItems or []):
+            try:
+                if it["expanded"]:
+                    out.add(int(it["body"]["viewParams"]["memberId"]))
+            except:
+                pass
+    except:
+        pass
+    return out
+
+
+def resultItems(runId, currentItems, runOpen, token):
+    """props.items for the Results accordion: one item per current member.
+       header = the summary row view, body = the entry form view. `token` is
+       passed into the body so a saved result reloads its numbers."""
+    keep = _expandedIds(currentItems)
+    isOpen = bool(_u(runOpen))
+    items = []
+    for r in listMemberResults(runId):
+        mid = r.get("MemberId")
+        left = int(r.get("LeftOver") or 0)
+        row = {
+            "memberId": mid,
+            "name":     r.get("DisplayName") or "",
+            "part":     r.get("PartNumber") or "",
+            "pieces":   int(r.get("PieceCount") or 0),
+            "accepted": int(r.get("AcceptedQty") or 0),
+            "scrap":    int(r.get("ScrapQty") or 0),
+            "rework":   int(r.get("ReworkQty") or 0),
+            "returned": int(r.get("ReturnQty") or 0),
+            "useAsIs":  int(r.get("UseAsIsQty") or 0),
+            "leftOver": left,
+            "hasResult": bool(r.get("HasResult")),
+        }
+        items.append({
+            "expanded": mid in keep,
+            "header": {
+                "content": {"type": "view", "text": "", "viewPath": _RESULT_HEADER_VIEW,
+                            "viewParams": {"row": row},
+                            "useDefaultViewHeight": False, "useDefaultViewWidth": False,
+                            "style": {"classes": ""}},
+                "height": "52px", "reverse": False, "style": {"classes": "crt-acc-header"},
+                "toggle": {"enabled": True,
+                           "collapsedIcon": {"path": "material/expand_more", "color": "", "style": {"classes": ""}},
+                           "expandedIcon":  {"path": "material/expand_less", "color": "", "style": {"classes": ""}}},
+            },
+            "body": {
+                "viewPath": _RESULT_BODY_VIEW,
+                "viewParams": {
+                    "runId": _u(runId), "memberId": mid, "name": row["name"],
+                    "isContainer": (r.get("Kind") == "Container"),
+                    "pieces": row["pieces"], "leftOver": left,
+                    "rankLocationId": r.get("RankLocationId"),
+                    "runOpen": isOpen, "token": _u(token) or 0,
+                },
+                "height": "auto", "useDefaultViewHeight": True, "useDefaultViewWidth": False,
+                "style": {"classes": "crt-acc-body", "margin": "0px"},
+            },
+        })
+    return items
+
+
+def resultLogInstances(runId, _refreshToken=None):
+    """Flex-repeater instances for the entry log under the accordion."""
+    out = []
+    for r in listResults(runId, False):
+        defect = " ".join([x for x in (r.get("DefectCode"), r.get("DefectDescription")) if x])
+        if r.get("DispositionCode") == "Scrap":
+            state = "Applied" if r.get("IsApplied") else "Not yet applied"
+        else:
+            state = ""
+        out.append({
+            "resultId": r.get("ResultId"),
+            "when":     _fmt(r.get("RecordedAt"), "EEE HH:mm"),
+            "member":   r.get("DisplayName") or "",
+            "outcome":  _OUTCOME_LABEL.get(r.get("DispositionCode"), r.get("DispositionName") or ""),
+            "quantity": int(r.get("Quantity") or 0),
+            "defect":   defect,
+            "by":       r.get("RecordedByInitials") or "",
+            "remarks":  r.get("Remarks") or "",
+            "state":    state,
+            "canVoid":  bool(r.get("CanVoid")),
+        })
+    return out
+
+
+# ---- Results tab: one member's entry form -----------------------------------
+# The draft is a JSON STRING in the body view's custom props (a list of dicts in
+# view.custom fed to a repeater renders nothing): {"lines": [{"key", "quantity"}]}.
+# key = a disposition code for a count, or "D<defectCodeId>" for a scrap reason.
+# One key == one line, so a second tap adds to the line instead of duplicating it.
+
+def _draftLines(draftJson):
+    t = _u(draftJson)
+    if not t:
+        return []
+    try:
+        d = system.util.jsonDecode(t) or {}
+        out = []
+        for l in (d.get("lines") or []):
+            q = BlueRidge.Common.Util.toIntOrNone(l.get("quantity")) or 0
+            if l.get("key") and q > 0:
+                out.append({"key": "%s" % l.get("key"), "quantity": q})
+        return out
+    except:
+        return []
+
+
+def _draftJson(lines):
+    return system.util.jsonEncode({"lines": lines})
+
+
+def entryChange(draftJson, key, delta=None, quantity=None):
+    """Tile tap / stepper (delta) or keyed quantity / remove (quantity). Returns
+       the new draft JSON. A quantity of 0 or less drops the line."""
+    key = _u(key)
+    lines = _draftLines(draftJson)
+    if not key:
+        return _draftJson(lines)
+    key = "%s" % key
+    cur = 0
+    for l in lines:
+        if l["key"] == key:
+            cur = l["quantity"]
+    if _u(quantity) is not None and _u(quantity) != "":
+        target = BlueRidge.Common.Util.toIntOrNone(_u(quantity)) or 0
+    else:
+        target = cur + (BlueRidge.Common.Util.toIntOrNone(_u(delta)) or 0)
+    target = max(0, min(target, 99999))
+    out, seen = [], False
+    for l in lines:
+        if l["key"] != key:
+            out.append(l)
+            continue
+        seen = True
+        if target > 0:
+            out.append({"key": key, "quantity": target})
+    if not seen and target > 0:
+        out.append({"key": key, "quantity": target})
+    return _draftJson(out)
+
+
+def entryAcceptRest(draftJson, leftOver):
+    """Put whatever is not yet accounted for into Accepted."""
+    lines = _draftLines(draftJson)
+    entered = sum(l["quantity"] for l in lines)
+    rest = (BlueRidge.Common.Util.toIntOrNone(_u(leftOver)) or 0) - entered
+    if rest <= 0:
+        return _draftJson(lines)
+    cur = 0
+    for l in lines:
+        if l["key"] == "Accepted":
+            cur = l["quantity"]
+    return entryChange(_draftJson(lines), "Accepted", None, cur + rest)
+
+
+def entryCatalog(rankLocationId):
+    """Scrap reasons for the tiles, most used at that location first. No
+       operation filter: an inspection is not an operation."""
+    return BlueRidge.Quality.DefectCode.getForTilesRanked(_u(rankLocationId), None)
+
+
+def entryModel(memberId, catalog, draftJson, showAll, leftOver, isContainer):
+    """Everything the entry form renders, in one pass. Always fully shaped."""
+    m = dict(_EMPTY_ENTRY_MODEL)
+    mid = _u(memberId)
+    lines = _draftLines(draftJson)
+    counts = dict((l["key"], l["quantity"]) for l in lines)
+    showAll = bool(_u(showAll))
+    left = BlueRidge.Common.Util.toIntOrNone(_u(leftOver)) or 0
+
+    m["outcomeTiles"] = [{
+        "memberId": mid, "key": k, "label": label, "sub": "",
+        "quantity": counts.get(k, 0), "selected": counts.get(k, 0) > 0,
+    } for (k, label) in _OUTCOMES]
+
+    names, reasonTiles, more = {}, [], 0
+    for t in (_u(catalog) or []):
+        did = BlueRidge.Common.Util.toIntOrNone(t.get("defectCodeId"))
+        if did is None:
+            continue
+        key = "D%d" % did
+        names[key] = (t.get("code") or "", t.get("description") or "")
+        primary = bool(t.get("isPrimary"))
+        if not primary:
+            more += 1
+        q = counts.get(key, 0)
+        if not (showAll or primary or q > 0):
+            continue
+        reasonTiles.append({"memberId": mid, "key": key, "label": t.get("description") or "",
+                            "sub": t.get("code") or "", "quantity": q, "selected": q > 0})
+    m["reasonTiles"] = reasonTiles
+    m["moreCount"] = more
+
+    outLines, scrap = [], 0
+    for l in lines:
+        k = l["key"]
+        if k in _OUTCOME_LABEL:
+            title, sub = _OUTCOME_LABEL[k], ("needs a signed deviation" if k == "UseAsIs" else "")
+        else:
+            code, desc = names.get(k, (k, ""))
+            title, sub = code, desc
+            scrap += l["quantity"]
+        outLines.append({"memberId": mid, "key": k, "title": title, "sub": sub, "quantity": l["quantity"]})
+    m["lines"] = outLines
+    total = sum(l["quantity"] for l in lines)
+    m["total"] = total
+    m["scrap"] = scrap
+    m["canSave"] = total > 0
+
+    bits = ["%d entered, %d left over" % (total, left - total)]
+    if scrap > 0:
+        bits.append("%d scrap is recorded but stays in the container until it is repacked" % scrap
+                    if _u(isContainer) else "%d scrap comes off this LOT when you save" % scrap)
+    m["summary"] = ". ".join(bits) + "."
+    return m
+
+
+def entryToResults(memberId, draftJson, remarks):
+    """Draft -> the entries recordResults() takes."""
+    out = []
+    rem = (_u(remarks) or "").strip() or None
+    for l in _draftLines(draftJson):
+        k = l["key"]
+        if k in _OUTCOME_LABEL:
+            out.append({"memberId": _u(memberId), "dispositionCode": k, "quantity": l["quantity"], "remarks": rem})
+        else:
+            out.append({"memberId": _u(memberId), "dispositionCode": "Scrap", "quantity": l["quantity"],
+                        "defectCodeId": BlueRidge.Common.Util.toIntOrNone(k[1:]), "remarks": rem})
+    return out
+
+
+def entryLineLabel(draftJson, key, catalog):
+    """Label for the number pad: what is being keyed."""
+    for l in entryModel(None, catalog, draftJson, True, 0, False)["lines"]:
+        if l["key"] == _u(key):
+            return ("%s %s" % (l["title"], l["sub"])).strip()
+    k = _u(key)
+    return _OUTCOME_LABEL.get(k, "")
+
+
+# ---- Sign-off tab -----------------------------------------------------------
+# The ticked members are kept as a JSON STRING of ids in the tab's custom props.
+
+def _tickIds(tickedJson):
+    t = _u(tickedJson)
+    if not t:
+        return []
+    try:
+        return [int(x) for x in (system.util.jsonDecode(t) or [])]
+    except:
+        return []
+
+
+def _resultText(r):
+    parts = []
+    for label, col in (("accepted", "AcceptedQty"), ("scrap", "ScrapQty"), ("rework", "ReworkQty"),
+                       ("return", "ReturnQty"), ("use as is", "UseAsIsQty")):
+        q = int(r.get(col) or 0)
+        if q:
+            parts.append("%d %s" % (q, label))
+    return ", ".join(parts) or "-"
+
+
+def releaseInstances(runId, tickedJson, _refreshToken=None):
+    """Flex-repeater instances for the release list. 'ready' is SQL's verdict
+       (ReleaseBlockReason IS NULL); a tick on a member that is not ready is
+       dropped here so the count can never include one."""
+    ticked = set(_tickIds(tickedJson))
+    out = []
+    for r in listMemberResults(runId):
+        reason = r.get("ReleaseBlockReason") or ""
+        ready = not reason
+        out.append({
+            "memberId": r.get("MemberId"),
+            "kind":     (r.get("Kind") or "").upper(),
+            "name":     r.get("DisplayName") or "",
+            "pieces":   int(r.get("PieceCount") or 0),
+            "results":  _resultText(r),
+            "leftOver": int(r.get("LeftOver") or 0),
+            "ready":    ready,
+            "reason":   reason,
+            "tagged":   bool(r.get("CrtActive")),
+            "ticked":   ready and r.get("MemberId") in ticked,
+        })
+    return out
+
+
+def tickToggle(runId, tickedJson, memberId):
+    """Flip one member's tick; only a ready member can be ticked."""
+    mid = BlueRidge.Common.Util.toIntOrNone(_u(memberId))
+    ids = _tickIds(tickedJson)
+    if mid in ids:
+        ids.remove(mid)
+    else:
+        for r in listMemberResults(runId):
+            if r.get("MemberId") == mid and not r.get("ReleaseBlockReason"):
+                ids.append(mid)
+    return system.util.jsonEncode(ids)
+
+
+def tickAllReady(runId):
+    return system.util.jsonEncode(
+        [r.get("MemberId") for r in listMemberResults(runId) if not r.get("ReleaseBlockReason")])
+
+
+def tickSummary(runId, tickedJson, _refreshToken=None):
+    """{count, pieces, names, ready} for the ticked members that are STILL ready.
+       Always the full shape."""
+    out = {"count": 0, "pieces": 0, "names": "", "ready": 0, "idsJson": "[]"}
+    ticked = set(_tickIds(tickedJson))
+    names, ids = [], []
+    for r in listMemberResults(runId):
+        if r.get("ReleaseBlockReason"):
+            continue
+        out["ready"] += 1
+        if r.get("MemberId") in ticked:
+            ids.append(r.get("MemberId"))
+            out["count"] += 1
+            out["pieces"] += int(r.get("PieceCount") or 0)
+            names.append(r.get("DisplayName") or "")
+    out["names"] = ", ".join(names[:8]) + (" and %d more" % (len(names) - 8) if len(names) > 8 else "")
+    out["idsJson"] = system.util.jsonEncode(ids)
+    return out
+
+
+def deviationInstances(runId, _refreshToken=None):
+    out = []
+    for d in listDeviations(runId):
+        meta = "Signed by %s, %s" % (d.get("SignedByInitials") or "?", _fmt(d.get("RaisedAt"), "EEE MM/dd HH:mm"))
+        if d.get("ExternalReference"):
+            meta += " - MPP ref %s" % d.get("ExternalReference")
+        title = d.get("DeviationNumber") or ""
+        if d.get("AffectedQuantity"):
+            title += "  (%d pcs)" % int(d.get("AffectedQuantity"))
+        out.append({"title": title, "text": d.get("Description") or "", "meta": meta})
+    return out
+
+
+def signatureInstances(runId, _refreshToken=None):
+    out = []
+    for s in listSignatures(runId):
+        out.append({"title": s.get("Summary") or "",
+                    "text":  s.get("Statement") or "",
+                    "meta":  "%s, %s" % (s.get("SignedByInitials") or "?", _fmt(s.get("SignedAt"), "EEE MM/dd HH:mm"))})
+    return out

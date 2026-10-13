@@ -49,14 +49,18 @@
         "pieces": 0
       }
     },
+    "elevatedGrantedAt": null,
     "elevatedHardUntil": null,
     "elevatedUntil": null,
+    "elevationProfile": "",
     "lotTrail": [],
     "pendingElevatedAction": null,
     "plcDevices": [],
     "policy": {
       "elevationTimeoutSeconds": 300,
-      "operatorPresenceTimeoutSeconds": 180
+      "operatorPresenceTimeoutSeconds": 180,
+      "qualityElevationMaxSeconds": 14400,
+      "qualityElevationTimeoutSeconds": 1800
     },
     "presence": {
       "policy": "confirm"

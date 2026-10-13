@@ -1,0 +1,639 @@
+{
+  "custom": {
+    "tickedJson": "[]",
+    "deviations": [],
+    "summary": {
+      "count": 0,
+      "pieces": 0,
+      "names": "",
+      "ready": 0,
+      "idsJson": "[]"
+    }
+  },
+  "params": {
+    "runId": null,
+    "runNumber": "",
+    "runOpen": false,
+    "token": 0
+  },
+  "propConfig": {
+    "params.runId": {
+      "paramDirection": "input"
+    },
+    "params.runNumber": {
+      "paramDirection": "input"
+    },
+    "params.runOpen": {
+      "paramDirection": "input"
+    },
+    "params.token": {
+      "paramDirection": "input"
+    },
+    "custom.summary": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.tickSummary\", 0, if(isNull({view.params.runId}), 0, {view.params.runId}), {view.custom.tickedJson}, {view.params.token})"
+        }
+      }
+    },
+    "custom.deviations": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.deviationInstances\", 0, if(isNull({view.params.runId}), 0, {view.params.runId}), {view.params.token})"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "stretch",
+      "style": {
+        "gap": "18px",
+        "overflow": "hidden",
+        "height": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ReleaseCol"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 3
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "gap": "10px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ReleaseStrip"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ReleaseHeader"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "text": "Release",
+                  "style": {
+                    "fontSize": "12px",
+                    "fontWeight": "700",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "TickAllButton"
+                },
+                "position": {
+                  "basis": "190px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "'Tick all ready (' + toStr({view.custom.summary.ready}) + ')'"
+                      }
+                    }
+                  },
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.params.runOpen} && {view.custom.summary.ready} > 0"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.custom.tickedJson = BlueRidge.Quality.ControlledRun.tickAllReady(self.view.params.runId)"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "ReleaseButton"
+                },
+                "position": {
+                  "basis": "210px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "'Release ticked (' + toStr({view.custom.summary.count}) + ')'"
+                      }
+                    }
+                  },
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.params.runOpen} && {view.custom.summary.count} > 0"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tv = self.view\n\ttid = None\n\ttry:\n\t\ttid = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttid = None\n\tsystem.perspective.openPopup(\"mpp-controlled-run-release\", \"BlueRidge/Components/Popups/ControlledRunRelease\",\n\t\tparams={\"popupId\": \"mpp-controlled-run-release\", \"runId\": v.params.runId, \"runNumber\": v.params.runNumber,\n\t\t\t\"memberIdsJson\": v.custom.summary.idsJson, \"count\": v.custom.summary.count,\n\t\t\t\"pieces\": v.custom.summary.pieces, \"names\": v.custom.summary.names, \"terminalLocationId\": tid},\n\t\tposition={\"width\": \"720px\", \"height\": \"86%\"}, modal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ReleaseHeaderRow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "crt-list-header",
+                "gap": "12px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "RH0"
+                },
+                "position": {
+                  "basis": "40px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": ""
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "RH1"
+                },
+                "position": {
+                  "basis": "84px",
+                  "shrink": 1
+                },
+                "props": {
+                  "text": "Kind"
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "RH2"
+                },
+                "position": {
+                  "basis": "190px",
+                  "shrink": 1
+                },
+                "props": {
+                  "text": "Member"
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "RH3"
+                },
+                "position": {
+                  "basis": "64px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Pieces",
+                  "style": {
+                    "fontVariantNumeric": "tabular-nums",
+                    "textAlign": "right"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "RH4"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "text": "Results"
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "RH5"
+                },
+                "position": {
+                  "basis": "230px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Ready?"
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "ReleaseRepeater"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Quality.ControlledRun.releaseInstances\", 0, if(isNull({view.params.runId}), 0, {view.params.runId}), {view.custom.tickedJson}, {view.params.token})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "useDefaultViewWidth": false,
+              "useDefaultViewHeight": true,
+              "elementPosition": {
+                "basis": "48px",
+                "shrink": 0
+              },
+              "elementStyle": {
+                "overflow": "hidden"
+              },
+              "path": "BlueRidge/Components/PlantFloor/ControlledRunReleaseRow",
+              "style": {
+                "overflowY": "auto"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ReleaseFoot"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "A member needs at least one result before it can be released. Use as is needs a signed deviation first. Releasing clears the Controlled Run Tag; closing the super-lot is a separate step.",
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-tertiary)",
+                "whiteSpace": "normal"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "SideCol"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 2
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "gap": "10px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "DevStrip"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "DevHeader"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "text": "Deviations",
+                  "style": {
+                    "fontSize": "12px",
+                    "fontWeight": "700",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "RaiseButton"
+                },
+                "position": {
+                  "basis": "190px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.params.runOpen}"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary"
+                  },
+                  "text": "Raise deviation"
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tv = self.view\n\ttid = None\n\ttry:\n\t\ttid = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttid = None\n\tsystem.perspective.openPopup(\"mpp-controlled-run-deviation\", \"BlueRidge/Components/Popups/ControlledRunDeviation\",\n\t\tparams={\"popupId\": \"mpp-controlled-run-deviation\", \"runId\": v.params.runId, \"runNumber\": v.params.runNumber,\n\t\t\t\"terminalLocationId\": tid},\n\t\tposition={\"width\": \"900px\", \"height\": \"86%\"}, modal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "DevEmpty"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.deviations}) = 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "No deviation has been signed on this super-lot.",
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "DevRepeater"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.deviations"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.deviations}) > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "useDefaultViewWidth": false,
+              "useDefaultViewHeight": true,
+              "elementPosition": {
+                "basis": "84px",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/ControlledRunInfoRow",
+              "style": {
+                "overflowY": "auto",
+                "gap": "6px"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SigHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Signatures on this super-lot",
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "700",
+                "letterSpacing": "0.06em",
+                "textTransform": "uppercase",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "SigRepeater"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Quality.ControlledRun.signatureInstances\", 0, if(isNull({view.params.runId}), 0, {view.params.runId}), {view.params.token})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "useDefaultViewWidth": false,
+              "useDefaultViewHeight": true,
+              "elementPosition": {
+                "basis": "84px",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/ControlledRunInfoRow",
+              "style": {
+                "overflowY": "auto",
+                "gap": "6px"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SeamNotice"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Any network account registered in the MES can sign today. Signing will be limited to Quality once plant AD roles exist.",
+              "style": {
+                "classes": "pf-pill pf-pill-warn",
+                "whiteSpace": "normal",
+                "borderRadius": "10px",
+                "padding": "8px 12px",
+                "textTransform": "none",
+                "letterSpacing": "normal",
+                "fontSize": "13px"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [],
+      "messageHandlers": [
+        {
+          "messageType": "crReleaseTick",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tv = self.view\n\tif v.params.runOpen:\n\t\tv.custom.tickedJson = BlueRidge.Quality.ControlledRun.tickToggle(v.params.runId, v.custom.tickedJson, (payload or {}).get(\"memberId\"))"
+        },
+        {
+          "messageType": "controlledRunChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.tickedJson = \"[]\""
+        },
+        {
+          "messageType": "controlledRunSelect",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.tickedJson = \"[]\""
+        }
+      ],
+      "extensionFunctions": null
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 1300
+    }
+  }
+}

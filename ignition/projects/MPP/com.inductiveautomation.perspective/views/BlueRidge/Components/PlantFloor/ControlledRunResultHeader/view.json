@@ -1,0 +1,331 @@
+{
+  "custom": {},
+  "params": {
+    "row": {
+      "memberId": null,
+      "name": "",
+      "part": "",
+      "pieces": 0,
+      "accepted": 0,
+      "scrap": 0,
+      "rework": 0,
+      "returned": 0,
+      "useAsIs": 0,
+      "leftOver": 0,
+      "hasResult": false
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "gap": "12px",
+        "overflow": "hidden",
+        "padding": "0 12px",
+        "height": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_name"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "190px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.name"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-part crt-mono",
+            "overflow": "hidden"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_part"
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.part"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta",
+            "overflow": "hidden"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_pieces"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.pieces})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_accepted"
+        },
+        "position": {
+          "basis": "84px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.accepted})"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.accepted} = 0, 'var(--mpp-text-tertiary)', 'var(--mpp-text-primary)')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_scrap"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.scrap})"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.scrap} = 0, 'var(--mpp-text-tertiary)', 'var(--mpp-text-primary)')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_rework"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.rework})"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.rework} = 0, 'var(--mpp-text-tertiary)', 'var(--mpp-text-primary)')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_returned"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.returned})"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.returned} = 0, 'var(--mpp-text-tertiary)', 'var(--mpp-text-primary)')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_useAsIs"
+        },
+        "position": {
+          "basis": "84px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.useAsIs})"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.useAsIs} = 0, 'var(--mpp-text-tertiary)', 'var(--mpp-text-primary)')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_leftOver"
+        },
+        "position": {
+          "basis": "84px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.leftOver})"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.leftOver} = 0, 'var(--mpp-state-good-fg)', if({view.params.row.hasResult}, 'var(--mpp-state-warn-fg)', 'var(--mpp-text-tertiary)'))"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right",
+            "fontWeight": "700"
+          }
+        }
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 52,
+      "width": 1200
+    }
+  }
+}

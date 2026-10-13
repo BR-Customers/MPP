@@ -1,7 +1,5 @@
 {
   "custom": {
-    "adAccount": "",
-    "password": "",
     "remarks": "",
     "scanText": "",
     "busy": false
@@ -13,7 +11,8 @@
     "runNumber": "",
     "memberId": null,
     "memberName": "",
-    "terminalLocationId": null
+    "terminalLocationId": null,
+    "resultId": null
   },
   "propConfig": {
     "params.popupId": {
@@ -35,6 +34,9 @@
       "paramDirection": "input"
     },
     "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "params.resultId": {
       "paramDirection": "input"
     }
   },
@@ -81,7 +83,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.params.action} = 'add', 'Add to ' + {view.params.runNumber}, if({view.params.action} = 'remove', 'Remove ' + {view.params.memberName}, if({view.params.action} = 'endWindow', 'End window - ' + {view.params.runNumber}, if({view.params.action} = 'resumeWindow', 'Resume adding new production - ' + {view.params.runNumber}, if({view.params.action} = 'close', 'Close super-lot ' + {view.params.runNumber}, if({view.params.action} = 'cancel', 'Cancel super-lot ' + {view.params.runNumber}, 'Confirm'))))))"
+                    "expression": "if({view.params.action} = 'add', 'Add to ' + {view.params.runNumber}, if({view.params.action} = 'remove', 'Remove ' + {view.params.memberName}, if({view.params.action} = 'endWindow', 'End window - ' + {view.params.runNumber}, if({view.params.action} = 'resumeWindow', 'Resume adding new production - ' + {view.params.runNumber}, if({view.params.action} = 'close', 'Close super-lot ' + {view.params.runNumber}, if({view.params.action} = 'cancel', 'Cancel super-lot ' + {view.params.runNumber}, if({view.params.action} = 'voidResult', 'Void ' + {view.params.memberName}, 'Confirm')))))))"
                   }
                 }
               }
@@ -126,7 +128,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.params.action} = 'add', 'Scan or type a LOT ticket or a container label. It is tagged CRT and added to this super-lot.', if({view.params.action} = 'remove', 'Removing a member does NOT release it. If it is still CRT-tagged it stays tagged until it is cleared.', if({view.params.action} = 'endWindow', 'New production will stop being tagged and added. The super-lot stays open for inspection and release.', if({view.params.action} = 'resumeWindow', 'New production of this part will be tagged CRT and added to this super-lot again.', if({view.params.action} = 'close', 'Closing states that every member has been dealt with. It is only possible once every member is cleared.', if({view.params.action} = 'cancel', 'Cancelling ends the grouping. It does NOT release the material: members that are CRT-tagged stay tagged.', ''))))))"
+                    "expression": "if({view.params.action} = 'add', 'Scan or type a LOT ticket or a container label. It is tagged CRT and added to this super-lot.', if({view.params.action} = 'remove', 'Removing a member does NOT release it. If it is still CRT-tagged it stays tagged until it is released or cleared.', if({view.params.action} = 'endWindow', 'New production will stop being tagged and added. The super-lot stays open for inspection and release.', if({view.params.action} = 'resumeWindow', 'New production of this part will be tagged CRT and added to this super-lot again.', if({view.params.action} = 'close', 'Closing states that every member has been dealt with. It is only possible once every member is released or cleared.', if({view.params.action} = 'cancel', 'Cancelling ends the grouping. It does NOT release the material: members that are CRT-tagged stay tagged.', if({view.params.action} = 'voidResult', 'The entry stops counting and stays on record as voided. Enter the right numbers again afterwards.', '')))))))"
                   }
                 }
               }
@@ -220,7 +222,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "{view.params.action} = 'remove' || {view.params.action} = 'close' || {view.params.action} = 'cancel'"
+                    "expression": "{view.params.action} = 'remove' || {view.params.action} = 'close' || {view.params.action} = 'cancel' || {view.params.action} = 'voidResult'"
                   }
                 }
               }
@@ -277,124 +279,6 @@
                 },
                 "props": {
                   "deferUpdates": false,
-                  "style": {
-                    "classes": "pf-field-input"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "AccountField"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "stretch",
-              "style": {
-                "classes": "pf-field",
-                "overflow": "visible"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "AccountFieldLabel"
-                },
-                "props": {
-                  "text": "Your network user name",
-                  "style": {
-                    "classes": "pf-field-label"
-                  }
-                }
-              },
-              {
-                "type": "ia.input.text-field",
-                "meta": {
-                  "name": "AccountInput"
-                },
-                "position": {
-                  "basis": "45px",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.adAccount",
-                        "bidirectional": true
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "deferUpdates": false,
-                  "placeholder": "domain\\username",
-                  "style": {
-                    "classes": "pf-field-input"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "PasswordField"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "stretch",
-              "style": {
-                "classes": "pf-field",
-                "overflow": "visible"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "PasswordFieldLabel"
-                },
-                "props": {
-                  "text": "Password",
-                  "style": {
-                    "classes": "pf-field-label"
-                  }
-                }
-              },
-              {
-                "type": "ia.input.password-field",
-                "meta": {
-                  "name": "PasswordInput"
-                },
-                "position": {
-                  "basis": "45px",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.password",
-                        "bidirectional": true
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "deferUpdates": false,
-                  "placeholder": "Password",
                   "style": {
                     "classes": "pf-field-input"
                   }
@@ -480,7 +364,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tpw = v.custom.password\n\t\tv.custom.password = \"\"   # cleared BEFORE the call: nothing below can leave it in the view\n\t\tel = BlueRidge.Location.AppUser.elevate(v.custom.adAccount, pw, \"ControlledRun\", tid)\n\t\tpw = None\n\t\tif not el or not el.get(\"success\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Not authorised\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")\n\t\t\treturn\n\t\tuid = el.get(\"appUserId\")\n\t\tCR = BlueRidge.Quality.ControlledRun\n\t\ta = v.params.action\n\t\tif a == \"add\":\n\t\t\tres = CR.addByScan(v.params.runId, v.custom.scanText, uid, tid)\n\t\telif a == \"remove\":\n\t\t\tres = CR.removeMember(v.params.memberId, v.custom.remarks, uid, tid)\n\t\telif a == \"endWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, False, uid, tid)\n\t\telif a == \"resumeWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, True, uid, tid)\n\t\telif a == \"close\":\n\t\t\tres = CR.close(v.params.runId, v.custom.remarks, uid, tid)\n\t\telif a == \"cancel\":\n\t\t\tres = CR.cancel(v.params.runId, v.custom.remarks, uid, tid)\n\t\telse:\n\t\t\tres = {\"Status\": 0, \"Message\": \"Unknown action.\"}\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot %s\" % v.params.runNumber)\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"runId\": v.params.runId}, scope=\"page\")\n\t\t\tif a == \"add\":\n\t\t\t\tv.custom.scanText = \"\"   # stay open: scan the next one (password is asked again by design)\n\t\t\telse:\n\t\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
+                    "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tS = BlueRidge.Common.Session\n\tif not S.isElevated(self.session):\n\t\tBlueRidge.Common.Notify.toast(\"Sign-in ended\", \"Your Quality sign-in has ended. Close this and try again.\", \"warning\")\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tuid = self.session.custom.appUserId    # the Quality sign-in user (elevation window)\n\t\tCR = BlueRidge.Quality.ControlledRun\n\t\ta = v.params.action\n\t\tif a == \"add\":\n\t\t\tres = CR.addByScan(v.params.runId, v.custom.scanText, uid, tid)\n\t\telif a == \"remove\":\n\t\t\tres = CR.removeMember(v.params.memberId, v.custom.remarks, uid, tid)\n\t\telif a == \"endWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, False, uid, tid)\n\t\telif a == \"resumeWindow\":\n\t\t\tres = CR.setAutoJoin(v.params.runId, True, uid, tid)\n\t\telif a == \"close\":\n\t\t\tres = CR.close(v.params.runId, v.custom.remarks, uid, tid)\n\t\telif a == \"cancel\":\n\t\t\tres = CR.cancel(v.params.runId, v.custom.remarks, uid, tid)\n\t\telif a == \"voidResult\":\n\t\t\tres = CR.voidResult(v.params.resultId, v.custom.remarks, uid, tid)\n\t\telse:\n\t\t\tres = {\"Status\": 0, \"Message\": \"Unknown action.\"}\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot %s\" % v.params.runNumber)\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"runId\": v.params.runId}, scope=\"page\")\n\t\t\tif a == \"add\":\n\t\t\t\tv.custom.scanText = \"\"   # stay open: scan the next one\n\t\t\telse:\n\t\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
                   }
                 }
               }
@@ -492,7 +376,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 560,
+      "height": 420,
       "width": 640
     }
   }

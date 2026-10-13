@@ -1,0 +1,498 @@
+{
+  "custom": {
+    "adAccount": "",
+    "password": "",
+    "remarks": "",
+    "confirmed": false,
+    "busy": false,
+    "statement": ""
+  },
+  "params": {
+    "popupId": "mpp-controlled-run-release",
+    "runId": null,
+    "runNumber": "",
+    "memberIdsJson": "[]",
+    "count": 0,
+    "pieces": 0,
+    "names": "",
+    "terminalLocationId": null
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.runId": {
+      "paramDirection": "input"
+    },
+    "params.runNumber": {
+      "paramDirection": "input"
+    },
+    "params.memberIdsJson": {
+      "paramDirection": "input"
+    },
+    "params.count": {
+      "paramDirection": "input"
+    },
+    "params.pieces": {
+      "paramDirection": "input"
+    },
+    "params.names": {
+      "paramDirection": "input"
+    },
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "custom.statement": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.signatureStatement\", 0, \"ControlledRunRelease\")"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Release ' + toStr({view.params.count}) + if({view.params.count} = 1, ' member', ' members') + ' - ' + {view.params.runNumber}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "classes": "modal-body",
+            "gap": "12px",
+            "overflowY": "auto"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "What"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.names} + ' - ' + toStr({view.params.pieces}) + ' pieces. Their Controlled Run Tag is cleared and they can be used and shipped again.'"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "14px",
+                "color": "var(--mpp-text-secondary)",
+                "whiteSpace": "normal"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Statement"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.statement"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "borderLeft": "4px solid var(--mpp-accent-60)",
+                "borderRadius": "8px",
+                "padding": "12px 14px",
+                "fontSize": "16px",
+                "whiteSpace": "normal"
+              }
+            }
+          },
+          {
+            "type": "ia.input.checkbox",
+            "meta": {
+              "name": "ConfirmCheck"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.selected": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.confirmed",
+                    "bidirectional": true
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "I confirm the statement above. Nothing is released without it.",
+              "style": {
+                "fontSize": "15px",
+                "fontWeight": "600"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "RemarksField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "RemarksFieldLabel"
+                },
+                "props": {
+                  "text": "Remarks (optional)",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-area",
+                "meta": {
+                  "name": "RemarksInput"
+                },
+                "position": {
+                  "basis": "70px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.remarks",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "AccountField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "AccountFieldLabel"
+                },
+                "props": {
+                  "text": "Your network user name",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "AccountInput"
+                },
+                "position": {
+                  "basis": "45px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.adAccount",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "domain\\username",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PasswordField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PasswordFieldLabel"
+                },
+                "props": {
+                  "text": "Password",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.password-field",
+                "meta": {
+                  "name": "PasswordInput"
+                },
+                "position": {
+                  "basis": "45px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.password",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "Password",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CredsNote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "A signature always asks for the password, even inside a Quality sign-in.",
+              "style": {
+                "fontSize": "12px",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          },
+          "justify": "flex-end"
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "basis": "110px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Cancel"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "SignButton"
+            },
+            "position": {
+              "basis": "200px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!{view.custom.busy} && {view.custom.confirmed} && len({view.custom.adAccount}) > 0 && len({view.custom.password}) > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              },
+              "text": "Sign and release"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tpw = v.custom.password\n\t\tv.custom.password = \"\"   # cleared BEFORE the call: nothing below can leave it in the view\n\t\tel = BlueRidge.Location.AppUser.elevate(v.custom.adAccount, pw, \"ControlledRunRelease\", tid)\n\t\tpw = None\n\t\tif not el or not el.get(\"success\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Not signed\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")\n\t\t\treturn\n\t\tsigner = el.get(\"appUserId\")   # THE SIGNER: straight to the proc, never onto the session\n\t\tres = BlueRidge.Quality.ControlledRun.release(v.params.runId, v.params.memberIdsJson, v.custom.confirmed, v.custom.remarks, signer, tid)\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot %s\" % v.params.runNumber)\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"runId\": v.params.runId}, scope=\"page\")\n\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 700,
+      "width": 720
+    }
+  }
+}

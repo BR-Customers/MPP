@@ -34,7 +34,8 @@
       "ClearedCount": 0,
       "PieceCount": 0,
       "CriteriaText": ""
-    }
+    },
+    "activeTab": "members"
   },
   "params": {},
   "propConfig": {
@@ -912,7 +913,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tsystem.perspective.openPopup(\"mpp-controlled-run-confirm\", \"BlueRidge/Components/Popups/ControlledRunConfirm\",\n\t\tparams={\"popupId\": \"mpp-controlled-run-confirm\", \"action\": \"add\",\n\t\t\t\"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t\t\"memberId\": None, \"memberName\": \"\",\n\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\tposition={\"width\": \"640px\", \"height\": \"78%\"},\n\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)"
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"add\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
                           }
                         }
                       }
@@ -949,7 +950,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tsystem.perspective.openPopup(\"mpp-controlled-run-confirm\", \"BlueRidge/Components/Popups/ControlledRunConfirm\",\n\t\tparams={\"popupId\": \"mpp-controlled-run-confirm\", \"action\": \"remove\",\n\t\t\t\"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t\t\"memberId\": self.view.custom.selectedMemberId, \"memberName\": self.view.custom.selectedMemberName,\n\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\tposition={\"width\": \"640px\", \"height\": \"78%\"},\n\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)"
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"remove\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": self.view.custom.selectedMemberId, \"memberName\": self.view.custom.selectedMemberName})"
                           }
                         }
                       }
@@ -1026,7 +1027,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tsystem.perspective.openPopup(\"mpp-controlled-run-confirm\", \"BlueRidge/Components/Popups/ControlledRunConfirm\",\n\t\tparams={\"popupId\": \"mpp-controlled-run-confirm\", \"action\": \"cancel\",\n\t\t\t\"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t\t\"memberId\": None, \"memberName\": \"\",\n\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\tposition={\"width\": \"640px\", \"height\": \"78%\"},\n\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)"
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"cancel\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
                           }
                         }
                       }
@@ -1063,7 +1064,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tsystem.perspective.openPopup(\"mpp-controlled-run-confirm\", \"BlueRidge/Components/Popups/ControlledRunConfirm\",\n\t\tparams={\"popupId\": \"mpp-controlled-run-confirm\", \"action\": \"endWindow\",\n\t\t\t\"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t\t\"memberId\": None, \"memberName\": \"\",\n\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\tposition={\"width\": \"640px\", \"height\": \"78%\"},\n\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)"
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"endWindow\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
                           }
                         }
                       }
@@ -1100,7 +1101,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tsystem.perspective.openPopup(\"mpp-controlled-run-confirm\", \"BlueRidge/Components/Popups/ControlledRunConfirm\",\n\t\tparams={\"popupId\": \"mpp-controlled-run-confirm\", \"action\": \"resumeWindow\",\n\t\t\t\"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t\t\"memberId\": None, \"memberName\": \"\",\n\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\tposition={\"width\": \"640px\", \"height\": \"78%\"},\n\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)"
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"resumeWindow\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
                           }
                         }
                       }
@@ -1145,7 +1146,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tsystem.perspective.openPopup(\"mpp-controlled-run-confirm\", \"BlueRidge/Components/Popups/ControlledRunConfirm\",\n\t\tparams={\"popupId\": \"mpp-controlled-run-confirm\", \"action\": \"close\",\n\t\t\t\"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t\t\"memberId\": None, \"memberName\": \"\",\n\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\tposition={\"width\": \"640px\", \"height\": \"78%\"},\n\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)"
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"close\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
                           }
                         }
                       }
@@ -1225,7 +1226,8 @@
                       "direction": "row",
                       "alignItems": "center",
                       "style": {
-                        "classes": "pf-tab pf-tab-active"
+                        "classes": "pf-tab",
+                        "cursor": "pointer"
                       }
                     },
                     "children": [
@@ -1241,7 +1243,28 @@
                           }
                         }
                       }
-                    ]
+                    ],
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.activeTab} = 'members', 'pf-tab pf-tab-active', 'pf-tab')"
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.activeTab = \"members\""
+                          }
+                        }
+                      }
+                    }
                   },
                   {
                     "type": "ia.container.flex",
@@ -1256,7 +1279,7 @@
                       "alignItems": "center",
                       "style": {
                         "classes": "pf-tab",
-                        "opacity": "0.45"
+                        "cursor": "pointer"
                       }
                     },
                     "children": [
@@ -1271,24 +1294,29 @@
                             "fontWeight": "600"
                           }
                         }
-                      },
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "TabResultsLater"
-                        },
-                        "props": {
-                          "text": "later piece",
-                          "style": {
-                            "fontSize": "11px",
-                            "marginLeft": "6px",
-                            "padding": "1px 6px",
-                            "border": "1px dashed var(--mpp-border-default)",
-                            "borderRadius": "6px"
+                      }
+                    ],
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.activeTab} = 'results', 'pf-tab pf-tab-active', 'pf-tab')"
                           }
                         }
                       }
-                    ]
+                    },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.activeTab = \"results\""
+                          }
+                        }
+                      }
+                    }
                   },
                   {
                     "type": "ia.container.flex",
@@ -1303,7 +1331,7 @@
                       "alignItems": "center",
                       "style": {
                         "classes": "pf-tab",
-                        "opacity": "0.45"
+                        "cursor": "pointer"
                       }
                     },
                     "children": [
@@ -1318,24 +1346,29 @@
                             "fontWeight": "600"
                           }
                         }
-                      },
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "TabSignOffLater"
-                        },
-                        "props": {
-                          "text": "later piece",
-                          "style": {
-                            "fontSize": "11px",
-                            "marginLeft": "6px",
-                            "padding": "1px 6px",
-                            "border": "1px dashed var(--mpp-border-default)",
-                            "borderRadius": "6px"
+                      }
+                    ],
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.activeTab} = 'signoff', 'pf-tab pf-tab-active', 'pf-tab')"
                           }
                         }
                       }
-                    ]
+                    },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.activeTab = \"signoff\""
+                          }
+                        }
+                      }
+                    }
                   },
                   {
                     "type": "ia.container.flex",
@@ -1521,7 +1554,17 @@
                       "text": ""
                     }
                   }
-                ]
+                ],
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'members'"
+                      }
+                    }
+                  }
+                }
               },
               {
                 "type": "ia.display.flex-repeater",
@@ -1538,6 +1581,14 @@
                       "type": "expr",
                       "config": {
                         "expression": "runScript(\"BlueRidge.Quality.ControlledRun.memberInstances\", 0, if(isNull({view.custom.selectedRunId}), 0, {view.custom.selectedRunId}), if(isNull({view.custom.selectedMemberId}), 0, {view.custom.selectedMemberId}), {view.custom.refreshToken})"
+                      }
+                    }
+                  },
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'members'"
                       }
                     }
                   }
@@ -1561,6 +1612,125 @@
                 }
               },
               {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "ResultsHost"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'results'"
+                      }
+                    }
+                  },
+                  "props.params.runId": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.selectedRunId"
+                      }
+                    }
+                  },
+                  "props.params.runOpen": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.run.StatusCode} = 'Open'"
+                      }
+                    }
+                  },
+                  "props.params.token": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.refreshToken"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunResults",
+                  "params": {
+                    "runId": null,
+                    "runOpen": false,
+                    "token": 0
+                  },
+                  "style": {
+                    "overflow": "hidden"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "SignOffHost"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'signoff'"
+                      }
+                    }
+                  },
+                  "props.params.runId": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.selectedRunId"
+                      }
+                    }
+                  },
+                  "props.params.runOpen": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.run.StatusCode} = 'Open'"
+                      }
+                    }
+                  },
+                  "props.params.token": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.refreshToken"
+                      }
+                    }
+                  },
+                  "props.params.runNumber": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.run.RunNumber"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunSignOff",
+                  "params": {
+                    "runId": null,
+                    "runOpen": false,
+                    "token": 0,
+                    "runNumber": ""
+                  },
+                  "style": {
+                    "overflow": "hidden"
+                  }
+                }
+              },
+              {
                 "type": "ia.display.label",
                 "meta": {
                   "name": "DetailFoot"
@@ -1569,10 +1739,20 @@
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Tap a row to select it. The arrow opens LOT Detail, where a LOT's tag is cleared until the sign-off piece is built.",
+                  "text": "Tap a row to select it. The arrow opens LOT Detail. Members are released with a signature on the Sign-off tab.",
                   "style": {
                     "fontSize": "13px",
                     "color": "var(--mpp-text-tertiary)"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'members'"
+                      }
+                    }
                   }
                 }
               }
@@ -1643,8 +1823,33 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tv = self.view\n\tv.custom.selectedMemberId = None\n\tv.custom.selectedMemberName = \"\"\n\tv.custom.refreshToken = (v.custom.refreshToken or 0) + 1"
+        },
+        {
+          "messageType": "controlledRunAction",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# Replayed by Common.Session.dispatchElevatedAction once a Quality sign-in window is\n\t# open (straight away when one already is). \"signin\" is a sign-in with nothing to\n\t# replay: the person repeats what they were doing.\n\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\ta = p.get(\"action\")\n\tif a in (\"add\", \"remove\", \"endWindow\", \"resumeWindow\", \"close\", \"cancel\", \"voidResult\"):\n\t\tsystem.perspective.openPopup(\"mpp-controlled-run-confirm\", \"BlueRidge/Components/Popups/ControlledRunConfirm\",\n\t\t\tparams={\"popupId\": \"mpp-controlled-run-confirm\", \"action\": a,\n\t\t\t\t\"runId\": p.get(\"runId\") or self.view.custom.selectedRunId,\n\t\t\t\t\"runNumber\": p.get(\"runNumber\") or self.view.custom.run.RunNumber,\n\t\t\t\t\"memberId\": p.get(\"memberId\"), \"memberName\": p.get(\"memberName\") or \"\",\n\t\t\t\t\"resultId\": p.get(\"resultId\"),\n\t\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\t\tposition={\"width\": \"640px\", \"height\": \"62%\"},\n\t\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)\n\telif a == \"signin\":\n\t\tBlueRidge.Common.Notify.toast(\"Signed in\", \"Quality sign-in is open. Carry on.\", \"success\")"
         }
       ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tBlueRidge.Common.Session.setElevationProfile(self.session, \"Quality\")"
+          }
+        },
+        "onShutdown": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tBlueRidge.Common.Session.setElevationProfile(self.session, \"\")"
+          }
+        }
+      }
     }
   },
   "props": {

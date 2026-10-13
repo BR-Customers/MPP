@@ -1,0 +1,434 @@
+{
+  "custom": {
+    "remaining": 0
+  },
+  "params": {
+    "runId": null,
+    "runOpen": false,
+    "token": 0
+  },
+  "propConfig": {
+    "params.runId": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.getChild(\"root\").reload()"
+      }
+    },
+    "params.runOpen": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.getChild(\"root\").reload()"
+      }
+    },
+    "params.token": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.getChild(\"root\").reload()"
+      }
+    },
+    "custom.remaining": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.remainingCount\", 0, if(isNull({view.params.runId}), 0, {view.params.runId}), {view.params.token})"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "gap": "10px",
+        "overflow": "hidden",
+        "height": "100%"
+      }
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.reload()"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Strip"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Hint"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "text": "Open a member to enter what the inspection found. Left over is what has not been accounted for yet; it does not have to reach zero.",
+              "style": {
+                "fontSize": "14px",
+                "color": "var(--mpp-text-secondary)",
+                "whiteSpace": "normal"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "AcceptRestAll"
+            },
+            "position": {
+              "basis": "330px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Mark the rest as all accepted (' + toStr({view.custom.remaining}) + ')'"
+                  }
+                }
+              },
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.runOpen} && {view.custom.remaining} > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tS = BlueRidge.Common.Session\n\tif not S.isElevated(self.session):\n\t\tS.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\", {\"action\": \"signin\"})\n\t\treturn\n\ttid = None\n\ttry:\n\t\ttid = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttid = None\n\tres = BlueRidge.Quality.ControlledRun.acceptRemaining(self.view.params.runId, self.session.custom.appUserId, tid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Results\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"runId\": self.view.params.runId}, scope=\"page\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ColumnHeader"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "crt-list-header",
+            "gap": "12px",
+            "padding": "0 12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_name"
+            },
+            "position": {
+              "grow": 1,
+              "basis": "190px",
+              "shrink": 1
+            },
+            "props": {
+              "text": "Member"
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_part"
+            },
+            "position": {
+              "basis": "150px",
+              "shrink": 1
+            },
+            "props": {
+              "text": "Part"
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_pieces"
+            },
+            "position": {
+              "basis": "70px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Pieces",
+              "style": {
+                "fontVariantNumeric": "tabular-nums",
+                "textAlign": "right"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_accepted"
+            },
+            "position": {
+              "basis": "84px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Accepted",
+              "style": {
+                "fontVariantNumeric": "tabular-nums",
+                "textAlign": "right"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_scrap"
+            },
+            "position": {
+              "basis": "70px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Scrap",
+              "style": {
+                "fontVariantNumeric": "tabular-nums",
+                "textAlign": "right"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_rework"
+            },
+            "position": {
+              "basis": "70px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Rework",
+              "style": {
+                "fontVariantNumeric": "tabular-nums",
+                "textAlign": "right"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_returned"
+            },
+            "position": {
+              "basis": "70px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Return",
+              "style": {
+                "fontVariantNumeric": "tabular-nums",
+                "textAlign": "right"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_useAsIs"
+            },
+            "position": {
+              "basis": "84px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Use as is",
+              "style": {
+                "fontVariantNumeric": "tabular-nums",
+                "textAlign": "right"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_leftOver"
+            },
+            "position": {
+              "basis": "84px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Left over",
+              "style": {
+                "fontVariantNumeric": "tabular-nums",
+                "textAlign": "right"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "H_toggle"
+            },
+            "position": {
+              "basis": "44px",
+              "shrink": 0
+            },
+            "props": {
+              "text": ""
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.accordion",
+        "meta": {
+          "name": "Accordion"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "items": [],
+          "style": {
+            "overflowY": "auto"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LogHeader"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Entries (newest first)",
+          "style": {
+            "fontSize": "12px",
+            "fontWeight": "700",
+            "letterSpacing": "0.06em",
+            "textTransform": "uppercase",
+            "color": "var(--mpp-text-tertiary)"
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "LogRepeater"
+        },
+        "position": {
+          "basis": "140px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Quality.ControlledRun.resultLogInstances\", 0, if(isNull({view.params.runId}), 0, {view.params.runId}), {view.params.token})"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "useDefaultViewWidth": false,
+          "useDefaultViewHeight": true,
+          "elementPosition": {
+            "basis": "42px",
+            "shrink": 0
+          },
+          "elementStyle": {
+            "overflow": "hidden"
+          },
+          "path": "BlueRidge/Components/PlantFloor/ControlledRunResultLogRow",
+          "style": {
+            "overflowY": "auto"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Foot"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Scrap on a LOT is taken off the LOT when you save, so it cannot be voided here. Scrap on a packed container is recorded but stays counted in the container until it is repacked.",
+          "style": {
+            "fontSize": "13px",
+            "color": "var(--mpp-text-tertiary)",
+            "whiteSpace": "normal"
+          }
+        }
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "reload",
+          "params": [],
+          "script": "\t# props.items is WRITTEN here, not bound: a binding would rebuild the list on every\n\t# refresh and reset each item's expanded flag, snapping shut the member being worked\n\t# on. resultItems() reads the flags the component's own toggle wrote and carries them\n\t# over by member id.\n\tacc = self.getChild(\"Accordion\")\n\tacc.props.items = BlueRidge.Quality.ControlledRun.resultItems(self.view.params.runId, acc.props.items, self.view.params.runOpen, self.view.params.token)"
+        }
+      ],
+      "messageHandlers": [],
+      "extensionFunctions": null
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 1300
+    }
+  }
+}
