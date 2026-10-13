@@ -2,7 +2,8 @@
 -- Repeatable:  R__Quality_ControlledRun_Cancel.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.1
+-- Version:     1.2
+-- Change Log:  2026-10-13 - 1.2 - Refused once a release has been signed on the super-lot.
 -- Description: Cancels a super-lot that should not have been opened. A reason is
 --              required. Ends every open membership (reason RunCancelled) and switches
 --              the window off, so the mint resolver stops tagging the part at once.
@@ -90,6 +91,22 @@ BEGIN
         IF @Remarks IS NULL
         BEGIN
             SET @Message = N'A reason is required to cancel a super-lot.';
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'ControlledRun',
+                    @EntityId = @Id, @LogEventTypeCode = N'ControlledRunCancelled',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- ---- 5. ----
+        -- Cancel says "this grouping should not have been opened". Once Quality has
+        -- SIGNED a release against it, that is no longer true: close it instead.
+        IF EXISTS (SELECT 1 FROM Quality.ControlledRunRelease WHERE ControlledRunId = @Id)
+        BEGIN
+            SET @Message = N'Super-lot ' + @RunNumber + N' has a signed release and cannot be cancelled. Close it instead.';
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'ControlledRun',

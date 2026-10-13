@@ -2,14 +2,16 @@
 -- Repeatable:  R__Quality_ControlledRun_Get.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.0
+-- Version:     1.1
+-- Change Log:  2026-10-13 - 1.1 - Totals count members that left by signed RELEASE,
+--                                 and a released member is cleared for good.
 -- Description: READ. One super-lot header with resolved names, totals and the
 --              selection criteria as a sentence (CriteriaText -- built here so
 --              no view or script assembles prose).
 --
 --              Totals count the members that are in the run now, or that left
---              it BECAUSE IT CLOSED (so a closed super-lot still reports what
---              it held). Members removed by hand, or ended by a cancel, are not
+--              it BECAUSE IT CLOSED or by a SIGNED RELEASE (so a super-lot still
+--              reports what it held). Members removed by hand, or ended by a cancel, are not
 --              counted. ClearedCount = members no longer CRT-tagged
 --              (Quality.ufn_ControlledRunMemberState).
 --
@@ -67,10 +69,13 @@ BEGIN
     LEFT JOIN Location.AppUser cu  ON cu.Id = r.ClosedByUserId
     OUTER APPLY (
         SELECT COUNT(*) AS MemberCount,
-               SUM(CASE WHEN ms.CrtActive = 0 THEN 1 ELSE 0 END) AS ClearedCount,
+               -- A RELEASED member counts as cleared for good: if the unit is tagged
+               -- again later for another reason, this super-lot's count must not drop.
+               SUM(CASE WHEN ms.CrtActive = 0 OR ms.ControlledRunMemberEndReasonId = 4 /* Released */
+                        THEN 1 ELSE 0 END) AS ClearedCount,
                SUM(ms.PieceCount) AS PieceCount
         FROM Quality.ufn_ControlledRunMemberState(r.Id) ms
-        WHERE ms.EndedAt IS NULL OR ms.ControlledRunMemberEndReasonId = 2 /* RunClosed */
+        WHERE ms.EndedAt IS NULL OR ms.ControlledRunMemberEndReasonId IN (2 /* RunClosed */, 4 /* Released */)
     ) tot
     WHERE r.Id = @Id;
 END;

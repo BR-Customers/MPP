@@ -2,9 +2,13 @@
 -- Repeatable:  R__Quality_ControlledRun_SyncInternal.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.1
+-- Version:     1.2
 -- Change Log:  2026-10-12 - 1.1 - Never re-adds a unit that was REMOVED from this
 --                                 super-lot by hand (final-review finding).
+--              2026-10-13 - 1.2 - ...nor one that left by signed RELEASE. If a
+--                                 released LOT is tagged again later for another
+--                                 reason, it must not drift back into the
+--                                 super-lot that already signed it off.
 -- Description: SILENT INTERNAL HELPER -- not called from Ignition. For ONE open
 --              super-lot, records the membership of material that is ALREADY
 --              CRT-tagged:
@@ -56,7 +60,8 @@ BEGIN
     INSERT INTO @Removed (LotId, ContainerId)
     SELECT m.LotId, m.ContainerId
     FROM Quality.ControlledRunMember m
-    WHERE m.ControlledRunId = @ControlledRunId AND m.ControlledRunMemberEndReasonId = 1 /* Removed */;
+    WHERE m.ControlledRunId = @ControlledRunId
+      AND m.ControlledRunMemberEndReasonId IN (1 /* Removed */, 4 /* Released (v1.2) */);
 
     BEGIN TRANSACTION;
 
