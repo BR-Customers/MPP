@@ -143,8 +143,15 @@ def completeHere(containerId, appUserId, terminalLocationId):
     res = resume(containerId, here, appUserId, terminalLocationId)
     if not res or not res.get("Status"):
         return res
-    done = BlueRidge.Lots.Container.complete(_int(containerId), operatorConfirmed=True,
-                                             appUserId=appUserId, terminalLocationId=_u(terminalLocationId))
+    # Container_Complete re-raises from its CATCH, so a failure can arrive as an
+    # exception as well as a Status 0. Either way the container must go back.
+    from java.lang import Throwable
+    try:
+        done = BlueRidge.Lots.Container.complete(_int(containerId), operatorConfirmed=True,
+                                                 appUserId=appUserId, terminalLocationId=_u(terminalLocationId))
+    except (Exception, Throwable) as e:
+        BlueRidge.Common.Util.log("completeHere: completion raised for container %s: %s" % (containerId, e), level="error")
+        done = {"Status": 0, "Message": "The container could not be completed: %s" % e}
     if not done or not done.get("Status"):
         back = setStage(containerId, "Filling", None, appUserId, terminalLocationId)
         if not back or not back.get("Status"):

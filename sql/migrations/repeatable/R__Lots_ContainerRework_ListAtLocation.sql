@@ -38,6 +38,11 @@ BEGIN
                  WHERE m.ContainerId = c.Id AND m.EndedAt IS NULL) run
     WHERE c.ContainerStatusCodeId = 7 /* ReworkFilling */
       AND c.CurrentLocationId IN (SELECT Id FROM Descendants)
+      -- Only what a line can finish: the gap is a whole number of trays (the same rule
+      -- Lots.ContainerRework_Resume enforces; the two must change together).
+      AND (cc.PartsPerTray IS NULL OR cc.PartsPerTray <= 0
+           OR ((cc.TraysPerContainer * cc.PartsPerTray) - ISNULL(acc.Pieces, 0) >= 0
+               AND ((cc.TraysPerContainer * cc.PartsPerTray) - ISNULL(acc.Pieces, 0)) % cc.PartsPerTray = 0))
     ORDER BY c.Id
     OPTION (MAXRECURSION 8);
 END;

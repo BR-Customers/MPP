@@ -357,10 +357,10 @@ SET @n = (SELECT CAST(Status AS NVARCHAR(1)) + N'|' + CASE WHEN Message LIKE N'%
 EXEC test.Assert_IsEqual @TestName = N'[Resume] a container still in processing cannot be picked up', @Expected = N'0|notyet', @Actual = @n;
 DELETE FROM @s;
 INSERT INTO @s EXEC Lots.ContainerRework_Resume @ContainerId = @ConA, @CellLocationId = @Line, @AppUserId = @App, @TerminalLocationId = @Term;
-SET @n = (SELECT CAST(s.Status AS NVARCHAR(1)) + N'|' + cs.Code + N'|' + CAST(CASE WHEN c.CurrentLocationId = @Line AND c.StationLocationId IS NULL THEN 1 ELSE 0 END AS NVARCHAR(1))
+SET @n = (SELECT CAST(s.Status AS NVARCHAR(1)) + N'|' + cs.Code + N'|' + CAST(CASE WHEN c.CurrentLocationId = @Line AND c.StationLocationId = @Term THEN 1 ELSE 0 END AS NVARCHAR(1))
                + N'|' + CAST(CASE WHEN r.ResumedAt IS NOT NULL AND r.ResumedAtLocationId = @Line THEN 1 ELSE 0 END AS NVARCHAR(1))
           FROM @s s, Lots.Container c JOIN Lots.ContainerStatusCode cs ON cs.Id = c.ContainerStatusCodeId, Lots.ContainerRework r WHERE c.Id = @ConA AND r.Id = @RwA);
-EXEC test.Assert_IsEqual @TestName = N'[Resume] it is the Open container at the line; the rework row says who and where', @Expected = N'1|Open|1|1', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[Resume] it is the Open container at the line, owned by the station that picked it up; the rework row says who and where', @Expected = N'1|Open|1|1', @Actual = @n;
 SET @n = (SELECT CAST(CASE WHEN (SELECT TOP 1 Id FROM Lots.Container WHERE CurrentLocationId = @Line AND ItemId = @Item AND ContainerStatusCodeId = 1 ORDER BY OpenedAt, Id) = @ConA THEN 1 ELSE 0 END AS NVARCHAR(1)));
 EXEC test.Assert_IsEqual @TestName = N'[Resume] it is the one the line''s own pick (oldest open, by OpenedAt) lands on', @Expected = N'1', @Actual = @n;
 SET @n = (SELECT ISNULL(ReleaseBlockReason, N'ready') FROM Quality.ufn_ControlledRunMemberResults(@Run) WHERE MemberId = @MemA);
@@ -376,6 +376,31 @@ SET @n = (SELECT CAST(s.Status AS NVARCHAR(1)) + N'|' + cs.Code + N'|' + CASE WH
 EXEC test.Assert_IsEqual @TestName = N'[Stage] recall from the line: back to ReworkFilling, no longer resumed', @Expected = N'1|ReworkFilling|cleared', @Actual = @n;
 DELETE FROM @s;
 INSERT INTO @s EXEC Lots.ContainerRework_Resume @ContainerId = @ConA, @CellLocationId = @Line, @AppUserId = @App;
+
+-- Review finding: a gap that is not a whole number of trays must never reach a line. D is
+-- refill-ready and full; take ONE piece out of it and it is short by 1.
+DECLARE @TrayD1 BIGINT = (SELECT TOP 1 Id FROM Lots.ContainerTray WHERE ContainerId = @ConD ORDER BY TrayPosition);
+DELETE FROM @o;
+INSERT INTO @o EXEC Lots.ContainerRework_Scrap @ContainerTrayId = @TrayD1, @DefectCodeId = @Def, @Quantity = 1, @AppUserId = @App;
+DELETE FROM @s;
+INSERT INTO @s EXEC Lots.ContainerRework_Resume @ContainerId = @ConD, @CellLocationId = @Line, @AppUserId = @App;
+SET @n = (SELECT CAST(s.Status AS NVARCHAR(1)) + N'|' + CASE WHEN s.Message LIKE N'%is short by 1, which is not a whole number of trays%' THEN N'ragged' ELSE s.Message END
+               + N'|' + cs.Code FROM @s s, Lots.Container c JOIN Lots.ContainerStatusCode cs ON cs.Id = c.ContainerStatusCodeId WHERE c.Id = @ConD);
+EXEC test.Assert_IsEqual @TestName = N'[Resume] a gap that is not a whole number of trays cannot go to a line (it would be packed past its target)', @Expected = N'0|ragged|ReworkFilling', @Actual = @n;
+DELETE FROM @s;
+INSERT INTO @s EXEC Lots.ContainerRework_SetStage @ContainerId = @ConD, @StageCode = N'Filling', @LocationId = @Line, @AppUserId = @App;
+DELETE FROM @AL;
+INSERT INTO @AL EXEC Lots.ContainerRework_ListAtLocation @LocationId = @Line;
+SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(5)) FROM @AL WHERE ContainerId = @ConD);
+EXEC test.Assert_IsEqual @TestName = N'[ListAtLocation] ...and the line is not offered it', @Expected = N'0', @Actual = @n;
+DELETE FROM @o;
+INSERT INTO @o EXEC Lots.ContainerRework_Scrap @ContainerTrayId = 999999999, @DefectCodeId = @Def, @Quantity = 1, @AppUserId = @App;
+SET @n = (SELECT CAST(Status AS NVARCHAR(1)) + N'|' + Message FROM @o);
+EXEC test.Assert_IsEqual @TestName = N'[Scrap] an unknown tray says so (the first failing rule is the message)', @Expected = N'0|Tray not found.', @Actual = @n;
+DELETE FROM @s;
+INSERT INTO @s EXEC Lots.ContainerRework_Resume @ContainerId = 999999999, @CellLocationId = @Line, @AppUserId = @App;
+SET @n = (SELECT CAST(Status AS NVARCHAR(1)) + N'|' + Message FROM @s);
+EXEC test.Assert_IsEqual @TestName = N'[Resume] an unknown container says so', @Expected = N'0|Container not found.', @Actual = @n;
 
 -- re-complete through the EXISTING, unmodified completion proc
 INSERT INTO Lots.AimShipperIdPool (AimShipperId) VALUES (N'TEST-RW-NEW1');

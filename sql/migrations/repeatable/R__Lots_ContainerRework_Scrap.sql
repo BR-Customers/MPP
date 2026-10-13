@@ -91,31 +91,31 @@ BEGIN
         -- ---- Validations: the FIRST rule that fails is the message. All of them
         --      run before BEGIN TRANSACTION (Msg 3915 rule). ----
         DECLARE @Reject NVARCHAR(500) = NULL;
-        IF @ContainerTrayId IS NULL OR @DefectCodeId IS NULL OR @AppUserId IS NULL
+        IF (@ContainerTrayId IS NULL OR @DefectCodeId IS NULL OR @AppUserId IS NULL)
             SET @Reject = N'Required parameter missing (ContainerTrayId, DefectCodeId, AppUserId).';
-        IF @Reject IS NULL AND NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId AND DeprecatedAt IS NULL)
+        IF @Reject IS NULL AND (NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId AND DeprecatedAt IS NULL))
             SET @Reject = N'User not found.';
-        IF @Reject IS NULL AND @ContainerId IS NULL
+        IF @Reject IS NULL AND (@ContainerId IS NULL)
             SET @Reject = N'Tray not found.';
-        IF @Reject IS NULL AND @TrayLotId IS NULL OR @LotName IS NULL
+        IF @Reject IS NULL AND (@TrayLotId IS NULL OR @LotName IS NULL)
             SET @Reject = N'That tray has no LOT behind it and cannot be reworked here.';
-        IF @Reject IS NULL AND @ConStatus NOT IN (N'ReworkProcessing', N'ReworkFilling')
+        IF @Reject IS NULL AND (@ConStatus NOT IN (N'ReworkProcessing', N'ReworkFilling'))
             SET @Reject = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' is not open for rework.';
-        IF @Reject IS NULL AND @Quantity IS NULL OR @Quantity <= 0
+        IF @Reject IS NULL AND (@Quantity IS NULL OR @Quantity <= 0)
             SET @Reject = N'Quantity must be greater than zero.';
-        IF @Reject IS NULL AND @IsSerialized = 1 AND @ContainerSerialId IS NULL
+        IF @Reject IS NULL AND (@IsSerialized = 1 AND @ContainerSerialId IS NULL)
             SET @Reject = N'This part is serialized: pick the serial.';
-        IF @Reject IS NULL AND @IsSerialized = 1 AND @Quantity <> 1
+        IF @Reject IS NULL AND (@IsSerialized = 1 AND @Quantity <> 1)
             SET @Reject = N'A serialized part is handled one serial at a time.';
-        IF @Reject IS NULL AND @IsSerialized = 0 AND @ContainerSerialId IS NOT NULL
+        IF @Reject IS NULL AND (@IsSerialized = 0 AND @ContainerSerialId IS NOT NULL)
             SET @Reject = N'This part is not serialized: give a quantity, not a serial.';
-        IF @Reject IS NULL AND @ContainerSerialId IS NOT NULL AND (@SerialContainerId IS NULL OR @SerialContainerId <> @ContainerId OR @SerialRemoved IS NOT NULL OR (@SerialTrayId IS NOT NULL AND @SerialTrayId <> @ContainerTrayId))
+        IF @Reject IS NULL AND (@ContainerSerialId IS NOT NULL AND (@SerialContainerId IS NULL OR @SerialContainerId <> @ContainerId OR @SerialRemoved IS NOT NULL OR (@SerialTrayId IS NOT NULL AND @SerialTrayId <> @ContainerTrayId)))
             SET @Reject = N'That serial is not in this tray.';
-        IF @Reject IS NULL AND @Quantity > LEAST(@LotPieces, @TrayPieces)
+        IF @Reject IS NULL AND (@Quantity > LEAST(@LotPieces, @TrayPieces))
             SET @Reject = N'Tray ' + CAST(@TrayPos AS NVARCHAR(10)) + N' of container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' holds ' + CAST(LEAST(@LotPieces, @TrayPieces) AS NVARCHAR(10)) + N' pieces; ' + CAST(@Quantity AS NVARCHAR(10)) + N' is too many.';
-        IF @Reject IS NULL AND @DefCode IS NULL
+        IF @Reject IS NULL AND (@DefCode IS NULL)
             SET @Reject = N'Defect reason not found or deprecated.';
-        IF @Reject IS NULL AND @ControlledRunResultId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Quality.ControlledRunResult rr WHERE rr.Id = @ControlledRunResultId AND rr.ControlledRunMemberId = @MemberId AND rr.DispositionCodeId = @ScrapDispositionId AND rr.VoidedAt IS NULL AND rr.RejectEventId IS NULL AND rr.DefectCodeId = @DefectCodeId AND rr.Quantity = @Quantity)
+        IF @Reject IS NULL AND (@ControlledRunResultId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Quality.ControlledRunResult rr WHERE rr.Id = @ControlledRunResultId AND rr.ControlledRunMemberId = @MemberId AND rr.DispositionCodeId = @ScrapDispositionId AND rr.VoidedAt IS NULL AND rr.RejectEventId IS NULL AND rr.DefectCodeId = @DefectCodeId AND rr.Quantity = @Quantity))
             SET @Reject = N'That recorded scrap does not match (same container, same defect, same quantity, not yet applied).';
 
         IF @Reject IS NOT NULL

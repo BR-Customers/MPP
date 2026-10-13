@@ -58,17 +58,17 @@ BEGIN
         -- ---- Validations: the FIRST rule that fails is the message. All of them
         --      run before BEGIN TRANSACTION (Msg 3915 rule). ----
         DECLARE @Reject NVARCHAR(500) = NULL;
-        IF @ContainerId IS NULL OR @AppUserId IS NULL
+        IF (@ContainerId IS NULL OR @AppUserId IS NULL)
             SET @Reject = N'Required parameter missing (ContainerId, AppUserId).';
-        IF @Reject IS NULL AND NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId AND DeprecatedAt IS NULL)
+        IF @Reject IS NULL AND (NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId AND DeprecatedAt IS NULL))
             SET @Reject = N'User not found.';
-        IF @Reject IS NULL AND @Cur IS NULL
+        IF @Reject IS NULL AND (@Cur IS NULL)
             SET @Reject = N'Container not found.';
-        IF @Reject IS NULL AND @Cur NOT IN (N'ReworkProcessing', N'ReworkFilling')
+        IF @Reject IS NULL AND (@Cur NOT IN (N'ReworkProcessing', N'ReworkFilling'))
             SET @Reject = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' is not open for rework.';
-        IF @Reject IS NULL AND @Pieces > 0
+        IF @Reject IS NULL AND (@Pieces > 0)
             SET @Reject = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' still holds ' + CAST(@Pieces AS NVARCHAR(10)) + N' pieces. Move or scrap them first.';
-        IF @Reject IS NULL AND @Remarks IS NULL
+        IF @Reject IS NULL AND (@Remarks IS NULL)
             SET @Reject = N'A reason is required to void a container.';
 
         IF @Reject IS NOT NULL

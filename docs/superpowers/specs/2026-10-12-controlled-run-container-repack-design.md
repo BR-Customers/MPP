@@ -1,6 +1,6 @@
 # Super-lot piece 4 — container repack: scrap, top-up, new serial, relabel
 
-> **Status: BUILT 2026-10-13. SQL tested (83 assertions); the Repack popup and the line pick have NOT been rendered on the gateway. See section 11.**
+> **Status: BUILT 2026-10-13. SQL tested (87 assertions); the Repack popup and the line pick have NOT been rendered on the gateway. See section 11.**
 > Fourth of six pieces. Sections marked *verified* were checked against the code.
 > **Neither change order mentions this piece.** It exists because MPP's own example cannot
 > finish without it; worth raising commercially.
@@ -187,7 +187,15 @@ Feasibility, from reading `Workorder.Assembly_CompleteTray` (*verified*):
 - **A recorded scrap is applied whole** to one tray (same defect, same quantity). If the parts came out of two trays, void the recorded entry and scrap each tray directly.
 - **The top-up tray LOT is minted Closed**, not Good, so it never appears in a WIP queue or a line's inventory.
 
-**Verified:** `sql/tests/0111_ContainerRework/010_rework.sql`, 83 assertions, including re-completion through the unmodified `Lots.Container_Complete` (new serial claimed, old one voided and never offered to the AIM sweep, the live serial read by container is the new one).
+**Changed by the end review (2026-10-13):**
+
+- **D8 has a condition the spec did not state.** `Lots.ContainerRework_Resume` refuses a container whose gap is not a whole number of trays, and the line is not offered one. The line packs FULL trays only and its over-fill guard only asks "is it already full?", so a container short by 3 with trays of 4 would have been packed to 17 of 16 and then refused by `Container_Complete` as over target. Loose pieces are topped up by a move first (or by the follow-on in section 9).
+- **The resumed container is owned by the station that picked it up.** `Workorder.Assembly_CompleteTray` fills a station's own open box before any unowned one (migration 0078), so an unowned resumed container would have waited behind the station's own box. Section 2 D8's "oldest open container at the cell" is true within one station's boxes.
+- A validation-order bug in the generated procs (an `OR` inside a rule escaping the "first failing rule" test, which replaced the right message with a later one) was fixed; `completeHere` now also returns the container to refill-ready when the completion raises.
+
+**Known and left:** `Lots.Container_Complete` takes the AIM lot number from the lowest tray position, which after a rework can be a tray emptied to zero pieces; `Lots.ShippingLabel_GetStranded` does not skip a void label (pre-existing, same as `ShippingLabel_Void`); a rework does not touch `Lot.InventoryAvailable` on the donor tray LOTs (they are Closed and hold 0 available already when completed normally).
+
+**Verified:** `sql/tests/0111_ContainerRework/010_rework.sql`, 87 assertions, including re-completion through the unmodified `Lots.Container_Complete` (new serial claimed, old one voided and never offered to the AIM sweep, the live serial read by container is the new one).
 
 **Not verified:** the Repack popup and the pick popup have not been rendered; no action has been driven from the UI; a real re-completion with label print and AIM post; how the line's own screens look while a resumed rework container is their open container (it will have more tray rows than the config's trays-per-container, with unequal counts).
 

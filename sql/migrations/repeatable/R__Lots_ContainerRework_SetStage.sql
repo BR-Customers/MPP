@@ -58,19 +58,19 @@ BEGIN
         -- ---- Validations: the FIRST rule that fails is the message. All of them
         --      run before BEGIN TRANSACTION (Msg 3915 rule). ----
         DECLARE @Reject NVARCHAR(500) = NULL;
-        IF @ContainerId IS NULL OR @StageCode IS NULL OR @AppUserId IS NULL
+        IF (@ContainerId IS NULL OR @StageCode IS NULL OR @AppUserId IS NULL)
             SET @Reject = N'Required parameter missing (ContainerId, StageCode, AppUserId).';
-        IF @Reject IS NULL AND NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId AND DeprecatedAt IS NULL)
+        IF @Reject IS NULL AND (NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId AND DeprecatedAt IS NULL))
             SET @Reject = N'User not found.';
-        IF @Reject IS NULL AND @Cur IS NULL
+        IF @Reject IS NULL AND (@Cur IS NULL)
             SET @Reject = N'Container not found.';
-        IF @Reject IS NULL AND @Target IS NULL
+        IF @Reject IS NULL AND (@Target IS NULL)
             SET @Reject = N'Unknown stage ''' + @StageCode + N'''.';
-        IF @Reject IS NULL AND @Cur NOT IN (N'ReworkProcessing', N'ReworkFilling') AND @Resumed = 0
+        IF @Reject IS NULL AND (@Cur NOT IN (N'ReworkProcessing', N'ReworkFilling') AND @Resumed = 0)
             SET @Reject = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' is not open for rework.';
-        IF @Reject IS NULL AND @Resumed = 1 AND @StageCode <> N'Filling'
+        IF @Reject IS NULL AND (@Resumed = 1 AND @StageCode <> N'Filling')
             SET @Reject = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' is being filled at a line. Recall it to refill-ready first.';
-        IF @Reject IS NULL AND @LocationId IS NOT NULL AND @LocName IS NULL
+        IF @Reject IS NULL AND (@LocationId IS NOT NULL AND @LocName IS NULL)
             SET @Reject = N'Location not found.';
 
         IF @Reject IS NOT NULL

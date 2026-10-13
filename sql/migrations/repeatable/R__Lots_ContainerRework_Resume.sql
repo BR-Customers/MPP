@@ -4,11 +4,17 @@
 -- Modified:    2026-10-13
 -- Version:     1.0
 -- Description: Makes a REFILL-READY container the open container at a cell (spec D8):
---              ReworkFilling -> Open, located at @CellLocationId, owned by no station.
---              From here it is an ordinary open container. Workorder.Assembly_
---              CompleteTray fills the OLDEST open container of the part at the cell
---              first (ORDER BY OpenedAt, which this proc does not touch), so the line
---              carries on into this one and its own newer container waits. The existing
+--              ReworkFilling -> Open, located at @CellLocationId, owned by the station
+--              (terminal) that picked it up. From here it is an ordinary open container.
+--              Workorder.Assembly_CompleteTray fills a station's own open containers
+--              oldest first (ORDER BY OpenedAt, which this proc does not touch), so the
+--              line carries on into this one and its own newer container waits.
+--
+--              REFUSED unless the gap is a whole number of trays. The line packs FULL
+--              trays only (PieceCount must equal PartsPerTray) and its over-fill guard
+--              only asks "is it already full?", so a ragged gap would be packed past
+--              the target and then refused by Container_Complete as over target -- a
+--              stuck container. Loose pieces are topped up by a move first. The existing
 --              Lots.Container_Complete then claims a NEW serial and label. Neither of
 --              those procs is modified.
 --
@@ -42,9 +48,19 @@ BEGIN
         FOR JSON PATH, INCLUDE_NULL_VALUES, WITHOUT_ARRAY_WRAPPER);
     DECLARE @Act NVARCHAR(500), @ActRaw NVARCHAR(MAX), @NewValue NVARCHAR(MAX);
 
-    DECLARE @Cur NVARCHAR(50), @CellName NVARCHAR(200), @ReworkId BIGINT;
-    SELECT @Cur = cs.Code FROM Lots.Container c INNER JOIN Lots.ContainerStatusCode cs ON cs.Id = c.ContainerStatusCodeId
+    DECLARE @Cur NVARCHAR(50), @CellName NVARCHAR(200), @ReworkId BIGINT, @PartsPerTray INT, @ShortBy INT, @StationId BIGINT;
+    SELECT @Cur = cs.Code, @PartsPerTray = cc.PartsPerTray,
+           @ShortBy = (cc.TraysPerContainer * cc.PartsPerTray)
+                    - ISNULL((SELECT SUM(t.PartsClosedCount) FROM Lots.ContainerTray t WHERE t.ContainerId = c.Id AND t.ClosedAt IS NOT NULL), 0)
+    FROM Lots.Container c
+    INNER JOIN Lots.ContainerStatusCode cs ON cs.Id = c.ContainerStatusCodeId
+    LEFT JOIN Parts.ContainerConfig cc     ON cc.Id = c.ContainerConfigId
     WHERE c.Id = @ContainerId;
+    -- Station (0078), derived exactly as Workorder.Assembly_CompleteTray derives it: only a
+    -- Terminal-type location owns a box.
+    SET @StationId = (SELECT l.Id FROM Location.Location l
+                      INNER JOIN Location.LocationTypeDefinition d ON d.Id = l.LocationTypeDefinitionId
+                      WHERE l.Id = @TerminalLocationId AND d.Code = N'Terminal');
     SET @CellName = (SELECT Name FROM Location.Location WHERE Id = @CellLocationId AND DeprecatedAt IS NULL);
     SET @ReworkId = (SELECT MAX(Id) FROM Lots.ContainerRework WHERE ContainerId = @ContainerId);
 
@@ -52,18 +68,22 @@ BEGIN
         -- ---- Validations: the FIRST rule that fails is the message. All of them
         --      run before BEGIN TRANSACTION (Msg 3915 rule). ----
         DECLARE @Reject NVARCHAR(500) = NULL;
-        IF @ContainerId IS NULL OR @CellLocationId IS NULL OR @AppUserId IS NULL
+        IF (@ContainerId IS NULL OR @CellLocationId IS NULL OR @AppUserId IS NULL)
             SET @Reject = N'Required parameter missing (ContainerId, CellLocationId, AppUserId).';
-        IF @Reject IS NULL AND NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId AND DeprecatedAt IS NULL)
+        IF @Reject IS NULL AND (NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId AND DeprecatedAt IS NULL))
             SET @Reject = N'User not found.';
-        IF @Reject IS NULL AND @Cur IS NULL
+        IF @Reject IS NULL AND (@Cur IS NULL)
             SET @Reject = N'Container not found.';
-        IF @Reject IS NULL AND @Cur = N'ReworkProcessing'
+        IF @Reject IS NULL AND (@Cur = N'ReworkProcessing')
             SET @Reject = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' is not refill-ready yet.';
-        IF @Reject IS NULL AND @Cur <> N'ReworkFilling' OR @ReworkId IS NULL
+        IF @Reject IS NULL AND (@Cur <> N'ReworkFilling' OR @ReworkId IS NULL)
             SET @Reject = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' is not waiting to be refilled.';
-        IF @Reject IS NULL AND @CellName IS NULL
+        IF @Reject IS NULL AND (@CellName IS NULL)
             SET @Reject = N'Location not found.';
+        IF @Reject IS NULL AND (@PartsPerTray > 0 AND @ShortBy > 0 AND @ShortBy % @PartsPerTray <> 0)
+            SET @Reject = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' is short by ' + CAST(@ShortBy AS NVARCHAR(10)) + N', which is not a whole number of trays of ' + CAST(@PartsPerTray AS NVARCHAR(10)) + N'. Top it up to a full tray by moving pieces in first.';
+        IF @Reject IS NULL AND (@ShortBy < 0)
+            SET @Reject = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' holds more than its target. Move pieces out first.';
 
         IF @Reject IS NOT NULL
         BEGIN
@@ -81,8 +101,12 @@ BEGIN
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
 
+        -- The box is handed to the station that picked it up. Assembly_CompleteTray fills a
+        -- station's OWN open box before any unowned one, so an unowned resumed container
+        -- would sit untouched behind the station's own box. Owned by the same station, the
+        -- two are ordered by OpenedAt and this, the older, is filled first.
         UPDATE Lots.Container
-        SET ContainerStatusCodeId = 1 /* Open */, CurrentLocationId = @CellLocationId, StationLocationId = NULL
+        SET ContainerStatusCodeId = 1 /* Open */, CurrentLocationId = @CellLocationId, StationLocationId = @StationId
         WHERE Id = @ContainerId AND ContainerStatusCodeId = 7 /* ReworkFilling */;
         IF @@ROWCOUNT = 0
             RAISERROR(N'REWORK_RACE: the container was picked up by someone else.', 16, 1);
