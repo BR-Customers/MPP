@@ -13,7 +13,8 @@ GO
 
 -- Get returns the single row, and it now carries the ceiling
 CREATE TABLE #G (Id BIGINT, OperatorPresenceTimeoutSeconds INT, ElevationTimeoutSeconds INT,
-                 ElevationMaxSeconds INT, UpdatedAt DATETIME2(3));
+                 ElevationMaxSeconds INT, UpdatedAt DATETIME2(3),
+                 QualityElevationTimeoutSeconds INT, QualityElevationMaxSeconds INT);
 INSERT INTO #G EXEC Location.SessionPolicy_Get;
 DECLARE @n NVARCHAR(10) = CAST((SELECT COUNT(*) FROM #G) AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName=N'[SessionPolicy] Get returns 1 row', @Expected=N'1', @Actual=@n;
@@ -108,5 +109,31 @@ INSERT INTO #R EXEC Location.SessionPolicy_Update @OperatorPresenceTimeoutSecond
 DROP TABLE #R;
 GO
 
+
+-- ===== 0110: the Quality-screen window =====
+DECLARE @qn NVARCHAR(50) = (SELECT CAST(QualityElevationTimeoutSeconds AS NVARCHAR(10)) + N'|' + CAST(QualityElevationMaxSeconds AS NVARCHAR(10)) FROM Location.SessionPolicy);
+DECLARE @QBase NVARCHAR(50) = @qn;
+CREATE TABLE #QU (Status BIT, Message NVARCHAR(500));
+DECLARE @QOp INT, @QEl INT, @QMx INT;
+SELECT TOP 1 @QOp = OperatorPresenceTimeoutSeconds, @QEl = ElevationTimeoutSeconds, @QMx = ElevationMaxSeconds FROM Location.SessionPolicy;
+INSERT INTO #QU EXEC Location.SessionPolicy_Update @OperatorPresenceTimeoutSeconds = @QOp, @ElevationTimeoutSeconds = @QEl, @ElevationMaxSeconds = @QMx, @AppUserId = 1;
+SET @qn = (SELECT CAST(QualityElevationTimeoutSeconds AS NVARCHAR(10)) + N'|' + CAST(QualityElevationMaxSeconds AS NVARCHAR(10)) FROM Location.SessionPolicy);
+EXEC test.Assert_IsEqual @TestName=N'[SessionPolicy] Update that omits the Quality window leaves it unchanged', @Expected=@QBase, @Actual=@qn;
+DELETE FROM #QU;
+INSERT INTO #QU EXEC Location.SessionPolicy_Update @OperatorPresenceTimeoutSeconds = @QOp, @ElevationTimeoutSeconds = @QEl, @ElevationMaxSeconds = @QMx, @AppUserId = 1,
+    @QualityElevationTimeoutSeconds = 900, @QualityElevationMaxSeconds = 7200;
+SET @qn = (SELECT CAST(u.Status AS NVARCHAR(1)) + N'|' + CAST(p.QualityElevationTimeoutSeconds AS NVARCHAR(10)) + N'|' + CAST(p.QualityElevationMaxSeconds AS NVARCHAR(10)) FROM #QU u, Location.SessionPolicy p);
+EXEC test.Assert_IsEqual @TestName=N'[SessionPolicy] Update stores a Quality window when given one', @Expected=N'1|900|7200', @Actual=@qn;
+DELETE FROM #QU;
+INSERT INTO #QU EXEC Location.SessionPolicy_Update @OperatorPresenceTimeoutSeconds = @QOp, @ElevationTimeoutSeconds = @QEl, @ElevationMaxSeconds = @QMx, @AppUserId = 1,
+    @QualityElevationMaxSeconds = 600;
+SET @qn = (SELECT CAST(u.Status AS NVARCHAR(1)) + N'|' + CAST(p.QualityElevationMaxSeconds AS NVARCHAR(10)) FROM #QU u, Location.SessionPolicy p);
+EXEC test.Assert_IsEqual @TestName=N'[SessionPolicy] a Quality ceiling below the Quality timeout is refused, nothing stored', @Expected=N'0|7200', @Actual=@qn;
+DELETE FROM #QU;
+INSERT INTO #QU EXEC Location.SessionPolicy_Update @OperatorPresenceTimeoutSeconds = @QOp, @ElevationTimeoutSeconds = @QEl, @ElevationMaxSeconds = @QMx, @AppUserId = 1,
+    @QualityElevationTimeoutSeconds = 1800, @QualityElevationMaxSeconds = 14400;
+SET @qn = (SELECT CAST(QualityElevationTimeoutSeconds AS NVARCHAR(10)) + N'|' + CAST(QualityElevationMaxSeconds AS NVARCHAR(10)) FROM Location.SessionPolicy);
+EXEC test.Assert_IsEqual @TestName=N'[SessionPolicy] Quality window restored to 30 min idle / 4 h ceiling', @Expected=N'1800|14400', @Actual=@qn;
+DROP TABLE #QU;
 EXEC test.EndTestFile;
 GO

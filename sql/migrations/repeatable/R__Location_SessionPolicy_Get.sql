@@ -20,8 +20,11 @@ CREATE OR ALTER PROCEDURE Location.SessionPolicy_Get
 AS
 BEGIN
     SET NOCOUNT ON;
+    -- QualityElevation* (0110): the longer window Quality screens use. They are
+    -- appended AFTER UpdatedAt so the first five columns keep their positions.
     SELECT TOP 1 Id, OperatorPresenceTimeoutSeconds, ElevationTimeoutSeconds,
-                 ElevationMaxSeconds, UpdatedAt
+                 ElevationMaxSeconds, UpdatedAt,
+                 QualityElevationTimeoutSeconds, QualityElevationMaxSeconds
     FROM Location.SessionPolicy ORDER BY Id;
 END
 GO
