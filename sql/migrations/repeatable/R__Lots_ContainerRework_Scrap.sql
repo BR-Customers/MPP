@@ -23,6 +23,8 @@
 --              live, not yet applied) by pointing it at the new RejectEvent. Without it a
 --              new, already-applied result entry is written. Either way the Results tab
 --              and the container agree.
+--              With @ControlledRunResultId, @DefectCodeId and @Quantity may be left NULL:
+--              they are taken from the recorded scrap.
 --
 --              Returns Status, Message, NewId (the RejectEvent).
 --
@@ -33,8 +35,8 @@
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.ContainerRework_Scrap
     @ContainerTrayId        BIGINT,
-    @DefectCodeId           BIGINT,
-    @Quantity               INT,
+    @DefectCodeId           BIGINT        = NULL,
+    @Quantity               INT           = NULL,
     @ContainerSerialId      BIGINT        = NULL,
     @ControlledRunResultId  BIGINT        = NULL,
     @Remarks                NVARCHAR(500) = NULL,
@@ -54,6 +56,12 @@ BEGIN
         SELECT @ContainerTrayId AS ContainerTrayId, @DefectCodeId AS DefectCodeId, @Quantity AS Quantity, @ContainerSerialId AS ContainerSerialId, @ControlledRunResultId AS ControlledRunResultId, @Remarks AS Remarks, @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId
         FOR JSON PATH, INCLUDE_NULL_VALUES, WITHOUT_ARRAY_WRAPPER);
     DECLARE @Act NVARCHAR(500), @ActRaw NVARCHAR(MAX), @NewValue NVARCHAR(MAX);
+
+    -- Applying a recorded scrap: the defect and the quantity are the recorded ones unless
+    -- the caller states them (in which case they must match, checked below).
+    IF @ControlledRunResultId IS NOT NULL
+        SELECT @DefectCodeId = ISNULL(@DefectCodeId, rr.DefectCodeId), @Quantity = ISNULL(@Quantity, rr.Quantity)
+        FROM Quality.ControlledRunResult rr WHERE rr.Id = @ControlledRunResultId;
 
     DECLARE @ContainerId BIGINT, @TrayLotId BIGINT, @TrayPieces INT, @TrayPos INT, @ConStatus NVARCHAR(50),
             @IsSerialized BIT, @ItemId BIGINT, @LotName NVARCHAR(50), @LotPieces INT, @LotCrt BIT,

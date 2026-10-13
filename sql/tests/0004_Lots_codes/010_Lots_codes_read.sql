@@ -125,8 +125,8 @@ INSERT INTO #R EXEC Lots.ContainerStatusCode_List;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'ContainerStatusCode_List: 5 rows returned by proc',
-    @ExpectedCount = 5,
+    @TestName      = N'ContainerStatusCode_List: 7 rows returned by proc (5 seeded + ReworkProcessing, ReworkFilling from 0111)',
+    @ExpectedCount = 7,
     @ActualCount   = @Count;
 GO
 

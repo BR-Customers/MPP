@@ -377,6 +377,7 @@ def memberInstances(runId, selectedMemberId, _refreshToken=None):
             "memberId": r.get("MemberId"),
             "kind":     (r.get("Kind") or "").upper(),
             "lotId":    r.get("LotId"),
+            "containerId": r.get("ContainerId"),      # piece 4: a container row gets a Repack button
             "name":     r.get("DisplayName") or "",
             "part":     r.get("PartNumber") or "",
             "where":    r.get("CurrentLocationName") or "",

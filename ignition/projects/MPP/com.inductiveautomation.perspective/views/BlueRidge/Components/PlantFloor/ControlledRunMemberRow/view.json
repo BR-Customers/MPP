@@ -11,7 +11,8 @@
     "tagged": false,
     "joined": "",
     "added": "",
-    "selected": false
+    "selected": false,
+    "containerId": null
   },
   "propConfig": {
     "params.memberId": {
@@ -45,6 +46,9 @@
       "paramDirection": "input"
     },
     "params.selected": {
+      "paramDirection": "input"
+    },
+    "params.containerId": {
       "paramDirection": "input"
     }
   },
@@ -348,6 +352,47 @@
                   "scope": "G",
                   "config": {
                     "script": "\tif self.view.params.lotId is not None:\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(int(self.view.params.lotId)))"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "Repack",
+              "tooltip": {
+                "text": "Repack this container"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.params.containerId})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "path": "material/build",
+              "style": {
+                "cursor": "pointer",
+                "height": "28px",
+                "width": "28px"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tif self.view.params.containerId is not None:\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t\t{\"action\": \"repack\", \"containerId\": int(self.view.params.containerId)})"
                   }
                 }
               }

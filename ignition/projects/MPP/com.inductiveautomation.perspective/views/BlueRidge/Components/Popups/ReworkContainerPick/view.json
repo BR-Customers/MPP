@@ -1,0 +1,190 @@
+{
+  "custom": {},
+  "params": {
+    "popupId": "mpp-rework-pick",
+    "locationId": null
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.locationId": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "Rework containers waiting to be filled",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "classes": "modal-body",
+            "gap": "10px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Blurb"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Pick one to make it this line's open container. Full trays packed here go into it first; the container you were filling waits.",
+              "style": {
+                "fontSize": "14px",
+                "color": "var(--mpp-text-secondary)",
+                "whiteSpace": "normal"
+              }
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "Rows"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Lots.ContainerRework.waitingInstances\", 0, if(isNull({view.params.locationId}), 0, {view.params.locationId}), {view.params.popupId})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "useDefaultViewWidth": false,
+              "useDefaultViewHeight": true,
+              "elementPosition": {
+                "basis": "56px",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/ReworkPickRow",
+              "style": {
+                "overflowY": "auto"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          },
+          "justify": "flex-end"
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CloseButton"
+            },
+            "position": {
+              "basis": "110px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 480,
+      "width": 900
+    }
+  }
+}

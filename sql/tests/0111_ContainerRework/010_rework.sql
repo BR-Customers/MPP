@@ -222,7 +222,8 @@ INSERT INTO @o EXEC Lots.ContainerRework_Scrap @ContainerTrayId = @TrayA2, @Defe
 SET @n = (SELECT CAST(Status AS NVARCHAR(1)) + N'|' + CASE WHEN Message LIKE N'That recorded scrap does not match%' THEN N'mismatch' ELSE Message END FROM @o);
 EXEC test.Assert_IsEqual @TestName = N'[Scrap] applying a recorded scrap with the wrong quantity is refused', @Expected = N'0|mismatch', @Actual = @n;
 DELETE FROM @o;
-INSERT INTO @o EXEC Lots.ContainerRework_Scrap @ContainerTrayId = @TrayA2, @DefectCodeId = @Def, @Quantity = 1, @ControlledRunResultId = @Intent, @AppUserId = @App;
+-- (defect and quantity left out: they are taken from the recorded scrap, as the Repack screen does)
+INSERT INTO @o EXEC Lots.ContainerRework_Scrap @ContainerTrayId = @TrayA2, @ControlledRunResultId = @Intent, @AppUserId = @App;
 SET @n = (SELECT CAST(o.Status AS NVARCHAR(1)) + N'|' + CAST(CASE WHEN rr.RejectEventId = o.NewId THEN 1 ELSE 0 END AS NVARCHAR(1)) + N'|'
                + CAST((SELECT COUNT(*) FROM Quality.ControlledRunResult x JOIN Quality.DispositionCode d ON d.Id = x.DispositionCodeId
                        WHERE x.ControlledRunMemberId = @MemA AND d.Code = N'Scrap') AS NVARCHAR(5))

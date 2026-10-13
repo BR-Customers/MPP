@@ -1,0 +1,152 @@
+{
+  "custom": {},
+  "params": {
+    "serialId": null,
+    "serial": "",
+    "trayId": null,
+    "position": 0,
+    "lot": "",
+    "selected": false
+  },
+  "propConfig": {
+    "params.serialId": {
+      "paramDirection": "input"
+    },
+    "params.serial": {
+      "paramDirection": "input"
+    },
+    "params.trayId": {
+      "paramDirection": "input"
+    },
+    "params.position": {
+      "paramDirection": "input"
+    },
+    "params.lot": {
+      "paramDirection": "input"
+    },
+    "params.selected": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.backgroundColor": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.selected}, 'var(--mpp-surface-selected)', 'var(--mpp-surface-raised)')"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "crt-row",
+        "gap": "12px",
+        "overflow": "hidden",
+        "cursor": "pointer"
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"reworkSerialSelect\", payload={\"serialId\": self.view.params.serialId, \"trayId\": self.view.params.trayId}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Serial"
+        },
+        "position": {
+          "basis": "220px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.serial"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-part crt-mono"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Pos"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "'Tray ' + toStr({view.params.position})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Lot"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "'made in ' + {view.params.lot}"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta",
+            "overflow": "hidden"
+          }
+        }
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 46,
+      "width": 640
+    }
+  }
+}

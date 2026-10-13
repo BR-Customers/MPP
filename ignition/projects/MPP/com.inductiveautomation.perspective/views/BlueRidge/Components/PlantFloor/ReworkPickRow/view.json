@@ -1,0 +1,166 @@
+{
+  "custom": {},
+  "params": {
+    "containerId": null,
+    "part": "",
+    "description": "",
+    "fill": "",
+    "shortBy": 0,
+    "runNumber": "",
+    "locationId": null,
+    "popupId": ""
+  },
+  "propConfig": {
+    "params.containerId": {
+      "paramDirection": "input"
+    },
+    "params.part": {
+      "paramDirection": "input"
+    },
+    "params.description": {
+      "paramDirection": "input"
+    },
+    "params.fill": {
+      "paramDirection": "input"
+    },
+    "params.shortBy": {
+      "paramDirection": "input"
+    },
+    "params.runNumber": {
+      "paramDirection": "input"
+    },
+    "params.locationId": {
+      "paramDirection": "input"
+    },
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "crt-row",
+        "gap": "12px",
+        "overflow": "hidden"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "No"
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "'Container ' + toStr({view.params.containerId})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-part crt-mono"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Part"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.part} + ' ' + {view.params.description}"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta",
+            "overflow": "hidden"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Fill"
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.fill} + if({view.params.shortBy} > 0, ', short ' + toStr({view.params.shortBy}), '')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "FillButton"
+        },
+        "position": {
+          "basis": "170px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-primary"
+          },
+          "text": "Fill this one"
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tv = self.view\n\ttid = None\n\ttry:\n\t\ttid = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttid = None\n\tuid = BlueRidge.Common.Session.currentAppUserId(self.session)\n\tif not uid:\n\t\tBlueRidge.Common.Notify.toast(\"Sign in\", \"Sign in at this terminal before picking up a container.\", \"warning\")\n\t\treturn\n\tres = BlueRidge.Lots.ContainerRework.resume(v.params.containerId, v.params.locationId, uid, tid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Container %s\" % v.params.containerId, (res or {}).get(\"Message\"))\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"inventoryChanged\", payload={}, scope=\"page\")\n\t\tsystem.perspective.closePopup(v.params.popupId)"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 56,
+      "width": 820
+    }
+  }
+}
