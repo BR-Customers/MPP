@@ -82,7 +82,7 @@ DECLARE @B TABLE (Id BIGINT, RunNumber NVARCHAR(15));
 INSERT INTO @L (Id, RunNumber, StatusCode, Reason, PartNumber, LocationName, OpenedAt, ClosedAt, MemberCount, ClearedCount, WindowOpen)
 EXEC Quality.ControlledRun_List;
 SET @n = (SELECT CAST(MemberCount AS NVARCHAR(5)) + N'|' + CAST(ClearedCount AS NVARCHAR(5)) + N'|' + CAST(WindowOpen AS NVARCHAR(1)) FROM @L WHERE Id = @Run);
-EXEC test.Assert_IsEqual @TestName = N'[List] default = open runs; 3 members, 2 cleared (B, and the never-tagged completed container)', @Expected = N'3|2|0', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[List] default = open runs; 3 members, 1 cleared (B; the completed container is tagged since piece 2)', @Expected = N'3|1|0', @Actual = @n;
 SET @n = (SELECT TOP 1 RunNumber FROM @L ORDER BY Seq);
 EXEC test.Assert_IsEqual @TestName = N'[List] open runs oldest first', @Expected = N'CR000001', @Actual = @n;
 DELETE FROM @L;
@@ -104,7 +104,7 @@ EXEC test.Assert_IsEqual @TestName = N'[List] text with no match -> none', @Expe
 -- ===== Get / GetByNumber =====
 INSERT INTO @G EXEC Quality.ControlledRun_Get @Id = @Run;
 SET @n = (SELECT StatusCode + N'|' + OpenedByInitials + N'|' + AnchorLotName + N'|' + CAST(MemberCount AS NVARCHAR(5)) + N'|' + CAST(ClearedCount AS NVARCHAR(5)) + N'|' + CAST(PieceCount AS NVARCHAR(10)) FROM @G);
-EXEC test.Assert_IsEqual @TestName = N'[Get] header, who opened it, totals (10 + 20 + 6 pieces)', @Expected = N'Open|SYS|TEST-CR-A|3|2|36', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[Get] header, who opened it, totals (10 + 20 + 6 pieces)', @Expected = N'Open|SYS|TEST-CR-A|3|1|36', @Actual = @n;
 SET @n = (SELECT CONVERT(NVARCHAR(19), SelectionFromAt, 126) FROM @G);
 EXEC test.Assert_IsEqual @TestName = N'[Get] SelectionFromAt comes back Eastern', @Expected = N'2026-07-01T08:00:00', @Actual = @n;
 SET @n = (SELECT CASE WHEN CriteriaText LIKE (SELECT PartNumber FROM Parts.Item WHERE Id = @Item) + N' made on % since %, plus everything made from TEST-CR-A' THEN N'ok' ELSE CriteriaText END FROM @G);
@@ -126,7 +126,7 @@ INSERT INTO @M EXEC Quality.ControlledRun_ListMembers @Id = @Run;
 SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(5)) FROM @M);
 EXEC test.Assert_IsEqual @TestName = N'[ListMembers] three members', @Expected = N'3', @Actual = @n;
 SET @n = (SELECT Kind + N'|' + JoinMethodName + N'|' + CAST(PieceCount AS NVARCHAR(5)) + N'|' + CAST(CrtActive AS NVARCHAR(1)) FROM @M WHERE ContainerId = @Con);
-EXEC test.Assert_IsEqual @TestName = N'[ListMembers] container row: kind, join method, tray pieces, tag state', @Expected = N'Container|Selected|6|0', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[ListMembers] container row: kind, join method, tray pieces, tag state', @Expected = N'Container|Selected|6|1', @Actual = @n;
 DECLARE @ExpEt NVARCHAR(30) = (SELECT CONVERT(NVARCHAR(30), CAST(AddedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)), 121)
                                FROM Quality.ControlledRunMember WHERE ControlledRunId = @Run AND LotId = @LotA);
 SET @n = (SELECT CONVERT(NVARCHAR(30), AddedAt, 121) FROM @M WHERE LotId = @LotA);

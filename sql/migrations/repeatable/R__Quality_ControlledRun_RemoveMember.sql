@@ -2,7 +2,9 @@
 -- Repeatable:  R__Quality_ControlledRun_RemoveMember.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.0
+-- Version:     1.1
+-- Change Log:  2026-10-13 - 1.1 - The still-tagged message is right for a container
+--                                 (released from the Sign-off tab, not LOT Detail).
 -- Description: Removes ONE member from an OPEN super-lot: a correction to the list. A
 --              reason is required.
 --
@@ -40,11 +42,12 @@ BEGIN
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @RunId BIGINT, @RunNumber NVARCHAR(15), @StatusId BIGINT, @EndedAt DATETIME2(3),
-            @DisplayName NVARCHAR(60), @StillTagged BIT, @Found BIT = 0;
+            @DisplayName NVARCHAR(60), @StillTagged BIT, @Found BIT = 0, @IsContainer BIT = 0;
     SELECT @RunId = m.ControlledRunId, @EndedAt = m.EndedAt, @Found = 1
     FROM Quality.ControlledRunMember m WHERE m.Id = @MemberId;
     SELECT @RunNumber = RunNumber, @StatusId = ControlledRunStatusId FROM Quality.ControlledRun WHERE Id = @RunId;
-    SELECT @DisplayName = ms.DisplayName, @StillTagged = ms.CrtActive
+    SELECT @DisplayName = ms.DisplayName, @StillTagged = ms.CrtActive,
+           @IsContainer = CASE WHEN ms.ContainerId IS NOT NULL THEN 1 ELSE 0 END
     FROM Quality.ufn_ControlledRunMemberState(@RunId) ms WHERE ms.MemberId = @MemberId;
     SET @Remarks = NULLIF(LTRIM(RTRIM(@Remarks)), N'');
 
@@ -152,8 +155,12 @@ BEGIN
             @OldValue           = NULL,
             @NewValue           = @NewValue;
 
-        DECLARE @Tail NVARCHAR(200) = CASE WHEN @StillTagged = 1
-            THEN N' It is still CRT-tagged; clear it on LOT Detail if it should be released.' ELSE N'' END;
+        DECLARE @Tail NVARCHAR(200) = CASE
+            WHEN @StillTagged = 1 AND @IsContainer = 1
+                THEN N' It is still CRT-tagged and cannot ship; add it back and release it on the Sign-off tab if it should be released.'
+            WHEN @StillTagged = 1
+                THEN N' It is still CRT-tagged; clear it on LOT Detail if it should be released.'
+            ELSE N'' END;
 
         COMMIT TRANSACTION;
 

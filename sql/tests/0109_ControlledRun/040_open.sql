@@ -87,7 +87,8 @@ SET @n = (SELECT CAST(CrtActive AS NVARCHAR(1)) FROM Lots.Lot WHERE Id = @LotFgO
 EXEC test.Assert_IsEqual @TestName = N'[Open] an open container: its tray LOT is tagged', @Expected = N'1', @Actual = @n;
 SET @n = (SELECT CAST(l.CrtActive AS NVARCHAR(1)) + N'|' + CAST(m.CrtSetByRun AS NVARCHAR(1))
           FROM Lots.Lot l, Quality.ControlledRunMember m WHERE l.Id = @LotFgD AND m.ContainerId = @ConDone);
-EXEC test.Assert_IsEqual @TestName = N'[Open] a completed container is a member but its Closed tray is NOT tagged in this piece', @Expected = N'0|0', @Actual = @n;
+-- CHANGED ON PURPOSE by piece 2 (was '0|0', "its Closed tray is NOT tagged in this piece").
+EXEC test.Assert_IsEqual @TestName = N'[Open] a completed container: its Closed tray IS tagged, CrtSetByRun = 1 (piece 2)', @Expected = N'1|1', @Actual = @n;
 SET @n = (SELECT CAST(SUM(CASE WHEN lel.LotId = @LotA THEN 1 ELSE 0 END) AS NVARCHAR(5)) + N'|'
                + CAST(SUM(CASE WHEN lel.LotId = @LotFgO THEN 1 ELSE 0 END) AS NVARCHAR(5)) + N'|'
                + CAST(SUM(CASE WHEN lel.LotId = @LotB THEN 1 ELSE 0 END) AS NVARCHAR(5))

@@ -36,7 +36,28 @@ SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LabelTemplate t JOIN L
 EXEC test.Assert_IsEqual @TestName = N'[Schema] label template is ASCII-only', @Expected = N'0', @Actual = @n;
 
 SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Audit.LogEventType WHERE Code LIKE N'ControlledRun%');
-EXEC test.Assert_IsEqual @TestName = N'[Schema] 7 audit event codes', @Expected = N'7', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[Schema] 11 audit event codes (7 from 0109 + 4 from 0110)', @Expected = N'11', @Actual = @n;
+
+-- ===== 0110: results, release, deviation, signature =====
+SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM sys.tables t JOIN sys.schemas s ON s.schema_id = t.schema_id
+          WHERE s.name = N'Quality' AND t.name IN (N'SignatureMeaning', N'Signature', N'ControlledRunRelease', N'ControlledRunResult', N'ControlledRunDeviation'));
+EXEC test.Assert_IsEqual @TestName = N'[Schema 0110] five new tables', @Expected = N'5', @Actual = @n;
+SET @n = (SELECT CAST(Id AS NVARCHAR(5)) FROM Quality.ControlledRunMemberEndReason WHERE Code = N'Released');
+EXEC test.Assert_IsEqual @TestName = N'[Schema 0110] end reason Released is Id 4 (procs use the literal)', @Expected = N'4', @Actual = @n;
+SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(5)) FROM Quality.DispositionCode WHERE Code IN (N'Accepted', N'Scrap', N'Rework', N'ReturnToSupplier', N'UseAsIs'));
+EXEC test.Assert_IsEqual @TestName = N'[Schema 0110] five disposition codes incl. Accepted', @Expected = N'5', @Actual = @n;
+SET @n = (SELECT FormatString FROM Lots.IdentifierSequence WHERE Code = N'ControlledRunDeviation');
+EXEC test.Assert_IsEqual @TestName = N'[Schema 0110] deviation sequence DV{0:D6}', @Expected = N'DV{0:D6}', @Actual = @n;
+SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(5)) FROM Quality.SignatureMeaning
+          WHERE Code IN (N'ControlledRunRelease', N'DeviationApproval') AND Statement NOT LIKE N'%[^ -~]%' COLLATE Latin1_General_BIN2 AND LEN(Statement) > 40);
+EXEC test.Assert_IsEqual @TestName = N'[Schema 0110] two signature meanings, statements ASCII-only', @Expected = N'2', @Actual = @n;
+SET @n = (SELECT CAST(COL_LENGTH(N'Quality.ControlledRunMember', N'WasCompleteAtJoin') AS NVARCHAR(5)) + N'|'
+               + CAST(COL_LENGTH(N'Quality.ControlledRunMember', N'ControlledRunReleaseId') AS NVARCHAR(5)));
+EXEC test.Assert_IsEqual @TestName = N'[Schema 0110] member columns WasCompleteAtJoin + ControlledRunReleaseId', @Expected = N'1|8', @Actual = @n;
+SET @n = (SELECT CAST(QualityElevationTimeoutSeconds AS NVARCHAR(10)) + N'|' + CAST(QualityElevationMaxSeconds AS NVARCHAR(10)) FROM Location.SessionPolicy);
+EXEC test.Assert_IsEqual @TestName = N'[Schema 0110] Quality window defaults: 30 min idle, 4 h ceiling', @Expected = N'1800|14400', @Actual = @n;
+SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(5)) FROM sys.check_constraints WHERE name = N'CK_ControlledRunRelease_Confirmed' AND definition LIKE N'%InspectionConfirmed%=%1%');
+EXEC test.Assert_IsEqual @TestName = N'[Schema 0110] a release row cannot exist unconfirmed (CHECK)', @Expected = N'1', @Actual = @n;
 SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Audit.LogEntityType WHERE Code = N'ControlledRun');
 EXEC test.Assert_IsEqual @TestName = N'[Schema] audit entity type', @Expected = N'1', @Actual = @n;
 
