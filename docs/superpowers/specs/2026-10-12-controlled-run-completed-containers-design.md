@@ -1,6 +1,6 @@
 # Super-lot piece 2 — Controlled Run Tag on completed containers
 
-> **Status: COMPLETE 2026-10-13, awaiting Jacques's read. NOT BUILT.** Second of six
+> **Status: BUILT 2026-10-13 with piece 3 (migration `0110`; tests `120_completed_containers.sql`).** Second of six
 > pieces. **Section 10 is the final design** - what is built, in one place. Sections 4,
 > 5 and 8 are kept as the record of what was proposed and asked.
 >

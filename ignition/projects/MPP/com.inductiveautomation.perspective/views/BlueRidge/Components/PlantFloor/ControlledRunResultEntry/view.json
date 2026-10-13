@@ -183,7 +183,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "'Accept the rest (' + toStr(max(0, {view.params.leftOver} - {view.custom.model.total})) + ')'"
+                    "expression": "'Accept the rest (' + toStr(toInt(max(0, {view.params.leftOver} - {view.custom.model.total}))) + ')'"
                   }
                 }
               },

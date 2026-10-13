@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 3.4 | 2026-10-13 | Blue Ridge Automation | **Super-lot pieces 2 and 3** (migration `0110_controlled_run_results_signoff`; specs `docs/superpowers/specs/2026-10-12-controlled-run-completed-containers-design.md` and `2026-10-12-controlled-run-results-and-signoff-design.md`) - CHANGE-ORDER ADDITION, still not deployable until all six pieces are in. Section 5 Quality gains `SignatureMeaning` (read-only), `Signature` (append-only, enforced by trigger `TR_Signature_Immutable` - the first trigger in the schema, deliberate), `ControlledRunRelease` (one signed bulk release; `InspectionConfirmed` is the recorded fact that the 200% inspection was completed), `ControlledRunResult` (one inspection result entry per row; voided, never edited) and `ControlledRunDeviation` (the signed deviation MPP call the nonconformance). `ControlledRunMember` gains `WasCompleteAtJoin` and `ControlledRunReleaseId`; a completed container's Closed tray LOTs are now tagged when it joins, so `CrtSetByRun` is 1 for it. `DispositionCode` gains `Accepted`; `ControlledRunMemberEndReason` gains `Released`. `Location.SessionPolicy` gains `QualityElevationTimeoutSeconds` (1800) and `QualityElevationMaxSeconds` (14400): the longer elevation window Quality screens use. **`Quality.NonConformance` is marked as never built**: it was described here but no migration ever created it, and the super-lot deviation takes its place for now. |
 | 3.3 | 2026-10-12 | Blue Ridge Automation | **Super-lot (Controlled Run)** (migration `0109_controlled_run`, spec `docs/superpowers/specs/2026-10-12-controlled-run-super-lot-design.md`) - CHANGE-ORDER ADDITION, outside the accepted baseline; piece 1 of 6 and not deployable on its own. Section 5 Quality gains `ControlledRun` (the case: run number, reason, selection criteria, rolling-window state), `ControlledRunMember` (a LOT XOR a container, one open membership per unit), `ControlledRunLabel` (append-only print log) and three read-only code tables (`ControlledRunStatusCode`, `ControlledRunJoinMethod`, `ControlledRunMemberEndReason`). Membership never blocks by itself: joining sets the existing `Lots.Lot.CrtActive`, so every CRT block applies unchanged. `Lots.ufn_CrtForMint` gains a fourth arm (an open super-lot window tags new production of its part). No existing table changed. |
 | 3.2 | 2026-10-06 | Blue Ridge Automation | **`Lots.LotNote`** (migration `0107_lot_note`) — append-only free-text notes against a LOT, written from the LOT Detail *Notes* tab. Any signed-in user may add one; there is no edit and no delete. Each row carries the author, the terminal, whether an elevation window was open, a **snapshot of the LOT at write time** (status, location, piece count, stamped by `Lots.LotNote_Add` itself) and a `ContextJson` blob of the session the note came from. No `Audit.*` rows: the table is the record. Procs `Lots.LotNote_Add` v1.0, `Lots.LotNote_ListByLot` v1.0. Also this session, no schema change: `Lots.Lot_SearchAdvanced` v1.3 returns `ItemDescription`, matches free text against it, and takes `@ExcludeFinishedGoods BIT = 0`. |
 | 3.1 | 2026-09-22 | Blue Ridge Automation | **Die cast shift reconciliation** (migration `0097`, spec `docs/superpowers/specs/2026-09-21-diecast-shift-reconciliation-design.md`). A team lead settles one past `(Shift, Press, Die)` against its press sheet: production that was never entered, entries filed against the wrong shift, and numbers that disagree — in either direction. New `Workorder.DieCastShiftReconciliation` (header), `DieCastReconciliationMove` (what was re-filed) and `DieCastReconciliationReason`; `ReconciliationId` on `DieCastContribution`, `RejectEvent` and `DieCastCounterAnchor`; `RejectEvent.ApprovedByUserId` (the sheet's QAS). `CK_DieCastContribution_DeltaNonNeg` relaxed so a **reconciliation row, and only a reconciliation row**, may carry a negative delta — corrections are compensating rows, never edits to recorded history. |
@@ -1446,6 +1447,8 @@ Specification-driven inspections, non-conformance, hold management.
 
 ### NonConformance
 
+> **NEVER BUILT (confirmed 2026-10-13).** No migration created this table, and `HoldEvent.NonConformanceId` / `QualityAttachment.NonConformanceId` do not exist either. It is kept here as the original design intent. What MPP call a nonconformance - a deviation found by a Controlled Run inspection and accepted for use as is - is built as `ControlledRunDeviation` below, a child of the super-lot. If a nonconformance with no super-lot behind it is ever needed, that is the time to generalise.
+
 | Column | Type | Constraints | Description |
 |---|---|---|---|
 | Id | BIGINT | PK | |
@@ -1545,13 +1548,15 @@ One LOT or one container in a super-lot (never both). WIP is listed as LOTs; pac
 | LotId | BIGINT | FK -> Lot.Id, NULL | Set for a LOT member. Exactly one of LotId / ContainerId is set |
 | ContainerId | BIGINT | FK -> Container.Id, NULL | Set for a container member |
 | ControlledRunJoinMethodId | BIGINT | FK -> ControlledRunJoinMethod.Id, NOT NULL | How it joined |
-| CrtSetByRun | BIT | NOT NULL | 1 = joining set the Controlled Run Tag; 0 = it was already tagged, or (a completed container) could not be tagged by this piece |
+| CrtSetByRun | BIT | NOT NULL | 1 = joining set the Controlled Run Tag; 0 = it was already tagged. A completed container's Closed tray LOTs ARE tagged on join (0110) |
+| WasCompleteAtJoin | BIT | NOT NULL, DEFAULT 0 | 1 = a container that was already complete when it joined, i.e. pulled back from finished stock. Recorded at join because nothing else can tell once a container is reopened |
 | AddedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The system user for members added by the background sync |
 | AddedAt | DATETIME2(3) | NOT NULL | UTC |
-| EndedAt | DATETIME2(3) | NULL | NULL = currently a member. Set when removed, or when the run closes or is cancelled |
+| EndedAt | DATETIME2(3) | NULL | NULL = currently a member. Set when removed, released under a signature, or when the run closes or is cancelled |
 | EndedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
 | ControlledRunMemberEndReasonId | BIGINT | FK -> ControlledRunMemberEndReason.Id, NULL | |
 | EndRemarks | NVARCHAR(500) | NULL | The reason given when a member was removed by hand |
+| ControlledRunReleaseId | BIGINT | FK -> ControlledRunRelease.Id, NULL | The signed release that ended this membership (end reason Released) |
 
 ### ControlledRunLabel
 
@@ -1567,6 +1572,87 @@ Append-only log of super-lot label print requests. The label belongs to the supe
 | PrintedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
 | TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | Terminal where the print was requested |
 | PrintedAt | DATETIME2(3) | NOT NULL | UTC |
+
+### SignatureMeaning
+
+Read-only code table: what a signature means and the exact statement shown to the signer.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(30) | NOT NULL, UNIQUE | ControlledRunRelease, DeviationApproval |
+| Name | NVARCHAR(100) | NOT NULL | |
+| Statement | NVARCHAR(500) | NOT NULL | The words shown before signing. COPIED onto Signature at signing, so rewording a row never changes what somebody already signed |
+
+### Signature
+
+An elevated electronic signature: who approved what, with what meaning, in what words, when. Written only after an AD password check at the moment of signing; the signer's id goes straight to the proc and is never taken from the session. **Append-only** - trigger `TR_Signature_Immutable` refuses UPDATE and DELETE. `Quality.ufn_SignatureAllowed(@AppUserId, @MeaningCode)` is the single place that decides who may sign; today it passes any active AD-mapped user (no plant AD roles exist yet).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| SignatureMeaningId | BIGINT | FK -> SignatureMeaning.Id, NOT NULL | |
+| AppUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The signer |
+| SignedAt | DATETIME2(3) | NOT NULL | UTC |
+| Statement | NVARCHAR(500) | NOT NULL | The statement as it read when signed |
+| LogEntityTypeId | BIGINT | FK -> Audit.LogEntityType.Id, NOT NULL | What kind of thing was signed (ControlledRun) |
+| EntityId | BIGINT | NOT NULL | Its id |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | Terminal where it was signed |
+
+### ControlledRunRelease
+
+One signed release of some or all members of a super-lot. Released members point here through `ControlledRunMember.ControlledRunReleaseId`.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunId | BIGINT | FK -> ControlledRun.Id, NOT NULL | |
+| SignatureId | BIGINT | FK -> Signature.Id, NOT NULL | Meaning ControlledRunRelease |
+| InspectionConfirmed | BIT | NOT NULL, CHECK = 1 | The recorded fact that the CRT was acted on and the 200% inspection was completed. The system never forces the inspection; it records that Quality said it was done |
+| MemberCount | INT | NOT NULL, CHECK > 0 | Members released by this action |
+| Remarks | NVARCHAR(500) | NULL | |
+| ReleasedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The signer |
+| ReleasedAt | DATETIME2(3) | NOT NULL | UTC |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+
+### ControlledRunResult
+
+One inspection result entry against a super-lot member: an outcome and a quantity. Never edited; a wrong entry is voided (the three Void columns, all or none) and entered again. A member's quantities need not add up to its piece count.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunMemberId | BIGINT | FK -> ControlledRunMember.Id, NOT NULL | |
+| DispositionCodeId | BIGINT | FK -> DispositionCode.Id, NOT NULL | Accepted, Scrap, Rework, ReturnToSupplier, UseAsIs |
+| Quantity | INT | NOT NULL, CHECK > 0 | |
+| DefectCodeId | BIGINT | FK -> DefectCode.Id, NULL | Required for Scrap |
+| RejectEventId | BIGINT | NULL | The Workorder.RejectEvent a Scrap entry produced when it took pieces off a LOT. NULL = nothing was taken off a LOT (a count-only outcome, or scrap recorded against a container, which is applied by the repack piece). Pointer, no FK |
+| Remarks | NVARCHAR(500) | NULL | |
+| RecordedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The Quality sign-in user |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+| RecordedAt | DATETIME2(3) | NOT NULL | UTC |
+| VoidedAt | DATETIME2(3) | NULL | Set once when the entry is voided. An entry with a RejectEventId cannot be voided |
+| VoidedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| VoidRemarks | NVARCHAR(500) | NULL | Required when voided |
+
+### ControlledRunDeviation
+
+A signed deviation on a super-lot: a condition the inspection found and Quality judged not to affect part performance (what MPP call the nonconformance). A member with a Use-As-Is result cannot be released until its super-lot carries one.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunId | BIGINT | FK -> ControlledRun.Id, NOT NULL | |
+| DeviationNumber | NVARCHAR(15) | NOT NULL, UNIQUE | DV000123, minted from Lots.IdentifierSequence code ControlledRunDeviation |
+| ExternalReference | NVARCHAR(50) | NULL | MPP's own reference, free text |
+| Description | NVARCHAR(1000) | NOT NULL | What deviates |
+| Justification | NVARCHAR(1000) | NOT NULL | Why it does not affect part performance |
+| DefectCodeId | BIGINT | FK -> DefectCode.Id, NULL | |
+| AffectedQuantity | INT | NULL, CHECK > 0 | |
+| SignatureId | BIGINT | FK -> Signature.Id, NOT NULL | Meaning DeviationApproval |
+| RaisedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The signer |
+| RaisedAt | DATETIME2(3) | NOT NULL | UTC |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
 
 ---
 

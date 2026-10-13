@@ -1,6 +1,6 @@
 # Super-lot piece 3 — inspection results, signed release, deviation record
 
-> **Status: COMPLETE 2026-10-13, awaiting Jacques's read. NOT BUILT.** Third of six
+> **Status: BUILT 2026-10-13. SQL tested; views walked up to the sign-in prompt. See section 12 for what differs from this spec and what is still unverified.** Third of six
 > pieces. Every decision in the first draft's section 9 is answered (section 2). Sections
 > marked *verified* were checked against the code on 2026-10-12/13.
 >
@@ -394,9 +394,26 @@ changes. 6. Session policy values. 7. Named queries and `BlueRidge.Quality.Contr
 - Does MPP need a deviation number in its own format? Built with ours plus a reference
   field; worth asking MPP.
 
+## 12. Build notes (2026-10-13)
+
+**Differs from the sections above:**
+
+- **5.6:** `Quality.ControlledRun_ListMembers` was NOT extended. The result columns, `WasCompleteAtJoin` and the release-block reason come from a new proc, `Quality.ControlledRun_ListMemberResults`, because `_ListMembers` is captured by column list in several piece 1 tests and feeds only the Members tab. The Members tab therefore does not show "pulled back from finished stock" yet.
+- **6:** the New super-lot wizard still asks for a network password on its last step; it was not moved inside the Quality sign-in window. A press of Save / Add / Remove with no window open asks for the sign-in and the person then repeats the press.
+- **7:** the middle KPI still reads "Cleared" (it counts members that are released OR untagged, which is what the number is). The "Released" wording in the mockup was not applied.
+- **7:** the Results tab scrolls as a whole; the accordion takes its natural height. The arrow is on the right.
+- **Observed on the gateway:** the accordion builds every member's body view up front, collapsed ones included. Fine for tens of members; a list of hundreds would need bodies loaded only for open items, which means taking over the expand flag (the thing D10 chose not to do). Revisit only if it is slow in practice.
+
+**Verified:** `sql/tests/0109_ControlledRun/` 304 assertions, 0 failed; full suite on a clean private database 4,730 assertions, 0 failed. Gateway walkthrough up to every point that needs a typed credential (see `PROJECT_STATUS.md`, 2026-10-13 entry).
+
+**Not verified:** anything after a sign-in or a signature on the gateway; layout at 1920 x 1080; that the body views keep an unsaved draft when another member is saved (the item list is rewritten on every refresh).
+
+**From the end review, left as they are:** the scrap status guard in `ControlledRunResult_Record` names the statuses (`Scrap`, `Closed`, `Open`) where `RejectEvent_Record` tests `BlocksProduction`; they agree today and a new blocking status would need adding here. A result voided in the instant between a release's check and its write is not re-checked inside the transaction.
+
 ## Revision History
 
 | Date | Change |
 |---|---|
 | 2026-10-12 | Initial draft, written as a handoff for another agent. Not approved. |
 | 2026-10-13 | Completed with Jacques: all seven open decisions answered, the "verify" items checked against code, results-entry layout settled as an accordion with the Record Scrap tile pattern, Quality 30-minute sign-in window added, data model and procs made concrete. |
+| 2026-10-13 | Built. Section 12 added: differences from the spec, what was verified and what was not. |

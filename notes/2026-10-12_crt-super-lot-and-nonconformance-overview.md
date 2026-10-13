@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-12
 **Branch:** `jacques/working`
-**Status:** Exploration complete. Nothing built. Spec for piece 1 drafted:
+**Status:** Exploration complete. Pieces 1-3 built since (see the last revision row); pieces 4-6 are drafts. Spec for piece 1 drafted:
 `docs/superpowers/specs/2026-10-12-controlled-run-super-lot-design.md`.
 **Audience:** a future session picking this up cold. Read this before touching CRT,
 holds, scrap-from-container, or anything called "nonconformance".
@@ -192,3 +192,4 @@ priced.
 | Date | Change |
 |---|---|
 | 2026-10-12 | Initial write-up from the exploration session. |
+| 2026-10-13 | Pieces 1-3 are built on `jacques/controlled-run-super-lot` (see `PROJECT_STATUS.md`). Section 4 above describes the system BEFORE the feature: a completed container can now be tagged (piece 2), there is a signed bulk release, per-member results, a deviation record and a signature record (piece 3), and `Quality.NonConformance` is marked never-built in the Data Model. Open questions in section 7 on AIM (answer: nothing is sent when a container is tagged) and on the deviation number are answered in the piece 2 and 3 specs. |

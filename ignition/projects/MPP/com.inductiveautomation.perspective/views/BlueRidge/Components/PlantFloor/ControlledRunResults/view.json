@@ -48,7 +48,8 @@
       "alignItems": "stretch",
       "style": {
         "gap": "10px",
-        "overflow": "hidden",
+        "overflowY": "auto",
+        "overflowX": "hidden",
         "height": "100%"
       }
     },
@@ -329,13 +330,12 @@
           "name": "Accordion"
         },
         "position": {
-          "basis": "0",
-          "grow": 1
+          "shrink": 0
         },
         "props": {
           "items": [],
           "style": {
-            "overflowY": "auto"
+            "overflow": "visible"
           }
         }
       },

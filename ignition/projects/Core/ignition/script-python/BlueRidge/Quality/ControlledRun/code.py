@@ -542,7 +542,9 @@ def recordResults(runId, entries, appUserId, terminalLocationId):
 def remainingCount(runId, _refreshToken=None):
     """How many current members have nothing recorded yet (the number on the
        'Mark the rest as all accepted' button). HasResult comes from SQL."""
-    return len([r for r in listMemberResults(runId) if not r.get("HasResult")])
+    # Same test as acceptRemaining(), so the number on the button is the number it acts on.
+    return len([r for r in listMemberResults(runId)
+                if not r.get("HasResult") and int(r.get("LeftOver") or 0) > 0])
 
 
 def acceptRemaining(runId, appUserId, terminalLocationId):
@@ -679,10 +681,16 @@ def resultItems(runId, currentItems, runOpen, token):
                             "viewParams": {"row": row},
                             "useDefaultViewHeight": False, "useDefaultViewWidth": False,
                             "style": {"classes": ""}},
-                "height": "52px", "reverse": False, "style": {"classes": "crt-acc-header"},
+                # The accordion ships with a light header; without these the row text
+                # (light, for the dark plant-floor theme) is invisible on white.
+                # reverse = toggle arrow on the RIGHT, under the column header's spacer
+                "height": "52px", "reverse": True,
+                "style": {"classes": "", "backgroundColor": "var(--mpp-surface-raised)",
+                          "color": "var(--mpp-text-primary)",
+                          "borderBottom": "1px solid var(--mpp-border-subtle)"},
                 "toggle": {"enabled": True,
-                           "collapsedIcon": {"path": "material/expand_more", "color": "", "style": {"classes": ""}},
-                           "expandedIcon":  {"path": "material/expand_less", "color": "", "style": {"classes": ""}}},
+                           "collapsedIcon": {"path": "material/expand_more", "color": "var(--mpp-text-secondary)", "style": {"classes": ""}},
+                           "expandedIcon":  {"path": "material/expand_less", "color": "var(--mpp-accent-60)", "style": {"classes": ""}}},
             },
             "body": {
                 "viewPath": _RESULT_BODY_VIEW,
@@ -694,7 +702,8 @@ def resultItems(runId, currentItems, runOpen, token):
                     "runOpen": isOpen, "token": _u(token) or 0,
                 },
                 "height": "auto", "useDefaultViewHeight": True, "useDefaultViewWidth": False,
-                "style": {"classes": "crt-acc-body", "margin": "0px"},
+                "style": {"classes": "", "margin": "0px", "backgroundColor": "var(--mpp-surface-raised)",
+                          "borderBottom": "2px solid var(--mpp-accent-60)"},
             },
         })
     return items
@@ -748,6 +757,19 @@ def _draftLines(draftJson):
 
 def _draftJson(lines):
     return system.util.jsonEncode({"lines": lines})
+
+
+def _plain(value):
+    """A list of dicts read back out of view.custom arrives as wrapper objects
+       (ImmutableMap elements have no .get()). A JSON round trip turns it into
+       plain lists and dicts; anything that will not encode yields []."""
+    v = _u(value)
+    if not v:
+        return []
+    try:
+        return list(system.util.jsonDecode(system.util.jsonEncode(v)) or [])
+    except:
+        return []
 
 
 def entryChange(draftJson, key, delta=None, quantity=None):
@@ -815,7 +837,7 @@ def entryModel(memberId, catalog, draftJson, showAll, leftOver, isContainer):
     } for (k, label) in _OUTCOMES]
 
     names, reasonTiles, more = {}, [], 0
-    for t in (_u(catalog) or []):
+    for t in _plain(catalog):
         did = BlueRidge.Common.Util.toIntOrNone(t.get("defectCodeId"))
         if did is None:
             continue

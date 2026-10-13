@@ -9,7 +9,7 @@
 --     - Quality.InspectionResultCode  (3 seeded rows)
 --     - Quality.SampleTriggerCode     (9 seeded rows: 4 from 0004 + 5 FDS-08-014 triggers from 0037)
 --     - Quality.HoldTypeCode          (3 seeded rows)
---     - Quality.DispositionCode       (4 seeded rows)
+--     - Quality.DispositionCode       (5 rows: 4 seeded + Accepted from 0110)
 --
 --   For each table:
 --     - _List returns the expected seeded row count (via INSERT-EXEC)
@@ -110,8 +110,8 @@ INSERT INTO #R EXEC Quality.DispositionCode_List;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'DispositionCode_List: 4 rows returned by proc',
-    @ExpectedCount = 4,
+    @TestName      = N'DispositionCode_List: 5 rows returned by proc (4 seeded + Accepted, migration 0110)',
+    @ExpectedCount = 5,
     @ActualCount   = @Count;
 GO
 
