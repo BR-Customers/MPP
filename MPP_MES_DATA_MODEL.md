@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 3.5 | 2026-10-13 | Blue Ridge Automation | **Super-lot piece 4: container repack** (migration `0111_container_rework`; spec `docs/superpowers/specs/2026-10-12-controlled-run-container-repack-design.md`) - CHANGE-ORDER ADDITION, in neither change order's wording, still not deployable until all six pieces are in. `Lots.ContainerStatusCode` gains `ReworkProcessing` and `ReworkFilling`. New `Lots.ContainerRework` (one row each time a completed container is opened for rework). `Lots.AimShipperIdPool` gains `VoidedAt` / `VoidedByUserId` / `VoidReason` (a voided serial; AIM is told nothing yet - `Lots.AimShipperIdPool_ListVoided` is the worklist for a future cancellation post). `Lots.ContainerSerial` gains `RemovedAt` / `RemovedRejectEventId` (a serial scrapped out of a container). `Quality.ControlledRunMemberEndReason` gains `ContainerVoided`. No piece-move table: a move is a `Workorder.ConsumptionEvent` with `Consumption` genealogy into a newly minted, Closed, Manufactured tray LOT. Tray LOTs stay Closed throughout a rework. |
 | 3.4 | 2026-10-13 | Blue Ridge Automation | **Super-lot pieces 2 and 3** (migration `0110_controlled_run_results_signoff`; specs `docs/superpowers/specs/2026-10-12-controlled-run-completed-containers-design.md` and `2026-10-12-controlled-run-results-and-signoff-design.md`) - CHANGE-ORDER ADDITION, still not deployable until all six pieces are in. Section 5 Quality gains `SignatureMeaning` (read-only), `Signature` (append-only, enforced by trigger `TR_Signature_Immutable` - the first trigger in the schema, deliberate), `ControlledRunRelease` (one signed bulk release; `InspectionConfirmed` is the recorded fact that the 200% inspection was completed), `ControlledRunResult` (one inspection result entry per row; voided, never edited) and `ControlledRunDeviation` (the signed deviation MPP call the nonconformance). `ControlledRunMember` gains `WasCompleteAtJoin` and `ControlledRunReleaseId`; a completed container's Closed tray LOTs are now tagged when it joins, so `CrtSetByRun` is 1 for it. `DispositionCode` gains `Accepted`; `ControlledRunMemberEndReason` gains `Released`. `Location.SessionPolicy` gains `QualityElevationTimeoutSeconds` (1800) and `QualityElevationMaxSeconds` (14400): the longer elevation window Quality screens use. **`Quality.NonConformance` is marked as never built**: it was described here but no migration ever created it, and the super-lot deviation takes its place for now. |
 | 3.3 | 2026-10-12 | Blue Ridge Automation | **Super-lot (Controlled Run)** (migration `0109_controlled_run`, spec `docs/superpowers/specs/2026-10-12-controlled-run-super-lot-design.md`) - CHANGE-ORDER ADDITION, outside the accepted baseline; piece 1 of 6 and not deployable on its own. Section 5 Quality gains `ControlledRun` (the case: run number, reason, selection criteria, rolling-window state), `ControlledRunMember` (a LOT XOR a container, one open membership per unit), `ControlledRunLabel` (append-only print log) and three read-only code tables (`ControlledRunStatusCode`, `ControlledRunJoinMethod`, `ControlledRunMemberEndReason`). Membership never blocks by itself: joining sets the existing `Lots.Lot.CrtActive`, so every CRT block applies unchanged. `Lots.ufn_CrtForMint` gains a fourth arm (an open super-lot window tags new production of its part). No existing table changed. |
 | 3.2 | 2026-10-06 | Blue Ridge Automation | **`Lots.LotNote`** (migration `0107_lot_note`) — append-only free-text notes against a LOT, written from the LOT Detail *Notes* tab. Any signed-in user may add one; there is no edit and no delete. Each row carries the author, the terminal, whether an elevation window was open, a **snapshot of the LOT at write time** (status, location, piece count, stamped by `Lots.LotNote_Add` itself) and a `ContextJson` blob of the session the note came from. No `Audit.*` rows: the table is the record. Procs `Lots.LotNote_Add` v1.0, `Lots.LotNote_ListByLot` v1.0. Also this session, no schema change: `Lots.Lot_SearchAdvanced` v1.3 returns `ItemDescription`, matches free text against it, and takes `@ExcludeFinishedGoods BIT = 0`. |
@@ -1572,6 +1573,30 @@ Append-only log of super-lot label print requests. The label belongs to the supe
 | PrintedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
 | TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | Terminal where the print was requested |
 | PrintedAt | DATETIME2(3) | NOT NULL | UTC |
+
+### ContainerRework (Lots schema; listed here with the rest of the super-lot feature)
+
+One row each time a completed container is opened for rework (super-lot piece 4). It records what the container was before parts were taken out. The current rework of a container is its latest row. A container under rework has status `ReworkProcessing` (parts being taken out) or `ReworkFilling` (refill-ready); once resumed at a line it reads `Open` with `ResumedAt` set until it completes again. Tray LOTs stay Closed throughout; the `Lots.ContainerRework_*` procs change them directly, gated on these statuses.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ContainerId | BIGINT | FK -> Container.Id, NOT NULL | |
+| OpenedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
+| OpenedAt | DATETIME2(3) | NOT NULL | UTC |
+| OpenedAtTerminalId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+| OriginalCompletedAt | DATETIME2(3) | NULL | Container.CompletedAt before it was cleared |
+| OriginalAimShipperId | NVARCHAR(50) | NULL | The serial that was voided |
+| OriginalShippingLabelId | BIGINT | NULL | The label that was voided |
+| OriginalPieceCount | INT | NOT NULL | Pieces in the container when it was opened |
+| ResumedAt | DATETIME2(3) | NULL | Set when it was made the open container at a cell; cleared if recalled |
+| ResumedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| ResumedAtLocationId | BIGINT | FK -> Location.Id, NULL | |
+| VoidedAt | DATETIME2(3) | NULL | Set when the emptied container was voided |
+| VoidedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| VoidRemarks | NVARCHAR(500) | NULL | |
+
+Also from migration `0111`: `Lots.AimShipperIdPool.VoidedAt` / `VoidedByUserId` / `VoidReason` (a serial voided on the MES side; never posted afterwards, and listed by `Lots.AimShipperIdPool_ListVoided`), and `Lots.ContainerSerial.RemovedAt` / `RemovedRejectEventId` (a serialized part scrapped out of its container; the row is kept so the record that it was packed there survives).
 
 ### SignatureMeaning
 

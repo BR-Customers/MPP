@@ -1,6 +1,6 @@
 # Super-lot piece 4 — container repack: scrap, top-up, new serial, relabel
 
-> **Status: COMPLETE 2026-10-13 (decisions answered by Jacques the same day). NOT BUILT.**
+> **Status: BUILT 2026-10-13. SQL tested (83 assertions); the Repack popup and the line pick have NOT been rendered on the gateway. See section 11.**
 > Fourth of six pieces. Sections marked *verified* were checked against the code.
 > **Neither change order mentions this piece.** It exists because MPP's own example cannot
 > finish without it; worth raising commercially.
@@ -177,9 +177,24 @@ Feasibility, from reading `Workorder.Assembly_CompleteTray` (*verified*):
 - A loose-piece shortfall can only be filled from finished parts until the follow-on.
 - One remainder container is normal at the end of a consolidation.
 
+## 11. Build notes (2026-10-13)
+
+**Differs from the sections above:**
+
+- **Scrapped serials (section 5):** only `Lots.Container_ListSerials` and the new rework reads skip a removed serial. The trace readers (`Container_GetTraceDetail`, `SerializedPart_GetTraceDetail`, `GlobalTrace_Resolve`, `Container_ListShipped`, `Hold_ListAssociatedContainers`) still show it in the container it was packed in, with no "scrapped" marker. That is piece 6 (visibility).
+- **No new print reason code.** The re-completion is an ordinary completion, so its label is an ordinary initial label.
+- **"Complete here"** resumes the container at the location it is standing in, then completes it. The label prints on the printer of the terminal the Quality user is at.
+- **A recorded scrap is applied whole** to one tray (same defect, same quantity). If the parts came out of two trays, void the recorded entry and scrap each tray directly.
+- **The top-up tray LOT is minted Closed**, not Good, so it never appears in a WIP queue or a line's inventory.
+
+**Verified:** `sql/tests/0111_ContainerRework/010_rework.sql`, 83 assertions, including re-completion through the unmodified `Lots.Container_Complete` (new serial claimed, old one voided and never offered to the AIM sweep, the live serial read by container is the new one).
+
+**Not verified:** the Repack popup and the pick popup have not been rendered; no action has been driven from the UI; a real re-completion with label print and AIM post; how the line's own screens look while a resumed rework container is their open container (it will have more tray rows than the config's trays-per-container, with unequal counts).
+
 ## Revision History
 
 | Date | Change |
 |---|---|
 | 2026-10-12 | Initial draft: problem statement and options, written as a handoff. Not approved. |
 | 2026-10-13 | Completed with Jacques: all questions answered (loose pieces, donor is any finished container, no AIM call for the old serial, void an emptied container, two rework statuses with trays left Closed, serialized included, Sort Cage separate, finish at a line through the inventory card). BOM-component partial fill recorded as a follow-on with its feasibility. Data model and procs made concrete. |
+| 2026-10-13 | Built. Section 11 added: differences from the spec, what was verified and what was not. |
