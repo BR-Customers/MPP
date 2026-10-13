@@ -1,0 +1,364 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Super-lot - Results and Sign-off mock</title><style>
+:root{
+  --mpp-neutral-10:#0B1220; --mpp-neutral-20:#111A2E; --mpp-neutral-30:#172238;
+  --mpp-neutral-40:#1F2C44; --mpp-neutral-50:#2C3A55; --mpp-neutral-60:#425270;
+  --mpp-neutral-70:#697A98; --mpp-neutral-80:#9AA8BF; --mpp-neutral-90:#C9D2E0;
+  --mpp-neutral-100:#F0F3F8;
+  --mpp-accent-20:#093240; --mpp-accent-40:#126680; --mpp-accent-50:#1888A8;
+  --mpp-accent-60:#22A8CC; --mpp-accent-70:#4BC2E0; --mpp-accent-90:#B0E5F3;
+  --bad:#F87171; --warn:#F4B343; --good:#4ADE80;
+  --card:var(--mpp-neutral-30); --raised:var(--mpp-neutral-20);
+  --border:var(--mpp-neutral-50); --t1:var(--mpp-neutral-100); --t2:var(--mpp-neutral-90); --t3:var(--mpp-neutral-80);
+  --mono:'JetBrains Mono','Roboto Mono',Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#05080f;color:var(--t1);font-family:Inter,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.4}
+button{font-family:inherit;color:inherit}
+.mockbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 16px;background:#0a0f1a;border-bottom:1px dashed var(--mpp-neutral-60);font-size:13px;color:var(--t3)}
+.mockbar b{color:var(--warn);letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.seg{display:inline-flex;border:1px solid var(--mpp-neutral-60);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{background:none;border:0;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--t3)}
+.seg button.on{background:var(--mpp-accent-40);color:#fff}
+.stage{padding:14px;overflow:hidden}
+.scaler{transform-origin:0 0}
+.screen{width:1920px;height:1080px;position:relative;background:var(--mpp-neutral-10);border:1px solid var(--mpp-neutral-60);overflow:hidden;font-size:17px;display:flex;flex-direction:column}
+
+/* app header */
+.apph{height:64px;flex:none;display:flex;align-items:center;gap:18px;padding:0 24px;background:var(--mpp-neutral-20);border-bottom:1px solid var(--border)}
+.apph .ttl{font-size:24px;font-weight:700}
+.apph .crumb{color:var(--t3);font-size:15px}
+.apph .sp{flex:1}
+.apph .who{border:1px solid var(--mpp-neutral-60);border-radius:8px;padding:8px 14px;font-size:15px}
+
+.main{flex:1;min-height:0;display:grid;grid-template-columns:540px minmax(0,1fr)}
+.left{border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0;padding:18px;gap:14px}
+.scan{display:flex;align-items:center;gap:10px;min-height:60px;border:2px solid var(--mpp-accent-50);border-radius:10px;background:var(--mpp-neutral-10);padding:0 14px;color:var(--t3);font-size:16px}
+.scan .ic{width:26px;height:26px;border:2px solid var(--mpp-accent-70);border-radius:4px;position:relative;flex:none}
+.scan .ic:after{content:"";position:absolute;left:3px;right:3px;top:9px;height:2px;background:var(--mpp-accent-70)}
+.row{display:flex;gap:10px;align-items:center}
+.btn{min-height:56px;border-radius:10px;border:1px solid var(--mpp-neutral-60);background:var(--card);font-size:16px;font-weight:600;cursor:pointer;padding:0 18px;white-space:nowrap}
+.btn.primary{background:var(--mpp-accent-50);border-color:var(--mpp-accent-60);color:#fff}
+.btn.warn{border-color:var(--warn);color:var(--warn)}
+.btn.sm{min-height:44px;font-size:14px;padding:0 14px}
+.btn:disabled,.btn.off{opacity:.4;cursor:not-allowed}
+.seg2{display:inline-flex;border:1px solid var(--mpp-neutral-60);border-radius:10px;overflow:hidden;flex:1}
+.seg2 span{flex:1;text-align:center;padding:14px 0;font-size:15px;font-weight:600;color:var(--t3)}
+.seg2 span.on{background:var(--mpp-accent-40);color:#fff}
+.runs{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;min-height:0}
+.run{background:var(--raised);border:2px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.run.on{background:var(--mpp-accent-20);border-color:var(--mpp-accent-60)}
+.run .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.run .no{font-family:var(--mono);font-weight:700;font-size:20px}
+.run .why{font-size:14px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.run .meta{display:flex;justify-content:space-between;font-size:13px;color:var(--t3)}
+.bar{height:8px;border-radius:4px;background:var(--mpp-neutral-50);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--good)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border:1px solid}
+.pill.open{color:var(--warn);border-color:var(--warn)}
+.pill.roll{color:var(--mpp-accent-90);border-color:var(--mpp-accent-60);background:var(--mpp-accent-20)}
+.pill.roll:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--mpp-accent-70);animation:bl 1.4s ease-in-out infinite}
+.pill.done{color:var(--good);border-color:var(--good)}
+.pill.bad{color:var(--bad);border-color:var(--bad)}
+.pill.mut{color:var(--t3);border-color:var(--mpp-neutral-60)}
+@keyframes bl{50%{opacity:.25}}
+
+.right{display:flex;flex-direction:column;min-height:0;padding:18px 24px;gap:14px}
+.rh{display:flex;gap:20px;align-items:flex-start}
+.rh .id{flex:1;min-width:0}
+.rh .big{font-family:var(--mono);font-size:44px;font-weight:700;line-height:1.05;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.rh .reason{font-size:19px;margin-top:6px}
+.rh .crit{font-size:15px;color:var(--t3);margin-top:4px}
+.stats{display:flex;gap:10px;flex:none}
+.stat{background:var(--raised);border:1px solid var(--border);border-radius:12px;padding:10px 16px;min-width:128px}
+.stat .n{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .l{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)}
+.acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.acts .sp{flex:1}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.tabs span{padding:12px 20px;font-size:16px;font-weight:600;color:var(--t3);border-bottom:3px solid transparent}
+.tabs span.on{color:var(--t1);border-bottom-color:var(--mpp-accent-60)}
+.tabs span.later{opacity:.45;font-weight:500}
+.tabs span.later em{font-style:normal;font-size:11px;border:1px dashed var(--mpp-neutral-60);border-radius:6px;padding:1px 6px;margin-left:6px}
+.tbl{flex:1;min-height:0;overflow:auto;border:1px solid var(--border);border-radius:12px;background:var(--raised)}
+table{width:100%;border-collapse:collapse;font-size:16px}
+th{position:sticky;top:0;background:var(--mpp-neutral-40);text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:10px 14px;font-weight:600}
+td{padding:11px 14px;border-top:1px solid var(--mpp-neutral-40);white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td .mono{font-family:var(--mono);font-weight:700}
+tr.sel td{background:var(--mpp-accent-20)}
+tr.inel td{color:var(--mpp-neutral-70)}
+tr.inel td .mono{font-weight:500}
+.kind{display:inline-block;width:92px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--t3)}
+.cb{width:26px;height:26px;border:2px solid var(--mpp-neutral-60);border-radius:6px;display:inline-block;vertical-align:middle;position:relative}
+.cb.on{background:var(--mpp-accent-50);border-color:var(--mpp-accent-60)}
+.cb.on:after{content:"";position:absolute;left:7px;top:2px;width:7px;height:14px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg)}
+.cb.no{border-style:dashed;opacity:.5}
+.foot{font-size:13px;color:var(--t3)}
+
+/* overlays */
+.dim{position:absolute;inset:0;background:rgba(5,8,15,.72);display:none;z-index:3}
+.pop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--raised);border:1px solid var(--mpp-accent-60);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.65);display:none;flex-direction:column;z-index:4;overflow:hidden}
+.pop .ph{display:flex;align-items:center;gap:16px;padding:16px 22px;border-bottom:1px solid var(--border)}
+.pop .ph h1{margin:0;font-size:22px}
+.steps{display:flex;gap:8px;margin-left:auto}
+.steps span{font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;border:1px solid var(--mpp-neutral-60);color:var(--t3)}
+.steps span.on{background:var(--mpp-accent-40);border-color:var(--mpp-accent-60);color:#fff}
+.pop .pb{padding:20px 22px;flex:1;min-height:0;display:flex;flex-direction:column;gap:16px;overflow:auto}
+.pop .pf{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--border);align-items:center}
+.pop .pf .sp{flex:1}
+.lbl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:6px}
+.fld{min-height:56px;border:1px solid var(--mpp-neutral-60);border-radius:10px;background:var(--mpp-neutral-10);padding:0 14px;display:flex;align-items:center;font-size:17px}
+.fld.ph{color:var(--t3)}
+.fld.tall{min-height:92px;align-items:flex-start;padding-top:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g4{display:grid;grid-template-columns:1.2fr 1.4fr 1fr 1fr;gap:16px}
+.chk{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.chk b{display:block;font-size:16px}
+.chk small{color:var(--t3);font-size:13px}
+.sum{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.note{background:#3a2a08;border:1px solid var(--warn);color:#ffe2a8;border-radius:10px;padding:10px 14px;font-size:14px}
+
+
+/* piece 2+3 additions */
+.tabs span.badge em{font-style:normal;font-size:12px;background:var(--mpp-accent-40);color:#fff;border-radius:999px;padding:1px 8px;margin-left:8px}
+.q{display:inline-block;min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.q.z{color:var(--mpp-neutral-70)}
+.q.warn{color:var(--warn);font-weight:700}.q.ok{color:var(--good);font-weight:700}
+.cell{display:inline-flex;align-items:center;justify-content:flex-end;width:84px;min-height:44px;border:1px solid var(--mpp-neutral-60);border-radius:8px;background:var(--mpp-neutral-10);padding:0 10px;font-variant-numeric:tabular-nums}
+.cell.e{color:var(--mpp-neutral-70)}
+.cell.w{width:200px;justify-content:flex-start}
+.strip{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.strip .sp{flex:1}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+.gs{display:grid;grid-template-columns:2.2fr 1fr;gap:12px}
+.stmt{background:var(--card);border-left:4px solid var(--mpp-accent-60);border-radius:8px;padding:14px 16px;font-size:17px}
+.two{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;flex:1;min-height:0}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0}
+.h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)}
+.card2{background:var(--raised);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:15px}
+.card2 b.mono{font-family:var(--mono)}
+.acchead,.acch{display:grid;grid-template-columns:230px 150px repeat(7,1fr) 50px;gap:0 10px;align-items:center;padding:0 16px}
+.acchead{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:600;background:var(--mpp-neutral-40);border-radius:10px;min-height:38px;flex:none}
+.acchead .num,.acch .num{text-align:right}
+.accwrap{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.acc{background:var(--raised);border:1px solid var(--border);border-radius:12px;flex:none}
+.acc.on{border-color:var(--mpp-accent-60)}
+.acch{min-height:54px;font-size:16px}.acch.on{background:var(--mpp-accent-20);border-radius:12px 12px 0 0}
+.acch .mono{font-family:var(--mono);font-weight:700}.chev{text-align:center;color:var(--t3);font-size:13px}
+.accb{display:grid;grid-template-columns:300px minmax(0,1fr) 420px;gap:18px;padding:16px;border-top:1px solid var(--border)}
+.accb>div{display:flex;flex-direction:column;gap:10px;min-width:0}
+.tiles{display:grid;gap:10px}.tiles.t2{grid-template-columns:1fr 1fr}.tiles.t4{grid-template-columns:repeat(4,1fr)}
+.tile{position:relative;min-height:74px;border:1px solid var(--mpp-neutral-60);border-radius:10px;background:var(--card);padding:10px 12px;display:flex;flex-direction:column;justify-content:center;font-size:15px}
+.tile b{font-weight:600}.tile small{color:var(--t3);font-family:var(--mono);font-size:12px}
+.tile i{position:absolute;right:10px;top:8px;font-style:normal;font-weight:700;font-size:18px;color:var(--mpp-accent-70)}
+.tile.sel{border-color:var(--mpp-accent-60);background:var(--mpp-accent-20)}
+.tile.wide{min-height:52px;align-items:center;font-weight:600;border-style:dashed}
+.line{display:grid;grid-template-columns:minmax(0,1fr) 44px 84px 44px 44px;gap:6px;align-items:center}
+.line small{color:var(--t3)}.line .btn.sm{padding:0;min-height:44px}
+.tot{font-size:14px;color:#c8f5d8;background:#0f2a1a;border:1px solid var(--good);border-radius:10px;padding:8px 12px}
+.scn{display:none;flex-direction:column;gap:14px;flex:1;min-height:0}
+.screen[data-scene="resA"] .sResA,.screen[data-scene="formA"] .sResA,.screen[data-scene="resB"] .sResB,
+.screen[data-scene="sign"] .sSign,.screen[data-scene="rel"] .sSign,.screen[data-scene="dev"] .sSign{display:flex}
+.screen[data-scene="formA"] .dim,.screen[data-scene="rel"] .dim,.screen[data-scene="dev"] .dim{display:block}
+.screen[data-scene="formA"] #pForm,.screen[data-scene="rel"] #pRel,.screen[data-scene="dev"] #pDev{display:flex}
+.screen[data-scene="sign"] .tR,.screen[data-scene="rel"] .tR,.screen[data-scene="dev"] .tR{color:var(--t3);border-bottom-color:transparent}
+.screen[data-scene="sign"] .tS,.screen[data-scene="rel"] .tS,.screen[data-scene="dev"] .tS{color:var(--t1);border-bottom-color:var(--mpp-accent-60)}
+</style></head><body>
+<div class="mockbar"><b>Mock controls</b>
+  <span>Scene <span class="seg" id="segScene">
+    <button data-v="resA" class="on">1 - Results (accordion)</button>
+    <button data-v="sign">2 - Sign-off</button>
+    <button data-v="rel">3 - Signed release</button>
+    <button data-v="dev">4 - Deviation</button>
+  </span></span>
+  <span>Nothing here is wired. Every part, LOT, container, person and line is made up.</span>
+</div>
+<div class="stage" id="stage"><div class="scaler" id="scaler"><div class="screen" id="screen" data-scene="resA">
+
+  <div class="apph">
+    <div class="ttl">Super-lots</div><div class="crumb">Quality &middot; Controlled runs</div>
+    <div class="sp"></div>
+    <div class="who">QA Office terminal</div><div class="who">KM &middot; Quality sign-in &middot; 24 min left</div>
+  </div>
+
+  <div class="main">
+    <div class="left">
+      <div class="scan"><span class="ic"></span>Scan a super-lot label, an LTT or a container label</div>
+      <div class="row"><div class="seg2"><span class="on">Open (3)</span><span>Closed</span><span>All</span></div><button class="btn primary">+ New super-lot</button></div>
+      <div class="runs">
+        <div class="run on"><div class="top"><span class="no">CR000123</span><span class="pill mut">Window ended</span></div>
+          <div class="why">Customer report: porosity at bore, traced to MESL3000412</div>
+          <div class="bar"><i style="width:25%"></i></div>
+          <div class="meta"><span>6MA-CH-01 &middot; MS Line 2</span><span>3 of 12 released</span></div></div>
+        <div class="run"><div class="top"><span class="no">CR000122</span><span class="pill mut">Window ended</span></div>
+          <div class="why">Vision camera down on Assembly 4 - count by hand</div>
+          <div class="bar"><i style="width:80%"></i></div>
+          <div class="meta"><span>5K8-OP-02 &middot; Assembly 4</span><span>8 of 10 released</span></div></div>
+      </div>
+      <div class="foot">Sorted by oldest open first.</div>
+    </div>
+
+    <div class="right">
+      <div class="rh">
+        <div class="id">
+          <div class="big">CR000123 <span class="pill open">Open</span> <span class="pill mut">Window ended 14:52</span></div>
+          <div class="reason">Customer report: porosity at bore, traced to MESL3000412</div>
+          <div class="crit">6MA-CH-01 made on <b>MS Line 2</b> since <b>Mon 06:10</b>, plus everything made from <b>MESL3000412</b>. Opened by KM, Mon 10:42.</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="n">12</div><div class="l">Members</div></div>
+          <div class="stat"><div class="n">3</div><div class="l">Released</div></div>
+          <div class="stat"><div class="n">1,482</div><div class="l">Pieces</div></div>
+        </div>
+      </div>
+
+      <div class="tabs"><span>Members</span><span class="on tR">Results</span><span class="tS badge">Sign-off<em>4 ready</em></span><span class="later">History<em>later piece</em></span></div>
+
+      <!-- ============ Results: accordion ============ -->
+      <div class="scn sResA">
+        <div class="strip">
+          <span class="foot" style="font-size:15px">Open a member to enter what the inspection found. <b>Left over</b> is what has not been accounted for yet; it does not have to reach zero.</span>
+          <div class="sp"></div>
+          <button class="btn sm">Mark the rest as all accepted (5)</button>
+        </div>
+        <div class="acchead"><span>Member</span><span>Part</span><span class="num">Pieces</span><span class="num">Accepted</span><span class="num">Scrap</span><span class="num">Rework</span><span class="num">Return</span><span class="num">Use as is</span><span class="num">Left over</span><span></span></div>
+        <div class="accwrap" id="acc"></div>
+        <div class="foot">One member open at a time. Scrap on a LOT is taken off the LOT when you save. Scrap on a packed container is recorded but stays counted in the container until it is repacked (later piece).</div>
+      </div>
+
+      <!-- ============ Sign-off ============ -->
+      <div class="scn sSign">
+        <div class="two">
+          <div class="col">
+            <div class="strip"><div class="h3">Release</div><div class="sp"></div><button class="btn sm">Tick all ready</button><button class="btn primary sm">Release ticked (4)</button></div>
+            <div class="tbl"><table>
+              <thead><tr><th style="width:44px"></th><th>Member</th><th class="num">Pieces</th><th>Results</th><th>Ready?</th></tr></thead>
+              <tbody id="sign"></tbody>
+            </table></div>
+            <div class="foot">A member needs at least one result before it can be released. Use-as-is needs a signed deviation first.</div>
+          </div>
+          <div class="col">
+            <div class="strip"><div class="h3">Deviations</div><div class="sp"></div><button class="btn sm">Raise deviation</button></div>
+            <div class="card2"><b class="mono">DV000007</b> &nbsp;Minor porosity outside sealing land, 14 pcs<br><span class="foot">Approved by KM, Mon 15:41 &middot; MPP ref NCR-2291</span></div>
+            <div class="h3" style="margin-top:6px">Signatures on this super-lot</div>
+            <div class="tbl"><table>
+              <thead><tr><th>When</th><th>Who</th><th>What was signed</th></tr></thead>
+              <tbody>
+                <tr><td>Mon 15:44</td><td>KM</td><td>Release of 3 members</td></tr>
+                <tr><td>Mon 15:41</td><td>KM</td><td>Deviation DV000007</td></tr>
+              </tbody></table></div>
+            <div class="note">Any network account registered in the MES can sign today. Signing will be limited to Quality once plant AD roles exist.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dim"></div>
+
+  <!-- Signed release -->
+  <div class="pop" id="pRel" style="width:860px">
+    <div class="ph"><h1>Release 4 members &middot; CR000123</h1></div>
+    <div class="pb">
+      <div style="font-size:16px;color:var(--t2)">MESL3000415, MESL3000423, MESL3000431, Container 8815 &middot; 467 pieces. Their Controlled Run Tag is cleared and they can be used and shipped again.</div>
+      <div class="stmt">I confirm the Controlled Run Tag was acted on and the 200% inspection was completed for the members being released.</div>
+      <div class="chk"><span class="cb on"></span><div><b>I confirm the statement above</b><small>Required. Nothing is released without it.</small></div></div>
+      <div><div class="lbl">Remarks (optional)</div><div class="fld ph">&nbsp;</div></div>
+      <div class="g2"><div><div class="lbl">Your network user name</div><div class="fld">kmiller</div></div><div><div class="lbl">Password</div><div class="fld ph">password</div></div></div>
+      <div class="foot">A signature always asks for the password, even inside a Quality sign-in.</div>
+    </div>
+    <div class="pf"><button class="btn">Cancel</button><div class="sp"></div><button class="btn primary">Sign and release</button></div>
+  </div>
+
+  <!-- Deviation -->
+  <div class="pop" id="pDev" style="width:960px">
+    <div class="ph"><h1>Raise deviation &middot; CR000123</h1></div>
+    <div class="pb">
+      <div><div class="lbl">What deviates (required)</div><div class="fld tall">Minor porosity outside the sealing land</div></div>
+      <div><div class="lbl">Why it does not affect part performance (required)</div><div class="fld tall">Outside the functional surface per drawing note 7; leak test passed on all 14.</div></div>
+      <div class="g3">
+        <div style="grid-column:span 2"><div class="lbl">Defect (optional)</div><div class="fld">POR-01 Porosity</div></div>
+        <div><div class="lbl">Pieces affected (optional)</div><div class="fld">14</div></div>
+        <div><div class="lbl">MPP reference (optional)</div><div class="fld">NCR-2291</div></div>
+      </div>
+      <div class="stmt">I approve this deviation: the condition described does not affect part performance and the affected material is accepted for use as is.</div>
+      <div class="g2"><div><div class="lbl">Your network user name</div><div class="fld">kmiller</div></div><div><div class="lbl">Password</div><div class="fld ph">password</div></div></div>
+    </div>
+    <div class="pf"><button class="btn">Cancel</button><div class="sp"></div><button class="btn primary">Sign deviation</button></div>
+  </div>
+
+</div></div></div>
+
+<div class="notes">
+  <h2>What this mock is for</h2>
+  <ul>
+    <li>The Results and Sign-off tabs of <code>/shop-floor/controlled-runs</code> (super-lot pieces 2 and 3), at a 1920 x 1080 terminal. Specs: <code>2026-10-12-controlled-run-completed-containers-design.md</code>, <code>2026-10-12-controlled-run-results-and-signoff-design.md</code>.</li>
+    </ul>
+  <h2>Results as an accordion</h2>
+  <ul>
+    <li><b>Header = the summary row</b> (its own view, same columns as the Members tab). <b>Body = the entry form</b> (its own view), built like Record Scrap at Trim and Assembly: tap a tile to add 1, tap a quantity for the number pad.</li>
+    <li><b>Outcomes and scrap reasons are both tiles</b> and both land in one Entered list, so there is one way to enter anything and one Save per member.</li>
+    <li><b>Accept the rest</b> puts whatever is left over into Accepted in one tap.</li>
+    <li>Reason tiles are the ranked list for where the member was made, with More reasons for the full list, as on the line.</li>
+  </ul>
+  <h2>Things to react to</h2>
+  <ul>
+    <li><b>Left over</b> is information, not a wall. A member can be released with pieces unaccounted for.</li>
+    <li><b>Scrap on a LOT happens immediately</b> and shows as Applied. <b>Scrap on a packed container</b> is recorded and shows as Not yet applied until the repack piece exists.</li>
+    <li><b>"Quality sign-in, 24 min left"</b> in the header is the open question about a longer sign-in for this screen. Signatures (scenes 5 and 6) ask for the password regardless.</li>
+    <li><b>Released replaces Cleared</b> on the left-hand cards and the middle KPI.</li>
+  </ul>
+</div>
+<script>
+// name, part, pieces now, accepted, scrap, rework, return, useAsIs
+var R=[
+ ["MESL3000412","6MA-CH-01",118,0,0,0,0,0],
+ ["MESL3000415","6MA-CH-01",117,117,3,0,0,0],
+ ["MESL3000419","6MA-CH-01",120,0,0,0,0,0],
+ ["MESL3000423","6MA-CH-01",96,90,0,6,0,0],
+ ["MESL3000431","6MA-SA-01",110,96,0,0,0,14],
+ ["Container 8812","6MA-FG-01",144,0,2,0,0,0],
+ ["Container 8815","6MA-FG-01",144,144,0,0,0,0],
+ ["Container 8819","6MA-FG-01",144,0,0,0,0,0],
+ ["MESL3000448","6MA-CH-01",120,0,0,0,0,0]
+];
+function q(n){return '<span class="q'+(n?'':' z')+'">'+n+'</span>'}
+function left(r){var isC=r[0].indexOf("Container")===0;return r[2]-(r[3]+r[5]+r[6]+r[7])-(isC?r[4]:0)}
+var OPEN=2;
+document.getElementById("acc").innerHTML=R.map(function(r,i){
+  var l=left(r),any=r[3]+r[4]+r[5]+r[6]+r[7],o=i===OPEN;
+  var h='<div class="acch'+(o?' on':'')+'"><span class="mono">'+r[0]+'</span><span>'+r[1]+'</span><span class="num">'+r[2]+'</span><span class="num">'+q(o?112:r[3])+'</span><span class="num">'+q(o?4:r[4])+'</span><span class="num">'+q(r[5])+'</span><span class="num">'+q(r[6])+'</span><span class="num">'+q(o?4:r[7])+'</span><span class="num"><span class="q '+(o||l===0?'ok':(any?'warn':'z'))+'">'+(o?0:l)+'</span></span><span class="chev">'+(o?'&#9650;':'&#9660;')+'</span></div>';
+  if(!o) return '<div class="acc">'+h+'</div>';
+  var D=[["POR-01","Porosity",3],["COLD-02","Cold shut",1],["FLSH-01","Trim flash",0],["DIM-04","Bore oversize",0],["CRK-01","Crack",0],["DMG-02","Handling damage",0],["MIS-01","Misrun",0],["LEAK-01","Leak test fail",0]];
+  var E=[["Accepted","",112],["Use as is","needs a deviation",4],["POR-01","Porosity",3],["COLD-02","Cold shut",1]];
+  var body='<div class="accb">'
+   +'<div class="bc1"><div class="h3">1 - Outcome</div><div class="tiles t2">'
+   +'<div class="tile sel"><b>Accepted</b><i>112</i></div><div class="tile"><b>Rework</b><i></i></div><div class="tile"><b>Return to vendor</b><i></i></div><div class="tile sel"><b>Use as is</b><i>4</i></div></div>'
+   +'<div class="tile wide">Accept the rest (0)</div></div>'
+   +'<div class="bc2"><div class="h3">2 - Scrap reason - tap a reason to add 1</div><div class="tiles t4">'
+   +D.map(function(d){return '<div class="tile'+(d[2]?' sel':'')+'"><b>'+d[1]+'</b><small>'+d[0]+'</small><i>'+(d[2]||'')+'</i></div>'}).join('')
+   +'</div><button class="btn sm" style="align-self:flex-start">More reasons (41)</button></div>'
+   +'<div class="bc3"><div class="h3">3 - Entered</div>'
+   +E.map(function(e){return '<div class="line"><span><b>'+e[0]+'</b> <small>'+e[1]+'</small></span><button class="btn sm">-</button><span class="cell">'+e[2]+'</span><button class="btn sm">+</button><button class="btn sm">x</button></div>'}).join('')
+   +'<div class="tot"><b>120 of 120</b> accounted for &middot; 4 scrap comes off this LOT on save</div>'
+   +'<div class="strip"><button class="btn sm">Remark</button><div class="sp"></div><button class="btn sm">Cancel</button><button class="btn primary sm">Save results</button></div></div>'
+   +'</div>';
+  return '<div class="acc on">'+h+body+'</div>';
+}).join("");
+document.getElementById("sign").innerHTML=R.map(function(r,i){
+  var any=r[3]+r[4]+r[5]+r[6]+r[7], ready=any>0 && r[0]!=="Container 8812";
+  var why=any?'Scrap not yet applied':'No results yet';
+  var res=[r[3]?r[3]+' accepted':'',r[4]?r[4]+' scrap':'',r[5]?r[5]+' rework':'',r[7]?r[7]+' use as is':''].filter(Boolean).join(', ')||'-';
+  return '<tr'+(ready?'':' class="inel"')+'><td><span class="cb '+(ready?'on':(any?'':'no'))+'"></span></td><td><span class="mono">'+r[0]+'</span></td><td class="num">'+r[2]+'</td><td>'+res+'</td><td>'+(ready?'<span class="pill done">Ready</span>':'<span class="pill '+(any?'open':'mut')+'">'+why+'</span>')+'</td></tr>';
+}).join("");
+var seg=document.getElementById("segScene"),screenEl=document.getElementById("screen");
+seg.addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return;
+  [].forEach.call(seg.children,function(x){x.classList.toggle("on",x===b)});
+  screenEl.setAttribute("data-scene",b.getAttribute("data-v"));});
+function fit(){var st=document.getElementById("stage"),sc=document.getElementById("scaler");
+  var k=Math.min(1,(st.clientWidth-28)/1922); sc.style.transform="scale("+k+")"; st.style.height=(1082*k+28)+"px";}
+window.addEventListener("resize",fit); fit();
+</script>
+</body></html>

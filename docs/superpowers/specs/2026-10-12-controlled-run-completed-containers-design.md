@@ -1,7 +1,8 @@
 # Super-lot piece 2 — Controlled Run Tag on completed containers
 
-> **Status: DRAFT 2026-10-12. NOT APPROVED. NOT BUILT.** Written as a handoff: another
-> agent will take this to a plan and build it. Second of six pieces.
+> **Status: COMPLETE 2026-10-13, awaiting Jacques's read. NOT BUILT.** Second of six
+> pieces. **Section 10 is the final design** - what is built, in one place. Sections 4,
+> 5 and 8 are kept as the record of what was proposed and asked.
 >
 > **Decisions were answered on 2026-10-12 — read section 8a first; it overrides the
 > proposals in sections 4 and 5.** In short: AIM is told nothing when a container is
@@ -290,8 +291,44 @@ Ask these in plain language before planning. Each has a recommendation.
 - Until piece 4, a container that fails inspection has no path: its parts cannot be
   scrapped (Closed LOT) and it cannot be reopened. It stays tagged and blocked.
 
+## 10. Final design (2026-10-13)
+
+Built with piece 3 as one plan and one migration
+(`0110_controlled_run_results_signoff`; see the piece 3 spec, section 4).
+
+1. **`Quality.ControlledRun_ApplyMembersInternal` v1.1.** The tag is also set on a
+   **Closed** LOT when it is a tray (`Lots.ContainerTray.FinishedGoodLotId`) of a
+   container that is joining. Eligibility already keeps `Shipped` and `Void` containers
+   out, so no second status test is needed. A Closed LOT that is not such a tray is still
+   never tagged, and `Lots.Lot_SetCrt` keeps refusing Closed LOTs. Same `CrtActivated`
+   audit row per LOT; `CrtSetByRun = 1`.
+2. **`ControlledRunMember.WasCompleteAtJoin`**, set by the helper when the container's
+   status is `Complete` at the moment it joins. `AimWasPostedAtJoin` is not built.
+3. **Nothing is sent to AIM** when a container is tagged. *Verified:* a claimed,
+   not-yet-posted serial drops out of `Lots.AimShipperIdPool_ListUnposted` while any tray
+   is tagged and returns when the tags clear; a posted serial is untouched, and
+   `AimPost.postOne` returns `already_posted` without calling AIM.
+4. **No Validate button here.** A tagged container is released by piece 3's signed
+   release, wherever it is. The existing Assembly OUT popup still lists and can validate
+   a tagged container that is standing at that line (piece 3, D5).
+5. **Join by scan and by sync** go through the same helper, so they behave the same.
+   The sync's descendant arm only looks at CRT-active descendants; a Closed tray of a
+   completed container is not CRT-active until it joins, so a completed container is
+   reached by sync only when its tray was already tagged. Selecting by genealogy in the
+   wizard is what finds warehouse containers - that is piece 1's preview, unchanged.
+6. **`Quality.ControlledRun_RemoveMember`** message: for a container it now says the
+   container is still tagged and is released from the Sign-off tab, not "on LOT Detail".
+7. **Hold and super-lot together** are allowed; neither refuses the other. Tested: both
+   blocks apply, and releasing one leaves the other.
+8. **Moving a tagged container** is not blocked by anything; shipping is the only block.
+   To confirm in the build: no container-move proc reads the tray LOTs' `CrtActive`.
+9. **Tests changed on purpose:** `040_open.sql` ("a completed container ... its Closed
+   tray is NOT tagged", now tagged with `CrtSetByRun = 1`) and `050_reads.sql` (the
+   "2 cleared" count). New file for the cases in section 7.
+
 ## Revision History
 
 | Date | Change |
 |---|---|
 | 2026-10-12 | Initial draft, written as a handoff for another agent. Not approved. |
+| 2026-10-13 | Section 10 added: the final design after Jacques's answers and code verification; built with piece 3. |

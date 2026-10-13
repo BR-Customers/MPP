@@ -1,273 +1,402 @@
 # Super-lot piece 3 — inspection results, signed release, deviation record
 
-> **Status: DRAFT 2026-10-12. NOT APPROVED. NOT BUILT.** Handoff for another agent.
-> Third of six pieces. Section 9 lists what is still Jacques's to decide; **do not build
-> past an open decision.** This draft is lighter on code-level grounding than pieces 1
-> and 2: where it says "verify", it has not been checked.
-
-> **Built together with piece 2 (decided 2026-10-12).** Piece 2 is now small: let the
-> member helper tag the Closed tray LOTs of an unshipped container, plus its tests. It
-> has no release path of its own, so it and this piece are ONE plan and ONE build. Read
-> section 8a of `2026-10-12-controlled-run-completed-containers-design.md` for the
-> answers that apply here: AIM is told nothing when a container is tagged; a tagged
-> container may move anywhere; a container may be on a hold and a super-lot at once.
-> This piece's bulk release must therefore cover completed containers wherever they are,
-> and must never post an already-posted AIM serial a second time.
+> **Status: COMPLETE 2026-10-13, awaiting Jacques's read. NOT BUILT.** Third of six
+> pieces. Every decision in the first draft's section 9 is answered (section 2). Sections
+> marked *verified* were checked against the code on 2026-10-12/13.
+>
+> **Built together with piece 2** as ONE plan, ONE migration and ONE build
+> (`2026-10-12-controlled-run-completed-containers-design.md`). Nothing in this feature
+> deploys until all six pieces are in.
 
 **Read first:** `notes/2026-10-12_crt-super-lot-and-nonconformance-overview.md`; the piece 1
-spec (`2026-10-12-controlled-run-super-lot-design.md`, built) and piece 2 spec
-(`2026-10-12-controlled-run-completed-containers-design.md`); `CLAUDE.md`.
-**Branch:** `jacques/controlled-run-super-lot`. Nothing deploys until all six pieces are in.
+spec (built) and piece 2 spec; `CLAUDE.md`.
+**Mockup:** `mockup/controlled_run_results_signoff_mock.html` (scene 1 Results, 2 Sign-off,
+3 signed release, 4 deviation). Scenes 2-4 approved by Jacques 2026-10-13; scene 1 is the
+accordion layout he asked for.
+**Branch:** `jacques/controlled-run-super-lot`.
 
 ---
 
 ## 1. Problem
 
 A super-lot can be opened, filled, labelled and closed, but closing it says nothing about
-what happened in between. Members are released one LOT or one container at a time by
-clearing a tag; the only record is a `CrtCleared` audit row per LOT. There is no record
-that the 200% inspection was done, of what it found, of who accepted the result, or of a
-deviation that was judged acceptable.
+what happened in between. Members are released one at a time by clearing a tag; the only
+record is a `CrtCleared` audit row per LOT. There is no record that the 200% inspection
+was done, of what it found, of who accepted the result, or of a deviation that was judged
+acceptable.
 
-MPP asked for three things that are really this one step: releasing many CRT LOTs at
-once (change order A), a quality deviation and approval workflow with dispositions
-(change order B), and an elevated electronic signature for quality approvals (B).
+MPP asked for three things that are this one step: releasing many CRT LOTs at once
+(change order A), a deviation and approval workflow with dispositions (B), and an elevated
+electronic signature for quality approvals (B).
 
 Confirmed with Jacques, 2026-10-12:
 
-- The system **does not force** the 200% inspection. On release, Quality **confirms** the
-  CRT was acted on and the inspection was completed.
-- The outcomes of the inspection are counted per member: good, scrap, rework, return to
-  vendor. The **nonconformance**, as MPP use the word, is the case where a deviation is
-  found and judged not to affect part performance — Use-As-Is, signed.
+- The system **does not force** the 200% inspection. On release, Quality **confirms** it
+  was done.
+- Outcomes are counted per member: good, scrap, rework, return to vendor. The
+  **nonconformance** is the Use-As-Is outcome with a signed deviation.
 - "Pending" is simply a super-lot that is still open.
-- Scrap is entered **per member** (the inspector knows which container the bad part came
-  from), on one screen, one submit — not as a group total spread across LOTs.
 
-## 2. Scope
+## 2. Decisions (all answered by Jacques, 2026-10-12 and 2026-10-13)
 
-**In:**
+| # | Decision |
+|---|---|
+| D1 | **Signing gate is a seam only.** One SQL function answers "may this user sign this meaning?". Today it passes any active AD-mapped user. The Sign-off tab and the status entry say so plainly. No role table is invented. |
+| D2 | **The deviation is a child of the super-lot** (`Quality.ControlledRunDeviation`), not the standalone `Quality.NonConformance` the data model describes. **The FDS is NOT edited** - "the FDS is a record of what was planned, not what is." `MPP_MES_DATA_MODEL.md` is updated, because it documents the schema as built. |
+| D3 | **Results need not add up.** A released member needs at least one live result entry; quantities need not equal its piece count. The screen shows the difference ("left over"). |
+| D4 | **Corrections: void and re-enter.** An entry is voided with a reason, never edited or deleted. A scrap entry that has already taken pieces off a LOT cannot be voided here. |
+| D5 | **Per-unit clears stay allowed** for super-lot members (LOT Detail, the Assembly OUT CRT popup). The member then reads as untagged; it still leaves the super-lot only by signed release, removal, or the close. |
+| D6 | **Add an `Accepted` disposition code.** Existing codes and names are left alone (`ReturnToSupplier` keeps its name; the screen label says "Return to vendor"). |
+| D7 | **Deviation number is ours:** `DV` + 6 digits from `Lots.IdentifierSequence`, plus an optional free-text MPP reference. Signature wording is ours and is stored verbatim. |
+| D8 | **A trigger refuses UPDATE and DELETE on `Quality.Signature`.** First trigger in the schema; deliberate. |
+| D9 | **Results are entered inside a Quality sign-in window**, not a password per entry: one network sign-in, then work. **Quality screens get a 30-minute idle window** (section 6). The signed release and the deviation ask for the password again at the moment of signing, always. |
+| D10 | **Results tab is an accordion** (`ia.display.accordion`): header = a summary-row view, body = an entry-form view built like Record Scrap at Trim and Assembly. **The component's built-in expand flag is used**; a reload preserves each item's `expanded` rather than replacing the toggle with our own. |
+| D11 | **The existing super-lot page is changed by a scripted file edit** (Jacques: "you can make the changes"). New tabs are new views. |
 
-- A **results** record per member: how many pieces were inspected and what became of them.
-- **Scrap** from a super-lot member, including a member that is on a real hold.
-- A **signed release** of some or all members in one action, carrying the confirmation
-  that the inspection was done.
-- A **deviation (nonconformance) record** attached to the super-lot for the Use-As-Is
-  outcome.
-- A **signature record**: who approved what, with what meaning, when.
-- A **Quality-only gate** on the approval, if roles exist by then (9.1).
-- The **Results** and **Sign-off** tabs on the super-lot view (placeholders exist).
+Decided by me while completing the spec; small, and each is reversible. Say so if any is
+wrong:
+
+- **Cancel is refused once a release has been signed** on the super-lot. Cancel means "this
+  grouping was a mistake"; after a signed release that is no longer true. Close it instead.
+- **A released or removed unit is never brought back by the sync.** `ControlledRun_SyncInternal`
+  already skips units removed by hand; released units join that list.
+- **Totals count a released member as cleared for good,** even if it is tagged again later
+  for another reason. Otherwise a closed super-lot's "cleared" count would drop afterwards.
+- **No inline AIM post on release.** Clearing the tags is what returns a held serial to
+  `Lots.AimShipperIdPool_ListUnposted`; the existing 60-second sweep posts it. An
+  already-posted serial is not in that list, and `AimPost.postOne` returns
+  `already_posted` without calling AIM if anything ever does ask (*verified*). One
+  definition of "owed", no second post.
+- **Quality ceiling: 4 hours** (`QualityElevationMaxSeconds = 14400`), configurable. The
+  existing ceiling is 30 minutes from sign-in, so a 30-minute idle window alone would
+  still end at 30 minutes in total.
+- **File attachments on a deviation are not in this piece.**
+
+## 3. Scope
+
+**In:** results per member; scrap from a LOT member (including one on a real hold); a
+signed release of ticked members with the inspection confirmation; the deviation record;
+the signature record and its seam; the Quality sign-in window; the Results and Sign-off
+tabs.
 
 **Out:**
 
 | Not here | Piece |
 |---|---|
-| Scrap out of a **Closed** tray LOT, reopening a container, top-up, re-serial, relabel | 4 |
-| Rework and Return to Vendor as outcomes with real material effects. This piece **records the counts**; what physically happens to those pieces is piece 5 | 5 |
-| Showing any of this on LOT Detail, genealogy, reports, dashboards | 6 |
-| Intelex. Out of scope for the whole feature | — |
+| Scrap out of a container's tray LOT, reopening a container, top-up, re-serial, relabel | 4 |
+| Rework and Return to Vendor as material movements. This piece **records the counts** only | 5 |
+| Any of this on LOT Detail, genealogy, reports, dashboards; the History tab | 6 |
+| Intelex | - |
+| Whether line scrap (`RejectEvent_RecordByPartFifo`) should skip CRT-tagged LOTs. A behaviour change outside this view; left as it is and listed in section 11 | - |
 
-## 3. What exists that this builds on
+## 4. Data model — migration `0110_controlled_run_results_signoff`
 
-| Existing | Use |
-|---|---|
-| `Quality.ControlledRun` / `ControlledRunMember` / `ufn_ControlledRunMemberState` | The case and its members. `ControlledRunMemberEndReason` was created expecting this piece to add outcome codes |
-| `Workorder.RejectEvent_Record` | The one scrap mechanism: one LOT, one defect code + quantity, decrements the LOT. Refuses `Scrap` / `Closed` / `Open` status, and `Hold` unless `@AllowHeldLot = 1`. **Has no CRT guard**, so a tagged WIP LOT can be scrapped today |
-| `Workorder.RejectEvent_RecordByPartFifo` | Precedent for many reject rows in one transaction from a JSON list. It does **not** look at `CrtActive` — see 6.3 |
-| `Quality.DispositionCode` | Exists with four rows: `UseAsIs`, `Rework`, `Scrap`, `ReturnToSupplier`. No `Pending`. Change order B says "Return to Vendor" |
-| `Quality.DefectCode` (+ `Quality.DefectCode_ListRankedForLocation`) | Scrap reasons |
-| `Lots.Lot_ClearCrt`, `Lots.Container_ValidateCrt` | The per-unit clears a bulk release must mirror (one `CrtCleared` audit row per LOT is a traceability requirement, not a nicety) |
-| `BlueRidge.Location.AppUser.elevate(...)` | Credential check + `ElevationGranted` audit row. **No role gate**: any active AD-mapped user passes |
-| `Quality.NonConformance` | **Does not exist in the database.** Documented in `MPP_MES_DATA_MODEL.md` and FDS 8.6 only. `HoldEvent.NonConformanceId` and `QualityAttachment.NonConformanceId` were never built either |
-| `Quality.QualityAttachment` | File metadata; only links to a `QualitySample` today |
+One migration for pieces 2 and 3 (check the directory and `main` for the next free number
+at build time). Idempotent per statement, ASCII-only.
 
-## 4. Proposed design
+### 4.1 Changes to existing tables
 
-Everything here is a recommendation until Jacques agrees it.
+```sql
+ALTER TABLE Quality.ControlledRunMember ADD
+    WasCompleteAtJoin      BIT    NOT NULL CONSTRAINT DF_ControlledRunMember_WasCompleteAtJoin DEFAULT (0),  -- piece 2
+    ControlledRunReleaseId BIGINT NULL     CONSTRAINT FK_ControlledRunMember_Release REFERENCES Quality.ControlledRunRelease(Id);
 
-### 4.1 Results
-
-A new append-only table, one row per **entry** against a member:
-
-```
-Quality.ControlledRunResult
-  Id, ControlledRunMemberId (FK), DispositionCodeId (FK -> Quality.DispositionCode),
-  Quantity INT (> 0), DefectCodeId (FK, NULL -- required for Scrap),
-  RejectEventId (BIGINT NULL -- the scrap row this entry produced, if any),
-  Remarks, AppUserId, TerminalLocationId, RecordedAt
+ALTER TABLE Location.SessionPolicy ADD
+    QualityElevationTimeoutSeconds INT NOT NULL DEFAULT 1800,    -- 30 min idle
+    QualityElevationMaxSeconds     INT NOT NULL DEFAULT 14400;   -- 4 h ceiling
+    -- CHECK: timeout BETWEEN 30 AND 3600; max BETWEEN timeout AND 28800 (same bounds as 0049 / 0100)
 ```
 
-- "Good" needs a code. **(proposed)** add `Accepted` to `Quality.DispositionCode`
-  rather than overloading `UseAsIs`: "the part is fine" and "the part deviates and we
-  accept it" are different statements, and only the second is a nonconformance.
-- Corrections are a new row, never an edit. If a wrong entry must be undone, a reversing
-  entry is the audited way — decide whether that is needed in v1 (9.4).
-- The sum of a member's result quantities need not equal its piece count while the
-  super-lot is open. Whether it must at release is decision 9.3.
+Code rows: `Quality.DispositionCode` + `Accepted`;
+`Quality.ControlledRunMemberEndReason` + `Released`;
+`Lots.IdentifierSequence` + `ControlledRunDeviation` (`DV{0:D6}`);
+`Audit.LogEventType` + `ControlledRunResultRecorded`, `ControlledRunResultVoided`,
+`ControlledRunReleased`, `ControlledRunDeviationRaised`.
 
-### 4.2 Scrap
-
-A Scrap result **calls the real scrap mechanism** so piece counts, the reject reports and
-genealogy stay true: one `Workorder.RejectEvent` per (LOT, defect code), stamped as the
-existing procs stamp it.
-
-- The orchestrating proc is captured via `INSERT … EXEC`, so it cannot `EXEC`
-  `RejectEvent_Record`. Either inline the reject block (as `RejectEvent_RecordByPartFifo`
-  does, commented as a mirror) or — better — extract a **silent internal helper** the way
-  piece 1 did for members, and have both callers use it. Read
-  `R__Quality_ControlledRun_ApplyMembersInternal.sql` for the pattern.
-- A container member's scrap lands on a specific tray LOT. Closed tray LOTs cannot be
-  scrapped until piece 4; until then a Scrap result on a completed container is
-  **recorded as intent only** (`RejectEventId` NULL) and piece 4 turns it into material
-  movement. Say so on the screen.
-- Scrap needs `ChargeToParty` / location stamping the same way the existing scrap paths
-  do (migration `0067`). Verify what `RejectEvent_Record` requires today.
-
-### 4.3 Signed release
-
-One action releases the ticked members of a super-lot:
-
-- Clears `CrtActive` on each LOT (and each tagged tray LOT of each container) with **one
-  `CrtCleared` audit row per LOT**, exactly as the per-unit paths do.
-- Ends those memberships with a new end reason (`Released`).
-- Writes **one** signature row (4.5) covering the action, and links each released member
-  to it.
-- Carries a required confirmation: *"The Controlled Run Tag was acted on and the 200%
-  inspection was completed for these members."* Stored as a fact on the signature row,
-  not as free text.
-- For containers, the AIM step that `BlueRidge.Lots.Container.validateCrt` performs
-  after clearing must still happen (post the held serial). Piece 2 decides what AIM is
-  told about an already-posted serial; follow it.
-- When the last member is released the super-lot can close. **(proposed)** closing stays
-  its own action (piece 1's `ControlledRun_Close`), so "everything is released" and "the
-  case is finished" remain separate statements.
-
-The per-unit clears on LOT Detail and in the `CrtValidation` popup keep working. Decide
-whether a unit that is in a super-lot may still be cleared there, bypassing the signed
-release (9.5).
-
-### 4.4 Deviation (nonconformance) record
-
-**(proposed)** Build the deviation as a child of the super-lot, not as the standalone
-`Quality.NonConformance` table the data model describes:
+### 4.2 New tables
 
 ```
+Quality.SignatureMeaning            (read-only code table)
+  Id, Code, Name, Statement NVARCHAR(500)
+  rows: ControlledRunRelease - "I confirm the Controlled Run Tag was acted on and the 200%
+                                inspection was completed for the members being released."
+        DeviationApproval    - "I approve this deviation: the condition described does not
+                                affect part performance and the affected material is
+                                accepted for use as is."
+
+Quality.Signature                   (append-only; trigger refuses UPDATE / DELETE)
+  Id, SignatureMeaningId (FK), AppUserId (FK, the signer), SignedAt,
+  Statement NVARCHAR(500)  -- copied from the meaning AT SIGNING, so later rewording
+                           -- never changes what somebody signed
+  LogEntityTypeId (FK Audit.LogEntityType), EntityId BIGINT  -- what was signed
+  TerminalLocationId (FK, NULL)
+
+Quality.ControlledRunRelease        (one row per signed release action)
+  Id, ControlledRunId (FK), SignatureId (FK), InspectionConfirmed BIT NOT NULL
+  CHECK (InspectionConfirmed = 1), MemberCount INT, Remarks NVARCHAR(500) NULL,
+  ReleasedByUserId (FK), ReleasedAt, TerminalLocationId (FK, NULL)
+
+Quality.ControlledRunResult         (one row per entry; never edited, may be voided once)
+  Id, ControlledRunMemberId (FK), DispositionCodeId (FK), Quantity INT CHECK (> 0),
+  DefectCodeId (FK, NULL - required for Scrap), RejectEventId BIGINT NULL
+  (the Workorder.RejectEvent this entry produced; NULL = nothing was taken off a LOT),
+  Remarks NVARCHAR(500) NULL, RecordedByUserId (FK), TerminalLocationId (FK, NULL),
+  RecordedAt, VoidedAt NULL, VoidedByUserId (FK, NULL), VoidRemarks NVARCHAR(500) NULL
+  CHECK void columns all-or-none; index (ControlledRunMemberId) INCLUDE (...)
+
 Quality.ControlledRunDeviation
-  Id, ControlledRunId (FK), DeviationNumber, Description (what deviates),
-  Justification (why it does not affect part performance),
-  DefectCodeId (NULL), AffectedQuantity (NULL), SignatureId (FK), RaisedAt
+  Id, ControlledRunId (FK), DeviationNumber NVARCHAR(15) UNIQUE,
+  ExternalReference NVARCHAR(50) NULL, Description NVARCHAR(1000) (what deviates),
+  Justification NVARCHAR(1000) (why it does not affect part performance),
+  DefectCodeId (FK, NULL), AffectedQuantity INT NULL CHECK (> 0),
+  SignatureId (FK), RaisedByUserId (FK), RaisedAt, TerminalLocationId (FK, NULL)
 ```
 
-Why not the documented table: it is single-LOT (`LotId NOT NULL`, one defect code, one
-quantity), and MPP's deviation covers a group and exists only as the outcome of a
-super-lot. If MPP later want a nonconformance with no super-lot behind it, that is the
-time to generalise. This is a real fork — decision 9.2 — and whichever way it goes,
-`MPP_MES_DATA_MODEL.md` and FDS 8.6 must be brought into line, because today they
-describe a table that was never built.
+The confirmation is a **fact on the release row** (`InspectionConfirmed`, constrained to 1),
+not free text. `Quality.Signature` stays generic: it is the "elevated electronic signature"
+of change order B and other approvals can use it later.
 
-A Use-As-Is result requires a deviation record. `Quality.QualityAttachment` could carry
-supporting files if it gains a nullable `ControlledRunDeviationId`.
+`MPP_MES_DATA_MODEL.md` gains these tables and loses the claim that
+`Quality.NonConformance` exists; extended properties are regenerated with
+`node sql/scripts/gen_extended_properties.js`.
 
-### 4.5 Signature record
+## 5. Behaviour
 
-```
-Quality.Signature
-  Id, AppUserId (the approver), SignedAt, MeaningCode (FK -> a small code table:
-  ControlledRunRelease, DeviationApproval, ...), EntityType / EntityId (what was signed),
-  Statement NVARCHAR (the exact words shown at signing), TerminalLocationId
-```
+### 5.1 Results — `Quality.ControlledRunResult_Record`
 
-- The signature is created **only** after `elevate()` succeeds with the stateless,
-  per-action form (the one the super-lot view already uses). The approver's `AppUserId`
-  goes straight to the proc; it is never stored on the session.
-- It is "distinct from standard operator sign-in" because a PIN sign-in is an identifier,
-  not a credential, and a signature takes an AD password at the moment of signing.
-- This table is deliberately generic: it is the "elevated electronic signature
-  capability" of change order B, and other approvals can use it later.
-- Store the statement text shown to the signer. A signature whose meaning has to be
-  reconstructed from code is not much of a signature.
+`@ControlledRunId, @ResultsJson, @AppUserId, @TerminalLocationId` with
+`[{memberId, dispositionCode, quantity, defectCodeId?, remarks?}, ...]`. One call may
+carry many members; the screen sends one member's entries, and "mark the rest as all
+accepted" sends many.
 
-### 4.6 The view
+Refused before the transaction (whole call, with the member named): super-lot not open;
+a member that is not a current member of it; unknown disposition; quantity not above
+zero; Scrap without an active defect code; Scrap on a LOT member whose status is `Closed`,
+`Scrap` or `Open`; Scrap totalling more than the LOT has.
 
-On `/shop-floor/controlled-runs` the **Results** and **Sign-off** tabs are placeholders
-drawn disabled. This piece makes them live:
+Inside one transaction:
 
-- **Results:** the member list with entry per row — accepted, scrap (defect code +
-  quantity, several reasons allowed), rework, return, use-as-is. Rows with nothing wrong
-  default to "all accepted" in one action.
-- **Sign-off:** what is ready to release, the confirmation, the deviation form when any
-  Use-As-Is exists, the credential, and the history of signatures on this super-lot.
+- **Scrap on a LOT member is real.** One `Workorder.RejectEvent` per entry, the LOT
+  decremented, closed at zero if it was `Good`, with the same audit rows as
+  `Workorder.RejectEvent_Record`. The block is an **inlined, commented mirror** of that
+  proc (the precedent is `RejectEvent_RecordByPartFifo`); the proc itself is not touched.
+  No operation type is passed, so the scrap is subtractive (*verified*: additive applies
+  only to die-cast). A LOT on a real hold is scrapped in place, as `@AllowHeldLot = 1`
+  does. `ChargeToArea` is NULL.
+- **Scrap on a container member is recorded only** (`RejectEventId` NULL). Which tray the
+  part came out of, and taking it out, is piece 4. The screen says "not yet applied".
+- Accepted, Rework, Return and Use-As-Is are counts only.
+- One `ControlledRunResultRecorded` audit row for the call.
 
-Mock it before building, as piece 1 did (`mockup/controlled_run_super_lot_mock.html`).
-The existing view files are **generated JSON that is now committed**; edit them in
-Designer per the project's view-edit boundary, or regenerate deliberately — do not
-hand-edit large view JSON.
+Returns `Status, Message, NewId` (NewId = the first result row).
 
-## 5. Quality-only gate
+**"Left over"** for a member is `PieceCount + AppliedScrap - SUM(live Quantity)`. Applied
+scrap has already come out of `PieceCount`, so adding it back gives the pieces the member
+started with; live quantities (applied scrap included) are what has been accounted for.
+It is information, never a wall (D3).
 
-`elevate()` returns `ignitionRole`. There is no action-to-role map anywhere, and Jacques
-has said AD roles are coming. This piece should **define the seam** — a single SQL place
-that answers "may this user sign this meaning?" — and enforce it only if roles exist.
-If they do not, say plainly on the sign-off screen and in the status entry that any
-AD-mapped user can sign. Do not invent a role table to fill the gap (CLAUDE.md: no
-custom RBAC tables).
+### 5.2 Void — `Quality.ControlledRunResult_Void`
 
-## 6. Things to check, not assume
+`@ResultId, @Remarks (required), @AppUserId, @TerminalLocationId`. Refused when: already
+voided; the super-lot is not open; the member has left the super-lot; **the entry
+produced a `RejectEvent`** ("these pieces were already taken off the LOT; correct the LOT's
+piece count instead"). Stamps the three void columns; one `ControlledRunResultVoided` audit
+row.
 
-1. What `RejectEvent_Record` requires today (charge-to party, terminal, operation type)
-   and whether a scrap from a quality inspection has a sensible `OperationTypeCode`.
-2. Whether a member on a real hold should be scrapped with `@AllowHeldLot = 1`.
-3. `RejectEvent_RecordByPartFifo` ignores `CrtActive`, so line scrap can land on a
-   super-lot member or skip one. Decide with Jacques whether line scrap should skip
-   tagged LOTs; it is a behaviour change outside this view.
-4. Whether `AimPost.postOne` is safe to call for a serial that is already posted.
-5. Piece 1's `Close` refuses while any member is tagged. With `Released` memberships
-   ended, confirm the totals in `ControlledRun_Get` / `_List` still read sensibly (they
-   count open members plus `RunClosed` ones today).
+### 5.3 Deviation — `Quality.ControlledRunDeviation_Raise`
 
-## 7. Constraints that will bite
+`@ControlledRunId, @Description, @Justification, @DefectCodeId?, @AffectedQuantity?,
+@ExternalReference?, @AppUserId (the signer), @TerminalLocationId`. Refused when the
+super-lot is not open, either text is blank, or the seam (5.5) says the user may not sign.
+Mints the `DV` number (inlined mirror of `Lots.IdentifierSequence_Next`, as
+`ControlledRun_Open` does), writes the signature (meaning `DeviationApproval`) and the
+deviation, one `ControlledRunDeviationRaised` audit row. Returns `Status, Message, NewId`.
 
-Same as piece 2, section 6: status-row procs may not `EXEC` each other or `ROLLBACK`
-inside `INSERT … EXEC` (use silent helpers); validations before `BEGIN TRANSACTION`;
-piece 1's mutation procs were generated by a script that is not in the repo — edit the
-committed `.sql`; no rule in Python or a view expression; tests in
-`sql/tests/0109_ControlledRun/` (171 assertions at hand-off) on a **private** database.
+A deviation belongs to the super-lot, not to a member. **A member with a live Use-As-Is
+result cannot be released until the super-lot has at least one deviation.**
 
-## 8. Testing this piece must add
+### 5.4 Signed release — `Quality.ControlledRun_Release`
 
-- Results: entries append; quantities validated; a Scrap entry on a WIP LOT writes a
-  `RejectEvent` and decrements the LOT; a Scrap entry on a completed container records
-  intent only.
-- Release: every ticked member cleared with one `CrtCleared` row per LOT; one signature;
-  unticked members untouched; all-or-nothing on any failure; a member taken or changed
-  mid-flight gives a clean refusal (piece 1's `SUPERLOT_RACE` pattern).
-- The confirmation is required; without it, nothing is released.
-- Use-As-Is cannot be released without a deviation record and its signature.
-- A released LOT can be consumed and moved again; a released container can ship.
-- Signature rows are never updated or deleted.
+`@Id, @MemberIdsJson ([n, ...]), @InspectionConfirmed, @Remarks?, @AppUserId (the signer),
+@TerminalLocationId`.
 
-## 9. Decisions for Jacques
+Refused before the transaction: super-lot not open; the seam refuses the signer;
+`@InspectionConfirmed` is not 1 ("Confirm the inspection was completed"); no members; a
+member that is not a current member of this super-lot; a member with no live result; a
+member with Use-As-Is and no deviation on the super-lot. Refusals name the member.
 
-1. **Quality-only signing.** Enforce now (needs AD roles), or ship the seam and state the
-   limitation?
-2. **The deviation record.** A child of the super-lot (recommended), or build the
-   standalone `Quality.NonConformance` the data model describes and attach super-lots to
-   it?
-3. **Must results add up before release?** Recommended: no hard wall — require a result
-   for every released member, but do not force quantities to equal the piece count; show
-   the difference. A hard wall invites made-up numbers.
-4. **Corrections.** Reversing entries in v1, or accept that a wrong entry is annotated
-   and left?
-5. **Per-unit clears for super-lot members.** Still allowed on LOT Detail (recommended
-   no: once a unit is in a super-lot, it leaves through the signed release or by being
-   removed with a reason)?
-6. **An `Accepted` disposition code** for "good", and renaming `ReturnToSupplier` to
-   match MPP's "Return to Vendor"?
-7. **Does MPP need a deviation number in their own format**, or their own approval
-   wording on the signature?
+Inside one transaction, all or nothing:
+
+1. Clear `CrtActive` on every tagged LOT of the ticked members (a container's tray LOTs
+   included, Closed or not) with **one `CrtCleared` audit row per LOT**, in the shape
+   `Lots.Lot_ClearCrt` writes, description suffixed `(super-lot CRnnnnnn release)`.
+2. One `Quality.Signature` (meaning `ControlledRunRelease`), one
+   `Quality.ControlledRunRelease`.
+3. End the memberships: `EndedAt`, reason `Released`, `ControlledRunReleaseId`. If the
+   number of rows ended differs from the number ticked, raise `SUPERLOT_RACE` and let
+   the CATCH map it to "Something changed while you were releasing. Reload and try
+   again." (piece 1's pattern).
+4. One `ControlledRunReleased` audit row naming the members.
+
+A member already untagged (cleared per unit, D5) is released the same way; it simply
+produces no `CrtCleared` row. Returns `Status, Message, NewId` (the release).
+
+Closing stays its own action (`ControlledRun_Close`): "everything is released" and "the
+case is finished" remain separate statements. With every member released the close
+guard sees nothing outstanding (*verified* against `ControlledRun_Close`).
+
+### 5.5 The seam — `Quality.ufn_SignatureAllowed(@AppUserId, @MeaningCode)`
+
+Returns 1 when the user is active and has an AD account. That is all it can check today.
+When AD roles exist, this function is the only place that changes. The Sign-off tab
+carries a standing notice: *"Any network account registered in the MES can sign today.
+Signing will be limited to Quality once plant AD roles exist."*
+
+### 5.6 Reads and changes to piece 1 objects
+
+| Object | Change |
+|---|---|
+| `Quality.ufn_ControlledRunMemberResults(@ControlledRunId)` (new, inline) | Per member: quantity per disposition, applied scrap, total, left over, `HasResult`, `ReleaseBlockReason` (NULL = ready; otherwise "No results yet" / "Use as is needs a deviation"). One definition for the screen and for the release proc |
+| `Quality.ControlledRun_ListMembers` | + the columns above, `WasCompleteAtJoin`, `ControlledRunReleaseId` |
+| `Quality.ControlledRunResult_ListByRun(@Id, @IncludeVoided)` (new) | Entries newest first, Eastern, with `IsApplied` and `CanVoid` |
+| `Quality.ControlledRun_ListSignatures(@Id)` (new) | Releases and deviations on this super-lot: when, who, meaning, statement, a one-line summary |
+| `Quality.ControlledRunDeviation_ListByRun(@Id)` (new) | Deviations |
+| `Quality.SignatureMeaning_Get(@Code)` (new) | The statement shown before signing - the same text the proc stores |
+| `Quality.ControlledRun_Get` / `_List` | Totals also count members ended as `Released`; a released member counts as cleared |
+| `Quality.ControlledRun_Cancel` | Refused once a release exists |
+| `Quality.ControlledRun_SyncInternal` | Skips units that were released, as it skips removed ones |
+| `Quality.ControlledRun_RemoveMember` | Message fix (piece 2) |
+| `Location.SessionPolicy_Get` / `_Update` | Carry the two Quality values. `_Update` takes them as optional parameters that mean "leave as it is" when omitted, so the Configuration Tool's existing panel keeps saving |
+
+No rule lives in Python or in a view expression: readiness, left over and what may be
+voided are all columns SQL returns.
+
+## 6. Quality sign-in window
+
+*Verified:* the timeout is the single global row `Location.SessionPolicy`
+(`ElevationTimeoutSeconds` 300, rolling on activity; `ElevationMaxSeconds` 1800, absolute).
+`Common.Session.beginElevatedWindow` makes the signed-in person the session user;
+`touchElevation` (app-header idle poll) extends the window on activity up to the ceiling.
+The super-lot page uses none of that today: every action takes a network password.
+
+Change:
+
+- `session.custom.elevationProfile` (declared in session props, default `""`).
+  `_elevationSeconds`, `_elevationMaxSeconds` and `activeTimeoutSeconds` read the Quality
+  values when it is `"Quality"`.
+- The super-lot page asks for a **Quality sign-in** (the existing elevation modal through
+  `Common.Session.requireElevation`) before the first action that changes anything, and
+  stamps the profile. Leaving the page clears the profile and pulls the rolling deadline
+  back to the standard timeout, so the long window never follows the person to a line
+  screen.
+- Inside the window: add, remove, end/resume window, close, cancel, results and void use
+  the session user and do not ask again. `ControlledRunConfirm` hides its account and
+  password fields while a window is open.
+- **Signing is outside the window.** Release and deviation always take account and
+  password in their own popup, validated by `AppUser.elevate(...)` in its stateless form,
+  and the signer's id goes straight to the proc.
+
+Consequence to know: while the window is open, the signed-in person is the terminal's
+user, so anything done on that terminal is credited to them. That is the existing
+elevation behaviour, now lasting up to 30 idle minutes on this page.
+
+## 7. The view
+
+`/shop-floor/controlled-runs`. The left-hand list is unchanged apart from "released"
+replacing "cleared" in the progress text.
+
+- **Tabs become live.** `view.custom.activeTab` (`members` | `results` | `signoff`); History
+  stays a placeholder. The member table shows on Members; two new embedded views show on
+  the others. The middle KPI reads "Released".
+- **Results** (`Components/PlantFloor/ControlledRunResults`): a fixed column header, then
+  an `ia.display.accordion`, one item per current member.
+  - Header view `ControlledRunResultHeader`: member, part, pieces, the five quantities,
+    left over. Same row look as the Members tab.
+  - Body view `ControlledRunResultEntry`: (1) outcome tiles - Accepted, Rework, Return to
+    vendor, Use as is, and "Accept the rest"; (2) scrap reason tiles, tap to add 1, "More
+    reasons" for the full list; (3) one Entered list holding outcomes and scrap reasons
+    alike, with - / + and tap-the-quantity for the number pad; Remark; Save. It reuses
+    `Scrap/ScrapCodeTile`, `Scrap/ScrapLineRow` and `PlantFloor/Numpad`.
+  - Reason tiles are ranked with `Quality.DefectCode_ListRankedForLocation` for the
+    super-lot's "made at" location (the member's current location when the super-lot has
+    none), no operation filter. With no scrap history there the order falls back to the
+    proc's tie-break, which is acceptable (*verified* in the proc header).
+  - `props.items` is written by a `reload()` method, not bound: it reads each current
+    item's `expanded`, rebuilds the list from SQL rows, and carries the flags over by
+    member id (D10). To be checked on the gateway: whether collapsed bodies are built up
+    front and what that costs on a long list.
+  - Above the list: "Mark the rest as all accepted (n)". Below it: the entry log with
+    Void where SQL says an entry can be voided.
+- **Sign-off** (`Components/PlantFloor/ControlledRunSignOff`): left, the release list
+  with a tick per ready member (`ReleaseBlockReason` shown otherwise), "Tick all ready",
+  "Release ticked (n)"; right, deviations with "Raise deviation", the signature history,
+  and the seam notice.
+- **Popups:** `ControlledRunRelease` (statement, required confirmation checkbox,
+  remarks, account, password) and `ControlledRunDeviation` (the two texts, defect,
+  quantity, MPP reference, statement, account, password).
+
+New views are written as files. The existing page and `ControlledRunConfirm` are changed
+by a script that edits the parsed JSON (D11). Jacques must not have either open with
+unsaved changes in Designer when it is scanned.
+
+## 8. Constraints that will bite
+
+- A status-row proc may not `EXEC` another status-row proc or `ROLLBACK` inside
+  `INSERT ... EXEC`: inline with a mirror comment, or use a silent helper. Rejecting
+  validations run before `BEGIN TRANSACTION`.
+- Piece 1's mutation procs are the committed `.sql`; edit them and keep their shape.
+- `Run-Tests.ps1` DROPS its target: use a private database name.
+- The trigger on `Quality.Signature` must `THROW`, never `ROLLBACK`, because it can fire
+  inside a caller's `INSERT ... EXEC`.
+- ASCII-only seed text, including the two signature statements.
+
+## 9. Tests (`sql/tests/0109_ControlledRun/`, 171 assertions at hand-off)
+
+- **Results:** entries append; each refusal in 5.1; Scrap on a WIP LOT writes a
+  `RejectEvent`, decrements the LOT and closes it at zero; Scrap on a held LOT works;
+  Scrap on a container records intent only; left over is right before and after scrap.
+- **Void:** stamps once; refuses a second void, an applied scrap, a member that has left.
+- **Deviation:** number `DV000001`; signature row with the stored statement; blank texts
+  refused.
+- **Release:** every ticked member cleared with one `CrtCleared` per LOT; one signature,
+  one release row; unticked members untouched; confirmation required; no-result and
+  Use-As-Is-without-deviation refused; all-or-nothing; a released LOT can move again and
+  a released container can ship; a member cleared per unit beforehand still releases.
+- **Signature:** UPDATE and DELETE are refused by the trigger.
+- **Piece 1 reads:** totals with released members; close after full release; cancel
+  refused after a release; sync does not bring a released unit back.
+- **Session policy:** the two Quality values round-trip; omitted on update = unchanged.
+- The existing CRT suites still reproduce their 178-assertion baseline.
+
+Gateway walkthrough: the embedded test browser cannot type into Perspective inputs, so
+anything needing typed text or a credential (sign-in, release, deviation) needs a person.
+Tile taps and the accordion can be walked.
+
+## 10. Build order
+
+1. Migration `0110`. 2. Piece 2's helper change and its tests. 3. Results, void and their
+reads. 4. Deviation, signature, seam, trigger. 5. Release, and the piece 1 read/guard
+changes. 6. Session policy values. 7. Named queries and `BlueRidge.Quality.ControlledRun`.
+8. `Common.Session` profile. 9. New views and popups. 10. The scripted edit to the page.
+11. Data model doc, extended properties, `PROJECT_STATUS.md`.
+
+## 11. Known limitations to state, not hide
+
+- Anyone with an AD-mapped account can sign until roles exist (D1).
+- A container that fails inspection still has no path until piece 4: its scrap is a
+  recorded intention and its parts stay counted.
+- Rework and Return to Vendor are counts with no material effect until piece 5.
+- Line scrap by part (`RejectEvent_RecordByPartFifo`) still spreads across CRT-tagged and
+  clean LOTs alike. Whether it should skip tagged LOTs is a question for Jacques, outside
+  this piece.
+- A per-unit clear (D5) bypasses the signature for that unit. The super-lot shows it
+  untagged; the only record of who cleared it is the LOT's own `CrtCleared` row.
+- Does MPP need a deviation number in its own format? Built with ours plus a reference
+  field; worth asking MPP.
 
 ## Revision History
 
 | Date | Change |
 |---|---|
 | 2026-10-12 | Initial draft, written as a handoff for another agent. Not approved. |
+| 2026-10-13 | Completed with Jacques: all seven open decisions answered, the "verify" items checked against code, results-entry layout settled as an accordion with the Record Scrap tile pattern, Quality 30-minute sign-in window added, data model and procs made concrete. |
