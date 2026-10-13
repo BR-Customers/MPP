@@ -3,7 +3,8 @@
 -- Object:      Quality.ufn_ControlledRunMemberResults
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-13
--- Version:     1.0
+-- Version:     1.1
+-- Change Log:  2026-10-13 - 1.1 - A container that is being reworked cannot be released (piece 4).
 -- Description: One row per member of a super-lot (open and ended) with what the
 --              inspection has recorded against it so far, how many pieces are
 --              still unaccounted for, and -- the part that must exist exactly
@@ -57,6 +58,18 @@ RETURN
         CONVERT(BIT, CASE WHEN ISNULL(r.Entries, 0) > 0 THEN 1 ELSE 0 END) AS HasResult,
         CAST(CASE
             WHEN ms.EndedAt IS NOT NULL THEN N'No longer in the super-lot'
+            -- Piece 4: parts are out of the box, or it is being refilled. It is released
+            -- once it is complete again. A resumed rework container reads Open, so the
+            -- test is the rework row, not only the two rework statuses.
+            WHEN ms.ContainerId IS NOT NULL AND EXISTS (
+                    SELECT 1 FROM Lots.Container c
+                    WHERE c.Id = ms.ContainerId
+                      AND ( c.ContainerStatusCodeId IN (6, 7)
+                         OR (c.ContainerStatusCodeId = 1 AND EXISTS (
+                                SELECT 1 FROM Lots.ContainerRework r
+                                WHERE r.Id = (SELECT MAX(Id) FROM Lots.ContainerRework WHERE ContainerId = c.Id)
+                                  AND r.ResumedAt IS NOT NULL AND r.VoidedAt IS NULL)) ))
+                THEN N'Being reworked'
             WHEN ISNULL(r.Entries, 0) = 0 THEN N'No results yet'
             WHEN ISNULL(r.UseAsIsQty, 0) > 0
                  AND NOT EXISTS (SELECT 1 FROM Quality.ControlledRunDeviation d WHERE d.ControlledRunId = ms.ControlledRunId)

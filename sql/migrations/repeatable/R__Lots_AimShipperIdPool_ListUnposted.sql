@@ -55,6 +55,9 @@ BEGIN
     LEFT JOIN Lots.Container c ON c.Id = p.ConsumedByContainerId
     LEFT JOIN Parts.Item i ON i.Id = c.ItemId
     WHERE p.ConsumedAt IS NOT NULL AND p.PostedAt IS NULL
+      -- Voided (0111): the container was opened for rework and this serial will never be
+      -- used. It must not be posted; the container posts its NEW serial when it completes again.
+      AND p.VoidedAt IS NULL
       -- Orphan guard (v1.4): no container, nothing owed. c is the LEFT JOIN above,
       -- so this also covers a dangling id, not just a NULLed one.
       AND c.Id IS NOT NULL

@@ -71,11 +71,11 @@ BEGIN
         SELECT COUNT(*) AS MemberCount,
                -- A RELEASED member counts as cleared for good: if the unit is tagged
                -- again later for another reason, this super-lot's count must not drop.
-               SUM(CASE WHEN ms.CrtActive = 0 OR ms.ControlledRunMemberEndReasonId = 4 /* Released */
+               SUM(CASE WHEN ms.CrtActive = 0 OR ms.ControlledRunMemberEndReasonId IN (4 /* Released */, 5 /* ContainerVoided */)
                         THEN 1 ELSE 0 END) AS ClearedCount,
                SUM(ms.PieceCount) AS PieceCount
         FROM Quality.ufn_ControlledRunMemberState(r.Id) ms
-        WHERE ms.EndedAt IS NULL OR ms.ControlledRunMemberEndReasonId IN (2 /* RunClosed */, 4 /* Released */)
+        WHERE ms.EndedAt IS NULL OR ms.ControlledRunMemberEndReasonId IN (2 /* RunClosed */, 4 /* Released */, 5 /* ContainerVoided */)
     ) tot
     WHERE r.Id = @Id;
 END;

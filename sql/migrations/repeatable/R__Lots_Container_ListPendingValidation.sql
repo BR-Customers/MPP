@@ -70,6 +70,7 @@ BEGIN
     INNER JOIN Lots.Lot fgl          ON fgl.Id = ct.FinishedGoodLotId AND fgl.CrtActive = 1
     INNER JOIN Parts.Item i          ON i.Id = c.ItemId
     LEFT  JOIN Lots.AimShipperIdPool p ON p.ConsumedByContainerId = c.Id
+                                      AND p.VoidedAt IS NULL   -- 0111: a reworked container's serial is its LIVE one
     WHERE c.CompletedAt IS NOT NULL   -- see header: only a COMPLETED container has a serial
       AND ((@ContainerId IS NOT NULL AND c.Id = @ContainerId)
         OR (@ContainerId IS NULL AND @LocationId IS NOT NULL

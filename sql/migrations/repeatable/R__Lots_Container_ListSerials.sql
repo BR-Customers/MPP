@@ -25,6 +25,7 @@ BEGIN
     INNER JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId
     INNER JOIN Lots.Lot            l  ON l.Id  = sp.ProducingLotId
     WHERE cs.ContainerId = @ContainerId
+      AND cs.RemovedAt IS NULL   -- 0111: a part scrapped out of the container in a repack
     ORDER BY cs.TrayPosition, sp.SerialNumber;
 END
 GO

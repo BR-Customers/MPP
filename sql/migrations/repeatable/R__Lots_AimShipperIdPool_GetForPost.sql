@@ -37,6 +37,7 @@ BEGIN
         p.Quantity                                                AS Quantity,
         p.LotNumber                                               AS LotNumber,
         p.PostedAt                                                AS PostedAt,
+        p.VoidedAt                                                AS VoidedAt,   -- 0111: AimPost.postOne refuses a voided row
         p.PostAttempts                                            AS PostAttempts,
         p.ConsumedByContainerId                                   AS ContainerId,
         i.PartNumber                                              AS ItemPartNumber
