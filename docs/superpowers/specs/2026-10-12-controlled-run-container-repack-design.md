@@ -1,163 +1,185 @@
 # Super-lot piece 4 — container repack: scrap, top-up, new serial, relabel
 
-> **Status: DRAFT 2026-10-12. NOT APPROVED. NOT BUILT.** Handoff for another agent.
-> Fourth of six pieces, and the one with the most unknowns. **This is a problem statement
-> and a set of options more than a design.** Section 7 has to be answered — several items
-> by MPP, not by reading code — before a plan is worth writing.
+> **Status: COMPLETE 2026-10-13 (decisions answered by Jacques the same day). NOT BUILT.**
+> Fourth of six pieces. Sections marked *verified* were checked against the code.
+> **Neither change order mentions this piece.** It exists because MPP's own example cannot
+> finish without it; worth raising commercially.
 
-**Read first:** `notes/2026-10-12_crt-super-lot-and-nonconformance-overview.md`; the piece
-1, 2 and 3 specs in this folder; `CLAUDE.md` (the "Pass-through repack" and "Terminal-mint
-model" sections matter here); FDS 7.7 Sort Cage (FDS-07-017 to -019).
+**Read first:** `notes/2026-10-12_crt-super-lot-and-nonconformance-overview.md`; the piece 1,
+2 and 3 specs in this folder; `CLAUDE.md` ("Pass-through repack", "Terminal-mint model",
+"Ignition JDBC compatibility").
 **Branch:** `jacques/controlled-run-super-lot`. Nothing deploys until all six pieces are in.
-
-**Neither change order mentions this piece.** It exists because MPP's own example cannot
-finish without it. That is worth raising commercially before it is built.
 
 ---
 
 ## 1. Problem
 
 When a super-lot covers finished goods, MPP pull the completed containers out of the
-warehouse and take every part out for inspection, one at a time. Bad parts are removed.
-Then, in Jacques's words (2026-10-12): **all containers are reused and relabelled; a
-container is topped back up with good parts, by consolidation or by new production; it
-gets a NEW shipper serial and the old one is voided.**
+warehouse and take every part out for inspection. Bad parts are removed. Then (Jacques,
+2026-10-12): **all containers are reused and relabelled; a container is topped back up
+with good parts, by consolidation or by new production; it gets a NEW shipper serial and
+the old one is voided.**
 
-The system can do none of that today:
+Before this piece the system can do none of that: a completed container's tray LOTs are
+Closed and cannot be scrapped; nothing reopens a container; nothing moves non-serialized
+pieces between containers; nothing voids a serial and issues another. Piece 3 can only
+*record* scrap against a container.
 
-- A completed container's tray LOTs are **Closed**, and `Workorder.RejectEvent_Record`
-  refuses a Closed LOT. Bad parts found in a finished container cannot be scrapped.
-- No proc reopens a completed container. Statuses are `Open`, `Complete`, `Shipped`,
-  `Hold`, `Void`.
-- `Lots.SortCage_MigrateSerial` moves **one serialized part** between containers. There
-  is nothing for non-serialized pieces. The Sort Cage view is partly stubbed.
-- A container's AIM serial is consumed permanently (decision of 2026-08-14). Nothing
-  voids one and issues another.
+## 2. Decisions (Jacques, 2026-10-13)
 
-## 2. What exists
-
-| Existing | Notes |
+| # | Decision |
 |---|---|
-| `Lots.Container`, `Lots.ContainerTray` (`FinishedGoodLotId`, one tray = one FG LOT), `Lots.ContainerSerial`, `Lots.ContainerSerialHistory` | A container is already a set of tray LOTs, so mixed sources per container are legal at tray level |
-| `Lots.Container_Open(@ItemId, @ContainerConfigId, @CellLocationId, …)`, `Lots.Container_Complete(@ContainerId, …)` | Complete closes the tray LOTs, claims an AIM serial, creates the shipping label |
-| `Workorder.Assembly_CompleteTray(@FinishedGoodItemId, @PieceCount, @CellLocationId, …)` | Mints a tray LOT into the cell's open container. **Takes no container id** — it finds the open container itself. Whether it can be pointed at a specific part-full container is unverified |
-| `Lots.ShippingLabel_Void(@ShippingLabelId, @VoidReason, …)`, `Lots.ShippingLabel_Reprint` | Label void and reprint exist |
-| `Lots.AimShipperIdPool` (`ConsumedByContainerId`), `AimShipperIdPool_Claim` | One serial per container today |
-| `BlueRidge.Lots.AimPoolGateway.update(aimShipperId, serialsJson)`, `placeOnHold`, `releaseFromHold` | AIM calls; simulated in dev. FDS-07-012 anticipates `UpdateAim` with a `previousSerial` |
-| `Lots.PrintReasonCode` | `Initial`, `ReprintDamaged`, `Split`, `Merge`, `SortCageReIdentify` |
-| Piece 3 | Records a Scrap result against a completed container as **intent only**; this piece makes it real |
-| Pass-through repack (`Assembly_CompleteTray` v1.5) | Precedent for same-part 1:1 consumption with `Consumption` genealogy. Its origin filter is load-bearing — read the CLAUDE.md section before touching it |
+| D1 | **Top-up moves loose pieces.** Any quantity moves from a donor tray into a receiving container. Each move is recorded against the donor tray LOT, so every piece still traces to its original LOT. Moving a whole tray is just moving all its pieces. |
+| D2 | **"New production" comes from a finished container.** The line packs and completes containers as normal; good parts are taken out of a finished, unshipped container of the same part, whether or not it is in a super-lot. One mechanism for consolidation and new production. |
+| D3 | **AIM is told nothing about the old serial, for now.** The MES voids the serial and its label and keeps a list of voided-but-posted serials. Jacques is discussing a cancellation post with MPP / AIM; that list is what it would work from. The new serial posts when the container completes again, as any completion does. |
+| D4 | **A container emptied by consolidation is voided.** Its serial and label are voided, its tray LOTs end at zero and it leaves the super-lot. |
+| D5 | **Two rework statuses; tray LOTs stay Closed.** `ReworkProcessing` (parts being taken out and scrapped; not fillable) and `ReworkFilling` (refill-ready). The repack procs take pieces off the Closed tray LOTs directly, allowed only while the container is in rework. Nothing reappears in a WIP queue or anything that treats Closed as final. |
+| D6 | **Serialized containers are included**: scrap and moves are per serial. |
+| D7 | **Sort Cage stays separate.** Repack is reached from a container on the super-lot page; the procs are written so Sort Cage could call them later. |
+| D8 | **A reworked container can be finished at a line.** Quality sends a refill-ready container to a line. The line's inventory card shows a button only while one is there; the operator picks it and it becomes the line's open container, so normal full-tray production carries on into it and the line's own container waits (*verified*: `Workorder.Assembly_CompleteTray` fills the oldest open container at the cell first). No change to the line's packing proc. |
+| D9 | **BOM-component partial fill is a FOLLOW-ON piece, not built here** (section 9). |
 
-## 3. The work, in the order it happens on the floor
+Decided by me while completing the spec; say if any is wrong:
 
-1. **Open the container for rework.** It must stop being shippable and become editable,
-   without losing what it was. *(Piece 2 already blocks shipping through the tag.)*
-2. **Take bad parts out.** Scrap against the right tray LOT, with a defect code.
-3. **Top it back up** to full count — from another container in the super-lot
-   (consolidation) or from new production.
-4. **Void the old serial**, claim a new one, tell AIM.
-5. **Relabel**, and close the container again.
-6. **Account for the containers that are emptied** by consolidation.
+- **Any Complete, unshipped container can be opened for rework**, member of a super-lot or
+  not, because a clean finished container is a legal donor (D2). A container on a real hold
+  is refused: release the hold first.
+- **A donor must itself be opened for rework before pieces leave it.** Opening voids its
+  serial and label. A donor left part-full stays in rework until it is refilled or
+  emptied and voided; there will usually be one remainder container at the end.
+- **A member that is being reworked cannot be released** (new block reason on the Sign-off
+  tab), and cannot be validated one at a time.
+- **Scrap in a repack is real** and, when the container is a super-lot member, is also a
+  result entry. A scrap already *recorded* on the Results tab (piece 3, "not yet applied")
+  can be applied to a tray instead of entered twice.
+- **Completing a reworked container reuses the existing completion** (`Lots.Container_
+  Complete` through `BlueRidge.Lots.Container.complete`): new serial claimed, new label
+  printed, new serial posted. No second copy of that logic.
+- **A voided container's membership ends as `ContainerVoided`** and counts as cleared.
 
-## 4. Design options to put to Jacques
+## 3. What a set part can and cannot do here
 
-### 4.1 How a container is "reopened"
+A 6MA cam holder finished good is a set of 12 pieces that the system counts as ONE part.
+This piece works in the units the LOT is counted in, so for a set part it scraps and moves
+whole sets. Making a short set whole again from sub-components is the follow-on (section 9).
 
-- **(a) New status `Rework`** on `Lots.ContainerStatusCode`. Explicit, queryable,
-  blocks shipping by status as well as by tag. Every proc and view that switches on
-  container status must be checked.
-- **(b) Reuse `Hold`.** `Quality.Hold_Place` already moves a container to `Hold` and
-  remembers the prior status. But a hold has its own lifecycle and its own AIM call, and
-  CRT and hold are separate axes by design.
-- **(c) Leave it `Complete`** and let the tag carry the meaning. No status churn; but
-  "Complete" would then be true of a container with parts missing.
+## 4. Data model — migration `0111_container_rework`
 
-Recommended: **(a)**, because a container that is physically open on a bench should not
-read as complete anywhere.
+```
+Lots.ContainerStatusCode  + ReworkProcessing (6), ReworkFilling (7)
 
-### 4.2 The tray LOTs
+Lots.ContainerRework            (one row each time a container is opened for rework)
+  Id, ContainerId (FK), OpenedByUserId (FK), OpenedAt, OpenedAtTerminalId (FK, NULL),
+  OriginalCompletedAt, OriginalAimShipperId NVARCHAR(50) NULL, OriginalShippingLabelId NULL,
+  OriginalPieceCount INT,
+  ResumedAt NULL, ResumedByUserId (FK, NULL), ResumedAtLocationId (FK, NULL),
+  VoidedAt NULL, VoidedByUserId (FK, NULL), VoidRemarks NVARCHAR(500) NULL
 
-Scrapping needs a LOT that is not Closed. Options: **reopen** the tray LOT (Closed →
-Good) for the duration of the rework; or allow scrap against a Closed LOT under a narrow
-flag, as `@AllowHeldLot` did for holds. Reopening is the more honest statement of state
-but touches the LOT status history and whatever assumes Closed is terminal
-(`IX_Lot_Active`, the WIP queue's pending rule, `Lot_RectifyPieceCount` / `Lot_Update`
-guards — CLAUDE.md warns about those). Verify each before choosing.
+Lots.AimShipperIdPool   + VoidedAt NULL, VoidedByUserId (FK, NULL), VoidReason NVARCHAR(200) NULL
+Lots.ContainerSerial    + RemovedAt NULL, RemovedRejectEventId BIGINT NULL   (a scrapped serial)
+Quality.ControlledRunMemberEndReason + ContainerVoided (5)
+Audit.LogEventType + ContainerReworkOpened, ContainerReworkScrapped, ContainerPiecesMoved,
+                     ContainerReworkStageChanged, ContainerReworkResumed, ContainerVoided
+```
 
-### 4.3 Top-up and genealogy — the hard part
+No piece-move table: a move IS a `Workorder.ConsumptionEvent` (donor tray LOT -> new tray
+LOT, same Item) with `Consumption` genealogy, exactly the shape the pass-through repack
+writes. "The current rework" of a container is its latest `ContainerRework` row.
 
-- **Serialized parts** are tractable: the serial carries its ancestry
-  (`SerializedPart.ProducingLotId`), and `SortCage_MigrateSerial` already moves a serial
-  between containers with a history row and no merge genealogy (FDS-07-019).
-- **Non-serialized parts** are not. A good piece moved from container B's tray LOT into
-  container A changes which LOT A's pieces came from. Honda requires full genealogy for
-  every part. Options:
-  - Mint a **new tray LOT** in the receiving container for the moved quantity, consuming
-    from the donor tray LOT with `Consumption` genealogy — the pass-through repack shape.
-  - Treat it as a `Lot_Split` of the donor + a move. Split is exception-only by project
-    rule and currently refuses CRT LOTs.
-  - Decide the unit of repack is the **tray**, never the piece: whole trays move between
-    containers, short trays are topped up only from new production.
-  Which of these matches what MPP physically do is a question for MPP.
-- **Top-up from new production** means a line finishes a container it did not open.
-  `Assembly_CompleteTray` finds the cell's open container itself; check whether a
-  reworked container can be made that open container, and what happens to the one the
-  line was already filling.
+## 5. Behaviour
 
-### 4.4 Serial and label
+Every proc follows FDS-11-011 (no OUTPUT params, one result set, rejections before
+`BEGIN TRANSACTION`, no status-row proc calls another).
 
-Settled: **new serial, old one voided** (Jacques, 2026-10-12). To design:
+| Proc | Does |
+|---|---|
+| `Lots.ContainerRework_Open(@ContainerId, …)` | `Complete` -> `ReworkProcessing`. Writes the `ContainerRework` row, voids the container's live shipping label(s) and its AIM pool row (posted or not), clears `CompletedAt`. Refuses anything not `Complete`. |
+| `Lots.ContainerRework_Scrap(@ContainerTrayId, @DefectCodeId, @Quantity, @ContainerSerialId, @ControlledRunResultId, @Remarks, …)` | Real scrap out of a tray: `Workorder.RejectEvent`, tray LOT and `ContainerTray.PartsClosedCount` decremented. Serialized config: one serial per call, marked `RemovedAt`. If the container is a super-lot member the scrap is a result entry: `@ControlledRunResultId` applies an existing recorded scrap (same defect, same quantity); without it a new applied entry is written. |
+| `Lots.ContainerRework_MovePieces(@FromContainerTrayId, @ToContainerId, @Quantity, @ContainerSerialId, …)` | Donor in rework, receiver `ReworkFilling`, same Item, receiver not over target. Mints a tray LOT in the receiver for the moved quantity, consuming the donor tray LOT (`ConsumptionEvent` + `Consumption` genealogy + closure). The new LOT inherits the donor's CRT tag. Serialized: the serial moves with a `ContainerSerialHistory` row. |
+| `Lots.ContainerRework_SetStage(@ContainerId, @StageCode, @LocationId, …)` | `Processing` <-> `Filling`; optionally sends the container to a location (a line). |
+| `Lots.ContainerRework_Resume(@ContainerId, @CellLocationId, …)` | `ReworkFilling` -> `Open` at that cell. The container is then an ordinary open container: the line fills it, and the existing completion gives it a new serial and label. |
+| `Lots.ContainerRework_Void(@ContainerId, @Remarks, …)` | A rework container with ZERO pieces -> `Void`. Clears the tag on its (empty) tray LOTs and ends its super-lot membership (`ContainerVoided`). Refused while pieces remain. |
+| Reads | `ContainerRework_Get`, `_ListTrays`, `_ListSerials`, `_ListTargets` (where pieces can go), `_ListAtLocation` (refill-ready containers at a line), `Lots.AimShipperIdPool_ListVoided` (the D3 list) |
 
-- `AimShipperIdPool` ties one serial to one container. A reworked container will have
-  had two. Either allow several pool rows per container (one current) or add a history
-  table, mirroring `ContainerSerialHistory`.
-- What AIM must be told for the old serial (`update` with a previous serial? a delete? a
-  hold that is never released?) is **MPP / Honda's answer**, and it interacts with piece
-  2's decision about what AIM is told when the container is tagged.
-- A new `PrintReasonCode` for the relabel (e.g. `SuperLotRepack`), ASCII-only.
+Changes to existing objects:
+
+| Object | Change |
+|---|---|
+| `Lots.AimShipperIdPool_ListUnposted`, `Lots.Container_ListPendingValidation`, `Lots.AimShipperIdPool_GetForPost` | Ignore / report voided pool rows, so a voided serial is never posted and a container's "serial" is its live one. `AimPost.postOne` refuses a voided row. |
+| Readers of `Lots.ContainerSerial` | Skip `RemovedAt IS NOT NULL` |
+| `Quality.ufn_ControlledRunMemberResults` | `ReleaseBlockReason` gains "Being reworked" |
+| `Quality.ControlledRun_Get` / `_List` | Members ended as `ContainerVoided` count, as cleared |
+| `Quality.ufn_ControlledRunResolveMembers` | A container in rework is still eligible (not Shipped / Void) - no change, tested |
+
+## 6. Completing a reworked container
+
+Two places, one mechanism (`Resume` then the existing completion):
+
+- **At a line (D8):** the operator picks the waiting container on the inventory card. It
+  becomes the cell's oldest open container; trays packed by the line go into it; the line
+  completes it as it completes any container.
+- **At Quality:** when the container is full, "Complete here" resumes it at the Quality
+  terminal's location and completes it in the same action. If the completion is refused
+  (not full, serial pool empty) the container goes back to `ReworkFilling`.
+
+A re-completed container that is still a super-lot member is CRT-tagged, so its new serial
+is held from AIM until the signed release (piece 2 behaviour, unchanged).
+
+## 7. Views
+
+- **Super-lot page, Members tab:** a container row gains a Repack button. It goes through
+  the Quality sign-in window and opens `Popups/ControlledRunRepack`.
+- **`ControlledRunRepack`:** the container (status, pieces of target, short by), its trays
+  and, for a serialized part, its serials; a Scrap form (defect, quantity, or a recorded
+  scrap to apply) and a Move form (destination, quantity); stage buttons (Open for rework,
+  Refill-ready, Back to processing, Send to line, Complete here, Void).
+- **Line inventory card:** a button, shown only while a refill-ready container is at the
+  line, opening `Popups/ReworkContainerPick`; picking one resumes it at this cell. The
+  operator is the signed-in PIN user; no elevation.
+
+## 8. Tests
+
+`sql/tests/0111_ContainerRework/`: open (status, label and serial voided, refusals);
+scrap by quantity and by serial, with and without a super-lot result; apply a recorded
+scrap; move pieces (new tray LOT, consumption genealogy, counts on both sides, CRT
+inherited, capacity and same-part refusals) and move a serial; stage changes; resume and
+re-complete through the existing `Container_Complete` (NEW serial, old one voided and
+never offered to AIM); void an emptied container (membership ended, counts as cleared);
+a member in rework cannot be released; the voided-serial list.
+
+## 9. Follow-on (NOT in this piece): partial fill at the line
+
+**BOM-component partial fill.** Jacques's example: a 6MA cam holder finished good is a
+set of 12 pieces treated as a single part. If 3 of the 12 are pulled, a "consume partial"
+action at the line would consume 3 replacement sub-components (machined, pass-through,
+purchased or raw) to make the set whole, outside the normal full-tray rules.
+
+Feasibility, from reading `Workorder.Assembly_CompleteTray` (*verified*):
+
+- The line accepts only FULL trays (`@PieceCount` must equal `PartsPerTray`) and consumes
+  the BOM for a full tray. A partial fill needs its own proc with its own copy of the
+  component-consumption logic, scaled to the quantity chosen - a second copy of the most
+  production-critical logic in the system, with its own tests.
+- It bypasses vision and PLC counts on lines that have them. That is the point of
+  "separate from the normal constraints", and must be a deliberate, audited action.
+- It cannot be done by hand on serialized lines: each part gets its serial from the
+  machine handshake.
+- The entry point already exists after this piece: the rework container picked on the
+  inventory card (D8). The follow-on adds a "Consume partial" action there, with buttons
+  for the BOM elements of the part.
+
+## 10. Known limitations
+
+- AIM still believes a voided, already-posted serial is good until the cancellation post
+  exists (D3). `Lots.AimShipperIdPool_ListVoided` is the worklist.
 - The old paper label is still on the container. The system voids the record; a person
-  removes the label. Say so in the procedure.
-
-### 4.5 Emptied containers
-
-A container emptied by consolidation is `Void`? Returned to stock as dunnage? Its serial
-is voided either way. Its tray LOTs end at zero pieces — closed by the existing
-close-at-zero path, or by this piece explicitly.
-
-## 5. Where it lives
-
-A **Repack** area reached from a container member on the super-lot view, not the Sort
-Cage view. Whether Sort Cage and this should converge is worth one question to Jacques:
-they do the same physical job for two different triggers (hold vs CRT).
-
-## 6. Constraints
-
-As pieces 2 and 3. In addition: AIM calls are asynchronous, gateway-side and never inside
-a database transaction (FDS-01-014), so the serial swap is a sequence with a failure
-state in the middle — design what "old voided, new not yet posted" looks like and how it
-is retried, the way `AimPost.retryTick` does for a normal completion.
-
-## 7. Questions that must be answered first
-
-For MPP (through Jacques):
-
-1. When parts are consolidated, do they move as **whole trays** or as loose pieces?
-2. For non-serialized parts, what does Honda need to be able to trace afterwards — the
-   container, the tray, or the original LOT of each piece?
-3. What must AIM be told about the old serial, and when?
-4. What happens to a container that ends up empty?
-5. Is top-up from new production done at the line, or are finished parts brought to the
-   inspection area?
-
-For Jacques:
-
-6. Container status for rework (4.1), and reopening tray LOTs versus a narrow scrap flag
-   (4.2).
-7. Should this and the Sort Cage workflow be one thing?
-8. Is this piece in scope commercially? It is in neither change order.
+  removes the label.
+- A loose-piece shortfall can only be filled from finished parts until the follow-on.
+- One remainder container is normal at the end of a consolidation.
 
 ## Revision History
 
 | Date | Change |
 |---|---|
 | 2026-10-12 | Initial draft: problem statement and options, written as a handoff. Not approved. |
+| 2026-10-13 | Completed with Jacques: all questions answered (loose pieces, donor is any finished container, no AIM call for the old serial, void an emptied container, two rework statuses with trays left Closed, serialized included, Sort Cage separate, finish at a line through the inventory card). BOM-component partial fill recorded as a follow-on with its feasibility. Data model and procs made concrete. |
