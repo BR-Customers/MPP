@@ -2,8 +2,9 @@
 -- Repeatable:  R__Quality_ControlledRun_List.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.1
--- Change Log:  2026-10-13 - 1.1 - Totals follow ControlledRun_Get v1.1 (released members).
+-- Version:     1.2
+-- Change Log:  2026-10-19 - 1.2 - Open runs: Id ASC tie-breaker (two runs opened in the same millisecond listed newest first).
+--              2026-10-13 - 1.1 - Totals follow ControlledRun_Get v1.1 (released members).
 -- Description: READ. Super-lots for the Quality view's left-hand list.
 --
 --              @StatusCode 'Open' (default) | 'Closed' | 'Cancelled'; NULL or
@@ -60,6 +61,7 @@ BEGIN
            OR i.PartNumber LIKE N'%' + @Text + N'%')
     ORDER BY CASE WHEN r.ControlledRunStatusId = 1 THEN 0 ELSE 1 END,
              CASE WHEN r.ControlledRunStatusId = 1 THEN r.OpenedAt END ASC,
+             CASE WHEN r.ControlledRunStatusId = 1 THEN r.Id END ASC,
              r.OpenedAt DESC,
              r.Id DESC;
 END;
