@@ -57,6 +57,7 @@ import threading
 import system.date
 import system.opc
 import system.tag
+import system.util
 
 
 # The unit every terminal is commissioned in. A different unit on the wire is
@@ -146,14 +147,6 @@ def _parseFlags(text):
             "ok": int(values[2])}, "read"
 
 
-def _flagsText(parsed):
-    """The flags as they go into the log payload."""
-    flags = parsed.get("flags")
-    if flags:
-        return "UNDER:%s,OVER:%s,OK:%s" % (flags["under"], flags["over"], flags["ok"])
-    return "Unreadable" if parsed.get("flagsState") == "unreadable" else "None"
-
-
 def _claim(instancePath, stamp, initialChange):
     """True when this receive stamp is a new press that should be acted on.
 
@@ -207,12 +200,25 @@ def _readMessage(instancePath):
     return "%s" % qv.value
 
 
-def _refuse(device, terminalLocationId, title, message, payload, level="error"):
+def _num(value):
+    """A DB decimal (BigDecimal) or None as a JSON-safe float or None."""
+    return None if value is None else float("%s" % value)
+
+
+def _encode(body):
+    """The RequestPayload: one JSON object (spec 2026-10-19 scale station 4).
+       Keys a press did not reach are left out; 'v' versions the shape so the
+       press-log read can skip rows written before it."""
+    return system.util.jsonEncode(body)
+
+
+def _refuse(device, terminalLocationId, title, message, body, level="error", itemId=None):
     """One refusal: an InterfaceLog row and a toast at this terminal. Returns
        the status dict so a caller can `return _refuse(...)`."""
     W = BlueRidge.Workorder.PlcWatcher
-    W.logInterface(device, title, requestPayload=payload, ok=False,
-                   errorDescription=message)
+    W.logInterface(device, title, requestPayload=_encode(body), ok=False,
+                   errorDescription=message,
+                   locationId=terminalLocationId, itemId=itemId)
     W.notifyAlarm(terminalLocationId, title, message, level=level)
     return {"Status": 0, "Message": message, "ContainerId": None}
 
@@ -232,7 +238,22 @@ def handleMessage(instancePath, terminalLocationId, message):
        Public so the simulator and the script console can drive the whole path
        with a typed message and no hardware.
 
+       Every outcome -- close, refusal, failure -- is then announced once as
+       a page-scoped 'scalePressRecorded' so the terminal's screen re-reads
+       its press log. A failed broadcast never undoes or masks the press.
+
        Returns {"Status": 1|0, "Message": str, "ContainerId": id or None}."""
+    try:
+        return _handle(instancePath, terminalLocationId, message)
+    finally:
+        try:
+            BlueRidge.Workorder.PlcWatcher.broadcastPageMessage(
+                "scalePressRecorded", {"terminalLocationId": terminalLocationId})
+        except (Exception, java.lang.Exception) as e:
+            BlueRidge.Common.Util.log("scalePressRecorded broadcast failed: %s" % e, level="warn")
+
+
+def _handle(instancePath, terminalLocationId, message):
     W = BlueRidge.Workorder.PlcWatcher
     device = instancePath.rsplit("/", 1)[-1]
 
@@ -240,42 +261,44 @@ def handleMessage(instancePath, terminalLocationId, message):
         return _refuse(device, terminalLocationId, "Scale weighment not read",
                        "The scale sent a weighment but it could not be read "
                        "back. Check the scale's network connection and press "
-                       "the button again.", None)
+                       "the button again.", {"v": 1})
 
     parsed = parse(message)
     if not parsed["ok"]:
         return _refuse(device, terminalLocationId, "Scale weighment not understood",
-                       parsed["reason"], message)
+                       parsed["reason"], {"v": 1, "raw": message})
 
-    payload = "net=%s uom=%s cam=%s flags=%s" % (
-        parsed["netText"], parsed["uom"], parsed["cam"], _flagsText(parsed))
+    body = {"v": 1, "net": parsed["net"], "uom": parsed["uom"], "cam": parsed["cam"],
+            "flags": parsed["flags"], "flagsState": parsed["flagsState"]}
 
     if parsed["uom"].lower() != EXPECTED_UOM:
         return _refuse(device, terminalLocationId, "Scale is in the wrong units",
                        "The scale reported %s, but this system expects %s. "
                        "Have the scale's units checked before weighing again."
-                       % (parsed["uom"], EXPECTED_UOM), payload)
+                       % (parsed["uom"], EXPECTED_UOM), body)
 
     ctx = BlueRidge.Workorder.Assembly.resolvePlcCloseContext(terminalLocationId, "ByWeight")
     if ctx.get("error"):
         return _refuse(device, terminalLocationId, "Tray not closed",
-                       ctx["error"], payload)
+                       ctx["error"], body)
+    itemId = ctx["finishedGoodItemId"]
 
     verdict = BlueRidge.Parts.ContainerConfig.judgeWeight(
-        ctx["finishedGoodItemId"], "ByWeight", parsed["net"],
-        scaleFlags=parsed["flags"]) or {}
-    payload = "%s item=%s verdict=%s low=%s high=%s scale=%s agree=%s" % (
-        payload, ctx["finishedGoodItemId"], verdict.get("Verdict"),
-        verdict.get("LowLimit"), verdict.get("HighLimit"),
-        verdict.get("ScaleVerdict"), verdict.get("FlagsAgree"))
+        itemId, "ByWeight", parsed["net"], scaleFlags=parsed["flags"]) or {}
+    agree = verdict.get("FlagsAgree")
+    body.update({"verdict": verdict.get("Verdict"),
+                 "low": _num(verdict.get("LowLimit")), "high": _num(verdict.get("HighLimit")),
+                 "scaleVerdict": verdict.get("ScaleVerdict"),
+                 "agree": None if agree is None else bool(agree)})
 
     # The scale's second opinion. SQL decided whether it is worth a look
     # (FlagsMessage); this only files it. It is logged BEFORE the close or
     # refusal so it is on record whichever way the press goes, and it raises
     # no toast and changes nothing about what happens next.
     if verdict.get("FlagsMessage"):
-        W.logInterface(device, "Scale flags warning", requestPayload=payload,
+        W.logInterface(device, "Scale flags warning", requestPayload=_encode(body),
                        ok=True, errorDescription=verdict.get("FlagsMessage"),
+                       locationId=terminalLocationId, itemId=itemId,
                        errorCondition=("ScaleFlagsMismatch"
                                        if verdict.get("FlagsAgree") in (0, False)
                                        else "ScaleFlags%s" % verdict.get("ScaleVerdict")))
@@ -287,13 +310,15 @@ def handleMessage(instancePath, terminalLocationId, message):
         level = "warning" if verdict.get("Verdict") in ("Under", "Over") else "error"
         return _refuse(device, terminalLocationId, "Tray not closed",
                        verdict.get("Message") or "The tray weight could not be judged.",
-                       payload, level=level)
+                       body, level=level, itemId=itemId)
 
     result = BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId, "ByWeight")
     ok = bool(result and result.get("Status"))
-    W.logInterface(device, "ByWeight tray close", requestPayload=payload,
-                   responsePayload=str(result), ok=ok,
-                   errorDescription=None if ok else (result or {}).get("Message"))
+    W.logInterface(device, "ByWeight tray close", requestPayload=_encode(body),
+                   responsePayload=system.util.jsonEncode(result or {}), ok=ok,
+                   errorDescription=None if ok else (result or {}).get("Message"),
+                   locationId=terminalLocationId, itemId=itemId,
+                   lotId=(result or {}).get("FinishedGoodLotId") if ok else None)
     if not ok:
         msg = (result or {}).get("Message") or "Tray close failed"
         W.notifyAlarm(terminalLocationId, "ByWeight tray close failed", msg)

@@ -259,14 +259,18 @@ _REPLAY_SAFE = {
 # ---- interface logging (FDS-01-014) -----------------------------------------
 def logInterface(deviceCode, description, requestPayload=None,
                  responsePayload=None, ok=True, errorDescription=None,
-                 logEventTypeCode="PlcHandshake", errorCondition=None):
+                 logEventTypeCode="PlcHandshake", errorCondition=None,
+                 locationId=None, itemId=None, lotId=None):
     """Log one handshake transaction to Audit.InterfaceLog. Best-effort -- never
        raises into the watcher. logEventTypeCode defaults to PlcHandshake; the
        tray watcher passes PlcLineStop on a vision mismatch (FDS-10-005/010).
 
        errorCondition names a non-failure finding on a row (the EPrint scale's
        'ScaleFlagsMismatch' warning) and is written with errorDescription even
-       when ok is True. Without it, a failed row reads HandshakeFailed."""
+       when ok is True. Without it, a failed row reads HandshakeFailed.
+
+       locationId / itemId / lotId (migration 0113) tie the row to the
+       terminal, the part and the LOT the call produced. All optional."""
     if errorCondition is None:
         errorCondition = None if ok else "HandshakeFailed"
     params = {
@@ -279,9 +283,9 @@ def logInterface(deviceCode, description, requestPayload=None,
         "errorCondition":   errorCondition,
         "errorDescription": errorDescription if errorCondition else None,
         "isHighFidelity":   True,
-        "locationId":       None,
-        "itemId":           None,
-        "lotId":            None,
+        "locationId":       locationId,
+        "itemId":           itemId,
+        "lotId":            lotId,
     }
     try:
         # Silent proc (no result set) -> UpdateQuery NQ via execNonQuery.

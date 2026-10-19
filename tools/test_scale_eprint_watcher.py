@@ -12,6 +12,7 @@ sql/tests/0008_Parts_Item/029_ContainerConfig_JudgeWeight.sql; here the judge
 is a stub that returns whatever row a case gives it.
 """
 
+import json
 import os
 import sys
 import types
@@ -28,10 +29,11 @@ def _stubModules():
     java.lang = types.ModuleType("java.lang")
     java.lang.Exception = Exception
     system = types.ModuleType("system")
-    for name in ("date", "opc", "tag"):
+    for name in ("date", "opc", "tag", "util"):
         mod = types.ModuleType("system." + name)
         setattr(system, name, mod)
         sys.modules["system." + name] = mod
+    system.util.jsonEncode = lambda obj: json.dumps(obj, sort_keys=True)
     sys.modules.update({"java": java, "java.lang": java.lang, "system": system})
 
 
@@ -44,6 +46,7 @@ class Recorder(object):
         self.alarms = []
         self.judgeCalls = []
         self.closes = []
+        self.broadcasts = []
         self.judgeRow = judgeRow
         self.closeResult = closeResult or {"Status": 1, "ContainerId": 77}
         self.ctx = ctx or {"finishedGoodItemId": 110}
@@ -56,7 +59,9 @@ class Recorder(object):
                 logInterface=lambda device, description, **kw:
                     rec.logs.append(dict(kw, device=device, description=description)),
                 notifyAlarm=lambda terminal, title, message, level="error":
-                    rec.alarms.append({"title": title, "message": message, "level": level})),
+                    rec.alarms.append({"title": title, "message": message, "level": level}),
+                broadcastPageMessage=lambda messageType, payload:
+                    rec.broadcasts.append((messageType, payload))),
             Assembly=types.SimpleNamespace(
                 resolvePlcCloseContext=lambda terminal, method: rec.ctx,
                 plcCompleteTray=lambda terminal, method:
@@ -188,17 +193,21 @@ class HandleMessageTests(unittest.TestCase):
         self.assertEqual(result["Status"], 1)
         self.assertIsNone(rec.judgeCalls[0]["scaleFlags"])
         self.assertEqual(len(rec.logs), 1)
-        self.assertIn("flags=None", rec.logs[0]["requestPayload"])
-        self.assertIn("scale=None agree=None", rec.logs[0]["requestPayload"])
+        body = json.loads(rec.logs[0]["requestPayload"])
+        self.assertIsNone(body["flags"])
+        self.assertEqual(body["flagsState"], "absent")
+        self.assertIsNone(body["scaleVerdict"])
+        self.assertIsNone(body["agree"])
 
     def test_flags_present_and_agreeing(self):
         rec, result = self._run(T3_OK, _row("Ok", scale="Ok", agree=True))
         self.assertEqual(result["Status"], 1)
         self.assertEqual(rec.judgeCalls[0]["scaleFlags"], {"under": 0, "over": 0, "ok": 1})
         self.assertEqual([l["description"] for l in rec.logs], ["ByWeight tray close"])
-        payload = rec.logs[0]["requestPayload"]
-        self.assertIn("flags=UNDER:0,OVER:0,OK:1", payload)
-        self.assertIn("scale=Ok agree=True", payload)
+        body = json.loads(rec.logs[0]["requestPayload"])
+        self.assertEqual(body["flags"], {"under": 0, "over": 0, "ok": 1})
+        self.assertEqual(body["scaleVerdict"], "Ok")
+        self.assertIs(body["agree"], True)
         self.assertEqual(rec.alarms, [])
 
     def test_mismatch_on_an_ok_tray_still_closes_and_warns(self):
@@ -221,8 +230,10 @@ class HandleMessageTests(unittest.TestCase):
         self.assertEqual(rec.closes, [])
         self.assertEqual([l["description"] for l in rec.logs],
                          ["Scale flags warning", "Tray not closed"])
-        self.assertIn("flags=UNDER:0,OVER:0,OK:1", rec.logs[1]["requestPayload"])
-        self.assertIn("scale=Ok agree=False", rec.logs[1]["requestPayload"])
+        body = json.loads(rec.logs[1]["requestPayload"])
+        self.assertEqual(body["flags"], {"under": 0, "over": 0, "ok": 1})
+        self.assertEqual(body["scaleVerdict"], "Ok")
+        self.assertIs(body["agree"], False)
         # The only toast is the MES refusal itself.
         self.assertEqual(len(rec.alarms), 1)
         self.assertEqual(rec.alarms[0]["level"], "warning")
@@ -241,13 +252,70 @@ class HandleMessageTests(unittest.TestCase):
             _row("Ok"))
         self.assertEqual(result["Status"], 1)
         self.assertIsNone(rec.judgeCalls[0]["scaleFlags"])
-        self.assertIn("flags=Unreadable", rec.logs[0]["requestPayload"])
+        body = json.loads(rec.logs[0]["requestPayload"])
+        self.assertIsNone(body["flags"])
+        self.assertEqual(body["flagsState"], "unreadable")
 
     def test_flags_on_a_refusal_before_judging(self):
         rec, result = self._run(T3_OK.replace(" lb", " kg"), _row("Ok"))
         self.assertEqual(result["Status"], 0)
         self.assertEqual(rec.judgeCalls, [])
-        self.assertIn("flags=UNDER:0,OVER:0,OK:1", rec.logs[0]["requestPayload"])
+        self.assertEqual(json.loads(rec.logs[0]["requestPayload"])["flags"],
+                         {"under": 0, "over": 0, "ok": 1})
+
+    # ---- Task 2 (scale station spec §4): JSON payload, context, broadcast ----
+
+    def test_payload_is_json_v1(self):
+        rec, result = self._run(T3_OK, _row("Ok", scale="Ok", agree=True))
+        body = json.loads(rec.logs[0]["requestPayload"])
+        self.assertEqual(body["v"], 1)
+        self.assertEqual(body["net"], 50.0)
+        self.assertEqual(body["uom"], "lb")
+        self.assertEqual(body["verdict"], "Ok")
+        self.assertEqual(body["low"], 48.0)
+        self.assertEqual(body["high"], 52.0)
+        self.assertEqual(body["flags"], {"under": 0, "over": 0, "ok": 1})
+        self.assertIs(body["agree"], True)
+        self.assertEqual(json.loads(rec.logs[0]["responsePayload"])["Status"], 1)
+
+    def test_refusal_before_judging_omits_verdict(self):
+        rec, result = self._run(T3_OK.replace(" lb", " kg"), _row("Ok"))
+        body = json.loads(rec.logs[0]["requestPayload"])
+        self.assertNotIn("verdict", body)
+        self.assertEqual(body["uom"], "kg")
+        self.assertIsNone(rec.logs[0].get("itemId"))
+        self.assertEqual(rec.logs[0]["locationId"], 106)
+
+    def test_context_on_close(self):
+        rec, result = self._run(T3_OK, _row("Ok", scale="Ok", agree=True),
+                                closeResult={"Status": 1, "ContainerId": 9, "FinishedGoodLotId": 77})
+        log = rec.logs[-1]
+        self.assertEqual((log["locationId"], log["itemId"], log["lotId"]), (106, 110, 77))
+
+    def test_context_on_refusal(self):
+        rec, result = self._run(T3_UNDER, _row("Under", scale="Under", agree=True))
+        log = rec.logs[-1]
+        self.assertEqual((log["locationId"], log["itemId"]), (106, 110))
+        self.assertIsNone(log.get("lotId"))
+
+    def test_press_broadcast_every_outcome(self):
+        cases = [
+            (T3_OK, _row("Ok"), None),                                  # close
+            (T3_UNDER, _row("Under"), None),                            # refusal
+            ("no weight here", _row("Ok"), None),                       # unreadable
+            (T3_OK, _row("Ok"), {"Status": 0, "Message": "boom"}),      # failed close
+        ]
+        for message, row, closeResult in cases:
+            rec, result = self._run(message, row, closeResult=closeResult)
+            self.assertEqual(rec.broadcasts, [("scalePressRecorded", {"terminalLocationId": 106})],
+                             "exactly one broadcast for %r" % message[:20])
+
+    def test_flags_warning_row_carries_context(self):
+        rec, result = self._run(T3_UNDER, _row("Ok", scale="Under", agree=False,
+                                               flagsMessage="scale Under, MES Ok"))
+        warn = rec.logs[0]
+        self.assertEqual(warn["description"], "Scale flags warning")
+        self.assertEqual((warn["locationId"], warn["itemId"]), (106, 110))
 
 
 if __name__ == "__main__":
