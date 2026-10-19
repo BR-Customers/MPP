@@ -188,7 +188,7 @@ The office scale (serial `B913444851`) was reprogrammed to print **Template 3**:
 
 **Log.** Every press's `Audit.InterfaceLog.RequestPayload` carries `flags=UNDER:u,OVER:o,OK:k` (or `flags=None` when absent, `flags=Unreadable` when malformed), and once judged also `scale=<ScaleVerdict> agree=<FlagsAgree>`, on Ok closes and refusals alike. Whenever SQL returns a `FlagsMessage`, a separate row `Scale flags warning` is written first, with `ErrorCondition` = `ScaleFlagsMismatch`, `ScaleFlagsNoTarget` or `ScaleFlagsInvalid` and the message as `ErrorDescription`.
 
-**No toast.** The warning is for supervisors and engineers reading the interface log, not operators. Any screen for it waits on a decision from Jacques.
+**No toast.** The warning is for supervisors and engineers reading the interface log, not operators. Decided by Jacques on 2026-10-19: the interface log only, with no toast and no screen for now.
 
 **To find them:**
 
