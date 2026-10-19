@@ -203,6 +203,7 @@ def _logAim(action, detail, ok, err=None):
         "errorCondition":   None if ok else "AimCallFailed",
         "errorDescription": err,
         "isHighFidelity":   True,
+        "locationId":   None, "itemId": None, "lotId": None,
     }
     try:
         BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)

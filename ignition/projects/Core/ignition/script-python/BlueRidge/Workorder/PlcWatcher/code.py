@@ -279,6 +279,9 @@ def logInterface(deviceCode, description, requestPayload=None,
         "errorCondition":   errorCondition,
         "errorDescription": errorDescription if errorCondition else None,
         "isHighFidelity":   True,
+        "locationId":       None,
+        "itemId":           None,
+        "lotId":            None,
     }
     try:
         # Silent proc (no result set) -> UpdateQuery NQ via execNonQuery.

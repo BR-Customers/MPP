@@ -74,6 +74,21 @@
         "type": "Parameter",
         "identifier": "isHighFidelity",
         "sqlType": 6
+      },
+      {
+        "type": "Parameter",
+        "identifier": "locationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "itemId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lotId",
+        "sqlType": 3
       }
     ]
   }

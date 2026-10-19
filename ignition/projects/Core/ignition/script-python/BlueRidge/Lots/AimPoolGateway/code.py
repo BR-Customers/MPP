@@ -137,7 +137,7 @@ def _logAim(action, aimShipperId, ok, err=None):
         "description": "AIM %s %s" % (action, aimShipperId or ""),
         "requestPayload": "%s | %s" % (action, aimShipperId or ""),
         "responsePayload": "OK" if ok else None,
-        "errorCondition": None if ok else "AimCallFailed", "errorDescription": err, "isHighFidelity": True}
+        "errorCondition": None if ok else "AimCallFailed", "errorDescription": err, "isHighFidelity": True, "locationId": None, "itemId": None, "lotId": None}
     try:
         BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
     except Exception as e:

@@ -1821,6 +1821,23 @@ BEGIN
                          @level2type = N'COLUMN', @level2name = N'TargetWeight';
     END
 
+    IF COL_LENGTH(N'[Parts].[ContainerConfig]', N'ToleranceWeight') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[ContainerConfig]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[ContainerConfig]'), N'ToleranceWeight', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added 2026-08-27 (migration 0068). One symmetric tolerance around TargetWeight. Parts.ContainerConfig_JudgeWeight judges a scale''s net weight against TargetWeight - ToleranceWeight to TargetWeight + ToleranceWeight, both ends inclusive. NULL is its own verdict (NoTolerance) and closes nothing, never a zero-width window. This window is the only checkweigh verdict (option C, v3.3): a scale printing its own UNDER / OVER / OK flags (IND570 Template 3) has them compared and logged as ScaleVerdict / FlagsAgree, but they never decide a close.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'ToleranceWeight';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added 2026-08-27 (migration 0068). One symmetric tolerance around TargetWeight. Parts.ContainerConfig_JudgeWeight judges a scale''s net weight against TargetWeight - ToleranceWeight to TargetWeight + ToleranceWeight, both ends inclusive. NULL is its own verdict (NoTolerance) and closes nothing, never a zero-width window. This window is the only checkweigh verdict (option C, v3.3): a scale printing its own UNDER / OVER / OK flags (IND570 Template 3) has them compared and logged as ScaleVerdict / FlagsAgree, but they never decide a close.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'ToleranceWeight';
+    END
+
     IF COL_LENGTH(N'[Parts].[ContainerConfig]', N'DunnageCode') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
@@ -3237,6 +3254,193 @@ BEGIN
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'PauseEvent',
                          @level2type = N'COLUMN', @level2name = N'ResumedRemarks';
+    END
+END
+GO
+
+-- Lots.LotNote
+IF OBJECT_ID(N'[Lots].[LotNote]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v3.2 (migration 0107_lot_note). Free-text notes against a LOT, written from the LOT Detail Notes tab. Append-only - there is an add proc and a list proc and deliberately nothing else; correcting a note means writing another. A note changes nothing about the LOT (not status, quantity or location), so adding one is not a protected action: any signed-in user may write a note on a LOT in any status, including Closed. If a note should stop a LOT, that is a Hold.',
+                     @level0type = N'SCHEMA', @level0name = N'Lots',
+                     @level1type = N'TABLE',  @level1name = N'LotNote';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v3.2 (migration 0107_lot_note). Free-text notes against a LOT, written from the LOT Detail Notes tab. Append-only - there is an add proc and a list proc and deliberately nothing else; correcting a note means writing another. A note changes nothing about the LOT (not status, quantity or location), so adding one is not a protected action: any signed-in user may write a note on a LOT in any status, including Closed. If a note should stop a LOT, that is a Hold.',
+                     @level0type = N'SCHEMA', @level0name = N'Lots',
+                     @level1type = N'TABLE',  @level1name = N'LotNote';
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'LotId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'LotId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The LOT the note is about.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'LotId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The LOT the note is about.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'LotId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'NoteText') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'NoteText', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Trimmed by the proc. A note over 1000 characters is rejected, not truncated.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'NoteText';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Trimmed by the proc. A note over 1000 characters is rejected, not truncated.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'NoteText';
+    END
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'AppUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'AppUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Who wrote it. During an elevation window this is the supervisor, by design (Common.Session.beginElevatedWindow).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'AppUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Who wrote it. During an elevation window this is the supervisor, by design (Common.Session.beginElevatedWindow).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'AppUserId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'TerminalLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'TerminalLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The terminal it was typed at. NULL when the session had no registered terminal.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The terminal it was typed at. NULL when the session had no registered terminal.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'WasElevated') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'WasElevated', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'1 when an AD elevation window was open. Lets the tab badge supervisor notes.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'WasElevated';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'1 when an AD elevation window was open. Lets the tab badge supervisor notes.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'WasElevated';
+    END
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'LotStatusId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'LotStatusId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Snapshot - the LOT''s status when the note was written.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'LotStatusId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Snapshot - the LOT''s status when the note was written.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'LotStatusId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'LotLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'LotLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Snapshot - Lot.CurrentLocationId when the note was written.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'LotLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Snapshot - Lot.CurrentLocationId when the note was written.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'LotLocationId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'LotPieceCount') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'LotPieceCount', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Snapshot - Lot.PieceCount when the note was written.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'LotPieceCount';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Snapshot - Lot.PieceCount when the note was written.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'LotPieceCount';
+    END
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'ContextJson') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'ContextJson', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Session and screen context: session id, client address, device and user agent, AD login if any, page path, elevation state, and session.custom (terminal, zone, cell, user, printer, LOT trail) minus bulk UI state. Evidence only - nothing reads it for behaviour.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'ContextJson';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Session and screen context: session id, client address, device and user agent, AD login if any, page path, elevation state, and session.custom (terminal, zone, cell, user, printer, LOT trail) minus bulk UI state. Evidence only - nothing reads it for behaviour.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'ContextJson';
+    END
+
+    IF COL_LENGTH(N'[Lots].[LotNote]', N'CreatedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotNote]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotNote]'), N'CreatedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC; LotNote_ListByLot converts to Eastern.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'CreatedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC; LotNote_ListByLot converts to Eastern.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotNote',
+                         @level2type = N'COLUMN', @level2name = N'CreatedAt';
     END
 END
 GO
@@ -7113,6 +7317,74 @@ BEGIN
                          @level1type = N'TABLE',  @level1name = N'InterfaceLog',
                          @level2type = N'COLUMN', @level2name = N'RequestPayload';
     END
+
+    IF COL_LENGTH(N'[Audit].[InterfaceLog]', N'ErrorCondition') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Audit].[InterfaceLog]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Audit].[InterfaceLog]'), N'ErrorCondition', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Failure or finding name. Scale watchers: HandshakeFailed on a refused press; on an EPrint scale''s Scale flags warning row (not a failure) ScaleFlagsMismatch / ScaleFlagsNoTarget / ScaleFlagsInvalid, from ContainerConfig_JudgeWeight''s flag comparison (v3.3).',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'InterfaceLog',
+                         @level2type = N'COLUMN', @level2name = N'ErrorCondition';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Failure or finding name. Scale watchers: HandshakeFailed on a refused press; on an EPrint scale''s Scale flags warning row (not a failure) ScaleFlagsMismatch / ScaleFlagsNoTarget / ScaleFlagsInvalid, from ContainerConfig_JudgeWeight''s flag comparison (v3.3).',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'InterfaceLog',
+                         @level2type = N'COLUMN', @level2name = N'ErrorCondition';
+    END
+
+    IF COL_LENGTH(N'[Audit].[InterfaceLog]', N'LocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Audit].[InterfaceLog]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Audit].[InterfaceLog]'), N'LocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added 2026-10-19 (migration 0113). Where the call was made for: the terminal for a scale or PLC watcher. With LoggedAt it also gives the shift (Oee.ufn_ShiftIdForInstant). NULL on rows written before 0113 and from writers that do not supply it. Indexed (LocationId, LoggedAt DESC), partition-aligned.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'InterfaceLog',
+                         @level2type = N'COLUMN', @level2name = N'LocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added 2026-10-19 (migration 0113). Where the call was made for: the terminal for a scale or PLC watcher. With LoggedAt it also gives the shift (Oee.ufn_ShiftIdForInstant). NULL on rows written before 0113 and from writers that do not supply it. Indexed (LocationId, LoggedAt DESC), partition-aligned.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'InterfaceLog',
+                         @level2type = N'COLUMN', @level2name = N'LocationId';
+    END
+
+    IF COL_LENGTH(N'[Audit].[InterfaceLog]', N'ItemId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Audit].[InterfaceLog]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Audit].[InterfaceLog]'), N'ItemId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added 2026-10-19 (migration 0113). The part the call concerned, when there was one (a scale press: the finished good it judged). NULL when the call never resolved a part.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'InterfaceLog',
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added 2026-10-19 (migration 0113). The part the call concerned, when there was one (a scale press: the finished good it judged). NULL when the call never resolved a part.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'InterfaceLog',
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+    END
+
+    IF COL_LENGTH(N'[Audit].[InterfaceLog]', N'LotId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Audit].[InterfaceLog]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Audit].[InterfaceLog]'), N'LotId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added 2026-10-19 (migration 0113). The production record the call produced or acted on (a scale tray close: the finished-good LOT it minted). NULL on a refusal.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'InterfaceLog',
+                         @level2type = N'COLUMN', @level2name = N'LotId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added 2026-10-19 (migration 0113). The production record the call produced or acted on (a scale tray close: the finished-good LOT it minted). NULL on a refusal.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'InterfaceLog',
+                         @level2type = N'COLUMN', @level2name = N'LotId';
+    END
 END
 GO
 
@@ -7269,4 +7541,4 @@ BEGIN
 END
 GO
 
--- 72 table descriptions, 347 column descriptions
+-- 73 table descriptions, 362 column descriptions

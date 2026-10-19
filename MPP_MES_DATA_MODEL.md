@@ -1954,6 +1954,9 @@ External system communications.
 | ErrorCondition | NVARCHAR(200) | NULL | Failure or finding name. Scale watchers: `HandshakeFailed` on a refused press; on an EPrint scale's `Scale flags warning` row (not a failure) `ScaleFlagsMismatch` / `ScaleFlagsNoTarget` / `ScaleFlagsInvalid`, from `ContainerConfig_JudgeWeight`'s flag comparison (v3.3). |
 | ErrorDescription | NVARCHAR(1000) | NULL | |
 | IsHighFidelity | BIT | NOT NULL, DEFAULT 0 | |
+| LocationId | BIGINT | FK → Location.Location.Id, NULL | Added 2026-10-19 (migration 0113). Where the call was made for: the terminal for a scale or PLC watcher. With LoggedAt it also gives the shift (Oee.ufn_ShiftIdForInstant). NULL on rows written before 0113 and from writers that do not supply it. Indexed (LocationId, LoggedAt DESC), partition-aligned. |
+| ItemId | BIGINT | FK → Parts.Item.Id, NULL | Added 2026-10-19 (migration 0113). The part the call concerned, when there was one (a scale press: the finished good it judged). NULL when the call never resolved a part. |
+| LotId | BIGINT | FK → Lots.Lot.Id, NULL | Added 2026-10-19 (migration 0113). The production record the call produced or acted on (a scale tray close: the finished-good LOT it minted). NULL on a refusal. |
 
 ### FailureLog
 

@@ -7,6 +7,11 @@
 --              Per FRS 3.17.4, @IsHighFidelity controls whether the
 --              full request/response payloads are stored or just the
 --              metadata.
+--
+--              v1.1 (2026-10-19, migration 0113): optional @LocationId /
+--              @ItemId / @LotId -- where the call was made for, the part it
+--              concerned, and the production record it produced. NULL when
+--              not supplied (every caller before 0113).
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Audit.Audit_LogInterfaceCall
@@ -18,7 +23,10 @@ CREATE OR ALTER PROCEDURE Audit.Audit_LogInterfaceCall
     @ResponsePayload    NVARCHAR(MAX)   = NULL,
     @ErrorCondition     NVARCHAR(200)   = NULL,
     @ErrorDescription   NVARCHAR(1000)  = NULL,
-    @IsHighFidelity     BIT             = 0
+    @IsHighFidelity     BIT             = 0,
+    @LocationId         BIGINT          = NULL,
+    @ItemId             BIGINT          = NULL,
+    @LotId              BIGINT          = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -39,7 +47,10 @@ BEGIN
         ResponsePayload,
         ErrorCondition,
         ErrorDescription,
-        IsHighFidelity
+        IsHighFidelity,
+        LocationId,
+        ItemId,
+        LotId
     )
     VALUES (
         SYSUTCDATETIME(),
@@ -51,7 +62,10 @@ BEGIN
         CASE WHEN @IsHighFidelity = 1 THEN @ResponsePayload ELSE NULL END,
         @ErrorCondition,
         @ErrorDescription,
-        @IsHighFidelity
+        @IsHighFidelity,
+        @LocationId,
+        @ItemId,
+        @LotId
     );
 
     SET @NewLogId = SCOPE_IDENTITY();

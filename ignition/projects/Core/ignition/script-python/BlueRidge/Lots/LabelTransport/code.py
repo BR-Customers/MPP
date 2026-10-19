@@ -420,6 +420,7 @@ def _resolveLogParams(endpoint, via, labelKind):
             "errorCondition":   None,
             "errorDescription": None,
             "isHighFidelity":   False,
+        "locationId":   None, "itemId": None, "lotId": None,
         }
     return {
         "systemName":       _SYSTEM_NAME,
@@ -431,6 +432,7 @@ def _resolveLogParams(endpoint, via, labelKind):
         "errorCondition":   "EndpointUnresolved",
         "errorDescription": "No printer endpoint for this terminal (tried: %s)" % (via or "unknown"),
         "isHighFidelity":   True,
+        "locationId":   None, "itemId": None, "lotId": None,
     }
 
 
@@ -468,6 +470,7 @@ def _dispatchLogParams(endpoint, zpl, outcome, labelKind):
         "errorCondition":   condition,
         "errorDescription": detail,
         "isHighFidelity":   True,
+        "locationId":   None, "itemId": None, "lotId": None,
     }
 
 

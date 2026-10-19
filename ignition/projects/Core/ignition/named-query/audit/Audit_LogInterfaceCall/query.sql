@@ -7,4 +7,7 @@ EXEC Audit.Audit_LogInterfaceCall
     @ResponsePayload  = :responsePayload,
     @ErrorCondition   = :errorCondition,
     @ErrorDescription = :errorDescription,
-    @IsHighFidelity   = :isHighFidelity
+    @IsHighFidelity   = :isHighFidelity,
+    @LocationId       = :locationId,
+    @ItemId           = :itemId,
+    @LotId            = :lotId
