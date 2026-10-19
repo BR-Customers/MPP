@@ -101,7 +101,7 @@ One row per trim rework. Append-only apart from the completion stamp.
 | ReEntrySequenceNumber | INT NOT NULL | The route `SequenceNumber` of the step moved back to (the LOT's TrimIn step). Steps at or after it become pending again. |
 | LotMovementId | BIGINT NOT NULL | The `Lots.LotMovement` row the override move wrote. Pointer, no FK (high-volume table; same precedent as `ControlledRunResult.RejectEventId`). |
 | StartedAt | DATETIME2(3) NOT NULL | UTC, = the movement time |
-| MovedByUserId | BIGINT FK → AppUser NOT NULL | The `@AppUserId` of the move (the operator) |
+| MovedByUserId | BIGINT FK → AppUser NOT NULL | The `@AppUserId` of the move. Usually the operator; when the supervisor's own session was already elevated the view passes the supervisor as both, so both columns hold the supervisor. |
 | ApprovedByUserId | BIGINT FK → AppUser NOT NULL | The `@OverrideAppUserId` (the supervisor) |
 | TerminalLocationId | BIGINT FK → Location NULL | |
 | CompletedAt | DATETIME2(3) NULL | Set by the Trim OUT that closes it |
@@ -119,14 +119,18 @@ Filtered unique index: at most one open rework per LOT (`WHERE CompletedAt IS NU
   A LOT with an open rework that is moved back into trim again does **not** get a second
   row (the filtered unique index would refuse it); the move just happens.
   - **CRT exception:** rule 6 does not refuse this move. A rework move into trim is
-    allowed for a CRT LOT. Hold, Scrap and Closed still refuse (rules before 4b are
+    allowed for a CRT LOT. Rule 4b is skipped entirely when an override is supplied, so
+    the "is it backward" test has to be computed for the override case too. Hold, Scrap and Closed still refuse (rules before 4b are
     untouched). The CRT tag stays on the LOT; after Trim OUT the LOT is still refused a
     production destination until Quality releases it, as today.
   - No change to the view or the `MoveOverride` popup. No reason field is added (my call:
     Jacques asked to use the interaction as it is).
-- **`Lots.ufn_NextPendingRouteStep` v1.2** (the one shared definition — Trim queue, Trim
-  OUT pick list, Machining queues, `Lot_MoveToValidated` and `MachiningOut_Mint` all read
-  it). For a LOT with a `LotRework` row, an `Advance` step whose `SequenceNumber` is
+- **`Lots.ufn_NextPendingRouteStep` v1.2** (the one shared definition — read by
+  `Lot_GetWipQueueByLocation` (Trim queue, Trim OUT pick list, Machining queues),
+  `Lot_GetComponentsAtCell`, `Lot_GetTrimStorageQueueForLine`, `Lot_MoveToValidated`,
+  `MachiningIn_RecordPick` and `MachiningOut_Mint`; every one changes with it, and each
+  needs a test with a reworked LOT — e.g. a LOT that had already been picked at Machining
+  IN reappears in the Trim Storage line queue after its re-run, which is intended). For a LOT with a `LotRework` row, an `Advance` step whose `SequenceNumber` is
   `>= ReEntrySequenceNumber` of the **latest** rework counts as done only if it has a
   `ProductionEvent` recorded **after that rework's `StartedAt`**. Steps below the re-entry
   point keep today's rule. LOTs with no rework rows are unchanged. Must stay an inline TVF.
@@ -138,7 +142,20 @@ Filtered unique index: at most one open rework per LOT (`WHERE CompletedAt IS NU
 - **Trim IN checkpoint.** Whatever records the TrimIn checkpoint today
   (`ProductionEvent.recordTrimInCheckpoint`) is unchanged; with the new pending rule the
   re-entered LOT is pending at TrimIn and then at TrimOut exactly like a first pass.
-- Scrap at the re-run Trim OUT is ordinary subtractive trim scrap.
+- **The rework pass starts its own count, and is not trim production (Jacques,
+  2026-10-19).** The Trim screen sends `ShotCount` = good pieces, and today
+  `Workorder.TrimOut_Record` guard 7 (cumulative-monotonic) refuses a count lower than the
+  LOT's last TrimIn / TrimOut checkpoint, while guard 6b caps good + scrap at the LOT's
+  pieces. A LOT that ran 100, scrapped 5 and kept 95 could not then scrap anything on its
+  re-run. So, in `TrimOut_Record` **and** `Workorder.TrimPartial_Record` (same guard):
+  - the "previous checkpoint" that guard 7 and the shift-credit delta compare against is
+    the latest checkpoint **since the open rework's `StartedAt`**; with none, the pass
+    starts from zero;
+  - output recorded while a rework is open is **not credited as trim production for the
+    shift** (excluded from whatever reads the ShotCount delta into shift output; the
+    builder finds every such reader and tests each);
+  - scrap recorded on the re-run is still ordinary subtractive trim scrap (a
+    `RejectEvent`, the LOT decrements), because it is real scrap.
 
 ### 4.5 Super-lot effect
 
@@ -183,6 +200,7 @@ to go back). `Closed`, `Scrap`, `Open` are refused. A CRT LOT may be marked.
 | Id | BIGINT IDENTITY PK | |
 | LotId | BIGINT FK → Lots.Lot NOT NULL | |
 | Quantity | INT NOT NULL, CHECK > 0 | |
+| PieceCountTaken / InventoryTaken | INT NOT NULL | What the mark actually took off each materialized quantity |
 | Remarks | NVARCHAR(500) NULL | Free text; no RMA / vendor fields (Jacques: "just mark it") |
 | ControlledRunResultId | BIGINT FK → Quality.ControlledRunResult NULL | Set when the mark applies a super-lot Return result |
 | MarkedByUserId | BIGINT FK → AppUser NOT NULL | |
@@ -199,8 +217,12 @@ CHECK: not both confirmed and cancelled. Filtered index on open rows
 - **`Lots.VendorReturn_Mark(@LotId, @Quantity, @Remarks, @ControlledRunResultId, @AppUserId, @TerminalLocationId)`**
   - Quantity must not exceed `PieceCount`. Decrements `PieceCount` and
     `InventoryAvailable` together (floored at zero, mirroring
-    `Workorder.RejectEvent_Record`'s subtractive path) and, at zero, closes the LOT with a
-    `LotStatusHistory` row the same way that proc does (inline mirror; cite it).
+    `Workorder.RejectEvent_Record`'s subtractive path) and, at zero, closes a `Good` LOT with a
+    `LotStatusHistory` row the same way that proc does (inline mirror; cite it). A `Hold`
+    LOT returned to zero stays `Hold` with 0 pieces, as with reject today.
+  - Stores the amounts actually taken off each quantity (`PieceCountTaken`,
+    `InventoryTaken`), because `InventoryAvailable` is floored at zero; Cancel restores
+    exactly those.
   - **Not a `RejectEvent`.** Nothing in reject / scrap reporting sees it.
   - With `@ControlledRunResultId`: that result must be a live, unapplied `ReturnToSupplier`
     entry for a member whose LOT is `@LotId`, and `@Quantity` must equal its quantity
@@ -210,8 +232,8 @@ CHECK: not both confirmed and cancelled. Filtered index on open rows
   No quantity change. Refused if already confirmed or cancelled. Audit
   `VendorReturnConfirmed`.
 - **`Lots.VendorReturn_Cancel(@VendorReturnId, @CancelRemarks, @AppUserId)`** — before
-  confirmation only. Restores `PieceCount` and `InventoryAvailable`. **Refused if the
-  mark closed the LOT** (re-opening a closed LOT has no proc and is not built here; the
+  confirmation only. Restores `PieceCount` and `InventoryAvailable`. **Refused if the LOT is now
+  Closed** (a Hold LOT left at zero can still be cancelled) (re-opening a closed LOT has no proc and is not built here; the
   limitation is stated in section 8). Audit `VendorReturnCancelled`.
 - **Reads:** `Lots.VendorReturn_ListOpen` (dashboard tile + popup: LOT, part, vendor lot
   number, quantity, marked by / at in ET, location), `Lots.VendorReturn_ListByLot`
@@ -219,10 +241,17 @@ CHECK: not both confirmed and cancelled. Filtered index on open rows
 
 ### 5.4 Super-lot effect
 
-- A live `ReturnToSupplier` result is *recorded* (count) as today; it is *applied* when a
-  `VendorReturn` row points at it — the same recorded/applied idea as scrap.
-  `IsApplied` / `CanVoid` in `Quality.ControlledRunResult_ListByRun` learn it; an applied
-  return result cannot be voided (cancel the return instead, which un-applies it).
+- **A Return result on a LOT member is applied when it is recorded** — the same way a
+  Scrap result on a LOT member already writes its `RejectEvent` at record time
+  (`ControlledRunResult_Record`). So `ControlledRunResult_Record` inlines the
+  `VendorReturn_Mark` logic for a `ReturnToSupplier` entry (commented as a mirror) and
+  writes the `VendorReturn` row pointing at the result. There is no separate Apply step
+  (my call, from the code). `IsApplied` / `CanVoid` in
+  `Quality.ControlledRunResult_ListByRun` learn it; an applied return result cannot be
+  voided (cancel the return instead, which voids the result in the same transaction).
+- **A return marked from LOT Detail on a LOT that is a current super-lot member** writes
+  an applied `ReturnToSupplier` result automatically, as `ContainerRework_Scrap` does
+  without `@ControlledRunResultId` (my call), so the left-over stays explained.
 - **Left-over math:** `Quality.ufn_ControlledRunMemberResults` adds `AppliedReturnQty`
   back exactly as it adds `AppliedScrapQty`, because an applied return has already come
   off `PieceCount`:
@@ -236,9 +265,8 @@ CHECK: not both confirmed and cancelled. Filtered index on open rows
 
 ### 5.5 Screens (Jacques wants a mock before any screen is built)
 
-- **Super-lot Results tab:** the existing Return tile records the count as today. A
-  recorded return gets an **Apply** action, the same way a recorded scrap is applied, inside
-  the Quality sign-in window. Hidden for non-received members.
+- **Super-lot Results tab:** the existing Return tile now takes the pieces off the LOT
+  when saved (no new action). Hidden for non-received members.
 - **LOT Detail:** a **Return to vendor** action for a received LOT (quantity + remarks),
   behind per-action AD elevation like other protected LOT actions (my call). Lists the
   LOT's returns with Cancel on an open one.
@@ -283,6 +311,9 @@ audit code pins); update them.
 
 - Reproduce both gaps in 4.1 first (re-entered LOT absent from the Trim queue; CRT LOT
   refused at Trim IN with override), then make them pass.
+- Rework counting: a re-run Trim OUT with scrap succeeds (100 → 95 → re-run 94 + 1
+  scrap); a partial on the re-run likewise; re-run output adds nothing to the shift's trim
+  production; first-pass behaviour unchanged.
 - Rework: override move into trim writes one `LotRework`; a non-override or non-TrimIn
   move writes none; a forward TrimIn move with an override supplied writes none; the LOT is
   pending at TrimIn then TrimOut; Trim OUT completes the rework; downstream steps
@@ -299,4 +330,4 @@ audit code pins); update them.
 | Date | Change |
 |---|---|
 | 2026-10-12 | Initial draft: options and questions, written as a handoff. Not approved. |
-| 2026-10-19 | Rewritten as a design from Jacques's answers: rework = the supervisor-approved move back into trim (whole LOT, `Lots.LotRework`, route pending rule re-armed after re-entry); Return to vendor = mark (stock off immediately, received-origin LOTs only, `Lots.VendorReturn`) + confirm on the Supervisor Dashboard. Partial fill stays a separate follow-on. |
+| 2026-10-19 | Rewritten as a design from Jacques's answers: rework = the supervisor-approved move back into trim (whole LOT, `Lots.LotRework`, route pending rule re-armed after re-entry); Return to vendor = mark (stock off immediately, received-origin LOTs only, `Lots.VendorReturn`) + confirm on the Supervisor Dashboard. Partial fill stays a separate follow-on. Builder check folded in (reader list, return applied at record time, Hold-at-zero, taken-amount columns); rework pass starts its own count and is not shift trim production (Jacques). |
