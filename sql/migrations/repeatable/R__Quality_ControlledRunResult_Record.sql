@@ -1,15 +1,18 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRunResult_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-13
--- Version:     1.0
+-- Modified:    2026-10-19
+-- Version:     1.1
+-- Change Log:  2026-10-19 - 1.1 - 'Rework' is no longer a recordable outcome (piece 5): rework is the LOT's
+--              move back into trim, and an open rework blocks release. The Rework disposition
+--              code and ReworkQty column stay for history.
 -- Description: Records what the Controlled Run inspection found, as one or more
 --              ENTRIES against members of an OPEN super-lot. One call may carry
 --              many members (the screen sends one member's entries; "mark the
 --              rest as all accepted" sends many). All or nothing.
 --
 --              @ResultsJson: [{"memberId":n, "dispositionCode":"Accepted" |
---              "Scrap" | "Rework" | "ReturnToSupplier" | "UseAsIs",
+--              "Scrap" | "ReturnToSupplier" | "UseAsIs",
 --              "quantity":n, "defectCodeId":n|null, "remarks":"..."|null}, ...]
 --
 --              What an entry DOES depends on the outcome and the member:
@@ -27,7 +30,7 @@
 --                * Scrap on a CONTAINER member is RECORDED ONLY (RejectEventId
 --                  stays NULL). Which tray the part came out of, and taking it
 --                  out, belongs to the container-repack piece.
---                * Accepted, Rework, ReturnToSupplier and UseAsIs are counts.
+--                * Accepted, ReturnToSupplier and UseAsIs are counts.
 --
 --              Quantities need not add up to the member's piece count (spec D3).
 --              A scrap total above what a LOT holds is refused, because that one
@@ -126,6 +129,9 @@ BEGIN
         IF @Reject IS NULL
             SELECT TOP 1 @Reject = e.DisplayName + N': unknown outcome ''' + ISNULL(e.DispositionCode, N'') + N'''.'
             FROM @E e WHERE e.DispositionCodeId IS NULL ORDER BY e.Seq;
+        IF @Reject IS NULL
+            SELECT TOP 1 @Reject = e.DisplayName + N': rework is recorded by moving the LOT back into trim, not as a result.'
+            FROM @E e WHERE (e.DispositionCode = N'Rework') ORDER BY e.Seq;
         IF @Reject IS NULL
             SELECT TOP 1 @Reject = e.DisplayName + N': quantity must be greater than zero.'
             FROM @E e WHERE e.Quantity IS NULL OR e.Quantity <= 0 ORDER BY e.Seq;

@@ -2,9 +2,10 @@
 -- Repeatable:  R__Quality_ufn_zzz_ControlledRunMemberResults.sql
 -- Object:      Quality.ufn_ControlledRunMemberResults
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-13
--- Version:     1.1
+-- Modified:    2026-10-19
+-- Version:     1.2
 -- Change Log:  2026-10-13 - 1.1 - A container that is being reworked cannot be released (piece 4).
+--              2026-10-19 - 1.2 - A LOT member with an OPEN trim rework cannot be released: 'At trim rework' (piece 5).
 -- Description: One row per member of a super-lot (open and ended) with what the
 --              inspection has recorded against it so far, how many pieces are
 --              still unaccounted for, and -- the part that must exist exactly
@@ -26,6 +27,7 @@
 --
 --              ReleaseBlockReason IS NULL means the member may be released:
 --                * it is a current member,
+--                * it is not at an open trim rework (Lots.LotRework, piece 5),
 --                * it has at least one live result, and
 --                * if any live result is Use-As-Is, the super-lot carries a
 --                  signed deviation.
@@ -58,6 +60,10 @@ RETURN
         CONVERT(BIT, CASE WHEN ISNULL(r.Entries, 0) > 0 THEN 1 ELSE 0 END) AS HasResult,
         CAST(CASE
             WHEN ms.EndedAt IS NOT NULL THEN N'No longer in the super-lot'
+            -- Piece 5: the LOT was moved back into trim and has not yet been re-run through
+            -- Trim OUT. Lots.ufn_OpenLotRework is a Lots-schema file, deployed before this one.
+            WHEN ms.LotId IS NOT NULL AND EXISTS (SELECT 1 FROM Lots.ufn_OpenLotRework(ms.LotId))
+                THEN N'At trim rework'
             -- Piece 4: parts are out of the box, or it is being refilled. It is released
             -- once it is complete again. A resumed rework container reads Open, so the
             -- test is the rework row, not only the two rework statuses.
