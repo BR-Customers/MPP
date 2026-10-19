@@ -1,7 +1,7 @@
 # Assembly Out, By Weight: Scale Station Screen — Design Spec
 
 **Date:** 2026-10-19
-**Status:** Draft rev 2 — Jacques's answers to questions 1–4 folded in; questions 5–6 open. Nothing built.
+**Status:** Draft rev 2 — all open questions resolved by Jacques 2026-10-19. Ready for an implementation plan. Nothing built.
 **Author:** Blue Ridge (with Claude)
 **Arc / Phase:** Arc 2 (Plant Floor) — Machining & Assembly checkweigh.
 **Builds on:** `docs/superpowers/specs/2026-08-31-ind570-eprint-demand-output-design.md` (EPrint transport, rev 2 option C).
@@ -105,7 +105,7 @@ The default is the eligible part **closest to ready**: the highest share of BOM 
 
 Definitions, from the published BOM and the item types:
 - **Raw cast good** = a BOM line whose child is `Component` or `SubAssembly`. On Dev, every `Component` child (40) has a die-cast route and every `SubAssembly` child (26) is a machined casting. `PassThrough` children (33) are bought parts.
-- **Covered** = unblocked stock at the line of at least `QtyPer × PartsPerTray`, enough for one tray close. Drafted this way because a close consumes a whole tray at once. Open question 5 asks whether to use this or the existing ranking's `QtyPer`.
+- **Covered** = unblocked stock at the line of at least `QtyPer × PartsPerTray`, enough for one tray close. A close consumes a whole tray at once (Jacques, 2026-10-19).
 - **Share covered** = covered lines ÷ all BOM lines.
 - A finished good with **no cast line** (pass-through repack: 10 on Dev) passes the cast test only on its own received stock, the rule `Item_ListEligibleFinishedGoodsRanked` v1.1 already uses.
 
@@ -189,7 +189,7 @@ All read procs, one result set each, timestamps converted to Eastern at the boun
 | 2 | ~~Elevation~~. **Resolved 2026-10-19:** PIN sign-in plus an audit row. | — |
 | 3 | ~~Eligibility~~. **Resolved 2026-10-19:** raw cast good plus at least 60% of other BOM lines in inventory, closest to ready by default (§5.1). | — |
 | 4 | ~~Trays per box~~. **Resolved 2026-10-19** from the configs: 14 of 20 By Weight pack-outs are multi-tray, so the open box gets its own card (§8 item 0). | — |
-| 5 | Covered = stock for one tray (`QtyPer × PartsPerTray`, drafted), or for one piece (`QtyPer`, as the existing ranking uses)? | §5.1 |
+| 5 | ~~Covered threshold~~. **Resolved 2026-10-19:** one full tray, `QtyPer × PartsPerTray`. | — |
 | 6 | ~~Several cast lines~~. **Resolved 2026-10-19:** at least one cast line covered; the rest count toward the 60%. | — |
 
 ## Revision History
