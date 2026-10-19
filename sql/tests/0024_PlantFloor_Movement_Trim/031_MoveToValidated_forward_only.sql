@@ -21,6 +21,7 @@ EXEC test.BeginTestFile @FileName = N'0024_PlantFloor_Movement_Trim/031_MoveToVa
 GO
 
 -- ---- fixture cleanup (FK-safe: children before LOTs; closure before LOTs) ----
+DELETE FROM Lots.LotRework WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'FONLY-%');
 DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'FONLY-%');
 DELETE FROM Lots.LotEventLog        WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'FONLY-%');
 DELETE FROM Lots.LotMovement        WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'FONLY-%');
@@ -168,6 +169,7 @@ EXEC test.Assert_IsEqual @TestName = N'[FwdOnly] no operation (storage move) all
 GO
 
 -- ---- cleanup ----
+DELETE FROM Lots.LotRework WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'FONLY-%');
 DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'FONLY-%');
 DELETE FROM Lots.LotEventLog        WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'FONLY-%');
 DELETE FROM Lots.LotMovement        WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'FONLY-%');
