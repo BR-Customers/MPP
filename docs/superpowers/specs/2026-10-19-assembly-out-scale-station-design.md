@@ -96,8 +96,9 @@ Resolution:
 ### 5.1 Eligible, and closest to ready (Jacques, 2026-10-19)
 
 A finished good is **eligible** at the terminal's line when all of these hold:
+- It is already eligible to be built at that line: `Parts.v_EffectiveItemLocation` places it at the line or one of its ancestors, the same base filter `Item_ListEligibleFinishedGoodsRanked` uses. Stock alone never makes a part runnable at a line it isn't set up for.
 - It has a By Weight pack-out with `PartsPerTray > 0`.
-- The line has its **raw cast good** in inventory.
+- The line has **at least one** of its **raw cast goods** in inventory (Jacques, 2026-10-19).
 - The line has **at least 60% of its other BOM lines** in inventory.
 
 The default is the eligible part **closest to ready**: the highest share of BOM lines covered. Ties go to the existing order (earliest ready stock, then part number).
@@ -141,7 +142,7 @@ All read procs, one result set each, timestamps converted to Eastern at the boun
 
 `Views/ShopFloor/AssemblyNonSerialized` in By Weight mode. Layout per the mockup:
 
-0. **Open box** (when the station has one): "Box #20041 · tray 7 of 16 · 420 of 960 parts", with a progress bar. Most By Weight pack-outs are multi-tray: 14 of the 20 on Dev are 4 to 24 trays per box, and only 6 are 1 tray per box. So a box is usually open across many presses, and this is the operator's main progress view. The mockup shows the 1-tray test part and needs this card added.
+0. **Open box** (when the station has one): "Box #20041 · tray 7 of 16 · 420 of 960 parts", with a progress bar. Most By Weight pack-outs are multi-tray: 14 of the 20 on Dev are 4 to 24 trays per box, and only 6 are 1 tray per box. So a box is usually open across many presses, and this is the operator's main progress view. Mockup screen "Multi-tray box in progress (16 x 6)" uses 19321-66V -A000. It shows a 16-cell tray strip, parts and trays to go, and "label prints when tray 16 closes". Each tray close mints its own LOT, so the last-press card shows the tray and LOT, and the label line appears only on the box-completing tray.
 1. **Running part banner** (`GetRunningPart`): part, description, source line ("Default: …" / "Override set by JGP at 2:41 PM"), pack-out tiles (parts per tray, trays per box, window), **Change part (N can run)**. `Source = None` shows the `Message` in the banner in red.
 2. **Last press card**:
    - The large net weight and an OK / UNDER / OVER pill.
@@ -189,7 +190,7 @@ All read procs, one result set each, timestamps converted to Eastern at the boun
 | 3 | ~~Eligibility~~. **Resolved 2026-10-19:** raw cast good plus at least 60% of other BOM lines in inventory, closest to ready by default (§5.1). | — |
 | 4 | ~~Trays per box~~. **Resolved 2026-10-19** from the configs: 14 of 20 By Weight pack-outs are multi-tray, so the open box gets its own card (§8 item 0). | — |
 | 5 | Covered = stock for one tray (`QtyPer × PartsPerTray`, drafted), or for one piece (`QtyPer`, as the existing ranking uses)? | §5.1 |
-| 6 | When a BOM has several cast lines (2 to 20 on some Dev finished goods), does "has the raw cast good" mean all of them, or at least one? Drafted as all. | §5.1 |
+| 6 | ~~Several cast lines~~. **Resolved 2026-10-19:** at least one cast line covered; the rest count toward the 60%. | — |
 
 ## Revision History
 
