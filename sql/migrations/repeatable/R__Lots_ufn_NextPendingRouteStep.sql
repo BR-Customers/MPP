@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_ufn_NextPendingRouteStep.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-12
--- Version:     1.1
+-- Modified:    2026-10-19
+-- Version:     1.2
 -- Description: THE single definition of "what is this LOT's next pending route
 --              step". Extracted from seven copy-pasted CTEs across five procs
 --              (Lots.Lot_GetWipQueueByLocation, Lots.Lot_GetComponentsAtCell,
@@ -15,6 +15,14 @@
 --              that is how inventory counted in at cutover surfaces at the
 --              terminal where it physically sits rather than at the first route
 --              step. NULL = entry at the route start = today's behaviour.
+--
+--              v1.2 (2026-10-19): a trim REWORK re-arms Advance steps. Lots.LotRework
+--              (migration 0112) holds one row per supervisor-approved override move
+--              back into trim. For the LOT's most recent rework, an Advance step at or
+--              above ReEntrySequenceNumber counts as done only by a ProductionEvent
+--              recorded at/after StartedAt; steps below the re-entry point, and LOTs
+--              with no rework row, keep the v1.1 rule. EntryRouteSequence is still
+--              applied separately, so a rework never re-arms anything below entry.
 --
 --              Pending depends on the step's OperationRoleKind:
 --                * Advance     -> pending until a matching Workorder.ProductionEvent
@@ -59,6 +67,11 @@ AS RETURN
     INNER JOIN Parts.OperationTemplate ot  ON ot.Id  = rs.OperationTemplateId
     INNER JOIN Parts.OperationType oty     ON oty.Id = ot.OperationTypeId
     INNER JOIN Parts.OperationRoleKind rk  ON rk.Id  = oty.OperationRoleKindId
+    -- The LOT's most recent rework, if any (NULLs when it has never been reworked).
+    OUTER APPLY (SELECT TOP (1) lr.ReEntrySequenceNumber, lr.StartedAt
+                 FROM Lots.LotRework lr
+                 WHERE lr.LotId = l.Id
+                 ORDER BY lr.StartedAt DESC, lr.Id DESC) rw
     WHERE l.Id = @LotId
       -- Steps below the LOT's entry point are not part of its journey. NULL
       -- (every pre-cutover row) means entry at the route start, so this is
@@ -68,7 +81,10 @@ AS RETURN
               rk.Code = N'ConsumeMint'
            OR (rk.Code = N'Advance' AND NOT EXISTS (
                   SELECT 1 FROM Workorder.ProductionEvent pe
-                  WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId))
+                  WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId
+                    AND (   rw.StartedAt IS NULL
+                         OR rs.SequenceNumber < rw.ReEntrySequenceNumber
+                         OR pe.EventAt >= rw.StartedAt)))
           )
     ORDER BY rs.SequenceNumber ASC;
 GO
