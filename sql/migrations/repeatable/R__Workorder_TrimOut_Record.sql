@@ -1,8 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_TrimOut_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-22
--- Version:     1.5
+-- Modified:    2026-10-19
+-- Version:     1.6
+-- Change:      v1.6 (2026-10-19, super-lot piece 5) - the rework pass starts its own
+--              count and is NOT shift trim production. (1) guard 7 reads the previous
+--              count from Workorder.ufn_TrimPassPreviousCount, which ignores
+--              checkpoints from before an open Lots.LotRework; (2) while a rework is
+--              open the closing checkpoint carries ShiftId NULL (scrap rows keep the
+--              resolved shift -- scrap is still scrap); (3) this Trim OUT completes
+--              the rework (CompletedAt + CompletedProductionEventId) and writes a
+--              LotReworkCompleted audit row. A move out of trim by any other route
+--              leaves the rework open; a zero-scrap Trim OUT is the undo.
 -- Change:      v1.5 (2026-09-22, trim partial checkpoint) - (1) the monotonic guard
 --              compares against the LOT's last TRIM checkpoint (TrimIn/TrimOut
 --              templates) instead of its last event of any operation, so a partial
@@ -329,13 +338,8 @@ BEGIN
         DECLARE @PrevShot INT;
 
         -- v1.5: scoped to TRIM checkpoints (a partial is cumulative within trim only).
-        SELECT TOP 1 @PrevShot = pe.ShotCount
-        FROM Workorder.ProductionEvent pe
-        INNER JOIN Parts.OperationTemplate ot ON ot.Id = pe.OperationTemplateId
-        INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
-        WHERE pe.LotId = @ParentLotId AND pe.ShotCount IS NOT NULL
-          AND oty.Code IN (N'TrimIn', N'TrimOut')
-        ORDER BY pe.EventAt DESC, pe.Id DESC;
+        -- v1.6: and to the CURRENT PASS (a rework pass starts its own count).
+        SELECT @PrevShot = ShotCount FROM Workorder.ufn_TrimPassPreviousCount(@ParentLotId);
 
         -- v1.5: after a partial the count is required.
         IF @PrevShot IS NOT NULL AND @ShotCount IS NULL
@@ -373,6 +377,9 @@ BEGIN
         DECLARE @ShiftId BIGINT = (SELECT TOP 1 r.ShiftId
                                    FROM Oee.ufn_ShiftIdForInstant(@SourceLocationId, SYSUTCDATETIME()) r);
 
+        -- v1.6: an open trim rework this Trim OUT will complete.
+        DECLARE @OpenReworkId BIGINT = (SELECT TOP 1 Id FROM Lots.ufn_OpenLotRework(@ParentLotId));
+
         BEGIN TRANSACTION;
 
         -- (a) INLINED closing checkpoint (mirror of Workorder.ProductionEvent_Record).
@@ -384,10 +391,32 @@ BEGIN
         VALUES (
             @ParentLotId, @OperationTemplateId, NULL, SYSUTCDATETIME(),
             @ShotCount, @ScrapTotal, NULL,
-            NULL, NULL, @AppUserId, @TerminalLocationId, NULL, @ShiftId
+            NULL, NULL, @AppUserId, @TerminalLocationId, NULL,
+            CASE WHEN @OpenReworkId IS NULL THEN @ShiftId END   -- v1.6: rework output is not shift production
         );
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
+
+        -- v1.6: this Trim OUT completes the open rework.
+        IF @OpenReworkId IS NOT NULL
+        BEGIN
+            UPDATE Lots.LotRework
+            SET CompletedAt = SYSUTCDATETIME(), CompletedProductionEventId = @NewId
+            WHERE Id = @OpenReworkId AND CompletedAt IS NULL;
+
+            DECLARE @ReworkDoneDesc NVARCHAR(500) = Audit.ufn_TruncateActivity(
+                (SELECT LotName FROM Lots.Lot WHERE Id = @ParentLotId) + N' ' + Audit.ufn_MidDot() + N' Rework ' + Audit.ufn_MidDot()
+                + N' Trim rework completed (Trim OUT, Shots=' + ISNULL(CAST(@ShotCount AS NVARCHAR(20)), N'-') + N')');
+            EXEC Audit.Audit_LogOperation
+                @AppUserId          = @AppUserId,
+                @TerminalLocationId = @TerminalLocationId,
+                @LocationId         = @TrimStoreId,
+                @LogEntityTypeCode  = N'Lot',
+                @EntityId           = @ParentLotId,
+                @LogEventTypeCode   = N'LotReworkCompleted',
+                @LogSeverityCode    = N'Info',
+                @Description        = @ReworkDoneDesc;
+        END
 
         -- Inline defect-coded scrap rows (mirror DieCastShiftOutput_Record). One
         -- RejectEvent per line; ProductionEventId NULL by design (attribution is

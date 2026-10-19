@@ -2,7 +2,9 @@
 -- Repeatable:  R__Workorder_TrimCheckpoint_GetLatestForLot.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.0
+-- Version:     1.1
+-- Change:      v1.1 (2026-10-19, super-lot piece 5) - while a trim rework is open only
+--              checkpoints at/after its start count (the new pass shows no prior count).
 -- Description: The LOT's newest TRIM checkpoint (TrimIn / TrimOut template), for
 --              the "already recorded" line on the partial-trim popup and Trim OUT.
 --              Empty result = no trim count recorded yet (read-proc convention:
@@ -29,8 +31,10 @@ BEGIN
     INNER JOIN Location.AppUser u         ON u.Id = pe.AppUserId
     LEFT  JOIN Oee.Shift s                ON s.Id = pe.ShiftId
     LEFT  JOIN Oee.ShiftSchedule ss       ON ss.Id = s.ShiftScheduleId
+    OUTER APPLY Lots.ufn_OpenLotRework(@LotId) rw
     WHERE pe.LotId = @LotId AND pe.ShotCount IS NOT NULL
       AND oty.Code IN (N'TrimIn', N'TrimOut')
+      AND (rw.StartedAt IS NULL OR pe.EventAt >= rw.StartedAt)
     ORDER BY pe.EventAt DESC, pe.Id DESC;
 END;
 GO
