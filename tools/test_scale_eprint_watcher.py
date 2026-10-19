@@ -93,11 +93,11 @@ T3_OK = "      66.0 lb \r\n      16.0 lb T \r\n      50.0 lb N \r\nUNDER: 0 OVER
 T3_UNDER = "      56.0 lb \r\n      49.8 lb T \r\n       6.2 lb N \r\nUNDER: 1 OVER: 0 OK: 0"
 T3_ZERO = "      66.0 lb \r\n      16.0 lb T \r\n      50.0 lb N \r\nUNDER: 0 OVER: 0 OK: 0"
 
-# False until the fixtures above are replaced by, or checked against, bytes
-# captured from a real Template 3 print (Audit.InterfaceLog or the Message tag
-# on [MPP]PlcDevices/MPP_Scale). Until then the Template 3 strings are the
-# reconstruction from the exported template file, not the wire.
-FIXTURES_VERIFIED = False
+# Verified 2026-10-19 on the office scale (B913444851) on Dev. Four real
+# Template 3 prints were each 74 bytes (MessageBytes), the exact length of this
+# fixed-width layout, and the live watcher parsed a real Message into
+# flags=UNDER:0,OVER:0,OK:1 and closed the tray (Audit.InterfaceLog Id 38).
+FIXTURES_VERIFIED = True
 
 
 def _row(verdict="Ok", scale=None, agree=None, flagsMessage=None):

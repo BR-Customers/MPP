@@ -86,9 +86,9 @@ _CAM = re.compile(r"CAM=([01])")
 # NO trailing CRLF. His how-to doc showed them on the N line instead, so they
 # are matched anywhere in the message. Each value is ONE digit, 0 or 1.
 #
-# UNVERIFIED: written against the template export, not bytes captured from
-# the scale. Re-check against the first real Message (tools/
-# test_scale_eprint_watcher.py, FIXTURES_VERIFIED) before calling it done.
+# Verified 2026-10-19 against real prints from that head on Dev (74 bytes each;
+# Audit.InterfaceLog Id 38). Production heads run their own TaskExpert
+# programs; confirm each one's print before relying on its flags.
 _FLAGS = re.compile(r"UNDER:\s*(\d+)\s+OVER:\s*(\d+)\s+OK:\s*(\d+)")
 _FLAGS_HINT = re.compile(r"UNDER:|OVER:|OK:")
 
