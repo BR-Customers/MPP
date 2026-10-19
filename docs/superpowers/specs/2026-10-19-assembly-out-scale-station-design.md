@@ -1,7 +1,7 @@
 # Assembly Out, By Weight: Scale Station Screen — Design Spec
 
 **Date:** 2026-10-19
-**Status:** Draft — awaiting Jacques review. Nothing built.
+**Status:** Draft rev 2 — Jacques's answers to questions 1–4 folded in; questions 5–6 open. Nothing built.
 **Author:** Blue Ridge (with Claude)
 **Arc / Phase:** Arc 2 (Plant Floor) — Machining & Assembly checkweigh.
 **Builds on:** `docs/superpowers/specs/2026-08-31-ind570-eprint-demand-output-design.md` (EPrint transport, rev 2 option C).
@@ -86,12 +86,31 @@ New read proc **`Workorder.ScaleStation_GetRunningPart(@TerminalLocationId)`**, 
 Resolution:
 1. The station's own open By Weight box, if any → its part (`Default`: an open box always wins, so a box is never split across parts).
 2. Else the terminal's override (§6), if that part is still eligible → `Override`.
-3. Else the top-ranked finished good at the terminal's cell that has a By Weight pack-out with `PartsPerTray > 0` (the ranking already in `Parts.Item_ListEligibleFinishedGoodsRanked`) → `Default`.
+3. Else the **eligible** finished good closest to ready (§5.1) → `Default`.
 4. Else `None` with a `Message` naming what is missing.
 
 `resolvePlcCloseContext(terminal, "ByWeight")` calls this proc instead of `_recommendedWithPackout`, so the scale and the screen cannot disagree. ByVision keeps its current path until it gets the same treatment. The rule moving out of Python is in line with `feedback_no_business_logic_in_python`.
 
-`EligibleCount` = the finished goods the line could run By Weight right now: a By Weight pack-out and component stock at the line for at least one tray. It drives the "Change part (N can run)" button. Hidden when `EligibleCount <= 1`.
+`EligibleCount` = the number of eligible parts (§5.1). It drives the "Change part (N can run)" button, which is hidden when `EligibleCount <= 1`.
+
+### 5.1 Eligible, and closest to ready (Jacques, 2026-10-19)
+
+A finished good is **eligible** at the terminal's line when all of these hold:
+- It has a By Weight pack-out with `PartsPerTray > 0`.
+- The line has its **raw cast good** in inventory.
+- The line has **at least 60% of its other BOM lines** in inventory.
+
+The default is the eligible part **closest to ready**: the highest share of BOM lines covered. Ties go to the existing order (earliest ready stock, then part number).
+
+Definitions, from the published BOM and the item types:
+- **Raw cast good** = a BOM line whose child is `Component` or `SubAssembly`. On Dev, every `Component` child (40) has a die-cast route and every `SubAssembly` child (26) is a machined casting. `PassThrough` children (33) are bought parts.
+- **Covered** = unblocked stock at the line of at least `QtyPer × PartsPerTray`, enough for one tray close. Drafted this way because a close consumes a whole tray at once. Open question 5 asks whether to use this or the existing ranking's `QtyPer`.
+- **Share covered** = covered lines ÷ all BOM lines.
+- A finished good with **no cast line** (pass-through repack: 10 on Dev) passes the cast test only on its own received stock, the rule `Item_ListEligibleFinishedGoodsRanked` v1.1 already uses.
+
+The 60% threshold is a number in the proc, not a setting, until there is a reason to tune it per line.
+
+This is a new rule beside `Item_ListEligibleFinishedGoodsRanked`, not a change to it. The By Count dropdown keeps its current ranking.
 
 ## 6. Part override
 
@@ -101,8 +120,9 @@ Resolution:
   - It refuses a part that is not eligible (no By Weight pack-out, not buildable at the line).
   - It refuses while the station has an open By Weight box of another part: finish or close that box first.
   - Audited: `Audit.ConfigLog` with the house Description shape: `<terminal> · Scale running part · <old part> -> <new part>`.
-- Lifetime: until changed or cleared. **Open question 1** asks whether a shift change should clear it.
-- The picker lists `Workorder.ScaleStation_ListEligibleParts(@TerminalLocationId)`: part, description, pack-out, window, and trays the line's stock covers.
+- Lifetime: until someone changes or clears it. It survives shift change (Jacques, 2026-10-19).
+- Who: any PIN-signed-in operator. No elevation; the audit row is the control (Jacques, 2026-10-19).
+- The picker lists `Workorder.ScaleStation_ListEligibleParts(@TerminalLocationId)`: every eligible part (§5.1), closest to ready first, with part, description, pack-out, window, share of BOM lines covered, and whole trays the line's stock covers.
 
 ## 7. Reads for the screen
 
@@ -121,6 +141,7 @@ All read procs, one result set each, timestamps converted to Eastern at the boun
 
 `Views/ShopFloor/AssemblyNonSerialized` in By Weight mode. Layout per the mockup:
 
+0. **Open box** (when the station has one): "Box #20041 · tray 7 of 16 · 420 of 960 parts", with a progress bar. Most By Weight pack-outs are multi-tray: 14 of the 20 on Dev are 4 to 24 trays per box, and only 6 are 1 tray per box. So a box is usually open across many presses, and this is the operator's main progress view. The mockup shows the 1-tray test part and needs this card added.
 1. **Running part banner** (`GetRunningPart`): part, description, source line ("Default: …" / "Override set by JGP at 2:41 PM"), pack-out tiles (parts per tray, trays per box, window), **Change part (N can run)**. `Source = None` shows the `Message` in the banner in red.
 2. **Last press card**:
    - The large net weight and an OK / UNDER / OVER pill.
@@ -163,13 +184,16 @@ All read procs, one result set each, timestamps converted to Eastern at the boun
 
 | # | Question | Blocks |
 |---|---|---|
-| 1 | Should the part override clear at shift change, or persist until someone changes it? Drafted as persist. | §6 lifetime |
-| 2 | Should setting the override need supervisor elevation, or is a PIN sign-in enough? Drafted as PIN, audited. | §6 |
-| 3 | "Enough stock for at least one tray" as the eligibility bar for the override list, or show every part with a By Weight pack-out and grey out the short ones? | §5 `EligibleCount` |
-| 4 | Is 1 tray per box typical for By Weight parts in production, or only this test part? It decides how much the open-box banner is worth keeping. | §8 |
+| 1 | ~~Override lifetime~~. **Resolved 2026-10-19:** until someone changes it. | — |
+| 2 | ~~Elevation~~. **Resolved 2026-10-19:** PIN sign-in plus an audit row. | — |
+| 3 | ~~Eligibility~~. **Resolved 2026-10-19:** raw cast good plus at least 60% of other BOM lines in inventory, closest to ready by default (§5.1). | — |
+| 4 | ~~Trays per box~~. **Resolved 2026-10-19** from the configs: 14 of 20 By Weight pack-outs are multi-tray, so the open box gets its own card (§8 item 0). | — |
+| 5 | Covered = stock for one tray (`QtyPer × PartsPerTray`, drafted), or for one piece (`QtyPer`, as the existing ranking uses)? | §5.1 |
+| 6 | When a BOM has several cast lines (2 to 20 on some Dev finished goods), does "has the raw cast good" mean all of them, or at least one? Drafted as all. | §5.1 |
 
 ## Revision History
 
 | Rev | Date | Author | Change |
 |---|---|---|---|
+| 2 | 2026-10-19 | Blue Ridge / Claude | Jacques's answers. The override persists until changed, and is set by PIN with an audit row. Eligibility is the raw cast good plus at least 60% of the other BOM lines, closest to ready by default (§5.1). An open-box card is added, since 14 of 20 By Weight pack-outs are multi-tray. New open questions 5 and 6. |
 | 1 | 2026-10-19 | Blue Ridge / Claude | Initial draft after the office scale test. No new event table: `Audit.InterfaceLog` gains `LocationId` / `ItemId` / `LotId` and JSON payloads; one SQL rule for the running part plus an audited per-terminal override; Weigh & Close removed. |
