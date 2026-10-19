@@ -44,6 +44,21 @@
         "type": "Parameter",
         "identifier": "weight",
         "sqlType": 5
+      },
+      {
+        "type": "Parameter",
+        "identifier": "scaleUnder",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "scaleOver",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "scaleOk",
+        "sqlType": 3
       }
     ]
   }

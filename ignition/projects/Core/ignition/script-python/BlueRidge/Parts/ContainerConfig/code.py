@@ -25,6 +25,8 @@
 #   2026-10-06 - 1.4 - getDraftForItem() + saveDraft(): the per-method edit shape and
 #                      its save, for the shop-floor Pack-Out popup.
 #                      getHistoryForItem(): past value sets (Parts.ContainerConfig_ListHistory).
+#   2026-10-19 - 1.5 - judgeWeight(scaleFlags=): the scale's own UNDER/OVER/OK
+#                      flags passed through for SQL to classify and compare.
 # =============================================================================
 
 import java.lang
@@ -110,20 +112,29 @@ def getByItemAndMethod(itemId, method):
     return row if row is not None else {}
 
 
-def judgeWeight(itemId, method, weight):
+def judgeWeight(itemId, method, weight, scaleFlags=None):
     """The checkweigh verdict for one tray, computed in SQL
        (Parts.ContainerConfig_JudgeWeight) against the part's TargetWeight +/-
        ToleranceWeight. Returns the proc's single row:
-         {Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit}
+         {Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit,
+          ScaleVerdict, FlagsAgree, FlagsMessage}
        Verdict is Ok | Under | Over | NoConfig | NoTolerance | NoWeight.
+
+       scaleFlags is the scale's own printed {"under", "over", "ok"} (each an
+       int), or None when the scale printed none. SQL classifies them into
+       ScaleVerdict and compares them into FlagsAgree; they never change
+       Verdict.
 
        No comparison happens here. A caller acts on Verdict == 'Ok' and shows
        Message otherwise; it never re-derives the window. Returns None only if
        the query itself returned nothing, which the caller must treat as a
        refusal, not a pass."""
+    flags = scaleFlags or {}
     return BlueRidge.Common.Db.execOne(
         "parts/ContainerConfig_JudgeWeight",
-        {"itemId": _u(itemId), "closureMethod": _u(method), "weight": _u(weight)})
+        {"itemId": _u(itemId), "closureMethod": _u(method), "weight": _u(weight),
+         "scaleUnder": flags.get("under"), "scaleOver": flags.get("over"),
+         "scaleOk": flags.get("ok")})
 
 
 def getByItemAndMethodOrEmpty(itemId, method, _refreshToken=None):

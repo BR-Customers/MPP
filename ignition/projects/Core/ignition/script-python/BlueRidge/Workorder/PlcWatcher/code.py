@@ -259,10 +259,16 @@ _REPLAY_SAFE = {
 # ---- interface logging (FDS-01-014) -----------------------------------------
 def logInterface(deviceCode, description, requestPayload=None,
                  responsePayload=None, ok=True, errorDescription=None,
-                 logEventTypeCode="PlcHandshake"):
+                 logEventTypeCode="PlcHandshake", errorCondition=None):
     """Log one handshake transaction to Audit.InterfaceLog. Best-effort -- never
        raises into the watcher. logEventTypeCode defaults to PlcHandshake; the
-       tray watcher passes PlcLineStop on a vision mismatch (FDS-10-005/010)."""
+       tray watcher passes PlcLineStop on a vision mismatch (FDS-10-005/010).
+
+       errorCondition names a non-failure finding on a row (the EPrint scale's
+       'ScaleFlagsMismatch' warning) and is written with errorDescription even
+       when ok is True. Without it, a failed row reads HandshakeFailed."""
+    if errorCondition is None:
+        errorCondition = None if ok else "HandshakeFailed"
     params = {
         "systemName":       "%s:%s" % (_SYSTEM_NAME, deviceCode or "?"),
         "direction":        "Inbound",
@@ -270,8 +276,8 @@ def logInterface(deviceCode, description, requestPayload=None,
         "description":      description,
         "requestPayload":   requestPayload,
         "responsePayload":  responsePayload,
-        "errorCondition":   None if ok else "HandshakeFailed",
-        "errorDescription": None if ok else errorDescription,
+        "errorCondition":   errorCondition,
+        "errorDescription": errorDescription if errorCondition else None,
         "isHighFidelity":   True,
     }
     try:

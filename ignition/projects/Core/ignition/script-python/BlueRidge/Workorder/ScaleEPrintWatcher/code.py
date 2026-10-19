@@ -18,6 +18,11 @@
        CAM=1                only on a head whose template was extended by
                             Add-IND570CameraField.ps1; absent on a
                             weight-only scale, and not gated on here
+       UNDER: 0 OVER: 0 OK: 1
+                            only on a head printing Template 3 (its own
+                            Target Table verdict, st0105/6/7); no line
+                            break after it. A SECOND OPINION: logged and
+                            compared in SQL, never acted on
 
        LastReceiveTime moves -> tag-change -> PlcWatcher.dispatchMessage
            -> onReceive: is this a real, new, recent press?
@@ -29,6 +34,15 @@
 
    No verdict is computed here. Parsing a printed line is transport; whether
    18.20 lb is a good tray is Parts.ContainerConfig_JudgeWeight's decision.
+
+   THE SCALE'S FLAGS (option C, 2026-10-19). When the head prints its own
+   UNDER / OVER / OK flags they go to the same proc, which classifies them
+   (ScaleVerdict) and compares them with its own verdict (FlagsAgree). The MES
+   verdict alone decides the close. When SQL returns a FlagsMessage -- the
+   two judges disagree, the scale has no active target, or the flags do not
+   read as one verdict -- a warning row is logged for supervisors and
+   engineers. No toast: operators do not read the scale display, and the
+   usual cause is a Target Table record not switched at a part changeover.
 
    WHY THE TRIGGER IS THE RECEIVE STAMP, NOT Message. Two trays of the same
    weight print the same text, and a tag whose value did not change raises no
@@ -67,18 +81,29 @@ _lastSeenLock = threading.Lock()
 # whitespace, end of text, or the CAM= field with no separator between.
 _NET = re.compile(r"(?<![\w.])(-?\d+(?:\.\d+)?)\s*([A-Za-z]+)[ \t]+N(?=\s|$|CAM=)")
 _CAM = re.compile(r"CAM=([01])")
+# Template 3's flags line. Digits are captured as printed, not limited to 0/1:
+# whether the three values make one verdict is SQL's call (ScaleVerdict
+# 'Invalid'), not the parser's.
+_FLAGS = re.compile(r"UNDER:\s*(\d+)\s+OVER:\s*(\d+)\s+OK:\s*(\d+)")
 
 
 def parse(message):
     """Pull the net weighment out of one printed template.
 
        Returns {"ok": True, "net": float, "netText": str, "uom": str,
-                "cam": 0 | 1 | None}
+                "cam": 0 | 1 | None,
+                "flags": {"under": int, "over": int, "ok": int} | None}
             or {"ok": False, "reason": str}.
 
        Exactly ONE net line is required. None means this was not a weighment
        record; more than one means two presses were run together into a single
-       message, and picking either would be a guess."""
+       message, and picking either would be a guess.
+
+       The flags line is optional (a Template 1 head prints none) and never
+       makes a record unreadable: the scale's flags are a second opinion, so a
+       garbled flags line leaves flags None and the weighment is still judged.
+       A flags line that appears twice is the same run-together record the
+       net-line count already refuses."""
     text = "" if message is None else "%s" % message
     found = _NET.findall(text)
     if len(found) == 0:
@@ -90,8 +115,22 @@ def parse(message):
                           "expected one." % len(found)}
     netText, uom = found[0]
     cam = _CAM.search(text)
+    flags = _FLAGS.findall(text)
+    if len(flags) > 1:
+        return {"ok": False,
+                "reason": "The scale's printout has %d UNDER/OVER/OK lines; "
+                          "expected one." % len(flags)}
     return {"ok": True, "net": float(netText), "netText": netText, "uom": uom,
-            "cam": int(cam.group(1)) if cam else None}
+            "cam": int(cam.group(1)) if cam else None,
+            "flags": ({"under": int(flags[0][0]), "over": int(flags[0][1]),
+                       "ok": int(flags[0][2])} if flags else None)}
+
+
+def _flagsText(flags):
+    """The flags as they go into the log payload."""
+    if not flags:
+        return "None"
+    return "UNDER:%s,OVER:%s,OK:%s" % (flags["under"], flags["over"], flags["ok"])
 
 
 def _claim(instancePath, stamp, initialChange):
@@ -187,7 +226,8 @@ def handleMessage(instancePath, terminalLocationId, message):
         return _refuse(device, terminalLocationId, "Scale weighment not understood",
                        parsed["reason"], message)
 
-    payload = "net=%s uom=%s cam=%s" % (parsed["netText"], parsed["uom"], parsed["cam"])
+    payload = "net=%s uom=%s cam=%s flags=%s" % (
+        parsed["netText"], parsed["uom"], parsed["cam"], _flagsText(parsed["flags"]))
 
     if parsed["uom"].lower() != EXPECTED_UOM:
         return _refuse(device, terminalLocationId, "Scale is in the wrong units",
@@ -201,10 +241,23 @@ def handleMessage(instancePath, terminalLocationId, message):
                        ctx["error"], payload)
 
     verdict = BlueRidge.Parts.ContainerConfig.judgeWeight(
-        ctx["finishedGoodItemId"], "ByWeight", parsed["net"]) or {}
-    payload = "%s item=%s verdict=%s low=%s high=%s" % (
+        ctx["finishedGoodItemId"], "ByWeight", parsed["net"],
+        scaleFlags=parsed["flags"]) or {}
+    payload = "%s item=%s verdict=%s low=%s high=%s scale=%s agree=%s" % (
         payload, ctx["finishedGoodItemId"], verdict.get("Verdict"),
-        verdict.get("LowLimit"), verdict.get("HighLimit"))
+        verdict.get("LowLimit"), verdict.get("HighLimit"),
+        verdict.get("ScaleVerdict"), verdict.get("FlagsAgree"))
+
+    # The scale's second opinion. SQL decided whether it is worth a look
+    # (FlagsMessage); this only files it. It is logged BEFORE the close or
+    # refusal so it is on record whichever way the press goes, and it raises
+    # no toast and changes nothing about what happens next.
+    if verdict.get("FlagsMessage"):
+        W.logInterface(device, "Scale flags warning", requestPayload=payload,
+                       ok=True, errorDescription=verdict.get("FlagsMessage"),
+                       errorCondition=("ScaleFlagsMismatch"
+                                       if verdict.get("FlagsAgree") in (0, False)
+                                       else "ScaleFlags%s" % verdict.get("ScaleVerdict")))
 
     if verdict.get("Verdict") != "Ok":
         # Under / Over is the ordinary checkweigh reject and clears itself on

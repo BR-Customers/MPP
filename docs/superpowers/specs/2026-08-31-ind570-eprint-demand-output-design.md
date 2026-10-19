@@ -34,6 +34,7 @@ MPP's decision (2026-08-31) is to use the terminal's existing `Communication > C
 5. **Scope is unchanged** from the superseded spec: Machining + Assembly checkweigh validation only. Trim Shop stays manual (FRS §2.2.3, FDS-06-005). No Work Order scale-weight auto-finish.
 6. **Tolerance remains a single symmetric value** on `ContainerConfig`. **UOM remains a constant (`lb`)**, verified at commissioning, not carried in the database.
 7. **Parse the net line only.** See §5.
+8. **The MES stays the only judge; the scale's own flags are a logged second opinion** (option C, Jacques 2026-10-19). A head that prints Template 3 appends its own Target Table verdict (`UNDER: x OVER: x OK: x`). The flags are parsed, passed to `Parts.ContainerConfig_JudgeWeight`, compared there, and logged on every press. A disagreement is a non-blocking warning row; it never closes or refuses a tray. See §5.4. This qualifies decision 4: the scale may still compare against its own target, but only the MES's comparison decides anything.
 
 ---
 
@@ -166,6 +167,36 @@ Template 1's default content is sufficient and requires no floor work, which is 
 
 Revisit only if the default proves unparseable in commissioning, or if InSite SL is adopted for remote terminal configuration (which would make template edits cheap).
 
+### 5.4 The scale's own flags (Template 3) — option C
+
+The office scale (serial `B913444851`) was reprogrammed to print **Template 3**: the gross / tare / net lines, then a fourth line `UNDER: x OVER: x OK: x` (`st0105` / `st0106` / `st0107`), with **no line break after it**. That is why the Dev `MPP Scale` device is Packet Based. The flags are the terminal's own verdict against whichever Target Table record is active on it.
+
+**Why the MES stays the judge.** The target is per part and audited in `Parts.ContainerConfig`. The scale's record is whatever someone last loaded at the terminal, and parts change on a line. Operators do not read the scale display. The production scales also run TaskExpert programs nobody can open, so whether their flags mean the same thing is unknown and has to be tested. The flags are therefore evidence, not authority: when they disagree with the MES, the most likely cause is a Target Table record that was not switched at a part changeover.
+
+**Parse (transport, Python).** `ScaleEPrintWatcher.parse()` returns `flags = {under, over, ok}` (integers, as printed) or `None` when there is no flags line. Template 1 heads and the `CAM=` variant are unchanged. The digits are captured as printed, not limited to 0/1, because deciding whether they make sense is the comparison's job. A garbled flags line leaves `flags = None` and the weighment is still judged. A flags line that appears twice is refused, the same run-together case the one-net-line rule refuses.
+
+**Compare (rule, SQL).** `Parts.ContainerConfig_JudgeWeight` v1.1 takes optional `@ScaleUnder` / `@ScaleOver` / `@ScaleOk` and adds three columns to its one row. `Verdict` never changes because of them.
+
+| Flags | `ScaleVerdict` | `FlagsAgree` | `FlagsMessage` |
+|---|---|---|---|
+| none supplied | NULL | NULL | NULL |
+| exactly one set | `Ok` / `Under` / `Over` | 1 if equal to `Verdict`, else 0. NULL when `Verdict` is not Ok/Under/Over (NoConfig etc.) | set only when they disagree |
+| all three 0 | `NoTarget`: the scale has no active target. Its own state, not a disagreement | NULL | set |
+| two set, a value other than 0/1, or only some of the three supplied | `Invalid` | NULL | set |
+
+**Log.** Every press's `Audit.InterfaceLog.RequestPayload` carries `flags=UNDER:u,OVER:o,OK:k` (or `flags=None`), and once judged also `scale=<ScaleVerdict> agree=<FlagsAgree>`, on Ok closes and refusals alike. Whenever SQL returns a `FlagsMessage`, a separate row `Scale flags warning` is written first, with `ErrorCondition` = `ScaleFlagsMismatch`, `ScaleFlagsNoTarget` or `ScaleFlagsInvalid` and the message as `ErrorDescription`.
+
+**No toast.** The warning is for supervisors and engineers reading the interface log, not operators. Any screen for it waits on a decision from Jacques.
+
+**To find them:**
+
+```sql
+SELECT LoggedAt, ErrorCondition, ErrorDescription, RequestPayload
+FROM Audit.InterfaceLog
+WHERE SystemName LIKE N'PLC:%' AND ErrorCondition LIKE N'ScaleFlags%'
+ORDER BY Id DESC;
+```
+
 ---
 
 ## 6. Error handling
@@ -182,6 +213,7 @@ Every refusal writes an `Audit.InterfaceLog` row via `PlcWatcher.logInterface` a
 | `TargetWeight` or `ToleranceWeight` null | Refuse. A missing tolerance is a configuration error, never a zero — a zero-width window rejects every tray. |
 | Weight outside tolerance | Refuse with Under/Over in the message. This is the normal checkweigh reject. |
 | `Assembly_CompleteTray` returns failure | Refuse, raise MES alarm, surface the proc's own message. |
+| Scale flags disagree with the MES, read all 0, or don't read as one verdict | **Not a refusal.** A `Scale flags warning` row only; the MES verdict proceeds unchanged (§5.4). |
 
 ### 6.2 Link health
 
@@ -270,7 +302,7 @@ If the socket connects but nothing arrives, the connection is live and the **tri
 
 - Live weight display in Perspective — one EPrint stream, spent on the weighment record (§2.2).
 - Remote tare, zero and print trigger — possible via CTPZ or Shared Data, deferred (open question 2).
-- Setpoint download to the terminal, and terminal-side target comparison (§2.4).
+- Setpoint download to the terminal, and terminal-side target comparison as a decision (§2.4). Its flags are logged and compared only (§5.4).
 - Shared Data Server access on port 1701 — the login handshake is out of reach of the TCP driver and no requirement needs it.
 - Print Client (terminal-initiated push to Ignition). A viable alternative topology, not needed if EPrint works.
 - Trim Shop scales — remain unconnected.
@@ -293,3 +325,4 @@ If the socket connects but nothing arrives, the connection is live and the **tri
 | Rev | Date | Author | Change |
 |---|---|---|---|
 | 1 | 2026-08-31 | Blue Ridge / Claude | Initial draft. Supersedes the Modbus TCP transport after the PLC option card was found absent. |
+| 2 | 2026-10-19 | Blue Ridge / Claude | Option C: decision 8 and §5.4. Template 3's UNDER/OVER/OK flags are parsed, compared in `ContainerConfig_JudgeWeight` v1.1 and logged on every press, with a non-blocking warning row; the MES stays the only judge. §6.1 row added. |
