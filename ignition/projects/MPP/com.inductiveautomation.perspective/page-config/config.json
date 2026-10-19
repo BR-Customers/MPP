@@ -98,6 +98,10 @@
       "title": "Assembly (Serialized)",
       "viewPath": "BlueRidge/Views/ShopFloor/AssemblySerialized"
     },
+    "/shop-floor/controlled-runs": {
+      "title": "Super-lots",
+      "viewPath": "BlueRidge/Views/ShopFloor/ControlledRuns"
+    },
     "/shop-floor/cutover-scan": {
       "title": "Inventory Cutover Scan",
       "viewPath": "BlueRidge/Views/ShopFloor/CutoverScan"
@@ -133,10 +137,6 @@
     "/shop-floor/genealogy": {
       "title": "Genealogy",
       "viewPath": "BlueRidge/Views/ShopFloor/GenealogyViewer"
-    },
-    "/shop-floor/controlled-runs": {
-      "title": "Super-lots",
-      "viewPath": "BlueRidge/Views/ShopFloor/ControlledRuns"
     },
     "/shop-floor/hold-management": {
       "title": "Hold Management",
