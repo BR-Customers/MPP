@@ -139,22 +139,40 @@ class ParseTests(unittest.TestCase):
         p = W.parse("50.0 lb N\nUNDER:  0   OVER: 1  OK:0")
         self.assertEqual(p["flags"], {"under": 0, "over": 1, "ok": 0})
 
-    def test_out_of_range_digit_is_passed_through_for_sql(self):
-        p = W.parse("50.0 lb N\r\nUNDER: 0 OVER: 0 OK: 2")
-        self.assertEqual(p["flags"]["ok"], 2)
-
-    def test_garbled_flags_line_does_not_refuse_the_weighment(self):
-        p = W.parse("50.0 lb N\r\nUNDER: OVER: 0")
+    def test_flags_on_the_net_line(self):
+        # Malaki's how-to doc showed them there; accepted anywhere.
+        p = W.parse("      66.0 lb \r\n      16.0 lb T \r\n      50.0 lb N UNDER: 0 OVER: 0 OK: 1")
         self.assertTrue(p["ok"])
+        self.assertEqual(p["netText"], "50.0")
+        self.assertEqual(p["flags"], {"under": 0, "over": 0, "ok": 1})
+        self.assertEqual(p["flagsState"], "read")
+
+    def _assertUnreadable(self, message):
+        p = W.parse(message)
+        self.assertTrue(p["ok"], "a flags problem must never refuse the weighment")
         self.assertIsNone(p["flags"])
+        self.assertEqual(p["flagsState"], "unreadable")
+
+    def test_value_other_than_0_or_1_is_unreadable(self):
+        self._assertUnreadable("50.0 lb N\r\nUNDER: 0 OVER: 0 OK: 2")
+        self._assertUnreadable("50.0 lb N\r\nUNDER: 0 OVER: 0 OK: 01")
+
+    def test_more_than_one_flag_set_is_unreadable(self):
+        self._assertUnreadable("50.0 lb N\r\nUNDER: 1 OVER: 0 OK: 1")
+
+    def test_partial_flags_line_is_unreadable(self):
+        self._assertUnreadable("50.0 lb N\r\nUNDER: OVER: 0")
+        self._assertUnreadable("50.0 lb N\r\nUNDER: 1")
+
+    def test_absent_flags_state(self):
+        self.assertEqual(W.parse(T1)["flagsState"], "absent")
 
     def test_still_exactly_one_net_line(self):
         self.assertFalse(W.parse(T3_OK + "\r\n" + T3_OK)["ok"])
         self.assertFalse(W.parse("UNDER: 0 OVER: 0 OK: 1")["ok"])
 
-    def test_two_flags_lines_refused(self):
-        p = W.parse("50.0 lb N\r\nUNDER: 0 OVER: 0 OK: 1\r\nUNDER: 1 OVER: 0 OK: 0")
-        self.assertFalse(p["ok"])
+    def test_two_flags_lines_are_unreadable_not_refused(self):
+        self._assertUnreadable("50.0 lb N\r\nUNDER: 0 OVER: 0 OK: 1\r\nUNDER: 1 OVER: 0 OK: 0")
 
 
 class HandleMessageTests(unittest.TestCase):
@@ -216,6 +234,14 @@ class HandleMessageTests(unittest.TestCase):
         self.assertEqual(rec.judgeCalls[0]["scaleFlags"], {"under": 0, "over": 0, "ok": 0})
         self.assertEqual(rec.logs[0]["errorCondition"], "ScaleFlagsNoTarget")
         self.assertEqual(rec.alarms, [])
+
+    def test_unreadable_flags_still_close_and_say_so(self):
+        rec, result = self._run(
+            "      66.0 lb \r\n      16.0 lb T \r\n      50.0 lb N \r\nUNDER: 1 OVER: 1 OK: 0",
+            _row("Ok"))
+        self.assertEqual(result["Status"], 1)
+        self.assertIsNone(rec.judgeCalls[0]["scaleFlags"])
+        self.assertIn("flags=Unreadable", rec.logs[0]["requestPayload"])
 
     def test_flags_on_a_refusal_before_judging(self):
         rec, result = self._run(T3_OK.replace(" lb", " kg"), _row("Ok"))

@@ -81,10 +81,16 @@ _lastSeenLock = threading.Lock()
 # whitespace, end of text, or the CAM= field with no separator between.
 _NET = re.compile(r"(?<![\w.])(-?\d+(?:\.\d+)?)\s*([A-Za-z]+)[ \t]+N(?=\s|$|CAM=)")
 _CAM = re.compile(r"CAM=([01])")
-# Template 3's flags line. Digits are captured as printed, not limited to 0/1:
-# whether the three values make one verdict is SQL's call (ScaleVerdict
-# 'Invalid'), not the parser's.
+# Template 3's flags, from Malaki's exported Template3.txt (office head
+# B913444851): line 4 is `UNDER: ` st0105 ` OVER: ` st0106 ` OK: ` st0107 with
+# NO trailing CRLF. His how-to doc showed them on the N line instead, so they
+# are matched anywhere in the message. Each value is ONE digit, 0 or 1.
+#
+# UNVERIFIED: written against the template export, not bytes captured from
+# the scale. Re-check against the first real Message (tools/
+# test_scale_eprint_watcher.py, FIXTURES_VERIFIED) before calling it done.
 _FLAGS = re.compile(r"UNDER:\s*(\d+)\s+OVER:\s*(\d+)\s+OK:\s*(\d+)")
+_FLAGS_HINT = re.compile(r"UNDER:|OVER:|OK:")
 
 
 def parse(message):
@@ -92,18 +98,22 @@ def parse(message):
 
        Returns {"ok": True, "net": float, "netText": str, "uom": str,
                 "cam": 0 | 1 | None,
-                "flags": {"under": int, "over": int, "ok": int} | None}
+                "flags": {"under": 0|1, "over": 0|1, "ok": 0|1} | None,
+                "flagsState": "absent" | "read" | "unreadable"}
             or {"ok": False, "reason": str}.
 
        Exactly ONE net line is required. None means this was not a weighment
        record; more than one means two presses were run together into a single
        message, and picking either would be a guess.
 
-       The flags line is optional (a Template 1 head prints none) and never
-       makes a record unreadable: the scale's flags are a second opinion, so a
-       garbled flags line leaves flags None and the weighment is still judged.
-       A flags line that appears twice is the same run-together record the
-       net-line count already refuses."""
+       The flags are optional and NEVER make a record unreadable: they are a
+       second opinion, and only the net line decides whether a weighment can
+       be judged. Absent (a Template 1 head) is flags None, flagsState
+       'absent'. Present but malformed is flags None, flagsState 'unreadable',
+       so the log can tell the two apart: only part of the line, a value that
+       is not a single 0 or 1, more than one flag set, or the line twice.
+       All three 0 is READ, not malformed: the scale has no active target,
+       which SQL reports as its own state (ScaleVerdict 'NoTarget')."""
     text = "" if message is None else "%s" % message
     found = _NET.findall(text)
     if len(found) == 0:
@@ -115,22 +125,33 @@ def parse(message):
                           "expected one." % len(found)}
     netText, uom = found[0]
     cam = _CAM.search(text)
-    flags = _FLAGS.findall(text)
-    if len(flags) > 1:
-        return {"ok": False,
-                "reason": "The scale's printout has %d UNDER/OVER/OK lines; "
-                          "expected one." % len(flags)}
+    flags, flagsState = _parseFlags(text)
     return {"ok": True, "net": float(netText), "netText": netText, "uom": uom,
             "cam": int(cam.group(1)) if cam else None,
-            "flags": ({"under": int(flags[0][0]), "over": int(flags[0][1]),
-                       "ok": int(flags[0][2])} if flags else None)}
+            "flags": flags, "flagsState": flagsState}
 
 
-def _flagsText(flags):
+def _parseFlags(text):
+    """(flags dict or None, 'absent' | 'read' | 'unreadable'). Never raises a
+       refusal: see parse()."""
+    found = _FLAGS.findall(text)
+    if not found:
+        return None, ("unreadable" if _FLAGS_HINT.search(text) else "absent")
+    if len(found) > 1:
+        return None, "unreadable"
+    values = found[0]
+    if any(v not in ("0", "1") for v in values) or sum(int(v) for v in values) > 1:
+        return None, "unreadable"
+    return {"under": int(values[0]), "over": int(values[1]),
+            "ok": int(values[2])}, "read"
+
+
+def _flagsText(parsed):
     """The flags as they go into the log payload."""
-    if not flags:
-        return "None"
-    return "UNDER:%s,OVER:%s,OK:%s" % (flags["under"], flags["over"], flags["ok"])
+    flags = parsed.get("flags")
+    if flags:
+        return "UNDER:%s,OVER:%s,OK:%s" % (flags["under"], flags["over"], flags["ok"])
+    return "Unreadable" if parsed.get("flagsState") == "unreadable" else "None"
 
 
 def _claim(instancePath, stamp, initialChange):
@@ -227,7 +248,7 @@ def handleMessage(instancePath, terminalLocationId, message):
                        parsed["reason"], message)
 
     payload = "net=%s uom=%s cam=%s flags=%s" % (
-        parsed["netText"], parsed["uom"], parsed["cam"], _flagsText(parsed["flags"]))
+        parsed["netText"], parsed["uom"], parsed["cam"], _flagsText(parsed))
 
     if parsed["uom"].lower() != EXPECTED_UOM:
         return _refuse(device, terminalLocationId, "Scale is in the wrong units",

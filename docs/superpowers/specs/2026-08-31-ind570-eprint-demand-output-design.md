@@ -173,7 +173,9 @@ The office scale (serial `B913444851`) was reprogrammed to print **Template 3**:
 
 **Why the MES stays the judge.** The target is per part and audited in `Parts.ContainerConfig`. The scale's record is whatever someone last loaded at the terminal, and parts change on a line. Operators do not read the scale display. The production scales also run TaskExpert programs nobody can open, so whether their flags mean the same thing is unknown and has to be tested. The flags are therefore evidence, not authority: when they disagree with the MES, the most likely cause is a Target Table record that was not switched at a part changeover.
 
-**Parse (transport, Python).** `ScaleEPrintWatcher.parse()` returns `flags = {under, over, ok}` (integers, as printed) or `None` when there is no flags line. Template 1 heads and the `CAM=` variant are unchanged. The digits are captured as printed, not limited to 0/1, because deciding whether they make sense is the comparison's job. A garbled flags line leaves `flags = None` and the weighment is still judged. A flags line that appears twice is refused, the same run-together case the one-net-line rule refuses.
+**Parse (transport, Python).** `ScaleEPrintWatcher.parse()` returns `flags = {under, over, ok}` (each 0 or 1) with `flagsState = read`, or `flags = None` with `flagsState` `absent` (no flags at all: a Template 1 head) or `unreadable` (only part of the line, a value that is not a single 0 or 1, more than one flag set, or the line twice). **A flags problem never refuses or blocks a weighment.** Only the net line decides whether a record is readable, and the exactly-one-net-line rule is unchanged. Template 1 heads and the `CAM=` variant are unchanged too. The flags are matched anywhere in the message, not only on line 4, because Malaki's how-to doc showed them on the `N` line. All three 0 is *read*, not unreadable: it reaches SQL as `NoTarget`.
+
+> **UNVERIFIED.** The flags pattern was written against Malaki's exported `Template3.txt` from the office head, not against bytes captured from the scale. Decoded, that file is: L1 `wt0101` right-justified width 10, a space, `wt0103` left-justified width 3, CRLF; L2 the same plus `ws0109` (`T `), CRLF; L3 `wt0102` right-justified width 10, a space, `wt0103` width 3, `N`, a space, CRLF; L4 `UNDER: ` st0105 ` OVER: ` st0106 ` OK: ` st0107, then **no trailing CRLF**. For example, `      56.0 lb \r\n      49.8 lb T \r\n       6.2 lb N \r\nUNDER: 1 OVER: 0 OK: 0`. Re-check against the first `Message` captured on Dev: paste it into `tools/test_scale_eprint_watcher.py` and set `FIXTURES_VERIFIED = True`.
 
 **Compare (rule, SQL).** `Parts.ContainerConfig_JudgeWeight` v1.1 takes optional `@ScaleUnder` / `@ScaleOver` / `@ScaleOk` and adds three columns to its one row. `Verdict` never changes because of them.
 
@@ -182,9 +184,9 @@ The office scale (serial `B913444851`) was reprogrammed to print **Template 3**:
 | none supplied | NULL | NULL | NULL |
 | exactly one set | `Ok` / `Under` / `Over` | 1 if equal to `Verdict`, else 0. NULL when `Verdict` is not Ok/Under/Over (NoConfig etc.) | set only when they disagree |
 | all three 0 | `NoTarget`: the scale has no active target. Its own state, not a disagreement | NULL | set |
-| two set, a value other than 0/1, or only some of the three supplied | `Invalid` | NULL | set |
+| two set, a value other than 0/1, or only some of the three supplied | `Invalid`. Defensive only: the parser already turns these into `flags = None`, so the watcher never sends them | NULL | set |
 
-**Log.** Every press's `Audit.InterfaceLog.RequestPayload` carries `flags=UNDER:u,OVER:o,OK:k` (or `flags=None`), and once judged also `scale=<ScaleVerdict> agree=<FlagsAgree>`, on Ok closes and refusals alike. Whenever SQL returns a `FlagsMessage`, a separate row `Scale flags warning` is written first, with `ErrorCondition` = `ScaleFlagsMismatch`, `ScaleFlagsNoTarget` or `ScaleFlagsInvalid` and the message as `ErrorDescription`.
+**Log.** Every press's `Audit.InterfaceLog.RequestPayload` carries `flags=UNDER:u,OVER:o,OK:k` (or `flags=None` when absent, `flags=Unreadable` when malformed), and once judged also `scale=<ScaleVerdict> agree=<FlagsAgree>`, on Ok closes and refusals alike. Whenever SQL returns a `FlagsMessage`, a separate row `Scale flags warning` is written first, with `ErrorCondition` = `ScaleFlagsMismatch`, `ScaleFlagsNoTarget` or `ScaleFlagsInvalid` and the message as `ErrorDescription`.
 
 **No toast.** The warning is for supervisors and engineers reading the interface log, not operators. Any screen for it waits on a decision from Jacques.
 
@@ -325,4 +327,4 @@ If the socket connects but nothing arrives, the connection is live and the **tri
 | Rev | Date | Author | Change |
 |---|---|---|---|
 | 1 | 2026-08-31 | Blue Ridge / Claude | Initial draft. Supersedes the Modbus TCP transport after the PLC option card was found absent. |
-| 2 | 2026-10-19 | Blue Ridge / Claude | Option C: decision 8 and §5.4. Template 3's UNDER/OVER/OK flags are parsed, compared in `ContainerConfig_JudgeWeight` v1.1 and logged on every press, with a non-blocking warning row; the MES stays the only judge. §6.1 row added. |
+| 2 | 2026-10-19 | Blue Ridge / Claude | Option C: decision 8 and §5.4. Template 3's UNDER/OVER/OK flags are parsed, compared in `ContainerConfig_JudgeWeight` v1.1 and logged on every press, with a non-blocking warning row; the MES stays the only judge. §6.1 row added. The flags pattern is UNVERIFIED against captured bytes. |
