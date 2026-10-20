@@ -354,21 +354,21 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\ttid = (payload or {}).get(\"terminalLocationId\")\n\tif tid is None or tid == self.view.custom.tid:\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
+          "script": "\ttid = (payload or {}).get(\"terminalLocationId\")\n\tif tid is None or str(tid) == str(self.view.custom.tid):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
         },
         {
           "messageType": "scaleRunningPartChanged",
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\ttid = (payload or {}).get(\"terminalLocationId\")\n\tif tid is None or tid == self.view.custom.tid:\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
+          "script": "\ttid = (payload or {}).get(\"terminalLocationId\")\n\tif tid is None or str(tid) == str(self.view.custom.tid):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
         },
         {
           "messageType": "inventoryChanged",
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\ttid = (payload or {}).get(\"terminalLocationId\")\n\tif tid is None or tid == self.view.custom.tid:\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
+          "script": "\ttid = (payload or {}).get(\"terminalLocationId\")\n\tif tid is None or str(tid) == str(self.view.custom.tid):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
         }
       ]
     }

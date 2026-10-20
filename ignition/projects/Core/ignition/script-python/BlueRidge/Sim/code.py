@@ -219,6 +219,9 @@ def fireScaleEPrint(terminalLocationId, gross, tare, net, under, over, ok):
        EPrint scale. A good press really closes a tray on this database.
        Returns handleMessage's {Status, Message, ContainerId}."""
     W = BlueRidge.Workorder.ScaleEPrintWatcher
+    # A page parameter arrives as text ("106"); the watcher's terminal lookup
+    # compares numbers, as a real press (a DB Id) always is.
+    terminalLocationId = long("%s" % terminalLocationId)
     path = BlueRidge.Workorder.ScaleStation.scaleInstancePath(terminalLocationId)
     if not path:
         return {"Status": 0, "Message": "No EPrint scale is mapped to terminal %s." % terminalLocationId,
