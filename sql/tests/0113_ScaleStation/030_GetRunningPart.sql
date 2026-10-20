@@ -27,7 +27,7 @@ DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
 DECLARE @Rcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DELETE FROM Lots.Lot WHERE CurrentLocationId = @Line;
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId)
-SELECT N'TST-SS-' + i.PartNumber + N'-' + CAST(NEWID() AS NVARCHAR(36)), i.Id, @Rcv, @Good, 10, 10, @Line, 1
+SELECT N'TSS-' + RIGHT(i.PartNumber, 2) + N'-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), i.Id, @Rcv, @Good, 10, 10, @Line, 1
 FROM Parts.Item i WHERE i.PartNumber IN (N'TST-SS-C1', N'TST-SS-C2', N'TST-SS-P1', N'TST-SS-P2', N'TST-SS-P3');
 GO
 

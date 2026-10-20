@@ -100,7 +100,7 @@ DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
 DECLARE @Rcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DELETE FROM Lots.Lot WHERE CurrentLocationId = @Line;
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId)
-SELECT N'TST-SS-' + s.PartNumber + N'-' + CAST(NEWID() AS NVARCHAR(36)), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
+SELECT N'TSS-' + RIGHT(s.PartNumber, 2) + N'-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
 FROM #Stock s JOIN Parts.Item i ON i.PartNumber = s.PartNumber;
 DELETE FROM #E; INSERT INTO #E EXEC Workorder.ScaleStation_ListEligibleParts @TerminalLocationId = @Term;
 DECLARE @N NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #E WHERE PartNumber = N'TST-SS-FG-A');
@@ -115,7 +115,7 @@ DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
 DECLARE @Rcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DELETE FROM Lots.Lot WHERE CurrentLocationId = @Line;
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId)
-SELECT N'TST-SS-' + s.PartNumber + N'-' + CAST(NEWID() AS NVARCHAR(36)), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
+SELECT N'TSS-' + RIGHT(s.PartNumber, 2) + N'-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
 FROM #Stock s JOIN Parts.Item i ON i.PartNumber = s.PartNumber;
 DELETE FROM #E; INSERT INTO #E EXEC Workorder.ScaleStation_ListEligibleParts @TerminalLocationId = @Term;
 DECLARE @S NVARCHAR(60) = (SELECT CONCAT(LinesCovered, N'/', LinesTotal, N' cast', CastLinesCovered, N' trays', TraysCovered)
@@ -134,7 +134,7 @@ DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
 DECLARE @Rcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DELETE FROM Lots.Lot WHERE CurrentLocationId = @Line;
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId)
-SELECT N'TST-SS-' + s.PartNumber + N'-' + CAST(NEWID() AS NVARCHAR(36)), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
+SELECT N'TSS-' + RIGHT(s.PartNumber, 2) + N'-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
 FROM #Stock s JOIN Parts.Item i ON i.PartNumber = s.PartNumber;
 DELETE FROM #E; INSERT INTO #E EXEC Workorder.ScaleStation_ListEligibleParts @TerminalLocationId = @Term;
 DECLARE @N NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #E WHERE PartNumber = N'TST-SS-FG-A');
@@ -149,7 +149,7 @@ DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
 DECLARE @Rcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DELETE FROM Lots.Lot WHERE CurrentLocationId = @Line;
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId)
-SELECT N'TST-SS-' + s.PartNumber + N'-' + CAST(NEWID() AS NVARCHAR(36)), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
+SELECT N'TSS-' + RIGHT(s.PartNumber, 2) + N'-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
 FROM #Stock s JOIN Parts.Item i ON i.PartNumber = s.PartNumber;
 DELETE FROM #E; INSERT INTO #E EXEC Workorder.ScaleStation_ListEligibleParts @TerminalLocationId = @Term;
 DECLARE @N NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #E WHERE PartNumber = N'TST-SS-FG-A');
@@ -164,7 +164,7 @@ DECLARE @Hold BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Hold');
 DECLARE @Rcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DELETE FROM Lots.Lot WHERE CurrentLocationId = @Line;
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId)
-SELECT N'TST-SS-' + s.PartNumber + N'-' + CAST(NEWID() AS NVARCHAR(36)), i.Id, @Rcv, @Hold, s.Qty, s.Qty, @Line, 1
+SELECT N'TSS-' + RIGHT(s.PartNumber, 2) + N'-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), i.Id, @Rcv, @Hold, s.Qty, s.Qty, @Line, 1
 FROM #Stock s JOIN Parts.Item i ON i.PartNumber = s.PartNumber;
 DELETE FROM #E; INSERT INTO #E EXEC Workorder.ScaleStation_ListEligibleParts @TerminalLocationId = @Term;
 DECLARE @N NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #E WHERE PartNumber = N'TST-SS-FG-B');
@@ -179,7 +179,7 @@ DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
 DECLARE @Rcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DELETE FROM Lots.Lot WHERE CurrentLocationId = @Line;
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId)
-SELECT N'TST-SS-' + s.PartNumber + N'-' + CAST(NEWID() AS NVARCHAR(36)), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
+SELECT N'TSS-' + RIGHT(s.PartNumber, 2) + N'-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), i.Id, @Rcv, @Good, s.Qty, s.Qty, @Line, 1
 FROM #Stock s JOIN Parts.Item i ON i.PartNumber = s.PartNumber;
 DELETE FROM #E; INSERT INTO #E EXEC Workorder.ScaleStation_ListEligibleParts @TerminalLocationId = @Term;
 DECLARE @Top NVARCHAR(50) = (SELECT PartNumber FROM #E WHERE ReadyRank = 1);
