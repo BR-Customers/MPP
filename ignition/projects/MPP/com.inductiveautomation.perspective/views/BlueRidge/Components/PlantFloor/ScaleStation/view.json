@@ -34,8 +34,9 @@
       "direction": "column",
       "style": {
         "padding": "14px",
-        "height": "100%",
+        "minHeight": "100%",
         "boxSizing": "border-box",
+        "overflowY": "auto",
         "gap": "14px"
       }
     },
@@ -272,7 +273,7 @@
                   "name": "RecentBoxes"
                 },
                 "position": {
-                  "basis": "0",
+                  "basis": "260px",
                   "grow": 1
                 },
                 "props": {
@@ -311,7 +312,7 @@
           }
         ],
         "position": {
-          "basis": "0",
+          "basis": "440px",
           "grow": 1
         }
       },

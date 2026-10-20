@@ -205,7 +205,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "toStr(max(0, {view.custom.rp.TraysPerContainer} - {view.custom.rp.OpenTraysClosed})) + ' trays to go'"
+                    "expression": "toStr(toInt(max(0, {view.custom.rp.TraysPerContainer} - {view.custom.rp.OpenTraysClosed}))) + ' trays to go'"
                   }
                 }
               }
@@ -219,8 +219,9 @@
           "name": "TrayStrip"
         },
         "position": {
-          "basis": "0",
-          "grow": 0
+          "basis": "48px",
+          "grow": 0,
+          "shrink": 0
         },
         "props": {
           "direction": "row",

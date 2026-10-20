@@ -1,21 +1,11 @@
 {
-  "custom": {
-    "instancePath": ""
-  },
+  "custom": {},
   "params": {
     "terminalLocationId": null
   },
   "propConfig": {
     "params.terminalLocationId": {
       "paramDirection": "input"
-    },
-    "custom.instancePath": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.scaleInstancePath\", 0, {view.params.terminalLocationId})"
-        }
-      }
     }
   },
   "props": {
@@ -54,7 +44,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if(len({view.custom.instancePath}) = 0, 'No scale is mapped to this terminal', 'Scale last message ' + if(isNull(tag({view.custom.instancePath} + '/LastReceiveTime')), 'never', dateFormat(tag({view.custom.instancePath} + '/LastReceiveTime'), 'h:mm:ss a')))"
+                "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.scaleStatusText\", 15000, {view.params.terminalLocationId})"
               }
             }
           }

@@ -490,6 +490,21 @@ class StationHelperTests(unittest.TestCase):
         s.applyPartChoice(object(), 106, None)
         self.assertEqual(closed, [])
 
+    def test_scale_status_text(self):
+        s = _loadStation(devices=[{"DeviceTypeCode": "ScaleStationEPrint", "UdtInstancePath": "[MPP]PlcDevices/Scale"}])
+        reads = []
+        s.system = types.SimpleNamespace(tag=types.SimpleNamespace(
+            readBlocking=lambda paths: reads.append(paths) or [types.SimpleNamespace(value="2:54:28 PM")]))
+        self.assertEqual(s.scaleStatusText(106), "Scale last message 2:54:28 PM")
+        self.assertEqual(reads, [["[MPP]PlcDevices/Scale/LastReceiveTime"]])
+        self.assertEqual(_loadStation(devices=[]).scaleStatusText(106), "No scale is mapped to this terminal")
+
+    def test_scale_status_text_never(self):
+        s = _loadStation(devices=[{"DeviceTypeCode": "ScaleStationEPrint", "UdtInstancePath": "[MPP]PlcDevices/Scale"}])
+        s.system = types.SimpleNamespace(tag=types.SimpleNamespace(
+            readBlocking=lambda paths: [types.SimpleNamespace(value=None)]))
+        self.assertEqual(s.scaleStatusText(106), "Scale last message: never")
+
     def test_scale_instance_path_picks_the_eprint_device(self):
         s = _loadStation(devices=[{"DeviceTypeCode": "TrayInspectionStation", "UdtInstancePath": "[MPP]PlcDevices/Cam"},
                                   {"DeviceTypeCode": "ScaleStationEPrint", "UdtInstancePath": "[MPP]PlcDevices/Scale"}])

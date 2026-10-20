@@ -50,7 +50,8 @@
         },
         "position": {
           "basis": "0",
-          "grow": 1
+          "grow": 1,
+          "shrink": 0
         },
         "props": {
           "direction": "column",

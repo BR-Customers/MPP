@@ -248,3 +248,16 @@ def applyPartChoice(session, terminalLocationId, itemId):
         system.perspective.sendMessage("scaleRunningPartChanged",
                                        payload={"terminalLocationId": _u(terminalLocationId)}, scope="page")
         system.perspective.closePopup(id="mpp-scale-part-picker")
+
+
+def scaleStatusText(terminalLocationId, _token=None):
+    """The scale strip: when the terminal's EPrint scale last sent a record.
+       Read in script, not an expression tag() call, so a terminal with no
+       scale never puts a bad-quality path on screen."""
+    path = scaleInstancePath(terminalLocationId)
+    if not path:
+        return "No scale is mapped to this terminal"
+    qv = system.tag.readBlocking([path + "/LastReceiveTime"])[0]
+    if qv.value is None:
+        return "Scale last message: never"
+    return "Scale last message " + _fmtTime(qv.value)
