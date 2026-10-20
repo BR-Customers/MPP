@@ -23,7 +23,10 @@ SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0113_ScaleStation/020_EligibleParts.sql';
 GO
 
--- ---- fixture teardown (FK-safe), shared with 030/040 ----
+-- ---- reset the fixture's operational data (shared with 030/040) ----
+-- The fixture's locations and parts are built once and kept: once 040 has
+-- run, audit rows point at the terminal, so it can never be deleted again.
+-- Only stock, boxes and the override are cleared between runs.
 DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TST-SS-AOUT');
 DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TST-SS-LINE');
 DELETE tr FROM Lots.ContainerTray tr JOIN Lots.Container c ON c.Id = tr.ContainerId WHERE c.CurrentLocationId = @Line;
@@ -31,57 +34,59 @@ DELETE FROM Lots.Container WHERE CurrentLocationId = @Line;
 DELETE cl FROM Lots.LotGenealogyClosure cl JOIN Lots.Lot l ON l.Id = cl.AncestorLotId OR l.Id = cl.DescendantLotId WHERE l.CurrentLocationId = @Line;
 DELETE FROM Lots.Lot WHERE CurrentLocationId = @Line;
 DELETE FROM Location.LocationAttribute WHERE LocationId = @Term;
-DELETE bl FROM Parts.BomLine bl JOIN Parts.Bom b ON b.Id = bl.BomId JOIN Parts.Item i ON i.Id = b.ParentItemId WHERE i.PartNumber LIKE N'TST-SS-%';
-DELETE b FROM Parts.Bom b JOIN Parts.Item i ON i.Id = b.ParentItemId WHERE i.PartNumber LIKE N'TST-SS-%';
-DELETE cc FROM Parts.ContainerConfig cc JOIN Parts.Item i ON i.Id = cc.ItemId WHERE i.PartNumber LIKE N'TST-SS-%';
-DELETE il FROM Parts.ItemLocation il JOIN Parts.Item i ON i.Id = il.ItemId WHERE i.PartNumber LIKE N'TST-SS-%';
-DELETE FROM Parts.Item WHERE PartNumber LIKE N'TST-SS-%';
-DELETE FROM Location.Location WHERE Code IN (N'TST-SS-AOUT', N'TST-SS-LINE');
 GO
 
--- ---- fixture build ----
+-- ---- fixture build: every piece created only if missing ----
 DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY Id);
-INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, SortOrder, CreatedAt)
-VALUES (5, @Area, N'Scale station test line', N'TST-SS-LINE', 999, @Now);
-DECLARE @Line BIGINT = SCOPE_IDENTITY();
-INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, SortOrder, CreatedAt)
-VALUES (7, @Line, N'Scale station test terminal', N'TST-SS-AOUT', 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TST-SS-LINE')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, SortOrder, CreatedAt)
+    VALUES (5, @Area, N'Scale station test line', N'TST-SS-LINE', 999, @Now);
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TST-SS-LINE');
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TST-SS-AOUT')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, SortOrder, CreatedAt)
+    VALUES (7, @Line, N'Scale station test terminal', N'TST-SS-AOUT', 1, @Now);
 
 DECLARE @Fg BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood');
 DECLARE @Comp BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'Component');
 DECLARE @Pass BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'PassThrough');
 INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
-VALUES (@Fg, N'TST-SS-FG-A', N'Scale test FG A', 1, @Now, 1),
-       (@Fg, N'TST-SS-FG-B', N'Scale test FG B', 1, @Now, 1),
-       (@Fg, N'TST-SS-FG-N', N'Scale test FG no ByWeight', 1, @Now, 1),
-       (@Fg, N'TST-SS-FG-X', N'Scale test FG not at line', 1, @Now, 1),
-       (@Comp, N'TST-SS-C1', N'cast 1', 1, @Now, 1),
-       (@Comp, N'TST-SS-C2', N'cast 2', 1, @Now, 1),
-       (@Pass, N'TST-SS-P1', N'bought 1', 1, @Now, 1),
-       (@Pass, N'TST-SS-P2', N'bought 2', 1, @Now, 1),
-       (@Pass, N'TST-SS-P3', N'bought 3', 1, @Now, 1),
-       (@Pass, N'TST-SS-P4', N'bought 4', 1, @Now, 1),
-       (@Pass, N'TST-SS-P5', N'bought 5', 1, @Now, 1);
+SELECT v.TypeId, v.PartNumber, v.Description, 1, @Now, 1
+FROM (VALUES (@Fg, N'TST-SS-FG-A', N'Scale test FG A'),
+             (@Fg, N'TST-SS-FG-B', N'Scale test FG B'),
+             (@Fg, N'TST-SS-FG-N', N'Scale test FG no ByWeight'),
+             (@Fg, N'TST-SS-FG-X', N'Scale test FG not at line'),
+             (@Comp, N'TST-SS-C1', N'cast 1'), (@Comp, N'TST-SS-C2', N'cast 2'),
+             (@Pass, N'TST-SS-P1', N'bought 1'), (@Pass, N'TST-SS-P2', N'bought 2'),
+             (@Pass, N'TST-SS-P3', N'bought 3'), (@Pass, N'TST-SS-P4', N'bought 4'),
+             (@Pass, N'TST-SS-P5', N'bought 5')) v (TypeId, PartNumber, Description)
+WHERE NOT EXISTS (SELECT 1 FROM Parts.Item i WHERE i.PartNumber = v.PartNumber);
 
 -- pack-outs: A/B/X ByWeight 4 x 10, 18.25 +/- 0.5; N ByCount only
 INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, ToleranceWeight, CreatedAt)
-SELECT Id, 4, 10, 0, CASE WHEN PartNumber = N'TST-SS-FG-N' THEN N'ByCount' ELSE N'ByWeight' END, 18.25, 0.5, @Now
-FROM Parts.Item WHERE PartNumber IN (N'TST-SS-FG-A', N'TST-SS-FG-B', N'TST-SS-FG-N', N'TST-SS-FG-X');
+SELECT i.Id, 4, 10, 0, CASE WHEN i.PartNumber = N'TST-SS-FG-N' THEN N'ByCount' ELSE N'ByWeight' END, 18.25, 0.5, @Now
+FROM Parts.Item i
+WHERE i.PartNumber IN (N'TST-SS-FG-A', N'TST-SS-FG-B', N'TST-SS-FG-N', N'TST-SS-FG-X')
+  AND NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig cc WHERE cc.ItemId = i.Id AND cc.DeprecatedAt IS NULL);
 
 -- set up at the line: A, B, N (not X)
 INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt)
-SELECT Id, @Line, 0, @Now FROM Parts.Item WHERE PartNumber IN (N'TST-SS-FG-A', N'TST-SS-FG-B', N'TST-SS-FG-N');
+SELECT i.Id, @Line, 0, @Now FROM Parts.Item i
+WHERE i.PartNumber IN (N'TST-SS-FG-A', N'TST-SS-FG-B', N'TST-SS-FG-N')
+  AND NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il WHERE il.ItemId = i.Id AND il.LocationId = @Line AND il.DeprecatedAt IS NULL);
 
 -- published BOMs
 INSERT INTO Parts.Bom (ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, CreatedByUserId, CreatedAt)
-SELECT Id, 1, @Now, @Now, 1, @Now FROM Parts.Item WHERE PartNumber IN (N'TST-SS-FG-A', N'TST-SS-FG-B', N'TST-SS-FG-N', N'TST-SS-FG-X');
+SELECT i.Id, 1, @Now, @Now, 1, @Now FROM Parts.Item i
+WHERE i.PartNumber IN (N'TST-SS-FG-A', N'TST-SS-FG-B', N'TST-SS-FG-N', N'TST-SS-FG-X')
+  AND NOT EXISTS (SELECT 1 FROM Parts.Bom b WHERE b.ParentItemId = i.Id);
 INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder)
 SELECT b.Id, c.Id, 1, 1, ROW_NUMBER() OVER (PARTITION BY b.Id ORDER BY c.PartNumber)
 FROM Parts.Bom b JOIN Parts.Item p ON p.Id = b.ParentItemId
 JOIN Parts.Item c ON (p.PartNumber = N'TST-SS-FG-A' AND c.PartNumber IN (N'TST-SS-C1', N'TST-SS-C2', N'TST-SS-P1', N'TST-SS-P2', N'TST-SS-P3', N'TST-SS-P4', N'TST-SS-P5'))
                   OR (p.PartNumber <> N'TST-SS-FG-A' AND c.PartNumber IN (N'TST-SS-C1', N'TST-SS-P1'))
-WHERE p.PartNumber LIKE N'TST-SS-FG-%';
+WHERE p.PartNumber LIKE N'TST-SS-FG-%'
+  AND NOT EXISTS (SELECT 1 FROM Parts.BomLine x WHERE x.BomId = b.Id);
 GO
 
 -- Stock helper pattern: #Stock(PartNumber, Qty) -> replace all fixture LOTs at the line.
