@@ -21,7 +21,8 @@
 --
 --   ScaleRunningItemId: the per-terminal running-part override for a By
 --   Weight scale station (Location.Terminal_SetScaleRunningPart), stored like
---   CurrentClosureMethod (migration 0041). ASCII only.
+--   CurrentClosureMethod (migration 0041), and its audit event type
+--   ScaleRunningPartChanged. ASCII only.
 --
 --   Spec: docs/superpowers/specs/2026-10-19-assembly-out-scale-station-design.md
 -- ============================================================
@@ -48,6 +49,18 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition
         (7, N'ScaleRunningItemId', N'NVARCHAR', 0, NULL, NULL,
          (SELECT ISNULL(MAX(SortOrder), 0) + 1 FROM Location.LocationAttributeDefinition WHERE LocationTypeDefinitionId = 7),
          N'By Weight scale station running-part override (Parts.Item.Id). Set by Location.Terminal_SetScaleRunningPart; empty = default part.');
+GO
+
+-- ScaleRunningPartChanged audit event type (next free Id; guarded).
+-- Audit.LogEventType.Id is a plain PK (NOT identity) -- insert the Id directly
+-- (the 0041 ClosureModeChanged pattern).
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Code = N'ScaleRunningPartChanged')
+BEGIN
+    DECLARE @EId BIGINT = (SELECT ISNULL(MAX(Id), 0) + 1 FROM Audit.LogEventType);
+    INSERT INTO Audit.LogEventType (Id, Code, Name, Description)
+    VALUES (@EId, N'ScaleRunningPartChanged', N'Scale Running Part Changed',
+            N'A By Weight scale station''s running-part override was set or cleared (Location.Terminal_SetScaleRunningPart).');
+END
 GO
 
 IF COL_LENGTH(N'Audit.InterfaceLog', N'LotId') IS NULL
