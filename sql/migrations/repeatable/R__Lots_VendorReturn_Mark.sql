@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_VendorReturn_Mark.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.0
+-- Version:     1.1
 -- Description: Super-lot piece 5 (spec 5.1). Marks part of a purchased /
 --              received LOT for return to the vendor: the quantity leaves the
 --              LOT NOW (PieceCount and InventoryAvailable together) and a
@@ -24,11 +24,21 @@
 --              LOT closes at zero with a LotStatusHistory row, Hold stays
 --              Hold). No RejectEvent is written -- a return is not scrap.
 --
+--              Super-lot side (spec 5.4): when the LOT is a CURRENT member of an
+--              OPEN super-lot, the same transaction writes an applied
+--              ReturnToSupplier Quality.ControlledRunResult (RecordedByUserId =
+--              the marker, Remarks = @Remarks) and the VendorReturn points at it,
+--              so the super-lot's left-over stays explained. A LOT whose
+--              membership has ended, or whose super-lot is not open, gets no
+--              result; the return itself still succeeds.
+--
 --              FDS-11-011 / Msg-3915: all rejecting validations run before
 --              BEGIN TRANSACTION; CATCH is the only ROLLBACK site.
 --              Single terminal row: Status, Message, NewId.
 -- Change Log:
 --   2026-10-19 - 1.0 - Initial version.
+--   2026-10-19 - 1.1 - Writes an applied ReturnToSupplier result for a current member
+--                      of an open super-lot, linked by ControlledRunResultId (piece 5).
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.VendorReturn_Mark
     @LotId              BIGINT,
@@ -60,6 +70,11 @@ BEGIN
     DECLARE @InventoryAvail  INT;
     DECLARE @GoodStatusId    BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
     DECLARE @ClosedStatusId  BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
+    DECLARE @ReturnDispId    BIGINT = (SELECT Id FROM Quality.DispositionCode WHERE Code = N'ReturnToSupplier');
+    DECLARE @MemberId        BIGINT = NULL;
+    DECLARE @RunId           BIGINT = NULL;
+    DECLARE @RunNumber       NVARCHAR(15) = NULL;
+    DECLARE @ResultId        BIGINT = NULL;
 
     BEGIN TRY
         -- ---- 1. Required parameters ----
@@ -155,23 +170,51 @@ BEGIN
         IF @NewPieceCount < 0
             RAISERROR(N'Return quantity exceeds the LOT''s remaining pieces (concurrent update). Reload and retry.', 16, 1);
 
+        -- Super-lot side (spec 5.4). INLINED form of the query in
+        -- Quality.ControlledRun_GetOpenByMember (a read proc, never EXEC'd from a
+        -- mutation), narrowed to a LOT member and to an OPEN run -- the same lookup
+        -- Lots.ContainerRework_Scrap inlines for a container. A received LOT is never
+        -- a tray LOT, so GetOpenByMember's tray -> container step does not apply.
+        -- Read after the Lot lock, inside the transaction.
+        SELECT TOP 1 @MemberId = m.Id, @RunId = r.Id, @RunNumber = r.RunNumber
+        FROM Quality.ControlledRunMember m
+        INNER JOIN Quality.ControlledRun r ON r.Id = m.ControlledRunId
+        WHERE (m.LotId = @LotId) AND (m.EndedAt IS NULL) AND (r.ControlledRunStatusId = 1);
+
+        -- The result row first: Lots.VendorReturn.ControlledRunResultId is an FK to it.
+        IF @MemberId IS NOT NULL
+        BEGIN
+            INSERT INTO Quality.ControlledRunResult
+                (ControlledRunMemberId, DispositionCodeId, Quantity, DefectCodeId, RejectEventId, Remarks,
+                 RecordedByUserId, TerminalLocationId)
+            VALUES
+                (@MemberId, @ReturnDispId, @Quantity, NULL, NULL, @Remarks,
+                 @AppUserId, @TerminalLocationId);
+            SET @ResultId = CAST(SCOPE_IDENTITY() AS BIGINT);
+        END
+
         INSERT INTO Lots.VendorReturn
-            (LotId, Quantity, PieceCountTaken, InventoryTaken, Remarks,
+            (LotId, Quantity, PieceCountTaken, InventoryTaken, Remarks, ControlledRunResultId,
              MarkedByUserId, MarkedAt, TerminalLocationId)
         VALUES
-            (@LotId, @Quantity, @Quantity, @InvTaken, @Remarks,
+            (@LotId, @Quantity, @Quantity, @InvTaken, @Remarks, @ResultId,
              @AppUserId, SYSUTCDATETIME(), @TerminalLocationId);
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
         DECLARE @ActivityRaw NVARCHAR(MAX) =
             @LotName + N' ' + Audit.ufn_MidDot() + N' Vendor return ' + Audit.ufn_MidDot()
-            + N' Marked ' + CAST(@Quantity AS NVARCHAR(20)) + N' pcs; remaining ' + CAST(@NewPieceCount AS NVARCHAR(20));
+            + N' Marked ' + CAST(@Quantity AS NVARCHAR(20)) + N' pcs; remaining ' + CAST(@NewPieceCount AS NVARCHAR(20))
+            + CASE WHEN @RunNumber IS NOT NULL THEN N' (super-lot ' + @RunNumber + N')' ELSE N'' END;
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
         DECLARE @NewValue NVARCHAR(MAX) = (
             SELECT vr.Id AS VendorReturnId, vr.Quantity, vr.PieceCountTaken, vr.InventoryTaken, vr.Remarks,
+                   vr.ControlledRunResultId,
                    JSON_QUERY((SELECT l.Id, l.LotName AS Code, l.LotName AS Name
                                FROM Lots.Lot l WHERE l.Id = vr.LotId
-                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Lot
+                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Lot,
+                   JSON_QUERY((SELECT @RunId AS Id, @RunNumber AS Code, @RunNumber AS Name
+                               WHERE @RunId IS NOT NULL
+                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ControlledRun
             FROM Lots.VendorReturn vr WHERE vr.Id = @NewId
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
@@ -186,6 +229,32 @@ BEGIN
             @Description        = @Activity,
             @OldValue           = NULL,
             @NewValue           = @NewValue;
+
+        -- The super-lot's own history shows the entry (as ControlledRunResult_Record's
+        -- ControlledRunResultRecorded row does).
+        IF @ResultId IS NOT NULL
+        BEGIN
+            DECLARE @RunActivity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+                @RunNumber + N' ' + Audit.ufn_MidDot() + N' Results ' + Audit.ufn_MidDot()
+                + N' + ' + @LotName + N' Return to Supplier ' + CAST(@Quantity AS NVARCHAR(20)) + N' (vendor return marked)');
+            DECLARE @RunNewValue NVARCHAR(MAX) = (
+                SELECT @ResultId AS ResultId, @NewId AS VendorReturnId, @LotName AS Member,
+                       N'ReturnToSupplier' AS Outcome, @Quantity AS Quantity,
+                       JSON_QUERY((SELECT @RunId AS Id, @RunNumber AS Code, @RunNumber AS Name
+                                   FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ControlledRun
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+            EXEC Audit.Audit_LogOperation
+                @AppUserId          = @AppUserId,
+                @TerminalLocationId = @TerminalLocationId,
+                @LocationId         = NULL,
+                @LogEntityTypeCode  = N'ControlledRun',
+                @EntityId           = @RunId,
+                @LogEventTypeCode   = N'ControlledRunResultRecorded',
+                @LogSeverityCode    = N'Info',
+                @Description        = @RunActivity,
+                @OldValue           = NULL,
+                @NewValue           = @RunNewValue;
+        END
 
         -- Close-at-zero: INLINED mirror of Lots.Lot_UpdateStatus Good->Closed
         -- (as in RejectEvent_Record). Hold stays Hold.

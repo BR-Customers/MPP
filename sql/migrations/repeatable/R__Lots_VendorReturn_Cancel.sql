@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_VendorReturn_Cancel.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.0
+-- Version:     1.1
 -- Description: Super-lot piece 5 (spec 5.3). Cancels a marked, not yet
 --              confirmed vendor return and puts the taken quantity back on the
 --              LOT: PieceCount += PieceCountTaken, InventoryAvailable +=
@@ -19,9 +19,16 @@
 --              conditional UPDATE + @@ROWCOUNT (routed to CATCH, never a
 --              ROLLBACK inside an INSERT-EXEC-captured call), so two
 --              concurrent cancels cannot both restore quantity.
+--              Super-lot side (spec 5.4): when the return is linked to a
+--              Quality.ControlledRunResult (ControlledRunResultId), that entry is
+--              voided in the same transaction (VoidedAt, VoidedByUserId,
+--              VoidRemarks = @CancelRemarks) -- an applied return result cannot be
+--              voided any other way.
 --              Single terminal row: Status, Message.
 -- Change Log:
 --   2026-10-19 - 1.0 - Initial version.
+--   2026-10-19 - 1.1 - Voids the linked super-lot result (piece 5). The Closed / Scrap /
+--                      Open LOT guard is repeated on the locked UPDATE (Task 6 review).
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.VendorReturn_Cancel
     @VendorReturnId     BIGINT,
@@ -45,6 +52,7 @@ BEGIN
     DECLARE @LotId BIGINT, @LotName NVARCHAR(50), @Qty INT, @PcTaken INT, @InvTaken INT;
     DECLARE @ConfAt DATETIME2(3), @CancAt DATETIME2(3);
     DECLARE @StatusCode NVARCHAR(20), @StatusName NVARCHAR(100);
+    DECLARE @ResultId BIGINT, @RunId BIGINT, @RunNumber NVARCHAR(15);
 
     BEGIN TRY
         IF (@VendorReturnId IS NULL) OR (@AppUserId IS NULL)
@@ -64,10 +72,14 @@ BEGIN
         SELECT @LotId = vr.LotId, @LotName = l.LotName, @Qty = vr.Quantity,
                @PcTaken = vr.PieceCountTaken, @InvTaken = vr.InventoryTaken,
                @ConfAt = vr.ConfirmedAt, @CancAt = vr.CancelledAt,
-               @StatusCode = sc.Code, @StatusName = sc.Name
+               @StatusCode = sc.Code, @StatusName = sc.Name,
+               @ResultId = vr.ControlledRunResultId, @RunId = r.Id, @RunNumber = r.RunNumber
         FROM Lots.VendorReturn vr
         INNER JOIN Lots.Lot l ON l.Id = vr.LotId
         INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
+        LEFT JOIN Quality.ControlledRunResult rr ON rr.Id = vr.ControlledRunResultId
+        LEFT JOIN Quality.ControlledRunMember m  ON m.Id = rr.ControlledRunMemberId
+        LEFT JOIN Quality.ControlledRun r        ON r.Id = m.ControlledRunId
         WHERE vr.Id = @VendorReturnId;
 
         IF (@LotId IS NULL)
@@ -99,7 +111,8 @@ BEGIN
 
         -- Take the Lot row first (same lock order as Mark), then claim the
         -- return with a conditional UPDATE: only one of two concurrent cancels
-        -- sees @@ROWCOUNT = 1.
+        -- sees @@ROWCOUNT = 1. The LOT status guard is repeated here, under the
+        -- lock: the check above was read unlocked.
         DECLARE @NewPieceCount INT;
         UPDATE l
         SET @NewPieceCount       = l.PieceCount + @PcTaken,
@@ -109,11 +122,12 @@ BEGIN
             l.UpdatedByUserId    = @AppUserId
         FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK)
         WHERE l.Id = @LotId
+          AND l.LotStatusId NOT IN (SELECT sc.Id FROM Lots.LotStatusCode sc WHERE sc.Code IN (N'Closed', N'Scrap', N'Open'))
           AND EXISTS (SELECT 1 FROM Lots.VendorReturn vr
                       WHERE vr.Id = @VendorReturnId AND vr.ConfirmedAt IS NULL AND vr.CancelledAt IS NULL);
 
         IF @@ROWCOUNT = 0
-            RAISERROR(N'The vendor return is no longer open (concurrent update). Reload and retry.', 16, 1);
+            RAISERROR(N'The vendor return is no longer open, or the LOT can no longer take the pieces back (concurrent update). Reload and retry.', 16, 1);
 
         UPDATE Lots.VendorReturn
         SET CancelledAt = SYSUTCDATETIME(), CancelledByUserId = @AppUserId, CancelRemarks = @CancelRemarks
@@ -144,6 +158,42 @@ BEGIN
             @Description        = @Activity,
             @OldValue           = NULL,
             @NewValue           = @NewValue;
+
+        -- Super-lot side: the linked ReturnToSupplier entry stops counting with the
+        -- return. Same stamp as Quality.ControlledRunResult_Void (mirror of its UPDATE
+        -- and audit row); voided whether or not the super-lot is still open, because
+        -- the pieces it explained are back on the LOT.
+        IF @ResultId IS NOT NULL
+        BEGIN
+            UPDATE Quality.ControlledRunResult
+            SET VoidedAt = SYSUTCDATETIME(), VoidedByUserId = @AppUserId, VoidRemarks = @CancelRemarks
+            WHERE Id = @ResultId AND VoidedAt IS NULL;
+
+            IF @@ROWCOUNT = 1
+            BEGIN
+                DECLARE @RunActivity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+                    @RunNumber + N' ' + Audit.ufn_MidDot() + N' Results ' + Audit.ufn_MidDot()
+                    + N' - ' + @LotName + N' Return to Supplier ' + CAST(@Qty AS NVARCHAR(20))
+                    + N' voided (vendor return cancelled): ' + @CancelRemarks);
+                DECLARE @RunNewValue NVARCHAR(MAX) = (
+                    SELECT @ResultId AS ResultId, @VendorReturnId AS VendorReturnId, @LotName AS Member,
+                           N'ReturnToSupplier' AS Outcome, @Qty AS Quantity, @CancelRemarks AS VoidRemarks,
+                           JSON_QUERY((SELECT @RunId AS Id, @RunNumber AS Code, @RunNumber AS Name
+                                       FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ControlledRun
+                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+                EXEC Audit.Audit_LogOperation
+                    @AppUserId          = @AppUserId,
+                    @TerminalLocationId = @TerminalLocationId,
+                    @LocationId         = NULL,
+                    @LogEntityTypeCode  = N'ControlledRun',
+                    @EntityId           = @RunId,
+                    @LogEventTypeCode   = N'ControlledRunResultVoided',
+                    @LogSeverityCode    = N'Info',
+                    @Description        = @RunActivity,
+                    @OldValue           = NULL,
+                    @NewValue           = @RunNewValue;
+            END
+        END
 
         COMMIT TRANSACTION;
 

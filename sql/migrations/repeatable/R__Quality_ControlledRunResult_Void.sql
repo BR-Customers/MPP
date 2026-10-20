@@ -1,8 +1,11 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRunResult_Void.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-13
--- Version:     1.0
+-- Modified:    2026-10-19
+-- Version:     1.1
+-- Change Log:  2026-10-19 - 1.1 - Refuses an APPLIED return: a ReturnToSupplier entry that a
+--                                 Lots.VendorReturn (not cancelled) points at. Cancelling the
+--                                 return voids the entry in the same transaction (piece 5).
 -- Description: Voids ONE inspection result entry: the correction for a wrong
 --              entry (spec D4). The row is never edited or deleted -- it is
 --              stamped VoidedAt / VoidedByUserId / VoidRemarks once, stops
@@ -15,6 +18,9 @@
 --                * the entry TOOK PIECES OFF A LOT (RejectEventId IS NOT NULL).
 --                  Voiding it here would leave the LOT short with nothing to
 --                  show why. That correction is to the LOT's piece count.
+--                * the entry is an applied vendor return (a Lots.VendorReturn not
+--                  cancelled points at it). Lots.VendorReturn_Cancel restores the
+--                  pieces and voids the entry together.
 --
 --              A reason is required.
 --
@@ -42,7 +48,7 @@ BEGIN
 
     DECLARE @Found BIT = 0, @RunId BIGINT, @RunNumber NVARCHAR(15), @RunStatusId BIGINT, @MemberId BIGINT,
             @MemberEndedAt DATETIME2(3), @VoidedAt DATETIME2(3), @RejectEventId BIGINT, @Qty INT,
-            @DispName NVARCHAR(100), @DisplayName NVARCHAR(60);
+            @DispName NVARCHAR(100), @DisplayName NVARCHAR(60), @HasReturn BIT = 0;
 
     SELECT @Found = 1, @MemberId = rr.ControlledRunMemberId, @VoidedAt = rr.VoidedAt,
            @RejectEventId = rr.RejectEventId, @Qty = rr.Quantity, @DispName = dc.Name,
@@ -53,6 +59,8 @@ BEGIN
     WHERE rr.Id = @ResultId;
     SELECT @RunNumber = RunNumber, @RunStatusId = ControlledRunStatusId FROM Quality.ControlledRun WHERE Id = @RunId;
     SELECT @DisplayName = ms.DisplayName FROM Quality.ufn_ControlledRunMemberState(@RunId) ms WHERE ms.MemberId = @MemberId;
+    IF EXISTS (SELECT 1 FROM Lots.VendorReturn WHERE ControlledRunResultId = @ResultId AND CancelledAt IS NULL)
+        SET @HasReturn = 1;
     SET @Remarks = NULLIF(LTRIM(RTRIM(@Remarks)), N'');
 
     BEGIN TRY
@@ -71,6 +79,8 @@ BEGIN
             SET @Reject = @DisplayName + N' is no longer in the super-lot.';
         IF @Reject IS NULL AND @RejectEventId IS NOT NULL
             SET @Reject = N'These pieces were already taken off ' + @DisplayName + N'. Correct the LOT''s piece count instead.';
+        IF @Reject IS NULL AND (@HasReturn = 1)
+            SET @Reject = N'These pieces were marked for return to the vendor from ' + @DisplayName + N'. Cancel the return instead.';
         IF @Reject IS NULL AND @Remarks IS NULL
             SET @Reject = N'A reason is required to void an entry.';
 
@@ -92,10 +102,11 @@ BEGIN
 
         UPDATE Quality.ControlledRunResult
         SET VoidedAt = SYSUTCDATETIME(), VoidedByUserId = @AppUserId, VoidRemarks = @Remarks
-        WHERE Id = @ResultId AND VoidedAt IS NULL;
+        WHERE Id = @ResultId AND VoidedAt IS NULL
+          AND NOT EXISTS (SELECT 1 FROM Lots.VendorReturn WHERE ControlledRunResultId = @ResultId AND CancelledAt IS NULL);
 
         IF @@ROWCOUNT = 0
-            RAISERROR(N'This entry was voided by someone else.', 16, 1);
+            RAISERROR(N'This entry was voided by someone else, or its pieces were marked for return.', 16, 1);
 
         DECLARE @ActivityRaw NVARCHAR(MAX) = @RunNumber + N' ' + Audit.ufn_MidDot() + N' Results ' + Audit.ufn_MidDot()
             + N' - ' + @DisplayName + N' ' + @DispName + N' ' + CAST(@Qty AS NVARCHAR(10)) + N' voided: ' + @Remarks;
