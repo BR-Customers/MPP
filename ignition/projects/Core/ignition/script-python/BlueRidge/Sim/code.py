@@ -207,3 +207,21 @@ def fireInspection(deviceCode, visionPartNumber, dispositions):
     for i in range(18):
         vals["PartDisposition%02d" % (i + 1)] = bool(disp[i]) if i < len(disp) else False
     return _seedThenPulse(deviceCode, vals, "InspectionComplete")
+
+
+def fireScaleEPrint(terminalLocationId, gross, tare, net, under, over, ok):
+    """Dev-only: one EPrint scale press without the hardware. Builds the exact
+       Template 3 record the IND570 prints (ScaleEPrintWatcher.template3Record)
+       and hands it to the same handleMessage a real press reaches, so the judge,
+       the close or refusal, the interface-log row and the screen refresh are
+       all real. Only the TCP receive + OPC read are skipped (proven on the
+       office head 2026-10-19). The instance path is the terminal's own mapped
+       EPrint scale. A good press really closes a tray on this database.
+       Returns handleMessage's {Status, Message, ContainerId}."""
+    W = BlueRidge.Workorder.ScaleEPrintWatcher
+    path = BlueRidge.Workorder.ScaleStation.scaleInstancePath(terminalLocationId)
+    if not path:
+        return {"Status": 0, "Message": "No EPrint scale is mapped to terminal %s." % terminalLocationId,
+                "ContainerId": None}
+    return W.handleMessage(path, terminalLocationId,
+                           W.template3Record(gross, tare, net, under, over, ok))

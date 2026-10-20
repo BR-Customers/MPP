@@ -176,6 +176,14 @@ class ParseTests(unittest.TestCase):
         self.assertFalse(W.parse(T3_OK + "\r\n" + T3_OK)["ok"])
         self.assertFalse(W.parse("UNDER: 0 OVER: 0 OK: 1")["ok"])
 
+    def test_template3_record_matches_the_real_print(self):
+        # The 1:44 PM print on 2026-10-19 was 74 bytes: 52.9 / 3.0 T / 49.9 N, OK.
+        rec = W.template3Record(52.9, 3.0, 49.9, 0, 0, 1)
+        self.assertEqual(len(rec), 74)
+        self.assertEqual(rec, "      52.9 lb \r\n       3.0 lb T \r\n      49.9 lb N \r\nUNDER: 0 OVER: 0 OK: 1")
+        p = W.parse(rec)
+        self.assertEqual((p["net"], p["flags"]), (49.9, {"under": 0, "over": 0, "ok": 1}))
+
     def test_two_flags_lines_are_unreadable_not_refused(self):
         self._assertUnreadable("50.0 lb N\r\nUNDER: 0 OVER: 0 OK: 1\r\nUNDER: 1 OVER: 0 OK: 0")
 

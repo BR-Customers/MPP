@@ -132,6 +132,16 @@ def parse(message):
             "flags": flags, "flagsState": flagsState}
 
 
+def template3Record(gross, tare, net, under, over, ok):
+    """The exact record an IND570 head on Template 3 prints for one press,
+       for the dev simulator (BlueRidge.Sim.fireScaleEPrint): weights right-
+       justified width 10, unit left-justified width 3, CRLF after the three
+       weight lines, NO line break after the flags. Byte-identical in length
+       (74) to the office head's real prints of 2026-10-19."""
+    return ("%10.1f %-3s\r\n%10.1f %-3sT \r\n%10.1f %-3sN \r\nUNDER: %d OVER: %d OK: %d"
+            % (gross, EXPECTED_UOM, tare, EXPECTED_UOM, net, EXPECTED_UOM, under, over, ok))
+
+
 def _parseFlags(text):
     """(flags dict or None, 'absent' | 'read' | 'unreadable'). Never raises a
        refusal: see parse()."""

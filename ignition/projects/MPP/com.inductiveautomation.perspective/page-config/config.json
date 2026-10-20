@@ -20,6 +20,10 @@
       "title": "Scale Station (dev)",
       "viewPath": "BlueRidge/Components/PlantFloor/ScaleStation"
     },
+    "/dev/scale-station-sim/:terminalLocationId": {
+      "title": "Scale Station Sim (dev)",
+      "viewPath": "BlueRidge/Views/Dev/ScaleStationSim"
+    },
     "/navigation-testing": {
       "title": "",
       "viewPath": "BlueRidge/Views/Navigation Testing"

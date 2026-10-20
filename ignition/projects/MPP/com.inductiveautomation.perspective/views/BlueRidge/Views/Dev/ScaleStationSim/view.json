@@ -1,0 +1,249 @@
+{
+  "custom": {},
+  "params": {
+    "terminalLocationId": null
+  },
+  "propConfig": {
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 1000,
+      "width": 1500
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "height": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "SimBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "wrap": "wrap",
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "10px",
+            "flexDirection": "row",
+            "margin": "14px 14px 0 14px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Kicker"
+            },
+            "props": {
+              "text": "DEV ONLY - SIMULATED SCALE PRESS (a good press really closes a tray)",
+              "style": {
+                "classes": "pf-kpi-label"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "GoodOk"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Good 49.9 lb (scale OK)",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleEPrint(self.view.params.terminalLocationId, 52.9, 3.0, 49.9, 0, 0, 1), \"Simulated press\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "LightUnder"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Light 31.5 lb (scale UNDER)",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleEPrint(self.view.params.terminalLocationId, 34.5, 3.0, 31.5, 1, 0, 0), \"Simulated press\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "HeavyOver"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Heavy 91.3 lb (scale OVER)",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleEPrint(self.view.params.terminalLocationId, 94.3, 3.0, 91.3, 0, 1, 0), \"Simulated press\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "Mismatch"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Good 50.0 lb, scale says UNDER",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleEPrint(self.view.params.terminalLocationId, 53.0, 3.0, 50.0, 1, 0, 0), \"Simulated press\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "NoTarget"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Good 50.0 lb, flags all 0",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleEPrint(self.view.params.terminalLocationId, 53.0, 3.0, 50.0, 0, 0, 0), \"Simulated press\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "EdgeLow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Exactly 48.0 lb (scale UNDER)",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleEPrint(self.view.params.terminalLocationId, 51.0, 3.0, 48.0, 1, 0, 0), \"Simulated press\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "Station"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/ScaleStation",
+          "params": {
+            "terminalLocationId": null
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "propConfig": {
+          "props.params.terminalLocationId": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.terminalLocationId}"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
