@@ -1,0 +1,214 @@
+{
+  "custom": {},
+  "params": {
+    "row": {
+      "vendorReturnId": null,
+      "lotId": null,
+      "quantity": 0,
+      "marked": "",
+      "remarks": "",
+      "stateCode": "",
+      "stateText": "",
+      "canCancel": false
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 52
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "12px",
+        "overflow": "hidden",
+        "padding": "6px 10px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "QtyLabel"
+        },
+        "props": {
+          "style": {
+            "fontSize": "16px",
+            "fontWeight": 700,
+            "overflow": "hidden",
+            "textAlign": "right"
+          }
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.quantity}) + ' pc'"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "MarkedBlock"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "1px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "MarkedLabel"
+            },
+            "props": {
+              "style": {
+                "overflow": "hidden",
+                "classes": "pf-field-mono"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.row.marked"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "RemarksLabel"
+            },
+            "props": {
+              "style": {
+                "overflow": "hidden",
+                "classes": "pf-field-help"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.row.remarks"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.params.row.remarks}) > 0"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "position": {
+          "basis": "260px",
+          "shrink": 1
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "StateLabel"
+        },
+        "props": {
+          "style": {
+            "fontSize": "14px",
+            "fontWeight": 600,
+            "overflow": "hidden"
+          }
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.stateText"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.stateCode} = 'Open', 'var(--mpp-state-warn-fg)', if({view.params.row.stateCode} = 'Confirmed', 'var(--mpp-state-good-fg)', 'var(--mpp-text-tertiary)'))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "CancelButton"
+        },
+        "props": {
+          "text": "Cancel",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\t# Picks this return for cancelling; the panel collects the reason and\n\t# runs the elevation-gated cancel. Rows never call the proc themselves.\n\tsystem.perspective.sendMessage(\"vendorReturnCancelPick\", payload={\n\t\t\"lotId\": self.view.params.row.lotId,\n\t\t\"vendorReturnId\": self.view.params.row.vendorReturnId,\n\t\t\"quantity\": self.view.params.row.quantity}, scope=\"page\")"
+              }
+            }
+          }
+        },
+        "position": {
+          "basis": "110px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.row.canCancel}"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -31,7 +31,9 @@
     "leftOver": 0,
     "rankLocationId": null,
     "runOpen": false,
-    "token": 0
+    "token": 0,
+    "canReturn": false,
+    "origin": ""
   },
   "propConfig": {
     "params.runId": {
@@ -68,6 +70,16 @@
         "enabled": true,
         "script": "\tself.getChild(\"root\").refresh()"
       }
+    },
+    "params.canReturn": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.getChild(\"root\").refresh()"
+      }
+    },
+    "params.origin": {
+      "paramDirection": "input"
     }
   },
   "root": {
@@ -166,6 +178,32 @@
               "path": "BlueRidge/Components/PlantFloor/ControlledRunEntryTile",
               "style": {
                 "gap": "8px"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "OutcomeHint"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-tertiary)",
+                "whiteSpace": "normal"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Rework is not entered here: move the LOT back into trim (supervisor override at Trim IN); its Trim OUT ends it.' + if({view.params.canReturn}, '', if({view.params.isContainer}, ' Return to vendor is not offered for a container.', ' Return to vendor is not offered: this LOT was made at MPP.'))"
+                  }
+                }
               }
             }
           },
@@ -846,7 +884,7 @@
         {
           "name": "refresh",
           "params": [],
-          "script": "\t# ONE pass rebuilds every derived prop from the two sources of truth: the ranked\n\t# reason catalog and the draft. Assigned whole, so no binding sees half of it.\n\tv = self.view\n\tv.custom.model = BlueRidge.Quality.ControlledRun.entryModel(v.params.memberId, v.custom.catalog, v.custom.draftJson, v.custom.showAll, v.params.leftOver, v.params.isContainer)"
+          "script": "\t# ONE pass rebuilds every derived prop from the two sources of truth: the ranked\n\t# reason catalog and the draft. Assigned whole, so no binding sees half of it.\n\tv = self.view\n\tv.custom.model = BlueRidge.Quality.ControlledRun.entryModel(v.params.memberId, v.custom.catalog, v.custom.draftJson, v.custom.showAll, v.params.leftOver, v.params.isContainer, v.params.canReturn)"
         },
         {
           "name": "change",

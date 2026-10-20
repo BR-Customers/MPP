@@ -1,0 +1,413 @@
+{
+  "custom": {
+    "returns": []
+  },
+  "params": {
+    "popupId": "mpp-vendor-return-confirm"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 600,
+      "width": 1100
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\t# Direct write, never refreshBinding (a no-op from a message handler).\n\tself.view.custom.returns = BlueRidge.Lots.VendorReturn.listOpenInstances()"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "vendorReturnsChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.load()"
+        }
+      ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.load()"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "props": {
+              "text": "Parts waiting to go back to the vendor",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "600"
+              }
+            },
+            "position": {
+              "grow": 1
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CountBadge"
+            },
+            "props": {
+              "style": {
+                "background": "var(--bg-row-alt)",
+                "borderRadius": "12px",
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "13px",
+                "padding": "4px 10px"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "toStr(len({view.custom.returns})) + ' waiting'"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/close",
+              "style": {
+                "cursor": "pointer",
+                "height": "32px",
+                "width": "32px"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "position": {
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body",
+            "gap": "8px",
+            "overflowY": "auto"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ColumnHeader"
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "crt-list-header",
+                "gap": "12px",
+                "padding": "0 10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "H_lot"
+                },
+                "props": {
+                  "text": "LOT"
+                },
+                "position": {
+                  "basis": "140px",
+                  "shrink": 1
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "H_part"
+                },
+                "props": {
+                  "text": "Part"
+                },
+                "position": {
+                  "basis": "150px",
+                  "shrink": 1
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "H_vendorLot"
+                },
+                "props": {
+                  "text": "Vendor lot"
+                },
+                "position": {
+                  "basis": "120px",
+                  "shrink": 1
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "H_qty"
+                },
+                "props": {
+                  "text": "Qty",
+                  "style": {
+                    "textAlign": "right"
+                  }
+                },
+                "position": {
+                  "basis": "60px",
+                  "shrink": 0
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "H_marked"
+                },
+                "props": {
+                  "text": "Marked"
+                },
+                "position": {
+                  "basis": "170px",
+                  "shrink": 1
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "H_where"
+                },
+                "props": {
+                  "text": "Where"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1,
+                  "shrink": 1
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "H_action"
+                },
+                "props": {
+                  "text": ""
+                },
+                "position": {
+                  "basis": "170px",
+                  "shrink": 0
+                }
+              }
+            ],
+            "position": {
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "EmptyState"
+            },
+            "props": {
+              "text": "Nothing is waiting to go back to a vendor.",
+              "style": {
+                "classes": "pf-empty-state"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.returns}) = 0"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "ReturnsRepeater"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.returns"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": {
+                "basis": "52px",
+                "grow": 0,
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/VendorReturnRow",
+              "style": {
+                "gap": "6px"
+              },
+              "useDefaultViewHeight": true,
+              "useDefaultViewWidth": false
+            }
+          }
+        ],
+        "position": {
+          "basis": "0",
+          "grow": 1
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "FootNote"
+            },
+            "props": {
+              "text": "Oldest first. Confirming records who and when, and the row leaves this list. It does not change any quantities: those came off when the parts were marked.",
+              "style": {
+                "color": "var(--mpp-text-tertiary)",
+                "fontSize": "13px",
+                "whiteSpace": "normal"
+              }
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "text": "Close",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            },
+            "position": {
+              "shrink": 0
+            }
+          }
+        ],
+        "position": {
+          "shrink": 0
+        }
+      }
+    ]
+  }
+}

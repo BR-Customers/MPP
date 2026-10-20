@@ -247,14 +247,14 @@
               "name": "H_rework"
             },
             "position": {
-              "basis": "70px",
+              "basis": "150px",
               "shrink": 0
             },
             "props": {
-              "text": "Rework",
+              "text": "At trim rework",
               "style": {
                 "fontVariantNumeric": "tabular-nums",
-                "textAlign": "right"
+                "textAlign": "left"
               }
             }
           },

@@ -12,7 +12,8 @@
     "joined": "",
     "added": "",
     "selected": false,
-    "containerId": null
+    "containerId": null,
+    "rework": ""
   },
   "propConfig": {
     "params.memberId": {
@@ -49,6 +50,9 @@
       "paramDirection": "input"
     },
     "params.containerId": {
+      "paramDirection": "input"
+    },
+    "params.rework": {
       "paramDirection": "input"
     }
   },
@@ -121,30 +125,84 @@
         }
       },
       {
-        "type": "ia.display.label",
+        "type": "ia.container.flex",
         "meta": {
-          "name": "Name"
+          "name": "NameCell"
         },
         "position": {
           "grow": 1,
           "basis": "150px",
           "shrink": 1
         },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.params.name"
+        "props": {
+          "direction": "column",
+          "justify": "center",
+          "style": {
+            "gap": "1px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Name"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.name"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "crt-part crt-mono"
+              }
+            },
+            "position": {
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ReworkLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "600",
+                "color": "var(--mpp-state-warn-fg)",
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.rework"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.params.rework}) > 0"
+                  }
+                }
               }
             }
           }
-        },
-        "props": {
-          "style": {
-            "classes": "crt-part crt-mono"
-          }
-        }
+        ]
       },
       {
         "type": "ia.display.label",

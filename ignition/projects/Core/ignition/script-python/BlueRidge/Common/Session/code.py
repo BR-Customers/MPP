@@ -39,6 +39,8 @@
 #                      from the session object the view already holds: the
 #                      PIN sign-in on the plant floor, the AD login in the
 #                      Configuration Tool.
+#   2026-10-20 - 2.1 - Adds the VendorReturn replay entry (super-lot piece 5:
+#                      LOT Detail Vendor return tab, mark and cancel).
 # =============================================================================
 
 
@@ -390,6 +392,7 @@ _ELEVATED_REPLAY_MESSAGES = {
     "DieCastReconcile":   "dieCastReconcileRequested",  # Die Cast - enter the shift reconciliation screen
     "LowInventoryRelease": "lowInventoryReleaseRequested",  # Assembly OUT - supervisor release of the low-inventory lock
     "ControlledRun":      "controlledRunAction",        # Super-lots - any change inside the Quality sign-in window
+    "VendorReturn":       "vendorReturnRequested",      # LOT Detail - mark / cancel a return to vendor (params carry "intent")
 }
 
 # NOTE on "DieMount": it is the first replay whose handler is NOT on an already

@@ -12,7 +12,8 @@
       "returned": 0,
       "useAsIs": 0,
       "leftOver": 0,
-      "hasResult": false
+      "hasResult": false,
+      "atTrim": ""
     }
   },
   "propConfig": {
@@ -189,7 +190,7 @@
           "name": "C_rework"
         },
         "position": {
-          "basis": "70px",
+          "basis": "150px",
           "shrink": 0
         },
         "propConfig": {
@@ -197,7 +198,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "toStr({view.params.row.rework})"
+                "expression": "if(len({view.params.row.atTrim}) > 0, {view.params.row.atTrim}, '-')"
               }
             }
           },
@@ -205,7 +206,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if({view.params.row.rework} = 0, 'var(--mpp-text-tertiary)', 'var(--mpp-text-primary)')"
+                "expression": "if(len({view.params.row.atTrim}) > 0, 'var(--mpp-state-warn-fg)', 'var(--mpp-text-tertiary)')"
               }
             }
           }
@@ -213,7 +214,8 @@
         "props": {
           "style": {
             "fontVariantNumeric": "tabular-nums",
-            "textAlign": "right"
+            "textAlign": "left",
+            "overflow": "hidden"
           }
         }
       },

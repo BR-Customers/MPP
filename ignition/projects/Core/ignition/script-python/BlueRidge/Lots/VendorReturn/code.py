@@ -14,7 +14,11 @@
      mark(lotId, quantity, remarks, appUserId, terminalLocationId)
      confirm(vendorReturnId, appUserId, terminalLocationId)
      cancel(vendorReturnId, cancelRemarks, appUserId, terminalLocationId)
-     listOpen(_t) / openCount(_t) / listByLot(lotId, _t)"""
+     listOpen(_t) / openCount(_t) / listByLot(lotId, _t)
+
+   Display shaping (no rules -- StateCode / CanCancel come from SQL):
+     listByLotInstances(lotId, _t)   LOT Detail "Vendor return" tab rows
+     listOpenInstances(_t)           Supervisor Dashboard popup rows"""
 
 
 def _u(value):
@@ -72,3 +76,68 @@ def listByLot(lotId, _refreshToken=None):
     if lid is None:
         return []
     return BlueRidge.Common.Db.execList("lots/VendorReturn_ListByLot", {"lotId": lid}) or []
+
+
+# ---- display shaping ----------------------------------------------------------
+# Flex-repeater instances, one {"row": {...}} each, with every time already
+# formatted: a Date serializes to a string on the repeater param hop, so a
+# dateFormat in the child view would render the raw value (same reason as
+# Lots.Lot.mapScrapEventInstances). The procs return times in Eastern already.
+
+_DOT = u" \u00b7 "
+
+
+def _when(value, pattern="MM/dd HH:mm"):
+    v = _u(value)
+    if v is None or v == "":
+        return ""
+    try:
+        return system.date.format(v, pattern)
+    except:
+        return ("%s" % v)[:16]
+
+
+def _stamp(at, initials):
+    return _DOT.join([x for x in (_when(at), initials or "") if x])
+
+
+def listByLotInstances(lotId, _refreshToken=None):
+    """Rows for the LOT Detail "Vendor return" tab, newest first. Always a list."""
+    out = []
+    for r in listByLot(lotId):
+        state = r.get("StateCode") or ""
+        if state == "Confirmed":
+            stateText = "Returned " + _stamp(r.get("ConfirmedAt"), r.get("ConfirmedByInitials"))
+        elif state == "Cancelled":
+            stateText = _DOT.join([x for x in ("Cancelled", r.get("CancelRemarks") or "") if x])
+        else:
+            stateText = "Waiting to go back"
+        out.append({"row": {
+            "vendorReturnId": r.get("VendorReturnId"),
+            "lotId":          _int(lotId),
+            "quantity":       int(r.get("Quantity") or 0),
+            "marked":         _stamp(r.get("MarkedAt"), r.get("MarkedByInitials")),
+            "remarks":        r.get("Remarks") or "",
+            "stateCode":      state,
+            "stateText":      stateText,
+            "canCancel":      bool(r.get("CanCancel")),
+        }})
+    return out
+
+
+def listOpenInstances(_refreshToken=None):
+    """Rows for the dashboard's "Parts to return" popup, oldest first. Always a list."""
+    out = []
+    for r in listOpen():
+        out.append({"row": {
+            "vendorReturnId": r.get("VendorReturnId"),
+            "lotId":          r.get("LotId"),
+            "lotName":        r.get("LotName") or "",
+            "part":           r.get("ItemPartNumber") or "",
+            "vendorLot":      r.get("VendorLotNumber") or "",
+            "quantity":       int(r.get("Quantity") or 0),
+            "marked":         _stamp(r.get("MarkedAt"), r.get("MarkedByInitials")),
+            "remarks":        r.get("Remarks") or "",
+            "where":          r.get("CurrentLocationName") or "",
+        }})
+    return out

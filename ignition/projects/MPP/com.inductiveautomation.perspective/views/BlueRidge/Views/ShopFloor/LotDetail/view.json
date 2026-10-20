@@ -2003,6 +2003,42 @@
               {
                 "children": [
                   {
+                    "meta": {
+                      "name": "VendorReturnPanelEmbed"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.params.lotId": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.lotId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/VendorReturnPanel"
+                    },
+                    "type": "ia.display.view"
+                  }
+                ],
+                "meta": {
+                  "name": "PanelVendorReturn"
+                },
+                "position": {
+                  "tabIndex": 8
+                },
+                "props": {
+                  "direction": "column"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
                     "children": [
                       {
                         "meta": {
@@ -2211,7 +2247,7 @@
                   "name": "PanelNotes"
                 },
                 "position": {
-                  "tabIndex": 8
+                  "tabIndex": 9
                 },
                 "props": {
                   "direction": "column",
@@ -2293,6 +2329,11 @@
                   "disabled": false,
                   "runWhileHidden": true,
                   "text": "Correct Count"
+                },
+                {
+                  "disabled": false,
+                  "runWhileHidden": true,
+                  "text": "Vendor Return"
                 },
                 {
                   "disabled": false,

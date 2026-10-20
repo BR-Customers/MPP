@@ -47,7 +47,14 @@
      resultItems (accordion) / resultLogInstances
      entryCatalog / entryModel / entryChange / entryAcceptRest / entryToResults
      releaseInstances / tickToggle / tickAllReady / tickSummary
-     deviationInstances / signatureInstances"""
+     deviationInstances / signatureInstances
+
+   Piece 5 (trim rework + return to vendor):
+     memberRework(controlledRunId)   -> {str(memberId): {startedAt, approvedBy}}
+     memberOrigin(controlledRunId)   -> {str(memberId): {origin, canReturn}}
+     Rework is no longer a result entry (a supervisor override move back into
+     trim starts it, the Trim OUT ends it); the Return to vendor tile is shown
+     only where SQL says the member can be returned (CanReturnToVendor)."""
 
 _EMPTY_RUN = {
     "Id": None, "RunNumber": "", "StatusCode": "", "Reason": "",
@@ -371,6 +378,7 @@ def cardInstances(statusCode, text, selectedRunId, _refreshToken=None):
 def memberInstances(runId, selectedMemberId, _refreshToken=None):
     """Flex-repeater instances for the member table."""
     sel = _u(selectedMemberId)
+    rework = memberRework(runId)
     out = []
     for r in listMembers(runId):
         out.append({
@@ -386,6 +394,7 @@ def memberInstances(runId, selectedMemberId, _refreshToken=None):
             "joined":   r.get("JoinMethodName") or "",
             "added":    _fmt(r.get("AddedAt"), "EEE HH:mm"),
             "selected": r.get("MemberId") == sel,
+            "rework":   _reworkText(rework.get(str(r.get("MemberId")))),   # piece 5; "" when none
         })
     return out
 
@@ -503,11 +512,15 @@ def previewTicked(rowsJson):
 
 _OUTCOMES = [                      # (key = Quality.DispositionCode.Code, tile label)
     ("Accepted",         "Accepted"),
-    ("Rework",           "Rework"),
+    # "Rework" removed (piece 5): a rework is the supervisor override move back
+    # into trim plus its Trim OUT, so a typed count would count the pieces twice.
+    # ControlledRunResult_Record refuses it.
     ("ReturnToSupplier", "Return to vendor"),
     ("UseAsIs",          "Use as is"),
 ]
 _OUTCOME_LABEL = dict(_OUTCOMES)
+_OUTCOME_SUB = {"ReturnToSupplier": "takes pieces off now"}
+_RETURN_KEY = "ReturnToSupplier"     # tile shown only where memberOrigin() says canReturn
 
 _EMPTY_ENTRY_MODEL = {"outcomeTiles": [], "reasonTiles": [], "lines": [], "total": 0,
                       "moreCount": 0, "scrap": 0, "summary": "", "canSave": False}
@@ -658,10 +671,13 @@ def resultItems(runId, currentItems, runOpen, token):
        passed into the body so a saved result reloads its numbers."""
     keep = _expandedIds(currentItems)
     isOpen = bool(_u(runOpen))
+    rework = memberRework(runId)
+    origin = memberOrigin(runId)
     items = []
     for r in listMemberResults(runId):
         mid = r.get("MemberId")
         left = int(r.get("LeftOver") or 0)
+        org = origin.get(str(mid)) or {}
         row = {
             "memberId": mid,
             "name":     r.get("DisplayName") or "",
@@ -670,6 +686,7 @@ def resultItems(runId, currentItems, runOpen, token):
             "accepted": int(r.get("AcceptedQty") or 0),
             "scrap":    int(r.get("ScrapQty") or 0),
             "rework":   int(r.get("ReworkQty") or 0),
+            "atTrim":   _reworkSince(rework.get(str(mid))),     # piece 5; "" when not at trim
             "returned": int(r.get("ReturnQty") or 0),
             "useAsIs":  int(r.get("UseAsIsQty") or 0),
             "leftOver": left,
@@ -698,6 +715,8 @@ def resultItems(runId, currentItems, runOpen, token):
                 "viewParams": {
                     "runId": _u(runId), "memberId": mid, "name": row["name"],
                     "isContainer": (r.get("Kind") == "Container"),
+                    "canReturn": bool(org.get("canReturn")),
+                    "origin": org.get("origin") or "",
                     "pieces": row["pieces"], "leftOver": left,
                     "rankLocationId": r.get("RankLocationId"),
                     "runOpen": isOpen, "token": _u(token) or 0,
@@ -823,8 +842,11 @@ def entryCatalog(rankLocationId):
     return BlueRidge.Quality.DefectCode.getForTilesRanked(_u(rankLocationId), None)
 
 
-def entryModel(memberId, catalog, draftJson, showAll, leftOver, isContainer):
-    """Everything the entry form renders, in one pass. Always fully shaped."""
+def entryModel(memberId, catalog, draftJson, showAll, leftOver, isContainer, canReturn=False):
+    """Everything the entry form renders, in one pass. Always fully shaped.
+       canReturn is SQL's CanReturnToVendor for the member (memberOrigin); the
+       Return to vendor tile is left out when it is false (unless a line for it
+       is already in the draft, so it can still be seen and removed)."""
     m = dict(_EMPTY_ENTRY_MODEL)
     mid = _u(memberId)
     lines = _draftLines(draftJson)
@@ -832,10 +854,11 @@ def entryModel(memberId, catalog, draftJson, showAll, leftOver, isContainer):
     showAll = bool(_u(showAll))
     left = BlueRidge.Common.Util.toIntOrNone(_u(leftOver)) or 0
 
+    showReturn = bool(_u(canReturn))
     m["outcomeTiles"] = [{
-        "memberId": mid, "key": k, "label": label, "sub": "",
+        "memberId": mid, "key": k, "label": label, "sub": _OUTCOME_SUB.get(k, ""),
         "quantity": counts.get(k, 0), "selected": counts.get(k, 0) > 0,
-    } for (k, label) in _OUTCOMES]
+    } for (k, label) in _OUTCOMES if (k != _RETURN_KEY or showReturn or counts.get(k, 0) > 0)]
 
     names, reasonTiles, more = {}, [], 0
     for t in _plain(catalog):
@@ -875,6 +898,9 @@ def entryModel(memberId, catalog, draftJson, showAll, leftOver, isContainer):
     if scrap > 0:
         bits.append("%d scrap is recorded but stays in the container until it is repacked" % scrap
                     if _u(isContainer) else "%d scrap comes off this LOT when you save" % scrap)
+    returned = counts.get(_RETURN_KEY, 0)
+    if returned > 0:
+        bits.append("%d to return to the vendor comes off this LOT when you save" % returned)
     m["summary"] = ". ".join(bits) + "."
     return m
 
@@ -1022,5 +1048,40 @@ def memberRework(controlledRunId, _refreshToken=None):
         out[str(r.get("MemberId"))] = {
             "startedAt":  _fmt(r.get("StartedAt"), "EEE HH:mm"),
             "approvedBy": r.get("ApprovedByInitials") or "",
+        }
+    return out
+
+
+def _reworkSince(entry):
+    """'since Mon 13:05 - DS' for a memberRework() entry, '' for none."""
+    e = _u(entry) or {}
+    if not e:
+        return ""
+    since = "since %s" % (e.get("startedAt") or "")
+    who = e.get("approvedBy") or ""
+    return (u"%s \u00b7 %s" % (since, who)) if who else since
+
+
+def _reworkText(entry):
+    """The member row's status line: 'At trim rework since Mon 13:05 - DS', '' for none."""
+    since = _reworkSince(entry)
+    return (u"At trim rework " + since) if since else ""
+
+
+def memberOrigin(controlledRunId, _refreshToken=None):
+    """Where each current member's material came from:
+       {memberId(str): {"origin": LotOriginCode or "", "canReturn": bool}}.
+       canReturn is SQL's CanReturnToVendor (a Received / ReceivedOffsite LOT,
+       never a container). It only decides whether the Return to vendor tile is
+       shown; ControlledRunResult_Record stays the authority. {} when none."""
+    rid = BlueRidge.Common.Util.toIntOrNone(_u(controlledRunId))
+    if rid is None:
+        return {}
+    out = {}
+    for r in (BlueRidge.Common.Db.execList(
+            "quality/ControlledRun_ListMemberOrigin", {"controlledRunId": rid}) or []):
+        out[str(r.get("MemberId"))] = {
+            "origin":    r.get("LotOriginCode") or "",
+            "canReturn": bool(r.get("CanReturnToVendor")),
         }
     return out
