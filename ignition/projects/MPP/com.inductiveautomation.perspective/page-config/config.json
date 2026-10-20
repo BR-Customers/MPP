@@ -16,6 +16,10 @@
       "title": "Dev Nav",
       "viewPath": "BlueRidge/Views/Dev/TestNavHeader"
     },
+    "/dev/scale-station/:terminalLocationId": {
+      "title": "Scale Station (dev)",
+      "viewPath": "BlueRidge/Components/PlantFloor/ScaleStation"
+    },
     "/navigation-testing": {
       "title": "",
       "viewPath": "BlueRidge/Views/Navigation Testing"
