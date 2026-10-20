@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRunResult_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-19
--- Version:     1.2
+-- Modified:    2026-10-20
+-- Version:     1.3
 -- Change Log:  2026-10-19 - 1.1 - 'Rework' is no longer a recordable outcome (piece 5): rework is the LOT's
 --              move back into trim, and an open rework blocks release. The Rework disposition
 --              code and ReworkQty column stay for history.
@@ -10,6 +10,9 @@
 --              spec 5.4): inlined mirror of Lots.VendorReturn_Mark writes the Lots.VendorReturn
 --              row pointing at the entry. Refused on a container member, a non-received LOT,
 --              a Closed / Scrap / Open LOT, and when scrap + return exceed the LOT's pieces.
+--              2026-10-20 - 1.3 - Final review: the origin + status refusal for ReturnToSupplier
+--              on a LOT member reads Lots.ufn_LotReturnableToVendor (the one rule, same text as
+--              VendorReturn_Mark). Per entry, origin is reported before status.
 -- Description: Records what the Controlled Run inspection found, as one or more
 --              ENTRIES against members of an OPEN super-lot. One call may carry
 --              many members (the screen sends one member's entries; "mark the
@@ -179,17 +182,14 @@ BEGIN
         IF @Reject IS NULL
             SELECT TOP 1 @Reject = e.DisplayName + N': a container cannot be returned to a vendor.'
             FROM @E e WHERE (e.DispositionCode = N'ReturnToSupplier') AND (e.ContainerId IS NOT NULL) ORDER BY e.Seq;
+        -- Origin + status: the shared rule (Lots.ufn_LotReturnableToVendor), whose
+        -- Reason is the same refusal text Lots.VendorReturn_Mark gives.
         IF @Reject IS NULL
-            SELECT TOP 1 @Reject = N'LOT ' + e.DisplayName + N' was made at MPP; only purchased or received material can be returned to a vendor.'
+            SELECT TOP 1 @Reject = rv.Reason
             FROM @E e
+            CROSS APPLY Lots.ufn_LotReturnableToVendor(e.LotId) rv
             WHERE (e.DispositionCode = N'ReturnToSupplier') AND (e.LotId IS NOT NULL)
-              AND (ISNULL(e.LotOriginCode, N'') NOT IN (N'Received', N'ReceivedOffsite'))
-            ORDER BY e.Seq;
-        IF @Reject IS NULL
-            SELECT TOP 1 @Reject = N'LOT ' + e.DisplayName + N' is ' + e.LotStatusName + N' (status ' + e.LotStatusCode + N') and cannot be returned to a vendor.'
-            FROM @E e
-            WHERE (e.DispositionCode = N'ReturnToSupplier') AND (e.LotId IS NOT NULL)
-              AND (e.LotStatusCode IN (N'Closed', N'Scrap', N'Open'))
+              AND (rv.CanReturnToVendor = 0)
             ORDER BY e.Seq;
         IF @Reject IS NULL
             SELECT TOP 1 @Reject = x.DisplayName + N': ' + CASE WHEN x.ScrapTotal > 0 THEN N'scrap and return of ' ELSE N'return of ' END

@@ -5,8 +5,13 @@
 --              Advance step is re-armed after a trim rework. A step at or above the
 --              rework's ReEntrySequenceNumber counts as done only by a ProductionEvent
 --              recorded at/after the rework started; steps below the re-entry point
---              keep the old rule. A LOT with no rework is unchanged, and
---              EntryRouteSequence still wins (rework re-arms nothing below entry).
+--              keep the old rule. A LOT with no rework is unchanged.
+--              v1.3 (final review I-1, ruling: the latest rework LOWERS the LOT's
+--              effective entry point): L4 used to pin "a rework re-arms nothing below
+--              EntryRouteSequence" with a hand-inserted LotRework row. It now drives a
+--              cutover LOT (entry = MachiningIn) THROUGH Lot_MoveToValidated with an
+--              override, and expects the opposite: the rework re-enters at TrimIn, the
+--              LOT is on the Trim queue, and a TrimIn checkpoint + Trim OUT close it.
 --              Fixture: item 12232-59B-0000 (DieCast > TrimIn > TrimOut > MachiningIn >
 --              AssemblyOut), trim shop TRIM1. LOTs named TEST-RWP-%.
 -- =============================================
@@ -45,6 +50,7 @@ DECLARE @otMac BIGINT = (SELECT rs.OperationTemplateId FROM Parts.RouteStep rs J
 DECLARE @TrimSeq INT = (SELECT rs.SequenceNumber FROM Parts.RouteStep rs WHERE rs.RouteTemplateId = @Rt AND rs.OperationTemplateId = @otIn);
 DECLARE @MacSeq  INT = (SELECT rs.SequenceNumber FROM Parts.RouteStep rs WHERE rs.RouteTemplateId = @Rt AND rs.OperationTemplateId = @otMac);
 DECLARE @n NVARCHAR(600);
+DECLARE @e NVARCHAR(600);
 DECLARE @L BIGINT;
 DECLARE @Lc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 DECLARE @Mv TABLE (Status BIT, Message NVARCHAR(500));
@@ -122,8 +128,11 @@ SET @n = CAST((SELECT COUNT(*) FROM @Q WHERE Id = @L3) AS NVARCHAR(10)); DELETE 
 EXEC test.Assert_IsEqual @TestName = N'[Pending] ...and it is listed by Lot_GetTrimStorageQueueForLine', @Expected = N'1', @Actual = @n;
 
 -- =====================================================================
--- L4: entered mid-way at cutover (EntryRouteSequence = MachiningIn); a rework row
--- with a TrimIn re-entry re-arms nothing below entry
+-- L4: entered mid-way at cutover (EntryRouteSequence = MachiningIn), then a
+-- supervisor override move back into trim. Ruling (I-1): the rework LOWERS the
+-- effective entry point to TrimIn, so the rework can be worked and closed.
+-- (Before v1.3 this case expected MachiningIn -- the rework re-armed nothing
+-- below entry -- which left a rework no screen could ever close.)
 -- =====================================================================
 INSERT INTO @Lc EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Safe, @PieceCount = 20, @AppUserId = @App, @LotName = N'TEST-RWP-4';
 SELECT @L = NewId FROM @Lc; DELETE FROM @Lc;
@@ -131,9 +140,47 @@ DECLARE @L4 BIGINT = @L;
 UPDATE Lots.Lot SET EntryRouteSequence = @MacSeq WHERE Id = @L4;
 SET @n = (SELECT OperationTypeCode FROM Lots.ufn_NextPendingRouteStep(@L4));
 EXEC test.Assert_IsEqual @TestName = N'[Pending] fixture: entry above TrimIn -> next pending = MachiningIn', @Expected = N'MachiningIn', @Actual = @n;
-INSERT INTO Lots.LotRework (LotId, ReEntrySequenceNumber, MovedByUserId) VALUES (@L4, @TrimSeq, @App);
+INSERT INTO @Q EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @Dest, @OperationTypeCode = N'TrimIn', @IncludeDescendants = 0;
+SET @n = CAST((SELECT COUNT(*) FROM @Q WHERE Id = @L4) AS NVARCHAR(10)); DELETE FROM @Q;
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT: not on the Trim queue before any rework', @Expected = N'0', @Actual = @n;
+
+-- the move without an override is refused (TrimIn is behind its pending MachiningIn)
+INSERT INTO @Mv EXEC Lots.Lot_MoveToValidated @LotId = @L4, @ToLocationId = @Dest, @AppUserId = @App, @OperationTypeCode = N'TrimIn';
+SELECT @n = CAST(Status AS NVARCHAR(5)) FROM @Mv; DELETE FROM @Mv;
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT: TrimIn move without override is refused (backward)', @Expected = N'0', @Actual = @n;
+
+-- the override move writes the rework
+INSERT INTO @Mv EXEC Lots.Lot_MoveToValidated @LotId = @L4, @ToLocationId = @Dest, @AppUserId = @App, @OperationTypeCode = N'TrimIn', @OverrideAppUserId = @Sup;
+SELECT @n = CAST(Status AS NVARCHAR(5)) FROM @Mv; DELETE FROM @Mv;
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT: override move into trim succeeds', @Expected = N'1', @Actual = @n;
+SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(ReEntrySequenceNumber)) FROM Lots.LotRework WHERE LotId = @L4 AND CompletedAt IS NULL);
+SET @e = CONCAT(N'1|', @TrimSeq);
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT: one open rework re-entering at TrimIn', @Expected = @e, @Actual = @n;
+
+-- the rework lowers the effective entry point: next pending = TrimIn, on the Trim queue
 SET @n = (SELECT OperationTypeCode FROM Lots.ufn_NextPendingRouteStep(@L4));
-EXEC test.Assert_IsEqual @TestName = N'[Pending] EntryRouteSequence above TrimIn: rework re-arms nothing below entry', @Expected = N'MachiningIn', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT reworked: next pending = TrimIn (rework lowers the entry point)', @Expected = N'TrimIn', @Actual = @n;
+INSERT INTO @Q EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @Dest, @OperationTypeCode = N'TrimIn', @IncludeDescendants = 0;
+SET @n = CAST((SELECT COUNT(*) FROM @Q WHERE Id = @L4 AND NextOperationTypeCode = N'TrimIn') AS NVARCHAR(10)); DELETE FROM @Q;
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT reworked: listed in the Trim queue as TrimIn', @Expected = N'1', @Actual = @n;
+
+-- TrimIn checkpoint -> next pending TrimOut
+INSERT INTO @Te EXEC Workorder.ProductionEvent_Record @LotId = @L4, @OperationTemplateId = @otIn, @AppUserId = @App;
+SELECT @n = CAST(Status AS NVARCHAR(5)) FROM @Te; DELETE FROM @Te;
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT reworked: TrimIn checkpoint recorded', @Expected = N'1', @Actual = @n;
+SET @n = (SELECT OperationTypeCode FROM Lots.ufn_NextPendingRouteStep(@L4));
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT reworked: after TrimIn, next pending = TrimOut', @Expected = N'TrimOut', @Actual = @n;
+
+-- Trim OUT closes the rework -> next pending MachiningIn
+INSERT INTO @Te EXEC Workorder.TrimOut_Record @ParentLotId = @L4, @OperationTemplateId = @otOut, @ShotCount = 20, @SourceLocationId = @Dest, @AppUserId = @App;
+SELECT @n = CONCAT(CAST(Status AS NVARCHAR(5)), N' ', Message) FROM @Te; DELETE FROM @Te;
+SET @n = LEFT(@n, 1);
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT reworked: Trim OUT recorded', @Expected = N'1', @Actual = @n;
+SET @n = CAST((SELECT COUNT(*) FROM Lots.LotRework WHERE LotId = @L4 AND CompletedAt IS NOT NULL AND CompletedProductionEventId IS NOT NULL) AS NVARCHAR(10))
+       + N'|' + CAST((SELECT COUNT(*) FROM Lots.LotRework WHERE LotId = @L4 AND CompletedAt IS NULL) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT reworked: Trim OUT closes the rework (1 closed, 0 open)', @Expected = N'1|0', @Actual = @n;
+SET @n = (SELECT OperationTypeCode FROM Lots.ufn_NextPendingRouteStep(@L4));
+EXEC test.Assert_IsEqual @TestName = N'[Pending] cutover LOT reworked: after Trim OUT, next pending = MachiningIn', @Expected = N'MachiningIn', @Actual = @n;
 GO
 
 -- ---- teardown ----

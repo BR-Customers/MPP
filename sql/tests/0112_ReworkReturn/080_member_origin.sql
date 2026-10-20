@@ -6,6 +6,8 @@
 --                * a Received and a ReceivedOffsite LOT member: CanReturnToVendor 1;
 --                * a Manufactured LOT member: 0, origin code still returned;
 --                * a container member: LotOriginCode NULL, CanReturnToVendor 0;
+--                * a received member that is Closed: 0 (the shared rule,
+--                  Lots.ufn_LotReturnableToVendor, folds status in -- final review);
 --                * a member whose membership ended is not listed;
 --                * an unknown run returns no rows.
 --              LOTs named TEST-VR-O%.
@@ -115,6 +117,15 @@ SET @n = (SELECT ISNULL(LotOriginCode, N'<NULL>') + N'|' + CAST(CanReturnToVendo
 EXEC test.Assert_IsEqual @TestName = N'[SlOrg] Manufactured LOT member: cannot return', @Expected = N'Manufactured|0', @Actual = @n;
 SET @n = (SELECT ISNULL(LotOriginCode, N'<NULL>') + N'|' + CAST(CanReturnToVendor AS NVARCHAR(1)) FROM @MO WHERE MemberId = @MemC);
 EXEC test.Assert_IsEqual @TestName = N'[SlOrg] container member: no origin, cannot return', @Expected = N'<NULL>|0', @Actual = @n;
+DELETE FROM @MO;
+
+-- the shared rule includes status: a Closed received member gets no tile (Record would refuse it)
+UPDATE Lots.Lot SET LotStatusId = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed') WHERE Id = @LO;
+INSERT INTO @MO EXEC Quality.ControlledRun_ListMemberOrigin @ControlledRunId = @Run;
+SET @n = (SELECT ISNULL(LotOriginCode, N'<NULL>') + N'|' + CAST(CanReturnToVendor AS NVARCHAR(1)) FROM @MO WHERE MemberId = @MemO);
+EXEC test.Assert_IsEqual @TestName = N'[SlOrg] Closed ReceivedOffsite LOT member: cannot return (status is part of the rule)', @Expected = N'ReceivedOffsite|0', @Actual = @n;
+SET @n = (SELECT CAST(CanReturnToVendor AS NVARCHAR(1)) FROM @MO WHERE MemberId = @MemR);
+EXEC test.Assert_IsEqual @TestName = N'[SlOrg] ...the Good Received member still can', @Expected = N'1', @Actual = @n;
 DELETE FROM @MO;
 
 DECLARE @Missing BIGINT = -1;

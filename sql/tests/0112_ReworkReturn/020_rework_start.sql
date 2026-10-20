@@ -100,6 +100,9 @@ EXEC test.Assert_IsEqual @TestName = N'[RwkStart] MovedByUserId = the caller', @
 SET @n = CAST((SELECT LotMovementId FROM Lots.LotRework WHERE LotId = @L1) AS NVARCHAR(20));
 SET @e = CAST((SELECT TOP 1 Id FROM Lots.LotMovement WHERE LotId = @L1 ORDER BY Id DESC) AS NVARCHAR(20));
 EXEC test.Assert_IsEqual @TestName = N'[RwkStart] LotMovementId = the newest movement for the LOT', @Expected = @e, @Actual = @n;
+SET @n = (SELECT CASE WHEN lr.StartedAt = lm.MovedAt THEN N'equal' ELSE CONCAT(CONVERT(NVARCHAR(30), lr.StartedAt, 126), N' vs ', CONVERT(NVARCHAR(30), lm.MovedAt, 126)) END
+          FROM Lots.LotRework lr JOIN Lots.LotMovement lm ON lm.Id = lr.LotMovementId WHERE lr.LotId = @L1);
+EXEC test.Assert_IsEqual @TestName = N'[RwkStart] StartedAt = the movement''s MovedAt exactly (one clock read)', @Expected = N'equal', @Actual = @n;
 SET @n = CAST((SELECT COUNT(*) FROM Lots.LotRework WHERE LotId = @L1 AND CompletedAt IS NULL AND CompletedProductionEventId IS NULL) AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[RwkStart] the rework is open', @Expected = N'1', @Actual = @n;
 SET @n = (SELECT TOP 1 Description FROM Lots.LotEventLog WHERE LotId = @L1 AND LogEventTypeId = (SELECT Id FROM Audit.LogEventType WHERE Code = N'LotMoved') ORDER BY Id DESC);

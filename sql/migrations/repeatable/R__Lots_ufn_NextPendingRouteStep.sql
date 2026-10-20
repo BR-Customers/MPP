@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_ufn_NextPendingRouteStep.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-19
--- Version:     1.2
+-- Modified:    2026-10-20
+-- Version:     1.3
 -- Description: THE single definition of "what is this LOT's next pending route
 --              step". Extracted from seven copy-pasted CTEs across five procs
 --              (Lots.Lot_GetWipQueueByLocation, Lots.Lot_GetComponentsAtCell,
@@ -22,7 +22,22 @@
 --              above ReEntrySequenceNumber counts as done only by a ProductionEvent
 --              recorded at/after StartedAt; steps below the re-entry point, and LOTs
 --              with no rework row, keep the v1.1 rule. EntryRouteSequence is still
---              applied separately, so a rework never re-arms anything below entry.
+--              applied separately, so a rework never re-arms anything below entry
+--              (superseded by v1.3).
+--
+--              v1.3 (2026-10-20, final review I-1): the latest rework LOWERS the LOT's
+--              effective entry point. Effective entry = ISNULL(EntryRouteSequence, 0),
+--              unless the LOT's most recent LotRework re-entered at a LOWER step, in
+--              which case that re-entry step. Without this, a LOT counted in at cutover
+--              above TrimIn (EntryRouteSequence = MachiningIn) and override-moved back
+--              into trim got a rework whose TrimIn/TrimOut steps were never pending --
+--              off every trim queue, so the Trim OUT that closes the rework was
+--              unreachable and a super-lot release stayed blocked. A rework is the
+--              plant saying "this LOT re-enters the route here", so it re-enters there.
+--              Inert for a LOT with no rework (rw columns NULL) and for a rework at or
+--              above entry. The re-arm rule (>= ReEntry counts only events at/after
+--              StartedAt; '>=' because the move and the next event can share a
+--              millisecond and nothing is recorded between them) is unchanged.
 --
 --              Pending depends on the step's OperationRoleKind:
 --                * Advance     -> pending until a matching Workorder.ProductionEvent
@@ -73,10 +88,12 @@ AS RETURN
                  WHERE lr.LotId = l.Id
                  ORDER BY lr.StartedAt DESC, lr.Id DESC) rw
     WHERE l.Id = @LotId
-      -- Steps below the LOT's entry point are not part of its journey. NULL
-      -- (every pre-cutover row) means entry at the route start, so this is
-      -- inert for existing data.
-      AND rs.SequenceNumber >= ISNULL(l.EntryRouteSequence, 0)
+      -- Steps below the LOT's effective entry point are not part of its journey.
+      -- NULL EntryRouteSequence (every pre-cutover row) means entry at the route
+      -- start. The latest rework lowers the entry to its re-entry step (v1.3).
+      AND rs.SequenceNumber >= CASE WHEN rw.ReEntrySequenceNumber < ISNULL(l.EntryRouteSequence, 0)
+                                    THEN rw.ReEntrySequenceNumber
+                                    ELSE ISNULL(l.EntryRouteSequence, 0) END
       AND (
               rk.Code = N'ConsumeMint'
            OR (rk.Code = N'Advance' AND NOT EXISTS (

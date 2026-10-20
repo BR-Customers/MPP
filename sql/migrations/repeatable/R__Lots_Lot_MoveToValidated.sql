@@ -1,8 +1,11 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_MoveToValidated.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-19
--- Version:     1.2 (2026-10-19, super-lot piece 5) - a backward move into TRIM IN with a
+-- Modified:    2026-10-20
+-- Version:     1.3 (2026-10-20, final review M-3) - one captured @Now is the LotMovement's
+--              MovedAt AND the LotRework's StartedAt (spec 4.3: StartedAt = the movement
+--              time), instead of the rework row taking its own clock read from its default.
+--              1.2 (2026-10-19, super-lot piece 5) - a backward move into TRIM IN with a
 --              supervisor override IS a rework: the LOT's route is re-entered at its
 --              TrimIn step, so a Lots.LotRework row is written (unless one is already
 --              open -- a second override move during a rework just happens). A rework
@@ -292,24 +295,27 @@ BEGIN
                    ELSE N'' END;
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
+        -- One clock read: the movement time is also the rework's StartedAt.
+        DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+
         BEGIN TRANSACTION;
 
         UPDATE Lots.Lot
         SET CurrentLocationId = @ToLocationId,
-            UpdatedAt         = SYSUTCDATETIME(),
+            UpdatedAt         = @Now,
             UpdatedByUserId   = @AppUserId
         WHERE Id = @LotId;
 
         INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
-        VALUES (@LotId, @FromLocationId, @ToLocationId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+        VALUES (@LotId, @FromLocationId, @ToLocationId, @AppUserId, @TerminalLocationId, @Now);
         DECLARE @MovementId BIGINT = SCOPE_IDENTITY();
 
         -- Trim rework starts here. One OPEN rework per LOT: a second override move
         -- while one is open writes nothing new.
         IF @IsRework = 1 AND NOT EXISTS (SELECT 1 FROM Lots.ufn_OpenLotRework(@LotId))
         BEGIN
-            INSERT INTO Lots.LotRework (LotId, ReEntrySequenceNumber, LotMovementId, MovedByUserId, ApprovedByUserId, TerminalLocationId)
-            VALUES (@LotId, @AttemptedSeq, @MovementId, @AppUserId, @OverrideAppUserId, @TerminalLocationId);
+            INSERT INTO Lots.LotRework (LotId, ReEntrySequenceNumber, LotMovementId, StartedAt, MovedByUserId, ApprovedByUserId, TerminalLocationId)
+            VALUES (@LotId, @AttemptedSeq, @MovementId, @Now, @AppUserId, @OverrideAppUserId, @TerminalLocationId);
 
             DECLARE @ReworkDesc NVARCHAR(500) = Audit.ufn_TruncateActivity(
                 @LotName + N' ' + Audit.ufn_MidDot() + N' Rework ' + Audit.ufn_MidDot()

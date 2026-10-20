@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_VendorReturn_Mark.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.1
+-- Version:     1.2
 -- Description: Super-lot piece 5 (spec 5.1). Marks part of a purchased /
 --              received LOT for return to the vendor: the quantity leaves the
 --              LOT NOW (PieceCount and InventoryAvailable together) and a
@@ -11,7 +11,10 @@
 --
 --              Only Received / ReceivedOffsite origin LOTs may be returned.
 --              Hold LOTs are allowed (a held box is a prime return candidate);
---              Open / Scrap / Closed are refused.
+--              Open / Scrap / Closed are refused. That rule and its refusal text
+--              are Lots.ufn_LotReturnableToVendor -- the one definition, shared
+--              with ControlledRunResult_Record, ControlledRun_ListMemberOrigin and
+--              VendorReturn_GetEligibility (LOT Detail).
 --
 --              InventoryAvailable may be lower than PieceCount (it is drawn
 --              down by consumption). When @Quantity exceeds it, it is floored
@@ -39,6 +42,11 @@
 --   2026-10-19 - 1.0 - Initial version.
 --   2026-10-19 - 1.1 - Writes an applied ReturnToSupplier result for a current member
 --                      of an open super-lot, linked by ControlledRunResultId (piece 5).
+--   2026-10-20 - 1.2 - Final review: origin + status rule read from Lots.ufn_LotReturnableToVendor
+--                      (same refusal text). The LOT status is re-checked under the
+--                      UPDLOCK/HOLDLOCK (the locked UPDATE matches only the status read
+--                      before the transaction), routed to CATCH like the quantity re-check,
+--                      so a concurrent Good->Hold cannot be closed from the wrong status.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.VendorReturn_Mark
     @LotId              BIGINT,
@@ -64,7 +72,6 @@ BEGIN
     DECLARE @LotName         NVARCHAR(50);
     DECLARE @StatusCode      NVARCHAR(20);
     DECLARE @StatusName      NVARCHAR(100);
-    DECLARE @OriginCode      NVARCHAR(50);
     DECLARE @CurrentStatusId BIGINT;
     DECLARE @PieceCount      INT;
     DECLARE @InventoryAvail  INT;
@@ -116,20 +123,23 @@ BEGIN
                @CurrentStatusId = l.LotStatusId,
                @StatusCode      = sc.Code,
                @StatusName      = sc.Name,
-               @OriginCode      = ot.Code,
                @PieceCount      = l.PieceCount,
                @InventoryAvail  = l.InventoryAvailable
         FROM Lots.Lot l
         INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
-        INNER JOIN Lots.LotOriginType ot ON ot.Id = l.LotOriginTypeId
         WHERE l.Id = @LotId;
+
+        -- Origin + status: the shared rule (Lots.ufn_LotReturnableToVendor). Its Reason
+        -- is the refusal text, origin first, then status.
+        DECLARE @Returnable BIT;
+        DECLARE @NotReturnableReason NVARCHAR(500);
+        SELECT @Returnable = rv.CanReturnToVendor, @NotReturnableReason = rv.Reason
+        FROM Lots.ufn_LotReturnableToVendor(@LotId) rv;
 
         IF (@StatusCode IS NULL)
             SET @Message = N'LOT not found.';
-        ELSE IF (@OriginCode NOT IN (N'Received', N'ReceivedOffsite'))
-            SET @Message = N'LOT ' + @LotName + N' was made at MPP; only purchased or received material can be returned to a vendor.';
-        ELSE IF (@StatusCode IN (N'Closed', N'Scrap', N'Open'))
-            SET @Message = N'LOT ' + @LotName + N' is ' + @StatusName + N' (status ' + @StatusCode + N') and cannot be returned to a vendor.';
+        ELSE IF (@Returnable = 0)
+            SET @Message = @NotReturnableReason;
         ELSE IF (@Quantity > @PieceCount)
             SET @Message = N'Return quantity ' + CAST(@Quantity AS NVARCHAR(20))
                          + N' exceeds LOT remaining pieces ' + CAST(@PieceCount AS NVARCHAR(20)) + N'.';
@@ -153,6 +163,8 @@ BEGIN
         -- INLINED mirror of Workorder.RejectEvent_Record v2.0 subtractive path
         -- (source: R__Workorder_RejectEvent_Record.sql). UPDLOCK/HOLDLOCK; the
         -- variables capture what was really taken and the new PieceCount.
+        -- The LOT status is re-checked here, under the lock: the locked UPDATE
+        -- matches only while the status is still the one validated above.
         DECLARE @NewPieceCount INT;
         DECLARE @InvTaken      INT;
         UPDATE l
@@ -164,9 +176,12 @@ BEGIN
             l.UpdatedAt          = SYSUTCDATETIME(),
             l.UpdatedByUserId    = @AppUserId
         FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK)
-        WHERE l.Id = @LotId;
+        WHERE l.Id = @LotId
+          AND l.LotStatusId = @CurrentStatusId;
 
-        -- TOCTOU re-check under the lock -> CATCH (only legal ROLLBACK site).
+        -- TOCTOU re-checks under the lock -> CATCH (only legal ROLLBACK site).
+        IF @@ROWCOUNT = 0
+            RAISERROR(N'The LOT''s status changed while the return was being marked (concurrent update). Reload and retry.', 16, 1);
         IF @NewPieceCount < 0
             RAISERROR(N'Return quantity exceeds the LOT''s remaining pieces (concurrent update). Reload and retry.', 16, 1);
 

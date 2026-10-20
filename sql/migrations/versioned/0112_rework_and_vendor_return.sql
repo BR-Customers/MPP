@@ -19,6 +19,9 @@
 --   Lots.LotMovement and Workorder.ProductionEvent are partitioned (B2) with
 --   composite (Id, timestamp) keys, so a bare-Id FK is not possible.
 --
+--   LotRework.LotMovementId and ApprovedByUserId are NOT NULL: a rework only ever
+--   starts from a supervisor-approved override move (spec 4.3).
+--
 --   Idempotent per statement; ASCII-only (sqlcmd codepage rule).
 -- ============================================================
 IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0112_rework_and_vendor_return')
@@ -32,10 +35,10 @@ BEGIN
         Id                         BIGINT        NOT NULL IDENTITY(1,1) CONSTRAINT PK_LotRework PRIMARY KEY,
         LotId                      BIGINT        NOT NULL CONSTRAINT FK_LotRework_Lot REFERENCES Lots.Lot(Id),
         ReEntrySequenceNumber      INT           NOT NULL,
-        LotMovementId              BIGINT        NULL,
+        LotMovementId              BIGINT        NOT NULL,
         StartedAt                  DATETIME2(3)  NOT NULL CONSTRAINT DF_LotRework_StartedAt DEFAULT (SYSUTCDATETIME()),
         MovedByUserId              BIGINT        NOT NULL CONSTRAINT FK_LotRework_MovedBy REFERENCES Location.AppUser(Id),
-        ApprovedByUserId           BIGINT        NULL CONSTRAINT FK_LotRework_ApprovedBy REFERENCES Location.AppUser(Id),
+        ApprovedByUserId           BIGINT        NOT NULL CONSTRAINT FK_LotRework_ApprovedBy REFERENCES Location.AppUser(Id),
         TerminalLocationId         BIGINT        NULL CONSTRAINT FK_LotRework_Terminal REFERENCES Location.Location(Id),
         CompletedAt                DATETIME2(3)  NULL,
         CompletedProductionEventId BIGINT        NULL,
@@ -78,6 +81,10 @@ BEGIN
                                                   OR (CancelledAt IS NOT NULL AND CancelledByUserId IS NOT NULL)));
     CREATE INDEX IX_VendorReturn_Open ON Lots.VendorReturn (MarkedAt) WHERE ConfirmedAt IS NULL AND CancelledAt IS NULL;
     CREATE INDEX IX_VendorReturn_Lot  ON Lots.VendorReturn (LotId);
+    -- One return per super-lot result row: ufn_ControlledRunMemberResults LEFT JOINs on this
+    -- link, so a second row on the same result would silently double AppliedReturnQty.
+    -- Covers cancelled rows too (cancel stamps, never deletes; a cancelled return's result is voided).
+    CREATE UNIQUE INDEX UQ_VendorReturn_Result ON Lots.VendorReturn (ControlledRunResultId) WHERE ControlledRunResultId IS NOT NULL;
 
     EXEC sys.sp_addextendedproperty @name = N'MS_Description',
         @value = N'One row per return-to-vendor of part of a LOT (super-lot piece 5). Marked, then confirmed or cancelled, never both. PieceCountTaken and InventoryTaken record exactly what was removed from the LOT so a Cancel restores it; they differ when Quantity exceeded InventoryAvailable. ControlledRunResultId links the failed-result row when the return came from a super-lot result.',
