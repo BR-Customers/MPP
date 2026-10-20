@@ -1,7 +1,7 @@
 # Assembly Out, By Weight: Scale Station Screen — Design Spec
 
 **Date:** 2026-10-19
-**Status:** Draft rev 2 — all open questions resolved by Jacques 2026-10-19. Ready for an implementation plan. Nothing built.
+**Status:** Built on Dev 2026-10-20 (branch `claude/scale-station`, plan `docs/superpowers/plans/2026-10-19-assembly-out-scale-station.md`), verified with simulated presses. Not yet wired into the Assembly Out view (Designer step) and not deployed to prod.
 **Author:** Blue Ridge (with Claude)
 **Arc / Phase:** Arc 2 (Plant Floor) — Machining & Assembly checkweigh.
 **Builds on:** `docs/superpowers/specs/2026-08-31-ind570-eprint-demand-output-design.md` (EPrint transport, rev 2 option C).

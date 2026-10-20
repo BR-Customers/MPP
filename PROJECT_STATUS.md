@@ -792,6 +792,20 @@
 
 ---
 
+## 🔖 2026-10-20 — Assembly Out By Weight: scale station screen. Built on Dev, NOT deployed to prod
+
+Branch `claude/scale-station` (fast-forwarded into `jacques/working`). Spec `docs/superpowers/specs/2026-10-19-assembly-out-scale-station-design.md`, plan `docs/superpowers/plans/2026-10-19-assembly-out-scale-station.md`.
+
+- Migration `0113`: `Audit.InterfaceLog` += `LocationId` / `ItemId` / `LotId`. The EPrint watcher writes them, plus a JSON payload, on every press.
+- One SQL rule for the part a scale closes (`ScaleStation_GetRunningPart`: open box, else an audited per-terminal override, else closest to ready), shared by the scale close and the screen.
+- New views `Components/PlantFloor/ScaleStation*`: one composite embed with running part, open box, last press, press log, shift tally, recent boxes and scale strip, refreshed live by `scalePressRecorded`.
+- Dev-only: `/dev/scale-station/:terminalLocationId` and `/dev/scale-station-sim/:terminalLocationId` (preset simulated presses through the real watcher).
+
+### Left open
+- **Wire it into Assembly Out (Designer):** in `AssemblyNonSerialized`, embed `BlueRidge/Components/PlantFloor/ScaleStation` in the By Weight pane, and delete `WeighCloseTrayButton`, its "Waiting for scale" label and `custom.scaleInstancePath`.
+- On `MPP_MES_Dev`, `R__Descriptions_ExtendedProperties` was deliberately NOT re-applied (it would drop super-lot piece-5 descriptions). Regenerate it once the branches meet.
+- Verified with simulated presses only (VPN down); one real press on the office scale is still worth doing.
+
 ## 🔖 2026-10-06 (evening) — Assembly OUT low-inventory lock (non-serialized). Built on Dev, NOT deployed
 
 Spec `docs/superpowers/specs/2026-10-06-assembly-out-low-inventory-lock-design.md` (rev 2 = as built).
