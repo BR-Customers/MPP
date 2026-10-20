@@ -1,0 +1,249 @@
+{
+  "custom": {
+    "rp": {
+      "ItemId": null,
+      "PartNumber": "",
+      "Description": "",
+      "Source": "None",
+      "PartsPerTray": 0,
+      "TraysPerContainer": 0,
+      "TargetWeight": null,
+      "ToleranceWeight": null,
+      "LowLimit": null,
+      "HighLimit": null,
+      "EligibleCount": 0,
+      "Message": "",
+      "OverrideItemId": null,
+      "OverrideSetBy": "",
+      "OverrideSetAtEt": null,
+      "OpenContainerId": null,
+      "OpenTraysClosed": 0,
+      "OpenPartsClosed": 0
+    }
+  },
+  "params": {
+    "terminalLocationId": null,
+    "pressToken": 0
+  },
+  "propConfig": {
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "params.pressToken": {
+      "paramDirection": "input"
+    },
+    "custom.rp": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.getRunningPartOrEmpty\", 0, {view.params.terminalLocationId}, {view.params.pressToken})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 96,
+      "width": 1200
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "style": {
+        "flexDirection": "row",
+        "classes": "pf-panel",
+        "gap": "24px"
+      },
+      "alignItems": "center"
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Identity"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "4px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Kicker"
+            },
+            "props": {
+              "text": "RUNNING PART",
+              "style": {
+                "classes": "pf-kpi-label"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PartLine"
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "gap": "12px"
+              },
+              "alignItems": "baseline"
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PartNumber"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value pf-kpi-value-mono"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.rp.PartNumber} = '', 'No part can run', {view.custom.rp.PartNumber})"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Description"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.rp.Description}"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SourceLine"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.rp.Source} = 'Override', 'Override set by ' + {view.custom.rp.OverrideSetBy} + if(len({view.custom.rp.Message}) > 0, '. ' + {view.custom.rp.Message}, ''), if(len({view.custom.rp.Message}) > 0, {view.custom.rp.Message}, 'Default: closest to ready'))"
+                  }
+                }
+              },
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.rp.Source} = 'None', 'pf-kpi-sub pf-kpi-value-bad', 'pf-kpi-sub')"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "position": {
+          "grow": 1
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PackOut"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.custom.rp.LowLimit}), '', toStr({view.custom.rp.PartsPerTray}) + ' per tray  |  ' + toStr({view.custom.rp.TraysPerContainer}) + ' trays per box  |  ' + toStr({view.custom.rp.LowLimit}) + ' - ' + toStr({view.custom.rp.HighLimit}) + ' lb')"
+              }
+            }
+          }
+        },
+        "position": {
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "ChangePart"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "'Change part (' + toStr({view.custom.rp.EligibleCount}) + ' can run)'"
+              }
+            }
+          },
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.rp.EligibleCount} > 1"
+              }
+            }
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.openPopup(\"mpp-scale-part-picker\", \"BlueRidge/Components/Popups/ScaleStationPartPicker\", params={\"terminalLocationId\": self.view.params.terminalLocationId}, modal=True, showCloseIcon=True)"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

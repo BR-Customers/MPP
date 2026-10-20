@@ -1,0 +1,79 @@
+{
+  "custom": {},
+  "params": {
+    "terminalLocationId": null,
+    "pressToken": 0
+  },
+  "propConfig": {
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "params.pressToken": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 300,
+      "width": 560
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-panel",
+        "gap": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Kicker"
+        },
+        "props": {
+          "text": "RECENT BOXES",
+          "style": {
+            "classes": "pf-kpi-label"
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Rows"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "path": "BlueRidge/Components/PlantFloor/ScaleStationBoxRow",
+          "elementPosition": {
+            "basis": "56px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.boxInstances\", 0, {view.params.terminalLocationId}, 5, {view.params.pressToken})"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

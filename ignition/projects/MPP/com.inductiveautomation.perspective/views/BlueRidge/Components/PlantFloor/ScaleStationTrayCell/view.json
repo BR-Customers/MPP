@@ -1,0 +1,71 @@
+{
+  "custom": {},
+  "params": {
+    "n": 0,
+    "state": "todo"
+  },
+  "propConfig": {
+    "params.n": {
+      "paramDirection": "input"
+    },
+    "params.state": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 40,
+      "width": 56
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "style": {
+        "height": "100%"
+      },
+      "alignItems": "center",
+      "justify": "center"
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Number"
+        },
+        "props": {
+          "style": {
+            "textAlign": "center"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.n})"
+              }
+            }
+          }
+        },
+        "position": {
+          "grow": 1
+        }
+      }
+    ],
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.state} = 'closed', 'pf-pill pf-pill-good', if({view.params.state} = 'next', 'pf-pill pf-pill-warn', 'pf-pill'))"
+          }
+        }
+      }
+    }
+  }
+}

@@ -15,6 +15,11 @@
 #   getShiftTallyOrEmpty(terminalLocationId, _token)   -> dict, always full shape
 #   getRecentBoxes(terminalLocationId, top, _token)    -> list of dicts
 #
+# Presentation helpers the scale station views bind to (display text and a
+# style class per row -- no rules):
+#   trayCells, lastPressOrEmpty, pressLogInstances, boxInstances,
+#   eligiblePartOptions, scaleInstancePath
+#
 # _token is ignored: runScript bindings pass a bumped token to force a re-read.
 #
 # Change Log:
@@ -22,6 +27,7 @@
 # =============================================================================
 
 import java.lang
+import system.date
 
 
 def _u(value):
@@ -123,3 +129,122 @@ def getRecentBoxes(terminalLocationId, top=5, _token=None):
         return []
     return BlueRidge.Common.Db.execList("workorder/ScaleStation_GetRecentBoxes",
                                         {"terminalLocationId": tid, "top": _u(top) or 5}) or []
+
+
+# ---- presentation helpers (views) ------------------------------------------
+
+_VERDICT_TEXT = {"Ok": "OK", "Under": "UNDER", "Over": "OVER"}
+_VERDICT_CLASS = {"Ok": "pf-pill pf-pill-good", "Under": "pf-pill pf-pill-warn",
+                  "Over": "pf-pill pf-pill-bad"}
+_LABEL_TEXT = {"Sent": "Label sent", "Failed": "Label failed", "Reprinted": "Label reprinted"}
+
+
+def _g(value):
+    """A DB number as short text: 18.3100 -> '18.31'. '' for None."""
+    if value is None:
+        return ""
+    return "%g" % float("%s" % value)
+
+
+def _fmtTime(d):
+    return system.date.format(d, "h:mm:ss a") if d is not None else ""
+
+
+def _pressDisplay(row):
+    verdict = row.get("Verdict")
+    outcome = row.get("Outcome")
+    if outcome == "Closed":
+        text = "Tray %s of %s closed, LOT %s" % (row.get("TrayPosition"), row.get("TraysPerContainer"),
+                                                 row.get("LotName"))
+        if row.get("TrayPosition") is not None and row.get("TrayPosition") == row.get("TraysPerContainer"):
+            text += ", box complete"
+            if row.get("LabelStatus"):
+                text += ", " + _LABEL_TEXT.get(row.get("LabelStatus"), row.get("LabelStatus")).lower()
+    elif outcome == "Refused":
+        text = "Not closed: %s" % (row.get("Detail") or "refused")
+    else:
+        text = "Close failed: %s" % (row.get("Detail") or "see the interface log")
+    sv = row.get("ScaleVerdict")
+    agree = row.get("FlagsAgree")
+    if sv is None:
+        scale = ""
+    elif agree is None:
+        scale = sv
+    else:
+        scale = "%s, %s" % (_VERDICT_TEXT.get(sv, sv), "agrees" if agree else "differs")
+    net = _g(row.get("Net"))
+    return {"time": _fmtTime(row.get("LoggedAtEt")),
+            "net": ("%s %s" % (net, row.get("Uom") or "")).strip() if net else "-",
+            "verdict": _VERDICT_TEXT.get(verdict, verdict or "-"),
+            "verdictClass": _VERDICT_CLASS.get(verdict, "pf-pill"),
+            "outcome": text, "scale": scale,
+            "window": ("%s - %s lb" % (_g(row.get("Low")), _g(row.get("High"))))
+                      if row.get("Low") is not None else ""}
+
+
+def pressLogInstances(terminalLocationId, top=10, _token=None):
+    """Flex-repeater instances for the press log: one display dict per press."""
+    return [_pressDisplay(r) for r in getPressLog(terminalLocationId, top)]
+
+
+_LAST_PRESS_EMPTY = {"hasPress": False, "time": "", "net": "-", "verdict": "-",
+                     "verdictClass": "pf-pill", "outcome": "No presses yet.", "scale": "", "window": ""}
+
+
+def lastPressOrEmpty(terminalLocationId, _token=None):
+    """The last-press card: row 1 of the press log, always the full shape."""
+    rows = getPressLog(terminalLocationId, 1)
+    if not rows:
+        return dict(_LAST_PRESS_EMPTY)
+    out = _pressDisplay(rows[0])
+    out["hasPress"] = True
+    return out
+
+
+def trayCells(terminalLocationId, _token=None):
+    """One cell per tray of the running part's box: closed / next / todo."""
+    rp = getRunningPartOrEmpty(terminalLocationId)
+    total = int(rp.get("TraysPerContainer") or 0)
+    closed = int(rp.get("OpenTraysClosed") or 0) if rp.get("OpenContainerId") is not None else 0
+    return [{"n": i, "state": "closed" if i <= closed else ("next" if i == closed + 1 else "todo")}
+            for i in range(1, total + 1)]
+
+
+def boxInstances(terminalLocationId, top=5, _token=None):
+    """Flex-repeater instances for recent boxes."""
+    out = []
+    for b in getRecentBoxes(terminalLocationId, top):
+        out.append({"containerId": b.get("ContainerId"),
+                    "title": "Box #%s - %s pcs, %s trays" % (b.get("ContainerId"), b.get("Pieces"), b.get("Trays")),
+                    "sub": "LOT %s - AIM %s" % (b.get("LotName") or "-", b.get("AimShipperId") or "-"),
+                    "labelStatus": _LABEL_TEXT.get(b.get("LabelStatus"), "No label"),
+                    "labelClass": "pf-pill pf-pill-bad" if b.get("LabelStatus") == "Failed" else "pf-pill pf-pill-good"})
+    return out
+
+
+def eligiblePartOptions(terminalLocationId, _token=None):
+    """Dropdown options for the part picker, closest to ready first."""
+    return [{"label": "%s  %s  (parts for %s trays)" % (p.get("PartNumber"), p.get("Description"), p.get("TraysCovered")),
+             "value": p.get("ItemId")}
+            for p in listEligibleParts(terminalLocationId)]
+
+
+def scaleInstancePath(terminalLocationId):
+    """The terminal's EPrint scale tag instance path, or '' when none is mapped."""
+    for d in BlueRidge.Location.TerminalPlcDevice.getByTerminal(_u(terminalLocationId)) or []:
+        if d.get("DeviceTypeCode") == "ScaleStationEPrint":
+            return d.get("UdtInstancePath") or ""
+    return ""
+
+
+def applyPartChoice(session, terminalLocationId, itemId):
+    """The part picker's Run / Use default buttons: set or clear the override
+       as the signed-in operator, toast the result, and on success tell the
+       Assembly Out screen (page-scoped scaleRunningPartChanged) and close."""
+    result = setRunningPart(terminalLocationId, itemId,
+                            appUserId=BlueRidge.Common.Session.currentAppUserId(session))
+    BlueRidge.Common.Ui.notifyResult(result, "Running part changed")
+    if result and result.get("Status"):
+        system.perspective.sendMessage("scaleRunningPartChanged",
+                                       payload={"terminalLocationId": _u(terminalLocationId)}, scope="page")
+        system.perspective.closePopup(id="mpp-scale-part-picker")

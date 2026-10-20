@@ -377,6 +377,126 @@ class CloseContextTests(unittest.TestCase):
         self.assertEqual(ctx["pieceCount"], 24)
 
 
+STATION = os.path.join(ROOT, "ignition", "projects", "Core", "ignition",
+                       "script-python", "BlueRidge", "Workorder", "ScaleStation", "code.py")
+
+
+def _loadStation(runningPart=None, pressRows=None, boxRows=None, parts=None, devices=None):
+    """ScaleStation/code.py with its SQL reads stubbed: the presentation
+       helpers the scale station views bind to are tested here."""
+    s = types.ModuleType("ScaleStation")
+    with open(STATION) as f:
+        exec(compile(f.read(), STATION, "exec"), s.__dict__)
+    BR = types.SimpleNamespace()
+    BR.Common = types.SimpleNamespace(Util=types.SimpleNamespace(extractQualifiedValues=lambda v: v))
+    BR.Location = types.SimpleNamespace(TerminalPlcDevice=types.SimpleNamespace(
+        getByTerminal=lambda tid: list(devices or [])))
+    s.BlueRidge = BR
+    s.getRunningPartOrEmpty = lambda tid, _token=None: dict(s._RUNNING_PART_SHAPE, **(runningPart or {}))
+    s.getPressLog = lambda tid, top=20, _token=None: list(pressRows or [])[:top]
+    s.getRecentBoxes = lambda tid, top=5, _token=None: list(boxRows or [])[:top]
+    s.listEligibleParts = lambda tid, _token=None: list(parts or [])
+    s._fmtTime = lambda d: "%s" % d
+    return s
+
+
+CLOSE_ROW = {"LoggedAtEt": "9:41:52 AM", "Net": 18.31, "Uom": "lb", "Verdict": "Ok",
+             "Low": 17.75, "High": 18.75, "ScaleVerdict": "Ok", "FlagsAgree": True,
+             "Outcome": "Closed", "Detail": None, "LotName": "MESL1", "TrayPosition": 7,
+             "TraysPerContainer": 16, "LabelStatus": None}
+UNDER_ROW = {"LoggedAtEt": "9:35:41 AM", "Net": 15.3, "Uom": "lb", "Verdict": "Under",
+             "Low": 17.75, "High": 18.75, "ScaleVerdict": "Under", "FlagsAgree": False,
+             "Outcome": "Refused", "Detail": "Tray is UNDER weight", "LotName": None,
+             "TrayPosition": None, "TraysPerContainer": None, "LabelStatus": None}
+
+
+class StationHelperTests(unittest.TestCase):
+    """Task 7: presentation helpers behind the scale station views."""
+
+    def test_tray_cells_mark_closed_next_and_todo(self):
+        s = _loadStation(runningPart={"TraysPerContainer": 4, "OpenContainerId": 9, "OpenTraysClosed": 2})
+        self.assertEqual([c["state"] for c in s.trayCells(106)], ["closed", "closed", "next", "todo"])
+        self.assertEqual([c["n"] for c in s.trayCells(106)], [1, 2, 3, 4])
+
+    def test_tray_cells_with_no_open_box_start_at_one(self):
+        s = _loadStation(runningPart={"TraysPerContainer": 3, "OpenContainerId": None, "OpenTraysClosed": 0})
+        self.assertEqual([c["state"] for c in s.trayCells(106)], ["next", "todo", "todo"])
+
+    def test_press_rows_closed_and_refused(self):
+        s = _loadStation(pressRows=[CLOSE_ROW, UNDER_ROW])
+        rows = s.pressLogInstances(106, 10)
+        self.assertEqual(rows[0]["verdict"], "OK")
+        self.assertEqual(rows[0]["outcome"], "Tray 7 of 16 closed, LOT MESL1")
+        self.assertEqual(rows[0]["scale"], "OK, agrees")
+        self.assertEqual(rows[1]["verdict"], "UNDER")
+        self.assertEqual(rows[1]["outcome"], "Not closed: Tray is UNDER weight")
+        self.assertEqual(rows[1]["scale"], "UNDER, differs")
+        self.assertNotEqual(rows[0]["verdictClass"], rows[1]["verdictClass"])
+
+    def test_box_completing_tray_says_so(self):
+        row = dict(CLOSE_ROW, TrayPosition=16, LabelStatus="Sent")
+        s = _loadStation(pressRows=[row])
+        self.assertEqual(s.pressLogInstances(106, 1)[0]["outcome"],
+                         "Tray 16 of 16 closed, LOT MESL1, box complete, label sent")
+
+    def test_last_press_or_empty_has_shape_when_none(self):
+        s = _loadStation(pressRows=[])
+        last = s.lastPressOrEmpty(106)
+        self.assertEqual(last["hasPress"], False)
+        for k in ("time", "net", "verdict", "verdictClass", "outcome", "scale", "window"):
+            self.assertIn(k, last)
+
+    def test_last_press_window_text(self):
+        s = _loadStation(pressRows=[CLOSE_ROW])
+        last = s.lastPressOrEmpty(106)
+        self.assertEqual((last["hasPress"], last["net"], last["window"]),
+                         (True, "18.31 lb", "17.75 - 18.75 lb"))
+
+    def test_box_instances(self):
+        s = _loadStation(boxRows=[{"ContainerId": 5, "CompletedAtEt": "8:50 AM", "Pieces": 96, "Trays": 16,
+                                   "LotName": "MESL9", "AimShipperId": "AIM-1", "LabelStatus": "Failed"}])
+        b = s.boxInstances(106, 5)[0]
+        self.assertEqual((b["containerId"], b["title"], b["labelStatus"]),
+                         (5, "Box #5 - 96 pcs, 16 trays", "Label failed"))
+
+    def test_eligible_part_options(self):
+        s = _loadStation(parts=[{"ItemId": 7, "PartNumber": "19321-66V -A000", "Description": "66V Thermo Case",
+                                 "TraysCovered": 8}])
+        self.assertEqual(s.eligiblePartOptions(106),
+                         [{"label": "19321-66V -A000  66V Thermo Case  (parts for 8 trays)", "value": 7}])
+
+    def test_apply_part_choice_sets_notifies_broadcasts_and_closes(self):
+        s = _loadStation()
+        seen = {"set": [], "notify": [], "msg": [], "close": []}
+        s.setRunningPart = lambda tid, item, appUserId=None: seen["set"].append((tid, item, appUserId)) or {"Status": 1, "Message": "ok"}
+        s.BlueRidge.Common.Session = types.SimpleNamespace(currentAppUserId=lambda sess: 22)
+        s.BlueRidge.Common.Ui = types.SimpleNamespace(notifyResult=lambda r, title, *a, **k: seen["notify"].append(title))
+        s.system = types.SimpleNamespace(perspective=types.SimpleNamespace(
+            sendMessage=lambda t, payload=None, scope=None: seen["msg"].append((t, payload, scope)),
+            closePopup=lambda id=None: seen["close"].append(id)))
+        s.applyPartChoice(object(), 106, 7)
+        self.assertEqual(seen["set"], [(106, 7, 22)])
+        self.assertEqual(seen["msg"], [("scaleRunningPartChanged", {"terminalLocationId": 106}, "page")])
+        self.assertEqual(seen["close"], ["mpp-scale-part-picker"])
+
+    def test_apply_part_choice_refused_keeps_popup_open(self):
+        s = _loadStation()
+        closed = []
+        s.setRunningPart = lambda tid, item, appUserId=None: {"Status": 0, "Message": "no"}
+        s.BlueRidge.Common.Session = types.SimpleNamespace(currentAppUserId=lambda sess: 22)
+        s.BlueRidge.Common.Ui = types.SimpleNamespace(notifyResult=lambda *a, **k: None)
+        s.system = types.SimpleNamespace(perspective=types.SimpleNamespace(
+            sendMessage=lambda *a, **k: None, closePopup=lambda id=None: closed.append(id)))
+        s.applyPartChoice(object(), 106, None)
+        self.assertEqual(closed, [])
+
+    def test_scale_instance_path_picks_the_eprint_device(self):
+        s = _loadStation(devices=[{"DeviceTypeCode": "TrayInspectionStation", "UdtInstancePath": "[MPP]PlcDevices/Cam"},
+                                  {"DeviceTypeCode": "ScaleStationEPrint", "UdtInstancePath": "[MPP]PlcDevices/Scale"}])
+        self.assertEqual(s.scaleInstancePath(106), "[MPP]PlcDevices/Scale")
+        self.assertEqual(_loadStation(devices=[]).scaleInstancePath(106), "")
+
+
 if __name__ == "__main__":
     if not FIXTURES_VERIFIED:
         sys.stderr.write("NOTE: Template 3 fixtures are a reconstruction, not "

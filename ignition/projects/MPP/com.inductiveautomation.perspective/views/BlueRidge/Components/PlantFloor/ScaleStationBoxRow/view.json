@@ -1,0 +1,156 @@
+{
+  "custom": {},
+  "params": {
+    "containerId": null,
+    "title": "",
+    "sub": "",
+    "labelStatus": "",
+    "labelClass": "pf-pill"
+  },
+  "propConfig": {
+    "params.containerId": {
+      "paramDirection": "input"
+    },
+    "params.title": {
+      "paramDirection": "input"
+    },
+    "params.sub": {
+      "paramDirection": "input"
+    },
+    "params.labelStatus": {
+      "paramDirection": "input"
+    },
+    "params.labelClass": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 56,
+      "width": 560
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "style": {
+        "padding": "6px 0",
+        "gap": "12px"
+      },
+      "alignItems": "center"
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Text"
+        },
+        "props": {
+          "direction": "column"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "props": {},
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.title}"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Sub"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.sub}"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "position": {
+          "basis": "0",
+          "grow": 1
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LabelStatus"
+        },
+        "props": {},
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.labelStatus}"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.labelClass}"
+              }
+            }
+          }
+        },
+        "position": {
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "Reprint"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Reprint",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.openPopup(\"mpp-shipping-reprint\", \"BlueRidge/Components/PlantFloor/ShippingLabelReprint\", params={\"cellLocationId\": self.session.custom.cell.locationId, \"terminalLocationId\": self.session.custom.terminal.terminalLocationId}, modal=True, showCloseIcon=True)"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

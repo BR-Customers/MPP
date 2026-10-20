@@ -1,0 +1,194 @@
+{
+  "custom": {},
+  "params": {
+    "time": "",
+    "net": "",
+    "verdict": "",
+    "verdictClass": "pf-pill",
+    "outcome": "",
+    "scale": ""
+  },
+  "propConfig": {
+    "params.time": {
+      "paramDirection": "input"
+    },
+    "params.net": {
+      "paramDirection": "input"
+    },
+    "params.verdict": {
+      "paramDirection": "input"
+    },
+    "params.verdictClass": {
+      "paramDirection": "input"
+    },
+    "params.outcome": {
+      "paramDirection": "input"
+    },
+    "params.scale": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 36,
+      "width": 900
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "12px"
+      },
+      "alignItems": "center"
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Time"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.time}"
+              }
+            }
+          }
+        },
+        "position": {
+          "basis": "110px",
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Net"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-mono"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.net}"
+              }
+            }
+          }
+        },
+        "position": {
+          "basis": "100px",
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "VerdictSlot"
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Verdict"
+            },
+            "props": {},
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.verdict}"
+                  }
+                }
+              },
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.verdictClass}"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "position": {
+          "basis": "100px",
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Outcome"
+        },
+        "props": {
+          "style": {
+            "minWidth": "0"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.outcome}"
+              }
+            }
+          }
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ScaleFlags"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.scale}"
+              }
+            }
+          }
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 0
+        }
+      }
+    ]
+  }
+}

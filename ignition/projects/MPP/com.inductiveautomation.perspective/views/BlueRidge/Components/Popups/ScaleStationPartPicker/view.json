@@ -1,0 +1,160 @@
+{
+  "custom": {
+    "choice": null
+  },
+  "params": {
+    "terminalLocationId": null
+  },
+  "propConfig": {
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 280,
+      "width": 640
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-panel",
+        "gap": "14px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Title"
+        },
+        "props": {
+          "text": "Change running part",
+          "style": {
+            "classes": "pf-section-title"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Hint"
+        },
+        "props": {
+          "text": "Finished goods this line has the parts and a By Weight pack-out for, closest to ready first. The scale closes whichever part is chosen here, until someone changes it.",
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        }
+      },
+      {
+        "type": "ia.input.dropdown",
+        "meta": {
+          "name": "Part"
+        },
+        "props": {
+          "placeholder": {
+            "text": "Choose a part"
+          },
+          "options": []
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.eligiblePartOptions\", 0, {view.params.terminalLocationId})"
+              }
+            }
+          },
+          "props.value": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.choice",
+                "bidirectional": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Buttons"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "12px"
+          },
+          "justify": "flex-end"
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "UseDefault"
+            },
+            "props": {
+              "text": "Use the default part",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Workorder.ScaleStation.applyPartChoice(self.session, self.view.params.terminalLocationId, None)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "Run"
+            },
+            "props": {
+              "text": "Run this part",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.choice})"
+                  }
+                }
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Workorder.ScaleStation.applyPartChoice(self.session, self.view.params.terminalLocationId, self.view.custom.choice)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

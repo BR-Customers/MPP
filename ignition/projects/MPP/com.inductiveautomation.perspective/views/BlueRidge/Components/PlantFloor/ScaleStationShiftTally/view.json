@@ -1,0 +1,317 @@
+{
+  "custom": {
+    "t": {
+      "ShiftName": "",
+      "ShiftStartEt": null,
+      "ShiftEndEt": null,
+      "TraysClosed": 0,
+      "PartsPacked": 0,
+      "BoxesCompleted": 0,
+      "Refused": 0,
+      "RefusedUnder": 0,
+      "RefusedOver": 0,
+      "RefusedOther": 0
+    }
+  },
+  "params": {
+    "terminalLocationId": null,
+    "pressToken": 0
+  },
+  "propConfig": {
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "params.pressToken": {
+      "paramDirection": "input"
+    },
+    "custom.t": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.getShiftTallyOrEmpty\", 0, {view.params.terminalLocationId}, {view.params.pressToken})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 160,
+      "width": 560
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-panel",
+        "gap": "10px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Kicker"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-label"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "'THIS SHIFT AT THIS SCALE' + if(len({view.custom.t.ShiftName}) > 0, '  (' + {view.custom.t.ShiftName} + ')', '')"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Tiles"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Trays"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-kpi"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "text": "Trays",
+                  "style": {
+                    "classes": "pf-kpi-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Value"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "toStr({view.custom.t.TraysClosed})"
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "0",
+              "grow": 1
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Parts"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-kpi"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "text": "Parts",
+                  "style": {
+                    "classes": "pf-kpi-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Value"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "toStr({view.custom.t.PartsPacked})"
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "0",
+              "grow": 1
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Boxes"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-kpi"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "text": "Boxes",
+                  "style": {
+                    "classes": "pf-kpi-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Value"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "toStr({view.custom.t.BoxesCompleted})"
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "0",
+              "grow": 1
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Refused"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-kpi"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "text": "Refused",
+                  "style": {
+                    "classes": "pf-kpi-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Value"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "toStr({view.custom.t.Refused})"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Sub"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "toStr({view.custom.t.RefusedUnder}) + ' under, ' + toStr({view.custom.t.RefusedOver}) + ' over'"
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "0",
+              "grow": 1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
