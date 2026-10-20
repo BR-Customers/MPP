@@ -15,6 +15,7 @@
      confirm(vendorReturnId, appUserId, terminalLocationId)
      cancel(vendorReturnId, cancelRemarks, appUserId, terminalLocationId)
      listOpen(_t) / openCount(_t) / listByLot(lotId, _t)
+     getEligibilityOrEmpty(lotId, _t...)  whether the LOT can be returned + why not (SQL decides)
 
    Display shaping (no rules -- StateCode / CanCancel come from SQL):
      listByLotInstances(lotId, _t)   LOT Detail "Vendor return" tab rows
@@ -69,6 +70,28 @@ def openCount(_refreshToken=None):
         return len(listOpen())
     except:
         return 0
+
+
+_EMPTY_ELIGIBILITY = {"LotId": None, "CanReturnToVendor": False, "Reason": ""}
+
+
+def getEligibilityOrEmpty(lotId, _statusToken=None, _countToken=None):
+    """Binding source for the LOT Detail "Vendor return" tab: may this LOT be
+    returned to a vendor, and if not, the refusal text VendorReturn_Mark would
+    give. The rule lives in SQL (Lots.ufn_LotReturnableToVendor via
+    Lots.VendorReturn_GetEligibility); nothing is decided here. Always the full
+    shape -- never None -- so the bound custom prop never goes Quality-Bad. The
+    token args only make the binding re-run when the LOT's status or count
+    changes."""
+    lid = _int(lotId)
+    if not lid:
+        return dict(_EMPTY_ELIGIBILITY)
+    row = BlueRidge.Common.Db.execOne("lots/VendorReturn_GetEligibility", {"lotId": lid})
+    if not row:
+        return dict(_EMPTY_ELIGIBILITY)
+    return {"LotId": row.get("LotId"),
+            "CanReturnToVendor": bool(row.get("CanReturnToVendor")),
+            "Reason": row.get("Reason") or ""}
 
 
 def listByLot(lotId, _refreshToken=None):

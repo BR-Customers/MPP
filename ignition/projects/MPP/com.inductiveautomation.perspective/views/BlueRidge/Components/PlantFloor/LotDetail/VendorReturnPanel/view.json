@@ -20,7 +20,11 @@
       "ToolName": "",
       "ToolCavityCode": ""
     },
-    "returnable": false,
+    "eligibility": {
+      "LotId": null,
+      "CanReturnToVendor": false,
+      "Reason": ""
+    },
     "draft": {
       "quantity": "",
       "remarks": ""
@@ -44,11 +48,11 @@
         "script": "\t# Second safety net beside onStartup: a lotId change repopulates the panel.\n\tself.rootContainer.applyLot(currentValue.value)"
       }
     },
-    "custom.returnable": {
+    "custom.eligibility": {
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "{view.custom.lot.LotOriginTypeCode} = 'Received' || {view.custom.lot.LotOriginTypeCode} = 'ReceivedOffsite'"
+          "expression": "runScript(\"BlueRidge.Lots.VendorReturn.getEligibilityOrEmpty\", 0, coalesce({view.custom.lot.Id}, 0), {view.custom.lot.LotStatusCode}, {view.custom.lot.PieceCount})"
         }
       }
     }
@@ -235,7 +239,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "'LOT ' + {view.custom.lot.LotName} + ' was made at MPP; only purchased or received material can be returned to a vendor.'"
+                "expression": "{view.custom.eligibility.Reason}"
               }
             }
           },
@@ -243,7 +247,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "coalesce({view.custom.lot.Id}, 0) > 0 && !{view.custom.returnable}"
+                "expression": "coalesce({view.custom.lot.Id}, 0) > 0 && !{view.custom.eligibility.CanReturnToVendor}"
               }
             }
           }
@@ -476,7 +480,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "coalesce({view.custom.lot.Id}, 0) > 0 && {view.custom.returnable}"
+                "expression": "coalesce({view.custom.lot.Id}, 0) > 0 && {view.custom.eligibility.CanReturnToVendor}"
               }
             }
           }
