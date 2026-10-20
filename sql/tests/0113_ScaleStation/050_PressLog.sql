@@ -94,7 +94,12 @@ EXEC Audit.Audit_LogInterfaceCall @SystemName = N'Zebra', @Direction = N'Outboun
 EXEC Audit.Audit_LogInterfaceCall @SystemName = N'PLC:TSS', @Direction = @L, @LogEventTypeCode = N'PlcHandshake',
     @Description = N'json, no v', @RequestPayload = N'{"net":2}', @IsHighFidelity = 1, @LocationId = @Term;
 
--- A shift covering now (local Eastern), all days.
+-- A shift covering now (local Eastern), all days. Other test files may leave
+-- their own schedules active; hide them for this file so only ours covers now
+-- (restored at the end).
+CREATE TABLE #HiddenSched (Id BIGINT);
+INSERT INTO #HiddenSched SELECT Id FROM Oee.ShiftSchedule WHERE DeprecatedAt IS NULL;
+UPDATE Oee.ShiftSchedule SET DeprecatedAt = SYSUTCDATETIME() WHERE Id IN (SELECT Id FROM #HiddenSched);
 DECLARE @NowLocal DATETIME2(3) = CAST(@Now AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3));
 INSERT INTO Oee.ShiftSchedule (Name, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedByUserId)
 VALUES (N'TST-SS shift', CAST(DATEADD(HOUR, -2, @NowLocal) AS TIME(0)), CAST(DATEADD(HOUR, 2, @NowLocal) AS TIME(0)), 127, '2026-01-01', 1);
@@ -151,6 +156,8 @@ EXEC test.Assert_IsEqual @TestName = N'[Tally] no covering shift returns one row
 GO
 
 DROP TABLE #P; DROP TABLE #T; DROP TABLE #B;
+UPDATE Oee.ShiftSchedule SET DeprecatedAt = NULL WHERE Id IN (SELECT Id FROM #HiddenSched);
+DROP TABLE #HiddenSched;
 GO
 EXEC test.EndTestFile;
 GO
