@@ -86,6 +86,11 @@ EXEC Audit.Audit_LogInterfaceCall @SystemName = N'PLC:TSS', @Direction = @L, @Lo
 EXEC Audit.Audit_LogInterfaceCall @SystemName = N'PLC:TSS', @Direction = @L, @LogEventTypeCode = N'PlcHandshake',
     @Description = N'Scale is in the wrong units', @RequestPayload = N'{"v":1,"net":8.3,"uom":"kg"}',
     @ErrorCondition = N'HandshakeFailed', @IsHighFidelity = 1, @LocationId = @Term;
+-- Ok verdict but the close itself failed (e.g. short of a component): no LOT.
+EXEC Audit.Audit_LogInterfaceCall @SystemName = N'PLC:TSS', @Direction = @L, @LogEventTypeCode = N'PlcHandshake',
+    @Description = N'ByWeight tray close', @RequestPayload = N'{"v":1,"net":18.2,"uom":"lb","verdict":"Ok","low":17.75,"high":18.75}',
+    @ErrorCondition = N'HandshakeFailed', @ErrorDescription = N'Insufficient component stock', @IsHighFidelity = 1,
+    @LocationId = @Term, @ItemId = @A;
 -- Noise that must never appear: pre-0113 text row, a Zebra row at the terminal, non-JSON.
 EXEC Audit.Audit_LogInterfaceCall @SystemName = N'PLC:TSS', @Direction = @L, @LogEventTypeCode = N'PlcHandshake',
     @Description = N'old', @RequestPayload = N'net=49.8 uom=lb verdict=Ok', @IsHighFidelity = 1, @LocationId = @Term;
@@ -112,7 +117,7 @@ DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TST-SS-A
 DELETE FROM #P; INSERT INTO #P EXEC Workorder.ScaleStation_GetPressLog @TerminalLocationId = @Term, @Top = 20;
 DECLARE @Seq NVARCHAR(200) = (SELECT STRING_AGG(CONCAT(Outcome, N':', ISNULL(Verdict, N'-')), N',') WITHIN GROUP (ORDER BY InterfaceLogId DESC) FROM #P);
 EXEC test.Assert_IsEqual @TestName = N'[PressLog] skips non-JSON, Zebra and flags-warning rows; newest first',
-    @Expected = N'Refused:-,Refused:Over,Closed:Ok,Refused:Under', @Actual = @Seq;
+    @Expected = N'Failed:Ok,Refused:-,Refused:Over,Closed:Ok,Refused:Under', @Actual = @Seq;
 DECLARE @Close NVARCHAR(200) = (SELECT CONCAT(LotName, N'|', TrayPosition, N'/', TraysPerContainer, N'|', AimShipperId, N'|', LabelStatus, N'|', ScaleVerdict, N'|', FlagsAgree)
                                 FROM #P WHERE Outcome = N'Closed');
 EXEC test.Assert_IsEqual @TestName = N'[PressLog] close row joins LOT, tray, box, AIM, label status',
@@ -133,8 +138,8 @@ GO
 DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TST-SS-AOUT');
 DELETE FROM #T; INSERT INTO #T EXEC Workorder.ScaleStation_GetShiftTally @TerminalLocationId = @Term;
 DECLARE @S NVARCHAR(200) = (SELECT CONCAT(ShiftName, N'|', TraysClosed, N'|', PartsPacked, N'|', BoxesCompleted, N'|', Refused, N'|', RefusedUnder, N'|', RefusedOver, N'|', RefusedOther) FROM #T);
-EXEC test.Assert_IsEqual @TestName = N'[Tally] counts trays/parts/boxes/refused under+over+other in the window; outside excluded',
-    @Expected = N'TST-SS shift|3|30|2|3|1|1|1', @Actual = @S;
+EXEC test.Assert_IsEqual @TestName = N'[Tally] counts trays/parts/boxes/refused under+over+other in the window; outside excluded; a failed close counts as other',
+    @Expected = N'TST-SS shift|3|30|2|4|1|1|2', @Actual = @S;
 GO
 
 -- ==== recent boxes ====

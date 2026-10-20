@@ -2,7 +2,7 @@
 -- Procedure:   Workorder.ScaleStation_GetShiftTally
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   "This shift at this scale" for the scale station screen (spec 2026-10-19
@@ -13,7 +13,9 @@
 --   Closes and boxes come from production records (Lots.ContainerTray /
 --   Lots.Container by StationLocationId), so a close made any other way is
 --   counted too. Refusals come from the interface log press rows (the same
---   filter as ScaleStation_GetPressLog).
+--   filter as ScaleStation_GetPressLog): every press that closed nothing,
+--   so an Ok press whose close failed (short of a part) is counted under
+--   RefusedOther rather than vanishing from the tally.
 --
 --   No covering shift -> ONE row of zeros (never an empty set), so the
 --   screen's binding keeps its shape.
@@ -25,6 +27,7 @@
 --
 -- Change Log:
 --   2026-10-19 - 1.0 - Initial version.
+--   2026-10-20 - 1.1 - A press judged Ok whose close failed counts as RefusedOther.
 -- =============================================
 CREATE OR ALTER PROCEDURE Workorder.ScaleStation_GetShiftTally
     @TerminalLocationId BIGINT
@@ -83,7 +86,6 @@ BEGIN
               AND (il.ErrorCondition IS NULL OR il.ErrorCondition NOT LIKE N'ScaleFlags%')
               AND il.LotId IS NULL
         ) p
-        WHERE ISNULL(p.Verdict, N'') <> N'Ok'
     ) rf;
 END;
 GO
