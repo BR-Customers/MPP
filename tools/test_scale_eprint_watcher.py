@@ -318,6 +318,65 @@ class HandleMessageTests(unittest.TestCase):
         self.assertEqual((warn["locationId"], warn["itemId"]), (106, 110))
 
 
+ASSEMBLY = os.path.join(ROOT, "ignition", "projects", "Core", "ignition",
+                        "script-python", "BlueRidge", "Workorder", "Assembly", "code.py")
+
+
+def _loadAssembly(runningPart, calls):
+    """Assembly/code.py with the BlueRidge entities resolvePlcCloseContext
+       touches stubbed. `calls` records every ScaleStation lookup."""
+    if "system.perspective" not in sys.modules:
+        mod = types.ModuleType("system.perspective")
+        sys.modules["system.perspective"] = mod
+        sys.modules["system"].perspective = mod
+    a = types.ModuleType("Assembly")
+    with open(ASSEMBLY) as f:
+        exec(compile(f.read(), ASSEMBLY, "exec"), a.__dict__)
+    BR = types.SimpleNamespace()
+    BR.Common = types.SimpleNamespace(
+        Util=types.SimpleNamespace(extractQualifiedValues=lambda v: v, log=lambda *x, **k: None))
+    BR.Location = types.SimpleNamespace(Terminal=types.SimpleNamespace(
+        listAll=lambda: [{"Id": 106, "ZoneId": 104}],
+        findById=lambda rows, tid: rows[0]))
+    BR.Workorder = types.SimpleNamespace(ScaleStation=types.SimpleNamespace(
+        getRunningPartOrEmpty=lambda tid, _token=None: calls.append(tid) or dict(runningPart)))
+    BR.Parts = types.SimpleNamespace(ContainerConfig=types.SimpleNamespace(
+        getByItemAndMethod=lambda item, method: {"PartsPerTray": 24}))
+    a.BlueRidge = BR
+    a.getStationContainerRows = lambda cell, tid, method: []
+    a._recommendedWithPackout = lambda cell, method: 555
+    return a
+
+
+class CloseContextTests(unittest.TestCase):
+    """Task 5: a ByWeight close takes its part from the same SQL rule the
+       screen shows (Workorder.ScaleStation_GetRunningPart)."""
+
+    def test_byweight_close_uses_running_part(self):
+        calls = []
+        a = _loadAssembly({"ItemId": 222, "Source": "Override", "PartsPerTray": 6,
+                           "OpenContainerId": 9001, "Message": ""}, calls)
+        ctx = a.resolvePlcCloseContext(106, "ByWeight")
+        self.assertEqual(calls, [106])
+        self.assertEqual(ctx, {"cellLocationId": 104, "finishedGoodItemId": 222,
+                               "pieceCount": 6, "containerId": 9001})
+
+    def test_byweight_none_is_error(self):
+        a = _loadAssembly({"ItemId": None, "Source": "None", "PartsPerTray": 0,
+                           "OpenContainerId": None, "Message": "No finished good can run."}, [])
+        self.assertEqual(a.resolvePlcCloseContext(106, "ByWeight"),
+                         {"error": "No finished good can run."})
+
+    def test_byvision_path_unchanged(self):
+        calls = []
+        a = _loadAssembly({"ItemId": 222, "Source": "Default", "PartsPerTray": 6,
+                           "OpenContainerId": None, "Message": ""}, calls)
+        ctx = a.resolvePlcCloseContext(106, "ByVision")
+        self.assertEqual(calls, [], "ByVision must not consult the scale station rule")
+        self.assertEqual(ctx["finishedGoodItemId"], 555)
+        self.assertEqual(ctx["pieceCount"], 24)
+
+
 if __name__ == "__main__":
     if not FIXTURES_VERIFIED:
         sys.stderr.write("NOTE: Template 3 fixtures are a reconstruction, not "

@@ -185,6 +185,16 @@ def resolvePlcCloseContext(terminalLocationId, closureMethod):
     cell = (term or {}).get("ZoneId")
     if cell is None:
         return {"error": "Terminal %s has no zone cell." % tid}
+    if closureMethod == "ByWeight":
+        # 2026-10-19 scale station: the part comes from the ONE SQL rule the
+        # screen also shows (open box, else override, else closest to ready),
+        # so the scale can never close a different part than the screen says.
+        rp = BlueRidge.Workorder.ScaleStation.getRunningPartOrEmpty(tid)
+        if rp.get("Source") == "None" or rp.get("ItemId") is None:
+            return {"error": rp.get("Message") or "No part can run on this scale."}
+        return {"cellLocationId": cell, "finishedGoodItemId": rp.get("ItemId"),
+                "pieceCount": int(rp.get("PartsPerTray") or 0),
+                "containerId": rp.get("OpenContainerId")}
     containerId = None
     openRows = getStationContainerRows(cell, tid, closureMethod)
     if openRows:
