@@ -1007,3 +1007,20 @@ def signatureInstances(runId, _refreshToken=None):
                     "text":  s.get("Statement") or "",
                     "meta":  "%s, %s" % (s.get("SignedByInitials") or "?", _fmt(s.get("SignedAt"), "EEE MM/dd HH:mm"))})
     return out
+
+
+def memberRework(controlledRunId, _refreshToken=None):
+    """Members whose LOT is in an open rework: {memberId(str): {startedAt, approvedBy}}.
+       Keys are strings so the dict survives the Perspective property tree / JSON
+       unchanged; a view looks a member up with str(memberId). {} when none."""
+    rid = BlueRidge.Common.Util.toIntOrNone(_u(controlledRunId))
+    if rid is None:
+        return {}
+    out = {}
+    for r in (BlueRidge.Common.Db.execList(
+            "quality/ControlledRun_ListMemberRework", {"controlledRunId": rid}) or []):
+        out[str(r.get("MemberId"))] = {
+            "startedAt":  _fmt(r.get("StartedAt"), "EEE HH:mm"),
+            "approvedBy": r.get("ApprovedByInitials") or "",
+        }
+    return out
