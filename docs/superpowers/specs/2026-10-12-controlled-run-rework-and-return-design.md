@@ -325,9 +325,25 @@ audit code pins); update them.
   applying a super-lot result (mismatch refusals); left-over math; confirm; cancel restores
   and un-applies; cancel refused after close and after confirm.
 
+## Build notes (2026-10-20)
+
+Where the build differs from the design above.
+
+- **`VendorReturn_Mark` has no `@ControlledRunResultId`.** A super-lot Return is applied at record time: `ControlledRunResult_Record` inlines Mark's body and writes the `VendorReturn` row with the link itself. A Mark from LOT Detail looks up the LOT's open super-lot membership and, if there is one, writes the ReturnToSupplier result and the link too (no row when the membership has ended or the super-lot is closed; the return still succeeds).
+- **Cancel requires non-blank remarks.** `VendorReturn_Cancel` refuses a blank `@CancelRemarks`; the LOT Detail strip disables "Cancel return" until a reason is typed.
+- **Cancel voids the linked result even after the super-lot has closed or released.** Confirmed by Jacques, 2026-10-20. The void is append-only (`VoidedAt` and the remarks keep the history) and the alternative would leave the left-over wrong after a real cancel. Cancel is on LOT Detail only.
+- **Trim rework detection and the CRT exemption also apply to a second override move during an open rework** (ruling R1). Once the pending rule re-arms TrimIn, a second override TrimIn move is no longer "backward", so it would have been refused for a CRT LOT. The build treats an override TrimIn move on a LOT with an open rework as part of the rework: no second row, no failure.
+- **Override user must exist.** `Lot_MoveToValidated` v1.2 refuses an override user id that is not an `AppUser` (rule 4a) rather than failing on the `LotRework` foreign key.
+- **New read `Quality.ControlledRun_ListMemberOrigin`** (with a Core named query): which super-lot members are LOT members of Received origin, so the Results screen knows which members can be returned. Not in the original read list.
+- **`Quality.ControlledRun_List` v1.2** gained an `Id` tie-breaker for open runs opened in the same millisecond (a latent ordering bug found by the full suite).
+- **The 0049 test capture fix.** `0049_AimIntegration/030_postback_procs.sql` had a capture table without piece 4's `VoidedAt` column on `AimShipperIdPool_GetForPost`, so the file threw and hid the assertions after it. Fixed in Task 1.
+- **`ufn_ControlledRunMemberResults` v1.3** gained `AppliedReturnQty` as its last column; `LeftOver` adds it. `ControlledRun_ListMemberResults` does not expose it yet.
+- **Not built / carried:** the destination of a rework override move is not checked to be a trim location; there is no unique index on `VendorReturn.ControlledRunResultId`; the screens have not been driven on a gateway.
+
 ## Revision History
 
 | Date | Change |
 |---|---|
 | 2026-10-12 | Initial draft: options and questions, written as a handoff. Not approved. |
 | 2026-10-19 | Rewritten as a design from Jacques's answers: rework = the supervisor-approved move back into trim (whole LOT, `Lots.LotRework`, route pending rule re-armed after re-entry); Return to vendor = mark (stock off immediately, received-origin LOTs only, `Lots.VendorReturn`) + confirm on the Supervisor Dashboard. Partial fill stays a separate follow-on. Builder check folded in (reader list, return applied at record time, Hold-at-zero, taken-amount columns); rework pass starts its own count and is not shift trim production (Jacques). |
+| 2026-10-20 | Build notes added: where the build differs from this design (super-lot Return applied at record time, Cancel remarks and void-after-close, second override move during a rework, the new origin read). |

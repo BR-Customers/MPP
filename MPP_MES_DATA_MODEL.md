@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 3.6 | 2026-10-20 | Blue Ridge Automation | **Super-lot piece 5: trim rework and return to vendor** (migration `0112_rework_and_vendor_return`; spec `docs/superpowers/specs/2026-10-12-controlled-run-rework-and-return-design.md`) - CHANGE-ORDER ADDITION, still not deployable until all six pieces are in. New `Lots.LotRework` (one row each time a LOT is moved back into trim by a supervisor-approved override move; at most one open per LOT, closed by the Trim OUT that re-runs it) and `Lots.VendorReturn` (part of a Received / ReceivedOffsite LOT marked for return to the vendor, then confirmed or cancelled; `PieceCountTaken` / `InventoryTaken` record exactly what was removed so a Cancel restores it). `Quality.ControlledRunResult`: a Rework entry is no longer accepted (rework is the move into trim, not a result), and a ReturnToSupplier entry is applied at record time through `Lots.VendorReturn.ControlledRunResultId`. Five audit event codes: `LotReworkStarted`, `LotReworkCompleted`, `VendorReturnMarked`, `VendorReturnConfirmed`, `VendorReturnCancelled`. No existing column changed. |
 | 3.5 | 2026-10-13 | Blue Ridge Automation | **Super-lot piece 4: container repack** (migration `0111_container_rework`; spec `docs/superpowers/specs/2026-10-12-controlled-run-container-repack-design.md`) - CHANGE-ORDER ADDITION, in neither change order's wording, still not deployable until all six pieces are in. `Lots.ContainerStatusCode` gains `ReworkProcessing` and `ReworkFilling`. New `Lots.ContainerRework` (one row each time a completed container is opened for rework). `Lots.AimShipperIdPool` gains `VoidedAt` / `VoidedByUserId` / `VoidReason` (a voided serial; AIM is told nothing yet - `Lots.AimShipperIdPool_ListVoided` is the worklist for a future cancellation post). `Lots.ContainerSerial` gains `RemovedAt` / `RemovedRejectEventId` (a serial scrapped out of a container). `Quality.ControlledRunMemberEndReason` gains `ContainerVoided`. No piece-move table: a move is a `Workorder.ConsumptionEvent` with `Consumption` genealogy into a newly minted, Closed, Manufactured tray LOT. Tray LOTs stay Closed throughout a rework. |
 | 3.4 | 2026-10-13 | Blue Ridge Automation | **Super-lot pieces 2 and 3** (migration `0110_controlled_run_results_signoff`; specs `docs/superpowers/specs/2026-10-12-controlled-run-completed-containers-design.md` and `2026-10-12-controlled-run-results-and-signoff-design.md`) - CHANGE-ORDER ADDITION, still not deployable until all six pieces are in. Section 5 Quality gains `SignatureMeaning` (read-only), `Signature` (append-only, enforced by trigger `TR_Signature_Immutable` - the first trigger in the schema, deliberate), `ControlledRunRelease` (one signed bulk release; `InspectionConfirmed` is the recorded fact that the 200% inspection was completed), `ControlledRunResult` (one inspection result entry per row; voided, never edited) and `ControlledRunDeviation` (the signed deviation MPP call the nonconformance). `ControlledRunMember` gains `WasCompleteAtJoin` and `ControlledRunReleaseId`; a completed container's Closed tray LOTs are now tagged when it joins, so `CrtSetByRun` is 1 for it. `DispositionCode` gains `Accepted`; `ControlledRunMemberEndReason` gains `Released`. `Location.SessionPolicy` gains `QualityElevationTimeoutSeconds` (1800) and `QualityElevationMaxSeconds` (14400): the longer elevation window Quality screens use. **`Quality.NonConformance` is marked as never built**: it was described here but no migration ever created it, and the super-lot deviation takes its place for now. |
 | 3.3 | 2026-10-12 | Blue Ridge Automation | **Super-lot (Controlled Run)** (migration `0109_controlled_run`, spec `docs/superpowers/specs/2026-10-12-controlled-run-super-lot-design.md`) - CHANGE-ORDER ADDITION, outside the accepted baseline; piece 1 of 6 and not deployable on its own. Section 5 Quality gains `ControlledRun` (the case: run number, reason, selection criteria, rolling-window state), `ControlledRunMember` (a LOT XOR a container, one open membership per unit), `ControlledRunLabel` (append-only print log) and three read-only code tables (`ControlledRunStatusCode`, `ControlledRunJoinMethod`, `ControlledRunMemberEndReason`). Membership never blocks by itself: joining sets the existing `Lots.Lot.CrtActive`, so every CRT block applies unchanged. `Lots.ufn_CrtForMint` gains a fourth arm (an open super-lot window tags new production of its part). No existing table changed. |
@@ -1598,6 +1599,45 @@ One row each time a completed container is opened for rework (super-lot piece 4)
 
 Also from migration `0111`: `Lots.AimShipperIdPool.VoidedAt` / `VoidedByUserId` / `VoidReason` (a serial voided on the MES side; never posted afterwards, and listed by `Lots.AimShipperIdPool_ListVoided`), and `Lots.ContainerSerial.RemovedAt` / `RemovedRejectEventId` (a serialized part scrapped out of its container; the row is kept so the record that it was packed there survives).
 
+### LotRework (Lots schema; listed here with the rest of the super-lot feature)
+
+One row each time a LOT is moved back into trim for rework (super-lot piece 5). The rework starts at the supervisor-approved override move into a Trim IN location (`Lots.Lot_MoveToValidated`) and ends at the Trim OUT that re-runs it. There is no separate cancel: a move that nobody runs leaves the rework open, and a zero-scrap Trim OUT is the undo. At most one rework is open per LOT (filtered unique index `UQ_LotRework_OpenPerLot`); a second override move while one is open writes no second row. While a rework is open the LOT's route steps from `ReEntrySequenceNumber` upward count as pending again (`Lots.ufn_NextPendingRouteStep`), steps below the LOT's entry point stay ignored, and a super-lot release is blocked with "At trim rework". The rework pass has its own trim count and is not shift production. `Lots.ufn_OpenLotRework(@LotId)` returns the open row.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| LotId | BIGINT | FK -> Lot.Id, NOT NULL | At most one row per LOT with CompletedAt NULL |
+| ReEntrySequenceNumber | INT | NOT NULL | The route step the LOT re-enters at (its TrimIn step) |
+| LotMovementId | BIGINT | NULL | The override move that started it. Pointer, no FK (`Lots.LotMovement` is partitioned) |
+| StartedAt | DATETIME2(3) | NOT NULL | UTC |
+| MovedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | Who made the move |
+| ApprovedByUserId | BIGINT | FK -> AppUser.Id, NULL | The supervisor whose AD sign-in approved the override |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+| CompletedAt | DATETIME2(3) | NULL | Set by the Trim OUT that closes it |
+| CompletedProductionEventId | BIGINT | NULL | That Trim OUT's `Workorder.ProductionEvent`. Pointer, no FK (partitioned). CompletedAt and this column are both set or both NULL |
+
+### VendorReturn (Lots schema; listed here with the rest of the super-lot feature)
+
+One row per return of part of a LOT's quantity to the vendor (super-lot piece 5). Only Received and ReceivedOffsite LOTs can be returned; a LOT that is Open, Closed or Scrap is refused. **Mark** takes the pieces off at once (`PieceCount` and `InventoryAvailable` together, closing a Good LOT at zero) and writes no `RejectEvent`; **Confirm** records that they went back; **Cancel** (LOT Detail only, supervisor AD sign-in, remarks required) puts back exactly what was taken. A row is confirmed or cancelled, never both. `Quantity` may exceed `InventoryAvailable` as long as it does not exceed `PieceCount`: stock is floored at zero, which is why `PieceCountTaken` and `InventoryTaken` are kept separately.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| LotId | BIGINT | FK -> Lot.Id, NOT NULL | |
+| Quantity | INT | NOT NULL, CHECK > 0 | Pieces returned |
+| PieceCountTaken | INT | NOT NULL, CHECK >= 0 | What was removed from `Lot.PieceCount` |
+| InventoryTaken | INT | NOT NULL, CHECK >= 0 | What was removed from `Lot.InventoryAvailable` (can be less than Quantity) |
+| Remarks | NVARCHAR(500) | NULL | |
+| ControlledRunResultId | BIGINT | FK -> Quality.ControlledRunResult.Id, NULL | Set when the return came from a super-lot ReturnToSupplier result entry. Cancelling the return voids that result, even after the super-lot has closed (append-only: the void and its remarks keep the history) |
+| MarkedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
+| MarkedAt | DATETIME2(3) | NOT NULL | UTC |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+| ConfirmedAt | DATETIME2(3) | NULL | The parts physically went back. Set with ConfirmedByUserId |
+| ConfirmedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| CancelledAt | DATETIME2(3) | NULL | Marked by mistake. Set with CancelledByUserId; never together with ConfirmedAt |
+| CancelledByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| CancelRemarks | NVARCHAR(500) | NULL | Required by `VendorReturn_Cancel` |
+
 ### SignatureMeaning
 
 Read-only code table: what a signature means and the exact statement shown to the signer.
@@ -1648,7 +1688,7 @@ One inspection result entry against a super-lot member: an outcome and a quantit
 |---|---|---|---|
 | Id | BIGINT | PK | |
 | ControlledRunMemberId | BIGINT | FK -> ControlledRunMember.Id, NOT NULL | |
-| DispositionCodeId | BIGINT | FK -> DispositionCode.Id, NOT NULL | Accepted, Scrap, Rework, ReturnToSupplier, UseAsIs |
+| DispositionCodeId | BIGINT | FK -> DispositionCode.Id, NOT NULL | Accepted, Scrap, ReturnToSupplier, UseAsIs. **Rework is no longer accepted as an entry** (piece 5: rework is the override move into trim, tracked in `Lots.LotRework`). **ReturnToSupplier is applied at record time** (piece 5): `ControlledRunResult_Record` takes the pieces off the LOT and writes a `Lots.VendorReturn` row pointing back here through `VendorReturn.ControlledRunResultId`; such an entry cannot be voided, the return is cancelled instead |
 | Quantity | INT | NOT NULL, CHECK > 0 | |
 | DefectCodeId | BIGINT | FK -> DefectCode.Id, NULL | Required for Scrap |
 | RejectEventId | BIGINT | NULL | The Workorder.RejectEvent a Scrap entry produced when it took pieces off a LOT. NULL = nothing was taken off a LOT (a count-only outcome, or scrap recorded against a container, which is applied by the repack piece). Pointer, no FK |
