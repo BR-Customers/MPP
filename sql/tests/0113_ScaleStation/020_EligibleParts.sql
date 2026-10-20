@@ -29,6 +29,8 @@ GO
 -- Only stock, boxes and the override are cleared between runs.
 DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TST-SS-AOUT');
 DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TST-SS-LINE');
+DELETE FROM Audit.InterfaceLog WHERE LocationId = @Term;          -- 050's press rows (FK to the LOTs)
+DELETE sl FROM Lots.ShippingLabel sl JOIN Lots.Container c ON c.Id = sl.ContainerId WHERE c.CurrentLocationId = @Line;
 DELETE tr FROM Lots.ContainerTray tr JOIN Lots.Container c ON c.Id = tr.ContainerId WHERE c.CurrentLocationId = @Line;
 DELETE FROM Lots.Container WHERE CurrentLocationId = @Line;
 DELETE cl FROM Lots.LotGenealogyClosure cl JOIN Lots.Lot l ON l.Id = cl.AncestorLotId OR l.Id = cl.DescendantLotId WHERE l.CurrentLocationId = @Line;
