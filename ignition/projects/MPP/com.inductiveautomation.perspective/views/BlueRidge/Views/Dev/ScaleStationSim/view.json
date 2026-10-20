@@ -22,7 +22,8 @@
     "props": {
       "direction": "column",
       "style": {
-        "height": "100%"
+        "height": "100%",
+        "backgroundColor": "var(--mpp-surface-canvas)"
       }
     },
     "children": [

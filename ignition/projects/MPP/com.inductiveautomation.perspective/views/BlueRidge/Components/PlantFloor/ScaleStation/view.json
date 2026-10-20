@@ -37,6 +37,7 @@
         "minHeight": "100%",
         "boxSizing": "border-box",
         "overflowY": "auto",
+        "backgroundColor": "var(--mpp-surface-canvas)",
         "gap": "14px"
       }
     },
