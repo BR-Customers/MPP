@@ -1,0 +1,312 @@
+<title>Piece 5 Screen Mocks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column of three terminal frames, each with a "what changes" note beside it (stacks under it when narrow).
+   Single dark look on purpose: these are the MPP plant-floor screens, which are dark-only (Core stylesheet --mpp-* tokens). */
+:root {
+  color-scheme: dark;
+  --page:      #070C17;
+  --n10: #0B1220; --n20: #111A2E; --n30: #172238; --n40: #1F2C44; --n50: #2C3A55; --n60: #425270;
+  --n70: #697A98; --n80: #9AA8BF; --n90: #C9D2E0; --n100: #F0F3F8;
+  --accent: #22A8CC; --accent-soft: #093240; --accent-line: #126680; --accent-fg: #4BC2E0;
+  --good-bg: #0F3A2A; --good-bd: #15532D; --good-fg: #4ADE80;
+  --warn-bg: #3A2E0A; --warn-bd: #5C4510; --warn-fg: #FACC15;
+  --bad-bg:  #3A1416; --bad-bd:  #5C1E22; --bad-fg:  #F87171;
+  --new: #C4A8FF; --new-bg: #2A1D45; --new-bd: #3F2D66;
+  --sans: 'Inter', 'Noto Sans', -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', 'Roboto Mono', Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--page); color: var(--n90); font-family: var(--sans); font-size: 14px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 44px; }
+header.intro { display: grid; gap: 10px; max-width: 70ch; }
+header.intro h1 { margin: 0; font-size: 26px; color: var(--n100); letter-spacing: -0.01em; text-wrap: balance; }
+header.intro p { margin: 0; color: var(--n80); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 12px; color: var(--n80); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px dashed var(--new); background: var(--new-bg); }
+
+section.mock { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 960px) { section.mock { grid-template-columns: minmax(0, 1fr); } }
+.mock-head { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mock-head h2 { margin: 0; font-size: 18px; color: var(--n100); }
+.mock-head .where { font-family: var(--mono); font-size: 12px; color: var(--n70); }
+
+/* the terminal frame */
+.screen { background: var(--n10); border: 1px solid var(--n40); border-radius: 10px; overflow: hidden; min-width: 0; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; background: var(--n20); border-bottom: 1px solid var(--n40); flex-wrap: wrap; }
+.bar .ttl { font-weight: 600; color: var(--n100); }
+.bar .op { font-family: var(--mono); font-size: 12px; color: var(--n80); }
+.body { padding: 16px; display: grid; gap: 14px; }
+
+.pill { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+.pill.good { background: var(--good-bg); border-color: var(--good-bd); color: var(--good-fg); }
+.pill.warn { background: var(--warn-bg); border-color: var(--warn-bd); color: var(--warn-fg); }
+.pill.bad  { background: var(--bad-bg);  border-color: var(--bad-bd);  color: var(--bad-fg); }
+.pill.info { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-fg); }
+.pill.mute { background: var(--n30); border-color: var(--n50); color: var(--n80); }
+
+.new { outline: 1px dashed var(--new); outline-offset: 3px; border-radius: 6px; }
+.tag-new { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--new); background: var(--new-bg); border: 1px solid var(--new-bd); border-radius: 4px; padding: 1px 6px; }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.kpi { background: var(--n20); border: 1px solid var(--n40); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.kpi .l { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--n70); }
+.kpi .v { font-family: var(--mono); color: var(--n100); font-size: 15px; overflow-wrap: anywhere; }
+
+.tabs { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--n40); }
+.tab { padding: 8px 12px; font-size: 13px; color: var(--n80); white-space: nowrap; border-bottom: 2px solid transparent; }
+.tab.on { color: var(--n100); border-bottom-color: var(--accent); }
+.tab.new { outline-offset: -2px; }
+
+.panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 16px; }
+@media (max-width: 720px) { .panel { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--n20); border: 1px solid var(--n40); border-radius: 8px; padding: 12px; display: grid; gap: 10px; min-width: 0; }
+.card h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--n80); font-weight: 600; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 12px; color: var(--n70); }
+.input { background: var(--n10); border: 1px solid var(--n50); border-radius: 6px; padding: 10px 12px; font-family: var(--mono); color: var(--n100); min-height: 42px; }
+.input.ph { color: var(--n60); font-family: var(--sans); }
+.hint { font-size: 12px; color: var(--n70); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 18px; border-radius: 8px; font-weight: 600; border: 1px solid var(--n50); background: var(--n30); color: var(--n100); white-space: nowrap; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #04121A; }
+.btn.small { min-height: 34px; padding: 0 12px; font-size: 13px; }
+.btn.danger { background: var(--bad-bg); border-color: var(--bad-bd); color: var(--bad-fg); }
+.row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lock { font-size: 12px; color: var(--warn-fg); }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--n70); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--n40); white-space: nowrap; }
+td { padding: 8px; border-bottom: 1px solid var(--n30); vertical-align: middle; white-space: nowrap; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+td.mono { font-family: var(--mono); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.tile { background: var(--n20); border: 1px solid var(--n40); border-radius: 8px; padding: 12px; display: grid; gap: 2px; min-height: 96px; }
+.tile .l { font-size: 12px; color: var(--n80); }
+.tile .v { font-family: var(--mono); font-size: 26px; color: var(--n100); font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 11px; color: var(--n70); }
+.tile.dim .v { color: var(--n60); font-size: 18px; }
+.tile.call { border-color: var(--warn-bd); background: linear-gradient(var(--warn-bg), var(--n20) 70%); }
+.tile.call .v { color: var(--warn-fg); }
+
+.popup { margin: 4px auto 0; width: min(760px, 100%); background: var(--n20); border: 1px solid var(--n50); border-radius: 10px; box-shadow: 0 18px 40px rgba(0,0,0,.45); overflow: hidden; }
+.popup .bar { background: var(--n30); }
+.connector { text-align: center; font-size: 12px; color: var(--n70); }
+
+.member { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--n20); border: 1px solid var(--n40); border-radius: 8px; padding: 10px 12px; }
+.member.sel { border-color: var(--accent-line); background: linear-gradient(90deg, var(--accent-soft), var(--n20) 60%); }
+.member .name { font-family: var(--mono); color: var(--n100); }
+.member .sub { font-size: 12px; color: var(--n70); }
+.member .status { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.outcomes { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+.otile { border: 1px solid var(--n50); background: var(--n30); border-radius: 8px; padding: 14px 10px; text-align: center; font-weight: 600; color: var(--n100); min-height: 64px; display: grid; place-items: center; gap: 2px; }
+.otile small { font-weight: 400; font-size: 11px; color: var(--n70); }
+.otile.on { border-color: var(--accent); background: var(--accent-soft); }
+.otile.gone { border-style: dashed; color: var(--n60); background: transparent; text-decoration: line-through; }
+.otile.gone small { text-decoration: none; display: block; }
+.cols2 { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 14px; }
+@media (max-width: 720px) { .cols2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* side notes */
+aside.notes { display: grid; gap: 12px; align-content: start; font-size: 13px; color: var(--n80); min-width: 0; }
+aside.notes h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--n70); }
+aside.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+aside.notes .ask { border: 1px solid var(--warn-bd); background: var(--warn-bg); color: var(--n90); border-radius: 8px; padding: 10px 12px; }
+aside.notes .ask b { color: var(--warn-fg); }
+code { font-family: var(--mono); font-size: 12px; color: var(--accent-fg); }
+</style>
+
+<div class="wrap">
+
+<header class="intro">
+  <h1>Super-lot piece 5: three screens to review</h1>
+  <p>These are static mocks of the only screens piece 5 adds or changes. The SQL behind them is already built and tested. Nothing on the Trim screen changes: a rework still starts with the supervisor override at Trim IN.</p>
+  <div class="legend">
+    <span><i class="swatch"></i> Dashed outline = new or changed in piece 5</span>
+    <span>Example data only (LOT names, part numbers, initials)</span>
+  </div>
+</header>
+
+<!-- ============ 1. LOT Detail ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>1. LOT Detail, new "Vendor return" tab</h2><span class="where">Views/ShopFloor/LotDetail</span></div>
+
+  <div class="screen">
+    <div class="bar"><span class="ttl">LOT Detail <span class="pill info" style="margin-left:8px">Good</span></span><span class="op">Receiving Dock 1 &middot; JP</span></div>
+    <div class="body">
+      <div class="kpis">
+        <div class="kpi"><div class="l">LOT name</div><div class="v">MESL3004127</div></div>
+        <div class="kpi"><div class="l">Item</div><div class="v">91503-5G0-A010</div></div>
+        <div class="kpi"><div class="l">Piece count</div><div class="v">380</div></div>
+        <div class="kpi"><div class="l">Origin</div><div class="v">Received</div></div>
+        <div class="kpi"><div class="l">Vendor lot</div><div class="v">KY-240917-3</div></div>
+      </div>
+      <div class="tabs">
+        <span class="tab">History</span><span class="tab">Genealogy</span><span class="tab">Paused-at</span><span class="tab">Container</span><span class="tab">Inspections</span><span class="tab">Hold</span><span class="tab">Scrap</span><span class="tab">Correct count</span>
+        <span class="tab on new">Vendor return <span class="tag-new">new</span></span>
+        <span class="tab">Notes</span>
+      </div>
+      <div class="panel">
+        <div class="card new">
+          <h3>Mark for return to vendor</h3>
+          <div class="field"><label for="vr-qty">Quantity to return</label><div class="input" id="vr-qty">20</div><span class="hint">Up to 380. The pieces come off available stock as soon as you save.</span></div>
+          <div class="field"><label for="vr-rem">Remarks (optional)</label><div class="input ph" id="vr-rem">e.g. porosity on bore, vendor notified</div></div>
+          <div class="row-actions"><span class="btn primary">Mark for return</span></div>
+          <span class="lock">Needs a supervisor AD sign-in (same as Hold and Scrap)</span>
+        </div>
+        <div class="card new">
+          <h3>Returns on this LOT</h3>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Qty</th><th>Marked</th><th>State</th><th></th></tr></thead>
+            <tbody>
+              <tr><td class="num">20</td><td>10/19 14:02 &middot; JP</td><td><span class="pill warn">Waiting to go back</span></td><td><span class="btn small danger">Cancel</span></td></tr>
+              <tr><td class="num">12</td><td>10/14 09:40 &middot; RK</td><td><span class="pill good">Returned 10/16 &middot; DS</span></td><td></td></tr>
+              <tr><td class="num">6</td><td>10/02 11:15 &middot; RK</td><td><span class="pill mute">Cancelled &middot; wrong LOT</span></td><td></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+      <div class="card" style="border-style:dashed">
+        <h3>On a LOT made at MPP the tab shows only this</h3>
+        <span class="hint">LOT MESL3003990 was made at MPP; only purchased or received material can be returned to a vendor.</span>
+      </div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h4>What changes</h4>
+    <ul>
+      <li>A new tab beside Scrap, built as its own embedded view like the Scrap and Count panels.</li>
+      <li>It's open only for <b>Received</b> or <b>Received offsite</b> LOTs. A pass-through part can be returned while it's still the received LOT, but not after MPP repacks it into a tray LOT.</li>
+      <li>Good or Hold LOTs can be marked. Returning the last pieces closes a Good LOT; a held LOT stays on Hold.</li>
+      <li>Cancel puts back exactly what was taken. It's refused once the parts are confirmed returned, or once the LOT has closed.</li>
+      <li>If the LOT is on an open super-lot, marking here also writes a Return result there, so the left-over count still adds up.</li>
+    </ul>
+    <div class="ask"><b>Check:</b> marking needs a supervisor AD sign-in here. Should a Quality or receiving operator be able to mark with just their PIN?</div>
+  </aside>
+</section>
+
+<!-- ============ 2. Supervisor Dashboard ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>2. Supervisor Dashboard, "Parts to return" tile and popup</h2><span class="where">Views/ShopFloor/SupervisorDashboard</span></div>
+
+  <div class="screen">
+    <div class="bar"><span class="ttl">Supervisor Dashboard</span><span class="op">Madison Facility &middot; DS</span></div>
+    <div class="body">
+      <div class="tiles">
+        <div class="tile"><span class="l">Open Downtime</span><span class="v">3</span><span class="s">2 die cast, 1 trim</span></div>
+        <div class="tile"><span class="l">Classified</span><span class="v">2</span><span class="s">open events with a reason</span></div>
+        <div class="tile dim"><span class="l">Paused LOTs</span><span class="v">&mdash;</span><span class="s">aggregate read pending</span></div>
+        <div class="tile"><span class="l">Shifts Not Reconciled</span><span class="v">1</span><span class="s">last 7 days</span></div>
+        <div class="tile call new"><span class="l">Parts to Return <span class="tag-new">new</span></span><span class="v">3</span><span class="s">marked, not yet confirmed &middot; tap to confirm</span></div>
+      </div>
+
+      <div class="connector">tapping the tile opens</div>
+
+      <div class="popup new">
+        <div class="bar"><span class="ttl">Parts waiting to go back to the vendor</span><span class="op">&times;</span></div>
+        <div class="body">
+          <div class="table-wrap"><table>
+            <thead><tr><th>LOT</th><th>Part</th><th>Vendor lot</th><th>Qty</th><th>Marked</th><th>Where</th><th></th></tr></thead>
+            <tbody>
+              <tr><td class="mono">MESL3003871</td><td>12251-5K8-A000</td><td class="mono">KY-240911-1</td><td class="num">48</td><td>10/17 15:20 &middot; RK</td><td>Warehouse B</td><td><span class="btn small primary">Confirm returned</span></td></tr>
+              <tr><td class="mono">MESL3004127</td><td>91503-5G0-A010</td><td class="mono">KY-240917-3</td><td class="num">20</td><td>10/19 14:02 &middot; JP</td><td>Receiving Dock 1</td><td><span class="btn small primary">Confirm returned</span></td></tr>
+              <tr><td class="mono">MESL3004133</td><td>17111-6MA-A000</td><td class="mono">0918-77</td><td class="num">6</td><td>10/19 16:45 &middot; JP</td><td>6MA Line</td><td><span class="btn small primary">Confirm returned</span></td></tr>
+            </tbody>
+          </table></div>
+          <span class="hint">Oldest first. Confirming records who and when, and the row leaves this list. It doesn't change any quantities: those came off when the parts were marked.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h4>What changes</h4>
+    <ul>
+      <li>One new tile beside "Shifts Not Reconciled". It turns amber while anything is waiting and refreshes every 30 seconds.</li>
+      <li>The popup lists every open return across the plant, oldest first.</li>
+      <li><b>Confirm returned</b> is recorded against whoever is signed in. There's no AD prompt, because it records a physical event rather than a protected action.</li>
+      <li>MES doesn't track the shipment itself: no carrier, no RMA number. Remarks from the mark show on LOT Detail.</li>
+    </ul>
+    <div class="ask"><b>Check:</b> should the popup also let a supervisor cancel a return, or keep cancel on LOT Detail only (as mocked)?</div>
+  </aside>
+</section>
+
+<!-- ============ 3. Super-lot Results ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>3. Super-lot page, Results tab</h2><span class="where">ControlledRunResultEntry &middot; ControlledRunMemberRow</span></div>
+
+  <div class="screen">
+    <div class="bar"><span class="ttl">Super-lot CR000014 <span class="pill warn" style="margin-left:8px">Open</span></span><span class="op">Quality sign-in &middot; MB &middot; 24 min left</span></div>
+    <div class="body">
+      <div class="tabs"><span class="tab">Members</span><span class="tab on">Results</span><span class="tab">Sign-off</span></div>
+      <div class="cols2">
+        <div style="display:grid; gap:8px; align-content:start; min-width:0">
+          <div class="member sel">
+            <div><div class="name">MESL3004127</div><div class="sub">91503-5G0-A010 &middot; Received &middot; 380 pcs &middot; left over 360</div></div>
+            <div class="status"><span class="pill info">In progress</span></div>
+          </div>
+          <div class="member new">
+            <div><div class="name">MESL3003655</div><div class="sub">12232-59B-0000 &middot; Manufactured &middot; 95 pcs</div></div>
+            <div class="status"><span class="pill warn">At trim rework since Mon 13:05 &middot; DS</span></div>
+          </div>
+          <div class="member">
+            <div><div class="name">MESL3003660</div><div class="sub">12232-59B-0000 &middot; Manufactured &middot; 96 pcs</div></div>
+            <div class="status"><span class="pill good">Ready</span></div>
+          </div>
+          <div class="member">
+            <div><div class="name">Container 20031</div><div class="sub">17111-6MA-A000 &middot; 4 trays</div></div>
+            <div class="status"><span class="pill mute">Being reworked</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="min-width:0">
+          <h3>1 - Outcome for MESL3004127</h3>
+          <div class="outcomes">
+            <div class="otile">Accepted</div>
+            <div class="otile">Scrap</div>
+            <div class="otile">Use as is</div>
+            <div class="otile on new">Return to vendor<small>takes pieces off now</small></div>
+            <div class="otile gone new">Rework<small>removed: move the LOT back into trim</small></div>
+          </div>
+          <div class="field"><label for="cr-qty">Quantity</label><div class="input" id="cr-qty">20</div></div>
+          <div class="row-actions"><span class="btn">Clear</span><span class="btn primary">OK</span></div>
+          <span class="hint">On a LOT made at MPP or on a container, the Return to vendor tile isn't shown.</span>
+        </div>
+      </div>
+
+      <div class="card new">
+        <h3>Sign-off tab, release check</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Member</th><th>Can release?</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">MESL3003655</td><td><span class="pill bad">At trim rework</span></td></tr>
+            <tr><td class="mono">MESL3003660</td><td><span class="pill good">Yes</span></td></tr>
+            <tr><td class="mono">Container 20031</td><td><span class="pill bad">Being reworked</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h4>What changes</h4>
+    <ul>
+      <li><b>Rework tile removed.</b> A rework is now the supervisor override back into trim followed by the Trim OUT, so a typed count would count the pieces twice.</li>
+      <li><b>Return to vendor</b> takes the pieces off the LOT when OK is pressed, the same way Scrap already does. There's no separate Apply step. It shows only for received LOTs.</li>
+      <li>A member at trim shows "At trim rework since &hellip;" with the supervisor who approved it. It can't be released until its Trim OUT is recorded.</li>
+      <li>After the Trim OUT, Quality records Accepted or Scrap for the reworked pieces as usual.</li>
+    </ul>
+    <div class="ask"><b>Your call (flagged by review):</b> cancelling a return also voids its Return result, even after the super-lot is closed. The void is kept as history, not deleted. Leave it that way, or refuse a cancel once the super-lot has closed?</div>
+  </aside>
+</section>
+
+</div>
