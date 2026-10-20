@@ -60,6 +60,9 @@ DELETE FROM Lots.LotGenealogyClosure;
 DELETE FROM Lots.LotEventLog;
 DELETE FROM Workorder.WorkOrderOperation;
 DELETE FROM Workorder.WorkOrder;
+-- Migration 0113: interface-log rows point at the LOT a scale close minted
+-- (and the part it judged). Keep the audit rows, drop the links.
+UPDATE Audit.InterfaceLog SET LotId = NULL, ItemId = NULL WHERE LotId IS NOT NULL OR ItemId IS NOT NULL;
 DELETE FROM Lots.Lot;
 
 -- ---- 2. Parts content (FK-safe: children before parents; every transactional
