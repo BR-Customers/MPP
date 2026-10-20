@@ -91,6 +91,12 @@ EXEC Audit.Audit_LogInterfaceCall @SystemName = N'PLC:TSS', @Direction = @L, @Lo
     @Description = N'ByWeight tray close', @RequestPayload = N'{"v":1,"net":18.2,"uom":"lb","verdict":"Ok","low":17.75,"high":18.75}',
     @ErrorCondition = N'HandshakeFailed', @ErrorDescription = N'Insufficient component stock', @IsHighFidelity = 1,
     @LocationId = @Term, @ItemId = @A;
+-- A press older than the press log's 30-day window.
+EXEC Audit.Audit_LogInterfaceCall @SystemName = N'PLC:TSS', @Direction = @L, @LogEventTypeCode = N'PlcHandshake',
+    @Description = N'Tray not closed', @RequestPayload = N'{"v":1,"net":99.9,"uom":"lb","verdict":"Over","low":17.75,"high":18.75}',
+    @ErrorCondition = N'HandshakeFailed', @IsHighFidelity = 1, @LocationId = @Term, @ItemId = @A;
+UPDATE Audit.InterfaceLog SET LoggedAt = DATEADD(DAY, -40, LoggedAt)
+WHERE Id = (SELECT MAX(Id) FROM Audit.InterfaceLog WHERE LocationId = @Term);
 -- Noise that must never appear: pre-0113 text row, a Zebra row at the terminal, non-JSON.
 EXEC Audit.Audit_LogInterfaceCall @SystemName = N'PLC:TSS', @Direction = @L, @LogEventTypeCode = N'PlcHandshake',
     @Description = N'old', @RequestPayload = N'net=49.8 uom=lb verdict=Ok', @IsHighFidelity = 1, @LocationId = @Term;

@@ -2,7 +2,7 @@
 -- Procedure:   Workorder.ScaleStation_GetRunningPart
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   The part a By Weight scale station's next press will close. The ONE
@@ -30,6 +30,7 @@
 --
 -- Change Log:
 --   2026-10-19 - 1.0 - Initial version.
+--   2026-10-20 - 1.1 - Eligibility evaluated once per call (table variable).
 -- =============================================
 CREATE OR ALTER PROCEDURE Workorder.ScaleStation_GetRunningPart
     @TerminalLocationId BIGINT
@@ -47,6 +48,12 @@ BEGIN
             @ItemId          BIGINT,
             @Source          NVARCHAR(20) = N'None',
             @Message         NVARCHAR(500);
+
+    -- The eligibility rule is evaluated ONCE per call (it reads stock for every
+    -- finished good x BOM line at the line).
+    DECLARE @Elig TABLE (ItemId BIGINT PRIMARY KEY, ReadyRank BIGINT);
+    INSERT INTO @Elig (ItemId, ReadyRank)
+    SELECT ItemId, ReadyRank FROM Workorder.ufn_ScaleStationEligibleParts(@TerminalLocationId);
 
     IF EXISTS (SELECT 1 FROM Location.Location
                WHERE Id = @TerminalLocationId AND LocationTypeDefinitionId = 7
@@ -71,7 +78,7 @@ BEGIN
     WHERE c.StationLocationId = @TerminalLocationId AND c.ContainerStatusCodeId = 1
     ORDER BY c.OpenedAt, c.Id;
 
-    SELECT @EligibleCount = COUNT(*) FROM Workorder.ufn_ScaleStationEligibleParts(@TerminalLocationId);
+    SELECT @EligibleCount = COUNT(*) FROM @Elig;
 
     IF @IsTerminal = 0
         SET @Message = N'This location is not an active terminal on a line.';
@@ -82,14 +89,14 @@ BEGIN
         SET @Message = N'Finishing open box #' + CAST(@OpenContainerId AS NVARCHAR(20)) + N'.';
     END
     ELSE IF @OverrideItemId IS NOT NULL
-         AND EXISTS (SELECT 1 FROM Workorder.ufn_ScaleStationEligibleParts(@TerminalLocationId) WHERE ItemId = @OverrideItemId)
+         AND EXISTS (SELECT 1 FROM @Elig WHERE ItemId = @OverrideItemId)
     BEGIN
         SET @ItemId = @OverrideItemId;
         SET @Source = N'Override';
     END
     ELSE
     BEGIN
-        SELECT @ItemId = ItemId FROM Workorder.ufn_ScaleStationEligibleParts(@TerminalLocationId) WHERE ReadyRank = 1;
+        SELECT @ItemId = ItemId FROM @Elig WHERE ReadyRank = 1;
         IF @ItemId IS NOT NULL
             SET @Source = N'Default';
         IF @OverrideItemId IS NOT NULL

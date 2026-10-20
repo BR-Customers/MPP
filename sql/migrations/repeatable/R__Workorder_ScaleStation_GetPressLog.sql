@@ -2,7 +2,7 @@
 -- Procedure:   Workorder.ScaleStation_GetPressLog
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Every press at a By Weight scale station, newest first, for the screen's
@@ -29,6 +29,7 @@
 --
 -- Change Log:
 --   2026-10-19 - 1.0 - Initial version.
+--   2026-10-20 - 1.1 - Last 30 days only (bounded read on a partitioned, growing table).
 -- =============================================
 CREATE OR ALTER PROCEDURE Workorder.ScaleStation_GetPressLog
     @TerminalLocationId BIGINT,
@@ -79,6 +80,7 @@ BEGIN
         ORDER BY s.Id DESC
     ) sl
     WHERE il.LocationId = @TerminalLocationId
+      AND il.LoggedAt >= DATEADD(DAY, -30, SYSUTCDATETIME())   -- recent presses only: keeps the seek to the newest partitions
       AND il.SystemName LIKE N'PLC:%'
       AND JSON_VALUE(j.Body, '$.v') IS NOT NULL
       AND (il.ErrorCondition IS NULL OR il.ErrorCondition NOT LIKE N'ScaleFlags%')
