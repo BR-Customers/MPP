@@ -12,7 +12,8 @@
       "ItemId": null,
       "LotName": "",
       "LotStatus": ""
-    }
+    },
+    "rootMarkersJson": ""
   },
   "params": {},
   "props": {
@@ -449,7 +450,7 @@
                       },
                       "transforms": [
                         {
-                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]",
+                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\",\n\t\t\t\"MarkersJson\": r.get(\"MarkersJson\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]",
                           "type": "script"
                         }
                       ],
@@ -523,6 +524,41 @@
                       }
                     },
                     "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "RootMarkerChips"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Quality.ControlledRun.markerChipInstances\", 0, {view.custom.rootMarkersJson})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "row",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/SuperLotMarkerChip",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": true,
+                      "useDefaultViewWidth": true,
+                      "wrap": "wrap"
+                    },
+                    "type": "ia.display.flex-repeater"
                   },
                   {
                     "meta": {
@@ -618,7 +654,7 @@
                       },
                       "transforms": [
                         {
-                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]",
+                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\",\n\t\t\t\"MarkersJson\": r.get(\"MarkersJson\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]",
                           "type": "script"
                         }
                       ],
@@ -776,7 +812,7 @@
         {
           "name": "walk",
           "params": [],
-          "script": "\tq \u003d self.view.custom.query\n\tif not q:\n\t\treturn\n\troot \u003d BlueRidge.Lots.Lot.get(lotName\u003dq)\n\tif not root:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT found\", \"No LOT named %s\" % q, \"warning\")\n\t\treturn\n\tnodes \u003d BlueRidge.Lots.Lot.getGenealogyTree(root[\"Id\"], self.view.custom.direction)\n\tself.view.custom.rootLot \u003d root\n\tself.view.custom.nodes \u003d nodes\n\tself.view.custom.ancestors \u003d [n for n in nodes if n.get(\"Direction\") \u003d\u003d \"Ancestor\"]\n\tself.view.custom.descendants \u003d [n for n in nodes if n.get(\"Direction\") \u003d\u003d \"Descendant\"]"
+          "script": "\tq = self.view.custom.query\n\tif not q:\n\t\treturn\n\troot = BlueRidge.Lots.Lot.get(lotName=q)\n\tif not root:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT found\", \"No LOT named %s\" % q, \"warning\")\n\t\treturn\n\tnodes = BlueRidge.Lots.Lot.getGenealogyTree(root[\"Id\"], self.view.custom.direction)\n\t# Piece 6: super-lot markers for every node and the root, ONE read per walk;\n\t# each node carries its chips as a MarkersJson string for NodeRow.\n\tmarked = BlueRidge.Quality.ControlledRun.markLotNodes(nodes, root[\"Id\"])\n\tnodes = marked[\"nodes\"]\n\tself.view.custom.rootLot = root\n\tself.view.custom.rootMarkersJson = marked[\"rootMarkersJson\"]\n\tself.view.custom.nodes = nodes\n\tself.view.custom.ancestors = [n for n in nodes if n.get(\"Direction\") == \"Ancestor\"]\n\tself.view.custom.descendants = [n for n in nodes if n.get(\"Direction\") == \"Descendant\"]"
         }
       ],
       "extensionFunctions": null,

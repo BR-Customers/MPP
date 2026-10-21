@@ -10,7 +10,10 @@
      resolve(searchText, _refreshToken=None)         -> list[dict] (raw proc rows)
      resolveForTable(searchText, _refreshToken=None) -> CandidateRow repeater instances
      productionEventRows(lotId, _refreshToken=None)  -> table rows, dates preformatted
-     genealogyRows(lotId, _refreshToken=None)        -> table rows (Relation/LotName/...)"""
+     genealogyRows(lotId, _refreshToken=None)        -> table rows (Relation/LotName/...)
+     traceTree(lotId, containerId)                   -> genealogy NodeRow rows + super-lot markers
+     serialRows(containerId)                         -> container serial-table rows (incl. removed)
+     loadDetail(matchType, matchedEntityId, serial)  -> serial / container panel payloads"""
 
 import system
 
@@ -111,6 +114,117 @@ def genealogyRows(lotId, _refreshToken=None):
     return out
 
 
+def traceTree(lotId, containerId=None, _refreshToken=None):
+    """The LOT's genealogy (Lot_GetGenealogyTree, Both directions -- the tree
+       read itself is untouched) as GenealogyViewer/NodeRow params, plus the
+       super-lot markers for every node, the LOT itself and the container on
+       the container panel, from ONE ControlledRun_ListMarkers read (piece 6).
+       Always shaped:
+         {'genealogy': [{LotId, LotName, ItemCode, Depth, Direction, MarkersJson}],
+          'lotMarkersJson': str, 'containerMarkersJson': str}"""
+    lotId = BlueRidge.Common.Util.toIntOrNone(_u(lotId))
+    containerId = BlueRidge.Common.Util.toIntOrNone(_u(containerId))
+    rows = []
+    if lotId is not None:
+        rows = BlueRidge.Lots.Lot.getGenealogyTree(lotId, "Both") or []
+    marked = BlueRidge.Quality.ControlledRun.markLotNodes(rows, lotId, containerId)
+    nodes = []
+    for r in marked["nodes"]:
+        nodes.append({
+            "LotId":       r.get("LotId"),
+            "LotName":     r.get("LotName") or "",
+            "ItemCode":    r.get("ItemCode") or "",
+            "Depth":       r.get("Depth") or 0,
+            "Direction":   r.get("Direction") or "",
+            "MarkersJson": r.get("MarkersJson") or "",
+        })
+    return {
+        "genealogy": nodes,
+        "lotMarkersJson": marked["rootMarkersJson"],
+        "containerMarkersJson": marked["containerMarkersJson"],
+    }
+
+
+def _date(value, pattern="MM/dd"):
+    """A proc time (already Eastern) as display text; '' for None."""
+    if value is None or value == "":
+        return ""
+    try:
+        return system.date.format(value, pattern)
+    except:
+        return ("%s" % value)[:10]
+
+
+# Display keys the container panel binds, beside Container_GetTraceDetail's columns.
+_CONTAINER_DISPLAY = {"ReplacedSerialText": "", "ReplacedSerialVoidText": "",
+                      "ReworkText": "", "SerialChangesText": ""}
+
+
+def _containerDisplay(detail):
+    """Container_GetTraceDetail row + the panel's display strings, formatted
+       from what SQL returned (piece 6, mock 4): the voided serial and its void
+       date, the repack date + initials, and the serial-move counts."""
+    d = dict(detail or {})
+    d.update(_CONTAINER_DISPLAY)
+    dot = u" \u00b7 "
+    if d.get("ReplacedSerial"):
+        d["ReplacedSerialText"] = u"%s" % d.get("ReplacedSerial")
+        voided = _date(d.get("ReplacedSerialVoidedAt"))
+        d["ReplacedSerialVoidText"] = (u"void %s" % voided) if voided else u""
+    if d.get("ReworkOpenedAt") is not None:
+        d["ReworkText"] = dot.join([x for x in (_date(d.get("ReworkOpenedAt")),
+                                                d.get("ReworkOpenedByInitials") or "") if x])
+    scrapped = d.get("ScrappedSerialCount") or 0
+    movedOut = d.get("MovedOutSerialCount") or 0
+    movedIn = d.get("MovedInSerialCount") or 0
+    if scrapped or movedOut or movedIn:
+        d["SerialChangesText"] = dot.join([u"%d scrapped" % scrapped,
+                                           u"%d moved out" % movedOut,
+                                           u"%d moved in" % movedIn])
+    return d
+
+
+def serialRows(containerId):
+    """Serial-table rows for the trace container panel, from
+       Container_ListSerials @IncludeRemoved = 1 (piece 6, spec 6b): a serial
+       scrapped out or moved away stays listed, struck through, with SQL's
+       RemovedReason and the date; a serial a repack moved in says where from.
+       Cells that carry a style are {'value', 'style'} table-cell objects.
+       Columns: SerialNumber, TrayPosition, ProducingLotName, State."""
+    out = []
+    for r in BlueRidge.Lots.Container.listSerials(containerId, includeRemoved=True):
+        r = r or {}
+        serial = r.get("SerialNumber") or ""
+        reason = r.get("RemovedReason") or ""
+        if r.get("RemovedAt") is not None or reason:
+            # SQL's reason with the date after its first word:
+            # 'Scrapped (Porosity)' -> 'Scrapped 10/15 (Porosity)',
+            # 'Moved to container 20044' -> 'Moved 10/15 to container 20044'.
+            when = _date(r.get("RemovedAt"))
+            head, _, tail = reason.partition(u" ")
+            text = u" ".join([x for x in (head, when, tail) if x]) or u"Removed"
+            serialCell = {"value": serial,
+                          "style": {"textDecoration": "line-through",
+                                    "color": "var(--mpp-text-secondary)"}}
+            stateCell = {"value": text, "style": {"color": "var(--pf-status-bad-fg)"}}
+        elif r.get("MovedInFromContainerName"):
+            when = _date(r.get("MovedInAt"))
+            text = u" ".join([x for x in (u"Moved in", when, u"from container",
+                                          u"%s" % r.get("MovedInFromContainerName")) if x])
+            serialCell = serial
+            stateCell = {"value": text, "style": {"color": "var(--mpp-accent-60)"}}
+        else:
+            serialCell = serial
+            stateCell = {"value": u"Packed", "style": {"color": "var(--pf-status-good-fg)"}}
+        out.append({
+            "SerialNumber":     serialCell,
+            "TrayPosition":     r.get("TrayPosition"),
+            "ProducingLotName": r.get("ProducingLotName") or "",
+            "State":            stateCell,
+        })
+    return out
+
+
 def loadDetail(matchType, matchedEntityId, serialNumber=None):
     """Dispatch a resolver hit to its entity-specific detail payload
        (FDS-12-002 / FDS-12-003).
@@ -130,7 +244,7 @@ def loadDetail(matchType, matchedEntityId, serialNumber=None):
 
     out = {
         "serialDetail": dict(BlueRidge.Lots.SerializedPart._EMPTY_TRACE_DETAIL),
-        "containerDetail": dict(BlueRidge.Lots.Container._EMPTY_TRACE_DETAIL),
+        "containerDetail": _containerDisplay(BlueRidge.Lots.Container._EMPTY_TRACE_DETAIL),
         "containerSerials": [],
         "containerHolds": [],
     }
@@ -149,7 +263,8 @@ def loadDetail(matchType, matchedEntityId, serialNumber=None):
         containerId = row.get("ContainerId") if row else None
 
     if containerId:
-        out["containerDetail"] = BlueRidge.Lots.Container.getTraceDetailOrEmpty(containerId)
-        out["containerSerials"] = BlueRidge.Lots.Container.listSerials(containerId)
+        out["containerDetail"] = _containerDisplay(
+            BlueRidge.Lots.Container.getTraceDetailOrEmpty(containerId))
+        out["containerSerials"] = serialRows(containerId)
         out["containerHolds"] = BlueRidge.Lots.Container.listHolds(containerId)
     return out

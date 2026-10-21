@@ -34,6 +34,11 @@
         "type": "Parameter",
         "identifier": "containerId",
         "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "includeRemoved",
+        "sqlType": 6
       }
     ]
   }

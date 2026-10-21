@@ -1243,3 +1243,90 @@ def superLotRowInstances(lotId, _refreshToken=None):
             r["ReleaseText"] = dash
         out.append({"row": r})
     return out
+
+
+# ---------------------------------------------------------------------------
+# Piece 6, Task 13 -- genealogy / trace markers. One markers() read per tree
+# load, grouped here per node and handed to each node as ONE JSON string (a
+# list argument to runScript arrives as QualifiedValue[] and throws, and a
+# list-of-dicts carried through a repeater transform can blank the repeater).
+# Nothing is judged: MembershipState is SQL's answer; amber = 'Open' is the
+# mock's colour rule, applied by the chip view.
+# ---------------------------------------------------------------------------
+
+def _idsCsv(ids):
+    out = []
+    for i in (ids or []):
+        i = BlueRidge.Common.Util.toIntOrNone(_u(i))
+        if i is not None and i not in out:
+            out.append(i)
+    return ",".join(["%d" % i for i in out])
+
+
+def markersByNode(lotIdsCsv, containerIdsCsv, _refreshToken=None):
+    """markers() grouped per node: {'Lot:<id>' | 'Container:<id>': [chip, ...]},
+       chip = {runNumber, text '<RunNumber> . <state lower-case>', state, isOpen}.
+       A node with no marker is absent. {} when both CSVs are empty."""
+    dot = u" \u00b7 "
+    out = {}
+    for r in markers(lotIdsCsv, containerIdsCsv):
+        r = r or {}
+        rn = r.get("RunNumber") or ""
+        state = r.get("MembershipState") or ""
+        key = "%s:%s" % (r.get("NodeKind") or "", r.get("NodeId"))
+        out.setdefault(key, []).append({
+            "runNumber": rn,
+            "text": u"%s%s%s" % (rn, dot, state.lower()),
+            "state": state,
+            "isOpen": state == "Open",
+        })
+    return out
+
+
+def markLotNodes(nodes, rootLotId=None, containerId=None):
+    """Decorate a genealogy tree (Lot_GetGenealogyTree rows) with super-lot
+       markers in ONE markers() read covering every node, the root LOT and an
+       optional container. Returns
+         {'nodes': copies of the rows, each with MarkersJson (str),
+          'rootMarkersJson': str, 'containerMarkersJson': str}
+       Each *MarkersJson is '' when the node has no marker; markerChipInstances
+       turns it into chip-repeater instances."""
+    nodes = [dict(n or {}) for n in (_u(nodes) or [])]
+    rootLotId = BlueRidge.Common.Util.toIntOrNone(_u(rootLotId))
+    containerId = BlueRidge.Common.Util.toIntOrNone(_u(containerId))
+    lotIds = [rootLotId] + [n.get("LotId") for n in nodes]
+    byNode = markersByNode(_idsCsv(lotIds), _idsCsv([containerId]))
+
+    def _json(key):
+        chips = byNode.get(key)
+        return system.util.jsonEncode(chips) if chips else ""
+
+    for n in nodes:
+        lotId = BlueRidge.Common.Util.toIntOrNone(n.get("LotId"))
+        n["MarkersJson"] = _json("Lot:%s" % lotId) if lotId is not None else ""
+    return {
+        "nodes": nodes,
+        "rootMarkersJson": _json("Lot:%s" % rootLotId) if rootLotId is not None else "",
+        "containerMarkersJson": _json("Container:%s" % containerId) if containerId is not None else "",
+    }
+
+
+def markerChipInstances(markersJson):
+    """Chip-repeater instances (SuperLotMarkerChip params) from one node's
+       MarkersJson: [{runNumber, text, isOpen}]. [] for ''/None/unparseable."""
+    t = _u(markersJson)
+    if not t:
+        return []
+    try:
+        rows = system.util.jsonDecode(t) or []
+    except:
+        return []
+    out = []
+    for r in rows:
+        r = r or {}
+        out.append({
+            "runNumber": r.get("runNumber") or "",
+            "text": r.get("text") or "",
+            "isOpen": bool(r.get("isOpen")),
+        })
+    return out

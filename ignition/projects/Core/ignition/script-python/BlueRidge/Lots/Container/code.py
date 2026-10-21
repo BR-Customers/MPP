@@ -227,6 +227,10 @@ _EMPTY_TRACE_DETAIL = {
     "ContainerStatusCode": None, "PieceCount": 0, "SerialCount": 0,
     "SourceLotCount": 0, "OpenedAt": None, "CompletedAt": None,
     "AimShipperId": None, "OpenHoldCount": 0, "TotalHoldCount": 0,
+    # Piece 6: the last repack's voided serial + the container's serial moves.
+    "ReplacedSerial": None, "ReplacedSerialVoidedAt": None,
+    "ReworkOpenedAt": None, "ReworkOpenedByInitials": None,
+    "ScrappedSerialCount": 0, "MovedOutSerialCount": 0, "MovedInSerialCount": 0,
 }
 
 
@@ -248,11 +252,17 @@ def getTraceDetailOrEmpty(containerId):
     return getTraceDetail(containerId) or dict(_EMPTY_TRACE_DETAIL)
 
 
-def listSerials(containerId):
+def listSerials(containerId, includeRemoved=False):
     """The container's serialized parts, tray-position order. [] when none.
-       Sibling read -- one proc returns one result set (FDS-11-011)."""
+       Sibling read -- one proc returns one result set (FDS-11-011).
+
+       includeRemoved=True (Global Trace) also lists serials scrapped out of
+       the container or moved to another one by a repack, with RemovedAt /
+       RemovedReason, and MovedInFromContainerName / MovedInAt on serials a
+       repack moved in. The default keeps today's list (packed serials only)."""
     return BlueRidge.Common.Db.execList(
-        "lots/Container_ListSerials", {"containerId": containerId}) or []
+        "lots/Container_ListSerials",
+        {"containerId": containerId, "includeRemoved": 1 if includeRemoved else 0}) or []
 
 
 def listHolds(containerId):

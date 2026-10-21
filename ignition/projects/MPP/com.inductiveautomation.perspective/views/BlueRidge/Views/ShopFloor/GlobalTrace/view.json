@@ -8,14 +8,26 @@
       "ContainerStatusCode": null,
       "ItemId": null,
       "ItemPartNumber": null,
+      "MovedInSerialCount": 0,
+      "MovedOutSerialCount": 0,
       "OpenHoldCount": 0,
       "OpenedAt": null,
       "PieceCount": 0,
+      "ReplacedSerial": null,
+      "ReplacedSerialText": "",
+      "ReplacedSerialVoidText": "",
+      "ReplacedSerialVoidedAt": null,
+      "ReworkOpenedAt": null,
+      "ReworkOpenedByInitials": null,
+      "ReworkText": "",
+      "ScrappedSerialCount": 0,
+      "SerialChangesText": "",
       "SerialCount": 0,
       "SourceLotCount": 0,
       "TotalHoldCount": 0
     },
     "containerHolds": [],
+    "containerMarkersJson": "",
     "containerSerials": [],
     "events": [],
     "genealogy": [],
@@ -34,6 +46,7 @@
       "LotStatusName": "",
       "PieceCount": 0
     },
+    "lotMarkersJson": "",
     "refreshToken": 1,
     "scrap": {
       "CounterScrap": 0,
@@ -1231,6 +1244,41 @@
                       "text": "Container"
                     },
                     "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ContainerMarkerChips"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Quality.ControlledRun.markerChipInstances\", 0, {view.custom.containerMarkersJson})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "row",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/SuperLotMarkerChip",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": true,
+                      "useDefaultViewWidth": true,
+                      "wrap": "wrap"
+                    },
+                    "type": "ia.display.flex-repeater"
                   }
                 ],
                 "meta": {
@@ -1761,6 +1809,250 @@
                       }
                     },
                     "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ReplacedSerialCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Replaced serial"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "ReplacedSerialCellVal"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.containerDetail.ReplacedSerialText"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "color": "var(--mpp-text-secondary)",
+                                "fontSize": "14px",
+                                "fontWeight": "600",
+                                "textDecoration": "line-through"
+                              }
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "ReplacedSerialVoid"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.containerDetail.ReplacedSerialVoidText"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "color": "var(--mpp-text-secondary)",
+                                "fontSize": "12px"
+                              }
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
+                        "meta": {
+                          "name": "ReplacedSerialValRow"
+                        },
+                        "props": {
+                          "alignItems": "baseline",
+                          "style": {
+                            "gap": "6px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ReplacedSerialCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "len({view.custom.containerDetail.ReplacedSerialText}) > 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ReworkCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Repack"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ReworkCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.containerDetail.ReworkText"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ReworkCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "len({view.custom.containerDetail.ReworkText}) > 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialChangesCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Serial changes"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialChangesCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.containerDetail.SerialChangesText"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialChangesCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "len({view.custom.containerDetail.SerialChangesText}) > 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
                 ],
                 "meta": {
@@ -2125,6 +2417,98 @@
                       "viewPath": "",
                       "visible": true,
                       "width": 200
+                    },
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "State",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "State"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 280
                     }
                   ],
                   "style": {
@@ -2865,6 +3249,41 @@
                       "text": "CRT Active"
                     },
                     "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "SummaryMarkerChips"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Quality.ControlledRun.markerChipInstances\", 0, {view.custom.lotMarkersJson})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "row",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/SuperLotMarkerChip",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": true,
+                      "useDefaultViewWidth": true,
+                      "wrap": "wrap"
+                    },
+                    "type": "ia.display.flex-repeater"
                   }
                 ],
                 "meta": {
@@ -3321,10 +3740,9 @@
               },
               {
                 "meta": {
-                  "name": "GenealogyTable"
+                  "name": "GenealogyRepeater"
                 },
                 "position": {
-                  "basis": "220px",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -3336,14 +3754,14 @@
                       "type": "expr"
                     }
                   },
-                  "props.data": {
+                  "props.instances": {
                     "binding": {
                       "config": {
                         "path": "view.custom.genealogy"
                       },
                       "transforms": [
                         {
-                          "code": "\treturn value or []",
+                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\",\n\t\t\t\"MarkersJson\": r.get(\"MarkersJson\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]",
                           "type": "script"
                         }
                       ],
@@ -3352,34 +3770,22 @@
                   }
                 },
                 "props": {
-                  "columns": [
-                    {
-                      "field": "Relation",
-                      "header": {
-                        "title": "Relation"
-                      }
-                    },
-                    {
-                      "field": "LotName",
-                      "header": {
-                        "title": "LOT"
-                      }
-                    },
-                    {
-                      "field": "Item",
-                      "header": {
-                        "title": "Item"
-                      }
-                    },
-                    {
-                      "field": "Depth",
-                      "header": {
-                        "title": "Depth"
-                      }
-                    }
-                  ]
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/NodeRow",
+                  "style": {
+                    "border": "1px solid var(--mpp-border-subtle)",
+                    "borderRadius": "6px",
+                    "gap": "0",
+                    "overflow": "hidden"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
                 },
-                "type": "ia.display.table"
+                "type": "ia.display.flex-repeater"
               }
             ],
             "meta": {
@@ -3461,7 +3867,7 @@
           "params": [
             "lotId"
           ],
-          "script": "\tif not lotId:\n\t\treturn\n\tself.view.custom.selectedLotId \u003d lotId\n\tself.view.custom.lot \u003d BlueRidge.Lots.Lot.getOrEmpty(lotId\u003dlotId)\n\tself.view.custom.history \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.scrap \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.events \u003d BlueRidge.Lots.GlobalTrace.productionEventRows(lotId)\n\tself.view.custom.genealogy \u003d BlueRidge.Lots.GlobalTrace.genealogyRows(lotId)"
+          "script": "\tif not lotId:\n\t\treturn\n\tself.view.custom.selectedLotId = lotId\n\tself.view.custom.lot = BlueRidge.Lots.Lot.getOrEmpty(lotId=lotId)\n\tself.view.custom.history = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.scrap = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.events = BlueRidge.Lots.GlobalTrace.productionEventRows(lotId)\n\t# Genealogy + super-lot markers (piece 6): ONE markers read covering the\n\t# tree, this LOT and the container on the container panel (loadDetail\n\t# runs first, so containerDetail is already this pick's container).\n\tt = BlueRidge.Lots.GlobalTrace.traceTree(lotId, self.view.custom.containerDetail.ContainerId)\n\tself.view.custom.genealogy = t[\"genealogy\"]\n\tself.view.custom.lotMarkersJson = t[\"lotMarkersJson\"]\n\tself.view.custom.containerMarkersJson = t[\"containerMarkersJson\"]"
         },
         {
           "name": "loadDetail",
@@ -3477,7 +3883,7 @@
         {
           "messageType": "traceCandidatePicked",
           "pageScope": true,
-          "script": "\tself.view.rootContainer.loadTrace(payload.get(\"lotId\"))\n\tself.view.rootContainer.loadDetail(\n\t\tpayload.get(\"matchType\"), payload.get(\"matchedEntityId\"))",
+          "script": "\t# loadDetail first: loadTrace reads the container it sets, so the\n\t# super-lot markers (one read per load) cover the container too.\n\tself.view.rootContainer.loadDetail(\n\t\tpayload.get(\"matchType\"), payload.get(\"matchedEntityId\"))\n\tself.view.rootContainer.loadTrace(payload.get(\"lotId\"))",
           "sessionScope": false,
           "viewScope": false
         }
