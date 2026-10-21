@@ -94,20 +94,6 @@
         "type": "expr"
       }
     },
-    "custom.scaleInstancePath": {
-      "binding": {
-        "config": {
-          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.TerminalPlcDevice.getByTerminal\", 0, {session.custom.terminal.terminalLocationId}), \"\")"
-        },
-        "transforms": [
-          {
-            "code": "\trows \u003d value or []\n\tfor r in rows:\n\t\tif (r.get(\"DeviceTypeCode\") or \"\") \u003d\u003d \"ScaleStation\":\n\t\t\treturn r.get(\"UdtInstancePath\") or \"\"\n\treturn \"\"",
-            "type": "script"
-          }
-        ],
-        "type": "expr"
-      }
-    },
     "custom.selectedFinishedGoodItemId": {
       "onChange": {
         "enabled": true,
@@ -606,7 +592,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{session.custom.closureMethod} \u003d \"ByWeight\" || {session.custom.closureMethod} \u003d \"ByCount\""
+                    "expression": "{session.custom.closureMethod} \u003d \"ByCount\""
                   },
                   "type": "expr"
                 }
@@ -626,6 +612,42 @@
                 "children": [
                   {
                     "meta": {
+                      "name": "ScaleStation"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{session.custom.closureMethod} \u003d \"ByWeight\""
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.params.terminalLocationId": {
+                        "binding": {
+                          "config": {
+                            "expression": "{session.custom.terminal.terminalLocationId}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "params": {
+                        "terminalLocationId": null
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/ScaleStation",
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.view"
+                  },
+                  {
+                    "meta": {
                       "name": "EmptyHint"
                     },
                     "position": {
@@ -635,7 +657,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "isNull({view.custom.container.Id})"
+                            "expression": "(isNull({view.custom.container.Id})) \u0026\u0026 {session.custom.closureMethod} !\u003d \"ByWeight\""
                           },
                           "type": "expr"
                         }
@@ -723,7 +745,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "!isNull({view.custom.container.Id})"
+                            "expression": "(!isNull({view.custom.container.Id})) \u0026\u0026 {session.custom.closureMethod} !\u003d \"ByWeight\""
                           },
                           "type": "expr"
                         }
@@ -909,105 +931,6 @@
                                 "overflow": "hidden",
                                 "padding": "4px",
                                 "position": "relative"
-                              }
-                            },
-                            "type": "ia.container.flex"
-                          },
-                          {
-                            "children": [
-                              {
-                                "meta": {
-                                  "name": "WeightLabel"
-                                },
-                                "props": {
-                                  "style": {
-                                    "color": "var(--mpp-neutral-90)",
-                                    "fontSize": "11px",
-                                    "fontWeight": "500",
-                                    "letterSpacing": "0.1em",
-                                    "textTransform": "uppercase"
-                                  },
-                                  "text": "NS Line Scale"
-                                },
-                                "type": "ia.display.label"
-                              },
-                              {
-                                "meta": {
-                                  "name": "WeightStatus"
-                                },
-                                "props": {
-                                  "style": {
-                                    "color": "var(--mpp-text-primary)",
-                                    "fontSize": "18px",
-                                    "fontWeight": "600",
-                                    "maxWidth": "360px",
-                                    "textAlign": "center"
-                                  },
-                                  "text": "Waiting for scale - press Weigh \u0026 Close Tray, or the button on the indicator."
-                                },
-                                "type": "ia.display.label"
-                              },
-                              {
-                                "events": {
-                                  "component": {
-                                    "onActionPerformed": {
-                                      "config": {
-                                        "script": "\t# The scale\u0027s UDT instance path is per-terminal and lives on the terminal\u0027s\n\t# PLC-device mapping (session.custom.plcDevices), NOT on session.custom.terminal.\n\t# Rows arrive as Java ImmutableMaps: dev[\u0027Key\u0027] works, dev.get(...) does not.\n\tscalePath \u003d \"\"\n\tfor dev in (self.session.custom.plcDevices or []):\n\t\tif dev and dev[\"DeviceTypeCode\"] \u003d\u003d \"ScaleStation\":\n\t\t\tscalePath \u003d \"%s\" % (dev[\"UdtInstancePath\"] or \"\")\n\t\t\tbreak\n\tif not scalePath:\n\t\tBlueRidge.Common.Notify.toast(\"No scale mapped\", \"This terminal has no ScaleStation device configured.\", \"warning\", 6000)\n\t\treturn\n\t# The SAME entry point the physical ENTER-key trigger reaches, so a screen\n\t# tap and a button press mint identically. captureAndClose re-checks the\n\t# full five-condition gate -- props.enabled below is only a courtesy.\n\tresult \u003d BlueRidge.Workorder.ScaleWatcher.captureAndClose(scalePath, self.session.custom.terminal.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray closed - FG LOT minted\", errorTitle\u003d\"Cannot close tray\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
-                                      },
-                                      "scope": "G",
-                                      "type": "script"
-                                    }
-                                  }
-                                },
-                                "meta": {
-                                  "name": "WeighCloseTrayButton"
-                                },
-                                "position": {
-                                  "shrink": 0
-                                },
-                                "propConfig": {
-                                  "props.enabled": {
-                                    "binding": {
-                                      "config": {
-                                        "expression": "!coalesce(tag({view.custom.scaleInstancePath} + \"/Weight/InMotion\"), true) \u0026\u0026 coalesce(tag({view.custom.scaleInstancePath} + \"/Weight/IsValid\"), false) \u0026\u0026 coalesce(tag({view.custom.scaleInstancePath} + \"/Setpoint/State\"), \"\") \u003d \"Active\""
-                                      },
-                                      "type": "expr"
-                                    }
-                                  }
-                                },
-                                "props": {
-                                  "style": {
-                                    "classes": "pf-btn pf-btn-primary pf-btn-large"
-                                  },
-                                  "text": "Weigh \u0026 Close Tray"
-                                },
-                                "type": "ia.input.button"
-                              }
-                            ],
-                            "meta": {
-                              "name": "WeightPane"
-                            },
-                            "position": {
-                              "shrink": 0
-                            },
-                            "propConfig": {
-                              "position.display": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "{session.custom.closureMethod} \u003d \"ByWeight\""
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "alignItems": "center",
-                              "justify": "center",
-                              "style": {
-                                "border": "2px solid var(--mpp-border-subtle)",
-                                "borderRadius": "var(--mpp-radius-lg)",
-                                "gap": "12px",
-                                "padding": "12px 16px"
                               }
                             },
                             "type": "ia.container.flex"
@@ -1255,7 +1178,17 @@
                         "gap": "4px"
                       }
                     },
-                    "type": "ia.container.flex"
+                    "type": "ia.container.flex",
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{session.custom.closureMethod} !\u003d \"ByWeight\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    }
                   },
                   {
                     "children": [
