@@ -23,7 +23,7 @@ CREATE TABLE #H (HoldEventId BIGINT, SubjectKind NVARCHAR(20), SubjectName NVARC
 IF OBJECT_ID(N'tempdb..#S') IS NOT NULL DROP TABLE #S;
 CREATE TABLE #S (ContainerId BIGINT, ItemPartNumber NVARCHAR(100), AimShipperId NVARCHAR(50),
                  PieceCount INT, SourceLotCount INT, OpenedAt DATETIME2(3),
-                 CompletedAt DATETIME2(3), CurrentLocationName NVARCHAR(200), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(100), MovedInFromContainerName NVARCHAR(50), ReplacedSerial NVARCHAR(50), ReplacedSerialVoidedAt DATETIME2(3), ReworkOpenedAt DATETIME2(3), ReworkOpenedByInitials NVARCHAR(20));
+                 CompletedAt DATETIME2(3), CurrentLocationName NVARCHAR(200), ReplacedSerial NVARCHAR(50), ReplacedSerialVoidedAt DATETIME2(3), ReworkOpenedAt DATETIME2(3), ReworkOpenedByInitials NVARCHAR(20), ScrappedSerialCount INT, MovedOutSerialCount INT, MovedInSerialCount INT);
 GO
 
 -- ---- Fixture: one held LOT (6h ago), one released hold, one shipped container ----

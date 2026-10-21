@@ -26,12 +26,12 @@ CREATE TABLE #CD (
     ContainerId BIGINT, ItemId BIGINT, ItemPartNumber NVARCHAR(100),
     ContainerStatusCode NVARCHAR(50), PieceCount INT, SerialCount INT,
     SourceLotCount INT, OpenedAt DATETIME2(3), CompletedAt DATETIME2(3),
-    AimShipperId NVARCHAR(50), OpenHoldCount INT, TotalHoldCount INT, RemovedAt DATETIME2(3), RemovedReason NVARCHAR(100), MovedInFromContainerName NVARCHAR(50), ReplacedSerial NVARCHAR(50), ReplacedSerialVoidedAt DATETIME2(3), ReworkOpenedAt DATETIME2(3), ReworkOpenedByInitials NVARCHAR(20)
+    AimShipperId NVARCHAR(50), OpenHoldCount INT, TotalHoldCount INT, ReplacedSerial NVARCHAR(50), ReplacedSerialVoidedAt DATETIME2(3), ReworkOpenedAt DATETIME2(3), ReworkOpenedByInitials NVARCHAR(20), ScrappedSerialCount INT, MovedOutSerialCount INT, MovedInSerialCount INT
 );
 IF OBJECT_ID(N'tempdb..#CS') IS NOT NULL DROP TABLE #CS;
 CREATE TABLE #CS (
     SerializedPartId BIGINT, SerialNumber NVARCHAR(50), TrayPosition INT,
-    ProducingLotId BIGINT, ProducingLotName NVARCHAR(50), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(100), MovedInFromContainerName NVARCHAR(50)
+    ProducingLotId BIGINT, ProducingLotName NVARCHAR(50), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(500), MovedInFromContainerName NVARCHAR(50), MovedInAt DATETIME2(3)
 );
 IF OBJECT_ID(N'tempdb..#CH') IS NOT NULL DROP TABLE #CH;
 CREATE TABLE #CH (

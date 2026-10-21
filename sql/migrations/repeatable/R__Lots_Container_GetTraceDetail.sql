@@ -21,11 +21,12 @@
 --              UNIONed with ContainerSerial -> SerializedPart.ProducingLotId.
 --
 --              v1.1 (super-lot piece 6): repack awareness, new columns LAST --
---              RemovedAt (ET) / RemovedReason ('Scrapped (<defect>)' or 'Moved to container <Id>')
---              = the latest serial taken out of this container (scrap outranks a move-out);
---              MovedInFromContainerName = the container the latest moved-in serial came from;
 --              ReplacedSerial / ReplacedSerialVoidedAt / ReworkOpenedAt / ReworkOpenedByInitials
---              from the latest Lots.ContainerRework. All NULL for an untouched container.
+--              from the latest Lots.ContainerRework, then ScrappedSerialCount (serials scrapped out
+--              of this container), MovedOutSerialCount, MovedInSerialCount (serials moved out / in
+--              per Lots.ContainerSerialHistory -- a repack OR a Sort Cage migration). Counts are 0
+--              and the rest NULL for an untouched container. Per-serial detail:
+--              Lots.Container_ListSerials @IncludeRemoved = 1.
 -- =============================================
 CREATE OR ALTER PROCEDURE Lots.Container_GetTraceDetail
     @ContainerId BIGINT
@@ -46,13 +47,13 @@ BEGIN
         lbl.AimShipperId,
         ISNULL(h.OpenHoldCount, 0)  AS OpenHoldCount,
         ISNULL(h.TotalHoldCount, 0) AS TotalHoldCount,
-        CAST(rem.At AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS RemovedAt,
-        rem.Reason AS RemovedReason,
-        mvin.FromName AS MovedInFromContainerName,
         rwk.OriginalAimShipperId AS ReplacedSerial,
         CAST(rwk.VoidedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS ReplacedSerialVoidedAt,
         CAST(rwk.OpenedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS ReworkOpenedAt,
-        rwk.Initials AS ReworkOpenedByInitials
+        rwk.Initials AS ReworkOpenedByInitials,
+        ISNULL(cnt.ScrappedCount, 0) AS ScrappedSerialCount,
+        ISNULL(cnt.MovedOutCount, 0) AS MovedOutSerialCount,
+        ISNULL(cnt.MovedInCount, 0) AS MovedInSerialCount
     FROM Lots.Container c
     INNER JOIN Parts.Item i ON i.Id = c.ItemId
     INNER JOIN Lots.ContainerStatusCode csc ON csc.Id = c.ContainerStatusCodeId
@@ -88,30 +89,6 @@ BEGIN
         FROM Quality.HoldEvent he WHERE he.ContainerId = c.Id
     ) h
     OUTER APPLY (
-        -- latest serial taken out of this container by a repack: scrapped first (the more
-        -- significant fact), else the most recent move-out. Rows stay; nothing is filtered.
-        SELECT TOP (1) e.At, e.Reason FROM (
-            SELECT cs.RemovedAt AS At, 1 AS Pri, cs.Id AS Sid,
-                   N'Scrapped (' + ISNULL(dc.Description, N'no defect') + N')' AS Reason
-            FROM Lots.ContainerSerial cs
-            LEFT JOIN Workorder.RejectEvent re ON re.Id = cs.RemovedRejectEventId
-            LEFT JOIN Quality.DefectCode    dc ON dc.Id = re.DefectCodeId
-            WHERE cs.ContainerId = c.Id AND cs.RemovedAt IS NOT NULL
-            UNION ALL
-            SELECT h.MigratedAt, 2, h.ContainerSerialId,
-                   N'Moved to container ' + CAST(h.NewContainerId AS NVARCHAR(20))
-            FROM Lots.ContainerSerialHistory h
-            WHERE h.OldContainerId = c.Id AND h.NewContainerId <> c.Id
-        ) e
-        ORDER BY e.Pri, e.At DESC, e.Sid DESC
-    ) rem
-    OUTER APPLY (
-        SELECT TOP (1) CAST(h.OldContainerId AS NVARCHAR(50)) AS FromName
-        FROM Lots.ContainerSerialHistory h
-        WHERE h.NewContainerId = c.Id AND h.OldContainerId <> c.Id
-        ORDER BY h.MigratedAt DESC, h.Id DESC
-    ) mvin
-    OUTER APPLY (
         SELECT TOP (1) rw.OpenedAt, rw.OriginalAimShipperId, ap.VoidedAt, u.Initials
         FROM Lots.ContainerRework rw
         LEFT JOIN Lots.AimShipperIdPool ap ON ap.AimShipperId = rw.OriginalAimShipperId
@@ -119,6 +96,19 @@ BEGIN
         WHERE rw.ContainerId = c.Id
         ORDER BY rw.OpenedAt DESC, rw.Id DESC
     ) rwk
+    OUTER APPLY (
+        SELECT
+            (SELECT COUNT(*) FROM Lots.ContainerSerial cs
+              WHERE cs.ContainerId = c.Id AND cs.RemovedAt IS NOT NULL) AS ScrappedCount,
+            (SELECT COUNT(DISTINCT h.ContainerSerialId)
+               FROM Lots.ContainerSerialHistory h
+               INNER JOIN Lots.ContainerSerial cs ON cs.Id = h.ContainerSerialId
+              WHERE h.OldContainerId = c.Id AND h.NewContainerId <> c.Id AND cs.ContainerId <> c.Id) AS MovedOutCount,
+            (SELECT COUNT(DISTINCT h.ContainerSerialId)
+               FROM Lots.ContainerSerialHistory h
+               INNER JOIN Lots.ContainerSerial cs ON cs.Id = h.ContainerSerialId
+              WHERE h.NewContainerId = c.Id AND h.OldContainerId <> c.Id AND cs.ContainerId = c.Id) AS MovedInCount
+    ) cnt
     WHERE c.Id = @ContainerId;
 END
 GO

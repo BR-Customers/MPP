@@ -16,9 +16,9 @@
 --              A container reachable by BOTH paths is returned ONCE (dedupe by
 --              ContainerId; the tray path wins the AssociationKind label).
 --
---              v1.1 (super-lot piece 6): RemovedAt (ET) / RemovedReason / MovedInFromContainerName,
---              LAST, about THIS LOT's serials only: scrapped out of the container (kept, marked),
---              or moved in from another container by a repack. NULL when untouched.
+--              v1.1 (super-lot piece 6): ScrappedSerialCount / MovedOutSerialCount /
+--              MovedInSerialCount, LAST, counting THIS LOT's serials in the container (0 when
+--              untouched). Per-serial detail: Lots.Container_ListSerials @IncludeRemoved = 1.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Quality.Hold_ListAssociatedContainers
@@ -54,42 +54,29 @@ BEGIN
         csc.Code                                                   AS ContainerStatusCode,
         CASE WHEN r.ViaTray = 1 THEN N'FinishedGoodTray'
              ELSE N'SerializedPart' END                            AS AssociationKind,
-        CAST(rem.At AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS RemovedAt,
-        rem.Reason                                                 AS RemovedReason,
-        mvin.FromName                                              AS MovedInFromContainerName
+        ISNULL(cnt.ScrappedCount, 0)                               AS ScrappedSerialCount,
+        ISNULL(cnt.MovedOutCount, 0)                               AS MovedOutSerialCount,
+        ISNULL(cnt.MovedInCount, 0)                                AS MovedInSerialCount
     FROM rolled r
     INNER JOIN Lots.Container           c   ON c.Id   = r.ContainerId
     INNER JOIN Parts.Item               i   ON i.Id   = c.ItemId
     INNER JOIN Location.Location        loc ON loc.Id = c.CurrentLocationId
     INNER JOIN Lots.ContainerStatusCode csc ON csc.Id = c.ContainerStatusCodeId
     OUTER APPLY (
-        -- this LOT's serials taken out of the container by a repack: scrapped first, else latest move-out
-        SELECT TOP (1) e.At, e.Reason FROM (
-            SELECT cs.RemovedAt AS At, 1 AS Pri, cs.Id AS Sid,
-                   N'Scrapped (' + ISNULL(dc.Description, N'no defect') + N')' AS Reason
-            FROM Lots.ContainerSerial cs
-            INNER JOIN Lots.SerializedPart  sp ON sp.Id = cs.SerializedPartId AND sp.ProducingLotId = @LotId
-            LEFT JOIN Workorder.RejectEvent re ON re.Id = cs.RemovedRejectEventId
-            LEFT JOIN Quality.DefectCode    dc ON dc.Id = re.DefectCodeId
-            WHERE cs.ContainerId = c.Id AND cs.RemovedAt IS NOT NULL
-            UNION ALL
-            SELECT h.MigratedAt, 2, h.ContainerSerialId,
-                   N'Moved to container ' + CAST(h.NewContainerId AS NVARCHAR(20))
-            FROM Lots.ContainerSerialHistory h
-            INNER JOIN Lots.ContainerSerial cs2 ON cs2.Id = h.ContainerSerialId
-            INNER JOIN Lots.SerializedPart  sp2 ON sp2.Id = cs2.SerializedPartId AND sp2.ProducingLotId = @LotId
-            WHERE h.OldContainerId = c.Id AND h.NewContainerId <> c.Id
-        ) e
-        ORDER BY e.Pri, e.At DESC, e.Sid DESC
-    ) rem
-    OUTER APPLY (
-        SELECT TOP (1) CAST(h.OldContainerId AS NVARCHAR(50)) AS FromName
-        FROM Lots.ContainerSerialHistory h
-        INNER JOIN Lots.ContainerSerial cs3 ON cs3.Id = h.ContainerSerialId
-        INNER JOIN Lots.SerializedPart  sp3 ON sp3.Id = cs3.SerializedPartId AND sp3.ProducingLotId = @LotId
-        WHERE h.NewContainerId = c.Id AND h.OldContainerId <> c.Id
-        ORDER BY h.MigratedAt DESC, h.Id DESC
-    ) mvin
+        -- counts of THIS LOT's serials only (repack or Sort Cage moves both land in ContainerSerialHistory)
+        SELECT
+            (SELECT COUNT(*) FROM Lots.ContainerSerial cs
+               INNER JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId AND sp.ProducingLotId = @LotId
+              WHERE cs.ContainerId = c.Id AND cs.RemovedAt IS NOT NULL) AS ScrappedCount,
+            (SELECT COUNT(DISTINCT h.ContainerSerialId) FROM Lots.ContainerSerialHistory h
+               INNER JOIN Lots.ContainerSerial cs ON cs.Id = h.ContainerSerialId
+               INNER JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId AND sp.ProducingLotId = @LotId
+              WHERE h.OldContainerId = c.Id AND h.NewContainerId <> c.Id AND cs.ContainerId <> c.Id) AS MovedOutCount,
+            (SELECT COUNT(DISTINCT h.ContainerSerialId) FROM Lots.ContainerSerialHistory h
+               INNER JOIN Lots.ContainerSerial cs ON cs.Id = h.ContainerSerialId
+               INNER JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId AND sp.ProducingLotId = @LotId
+              WHERE h.NewContainerId = c.Id AND h.OldContainerId <> c.Id AND cs.ContainerId = c.Id) AS MovedInCount
+    ) cnt
     ORDER BY c.Id;
 END;
 GO

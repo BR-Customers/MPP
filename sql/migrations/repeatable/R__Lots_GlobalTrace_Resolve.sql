@@ -29,7 +29,7 @@
 --              ItemPartNumber, Detail.
 --
 --              v1.1 (super-lot piece 6): + RemovedAt (ET), RemovedReason, MovedInFromContainerName,
---              filled on 'Serial' rows only (scrapped / moved-in by a container repack); NULL elsewhere.
+--              filled on 'Serial' rows only (scrapped / moved in by a container repack or Sort Cage migration); NULL elsewhere.
 --
 --              READ proc: no status row, no OUTPUT params (FDS-11-011).
 --              Empty/blank input or no match = empty result set.
@@ -52,7 +52,7 @@ BEGIN
                CAST(NULL AS NVARCHAR(50))  AS ItemPartNumber,
                CAST(NULL AS NVARCHAR(200)) AS Detail,
                CAST(NULL AS DATETIME2(3))  AS RemovedAt,
-               CAST(NULL AS NVARCHAR(100)) AS RemovedReason,
+               CAST(NULL AS NVARCHAR(500)) AS RemovedReason,
                CAST(NULL AS NVARCHAR(50))  AS MovedInFromContainerName
         WHERE 1 = 0;
         RETURN;
@@ -68,7 +68,7 @@ BEGIN
         SELECT 1 AS MatchRank, N'Lot' AS MatchType, l.Id AS MatchedEntityId,
                l.Id AS LotId, l.LotName, i.PartNumber AS ItemPartNumber,
                CAST(sc.Code + N' at ' + loc.Name AS NVARCHAR(200)) AS Detail,
-               CAST(NULL AS DATETIME2(3)) AS RemovedAt, CAST(NULL AS NVARCHAR(100)) AS RemovedReason, CAST(NULL AS NVARCHAR(50)) AS MovedInFromContainerName
+               CAST(NULL AS DATETIME2(3)) AS RemovedAt, CAST(NULL AS NVARCHAR(500)) AS RemovedReason, CAST(NULL AS NVARCHAR(50)) AS MovedInFromContainerName
         FROM Lots.Lot l
         INNER JOIN Parts.Item         i   ON i.Id   = l.ItemId
         INNER JOIN Lots.LotStatusCode sc  ON sc.Id  = l.LotStatusId
@@ -83,7 +83,7 @@ BEGIN
                CAST(N'Serial ' + sp.SerialNumber + N' -> producing LOT' AS NVARCHAR(200)),
                CAST(scs.RemovedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)),
                CASE WHEN scs.RemovedAt IS NULL THEN NULL
-                    ELSE CAST(N'Scrapped (' + ISNULL(sdc.Description, N'no defect') + N')' AS NVARCHAR(100)) END,
+                    ELSE CAST(N'Scrapped (' + ISNULL(sdc.Description, N'no defect') + N')' AS NVARCHAR(500)) END,
                CAST(smv.OldContainerId AS NVARCHAR(50))
         FROM Lots.SerializedPart sp
         LEFT JOIN Lots.ContainerSerial   scs ON scs.SerializedPartId = sp.Id
@@ -104,7 +104,7 @@ BEGIN
         --    (ContainerTray.FinishedGoodLotId UNION ContainerSerial->ProducingLotId)
         SELECT DISTINCT 3, N'Container', c.Id,
                l.Id, l.LotName, i.PartNumber,
-               CAST(N'Container ' + CAST(c.Id AS NVARCHAR(20)) + N' source LOT' AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(100)), CAST(NULL AS NVARCHAR(50))
+               CAST(N'Container ' + CAST(c.Id AS NVARCHAR(20)) + N' source LOT' AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(500)), CAST(NULL AS NVARCHAR(50))
         FROM Lots.Container c
         CROSS APPLY (
             SELECT ct.FinishedGoodLotId AS SrcLotId
@@ -125,7 +125,7 @@ BEGIN
         -- 4. AIM shipper id -> its container's source LOTs (same expansion)
         SELECT DISTINCT 4, N'Shipper', sl.Id,
                l.Id, l.LotName, i.PartNumber,
-               CAST(N'Shipper ' + sl.AimShipperId + N' container ' + CAST(sl.ContainerId AS NVARCHAR(20)) AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(100)), CAST(NULL AS NVARCHAR(50))
+               CAST(N'Shipper ' + sl.AimShipperId + N' container ' + CAST(sl.ContainerId AS NVARCHAR(20)) AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(500)), CAST(NULL AS NVARCHAR(50))
         FROM Lots.ShippingLabel sl
         CROSS APPLY (
             SELECT ct.FinishedGoodLotId AS SrcLotId
@@ -146,7 +146,7 @@ BEGIN
         -- 5. LOT name prefix (disambiguation list; exact hit excluded)
         SELECT 5, N'Lot', l.Id,
                l.Id, l.LotName, i.PartNumber,
-               CAST(sc.Code + N' at ' + loc.Name AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(100)), CAST(NULL AS NVARCHAR(50))
+               CAST(sc.Code + N' at ' + loc.Name AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(500)), CAST(NULL AS NVARCHAR(50))
         FROM Lots.Lot l
         INNER JOIN Parts.Item         i   ON i.Id   = l.ItemId
         INNER JOIN Lots.LotStatusCode sc  ON sc.Id  = l.LotStatusId

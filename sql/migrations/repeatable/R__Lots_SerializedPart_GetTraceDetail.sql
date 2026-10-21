@@ -17,7 +17,7 @@
 --
 --              v1.1 (super-lot piece 6): RemovedAt (ET) / RemovedReason ('Scrapped (<defect>)')
 --              from ContainerSerial.RemovedAt / RemovedRejectEventId -- the row is KEPT, never
---              filtered; MovedInFromContainerName = source container of the latest repack move
+--              filtered; MovedInFromContainerName = source container of the latest move (repack or Sort Cage migration)
 --              into the current container. New columns LAST; NULL when untouched.
 -- =============================================
 CREATE OR ALTER PROCEDURE Lots.SerializedPart_GetTraceDetail
@@ -42,7 +42,7 @@ BEGIN
         CAST(c.CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CompletedAt,
         CAST(cs.RemovedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS RemovedAt,
         CASE WHEN cs.RemovedAt IS NULL THEN NULL
-             ELSE N'Scrapped (' + ISNULL(dc.Description, N'no defect') + N')' END AS RemovedReason,
+             ELSE CAST(N'Scrapped (' + ISNULL(dc.Description, N'no defect') + N')' AS NVARCHAR(500)) END AS RemovedReason,
         CAST(mv.OldContainerId AS NVARCHAR(50)) AS MovedInFromContainerName
     FROM Lots.SerializedPart sp
     INNER JOIN Parts.Item i ON i.Id = sp.ItemId
