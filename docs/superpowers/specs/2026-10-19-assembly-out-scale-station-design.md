@@ -153,7 +153,7 @@ All read procs, one result set each, timestamps converted to Eastern at the boun
    The card is amber for UNDER, red-orange for OVER, and neutral for OK.
 3. **This shift at this scale** (`GetShiftTally`).
 4. **Press log** (`GetPressLog`, 10 visible): time, net, verdict, outcome, scale flags. A ⚑ marks `FlagsAgree = 0`, for supervisors.
-5. **Recent boxes** (`GetRecentBoxes`) with **Reprint** per row (opens the existing `ShippingLabelReprint` popup).
+5. **Recent boxes** (`GetRecentBoxes`) with each box's label status. No per-row Reprint (Jacques, 2026-10-21): the header's **Reprint Shipping Label** button already opens the popup that lists the line's recent labels, so a row button only duplicated it.
 6. **Scale strip**: connection state and last message time from the instance's `LastReceiveTime` / device connection, plus the instruction "Tare the container, load the tray, then press the button on the scale."
 
 **Removed:** `WeighCloseTrayButton`, its enabled expression, the "Waiting for scale - press Weigh & Close Tray…" text, and `custom.scaleInstancePath`. The By Count and By Vision layouts are unchanged.
