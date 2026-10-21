@@ -369,6 +369,15 @@ EXEC test.Assert_IsEqual
 
 -- Leave nothing tagged behind at this line.
 UPDATE Lots.Lot SET CrtActive = 0 WHERE Id IN (@MintedLot, @CrtCast, @CleanCast);
+
+-- The castings and the minted sub-assembly are MESL-named and this section leaves
+-- them in place. Their ConsumptionEvent rows must not outlive the file: a lingering
+-- row pins its source LOT through FK_ConsumptionEvent_SourceLot, and the next file
+-- whose fixture cleanup does the blanket `DELETE FROM Lots.Lot WHERE LotName LIKE
+-- N'MESL%'` fails with Msg 547 -- an sqlcmd-level failure, not an assertion, so the
+-- suite reports 0 failures and still exits 1.
+DELETE FROM Workorder.ConsumptionEvent
+WHERE SourceLotId IN (@CleanCast, @CrtCast) OR ProducedLotId = @MintedLot;
 GO
 
 -- =============================================
@@ -442,6 +451,11 @@ EXEC test.Assert_IsEqual
 
 -- Untag the component stock this file tagged so no later file inherits it.
 UPDATE Lots.Lot SET CrtActive = 0 WHERE ItemId = @CompA AND CurrentLocationId = @Cell;
+
+-- Same reason as section C: the tray's ConsumptionEvent rows (FG LOT <- CompA/B/C)
+-- would otherwise pin their MESL-named source LOTs against any later blanket delete.
+-- The cleanup at the top of this section only clears the PREVIOUS run's rows.
+DELETE FROM Workorder.ConsumptionEvent WHERE ProducedLotId = @FgLot;
 GO
 
 -- =============================================

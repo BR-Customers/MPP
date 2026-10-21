@@ -441,6 +441,15 @@ EXEC test.Assert_IsEqual @TestName = N'[Enforce] MachiningOut_Mint: the CRT cast
 -- ---- Teardown: close and untag everything this section created so no later file
 --      inherits a tagged or open LOT at this line. ----
 UPDATE Lots.Lot SET CrtActive = 0 WHERE Id IN (@CleanCast, @CrtCast, @CleanMinted);
+
+-- D1's successful mint leaves ConsumptionEvent rows behind, and this section leaves
+-- its MESL-named castings in place. A lingering row pins its source LOT through
+-- FK_ConsumptionEvent_SourceLot, so the next file whose fixture cleanup does the
+-- blanket `DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%'` fails with Msg 547 --
+-- an sqlcmd-level failure, not an assertion, so the suite reports 0 failures and
+-- still exits 1.
+DELETE FROM Workorder.ConsumptionEvent
+WHERE SourceLotId IN (@CleanCast, @CrtCast) OR ProducedLotId = @CleanMinted;
 UPDATE Lots.Lot SET LotStatusId = @ClosedSt
 WHERE ItemId = @Casting AND CurrentLocationId = @Line AND LotStatusId = @GoodSt;
 GO
