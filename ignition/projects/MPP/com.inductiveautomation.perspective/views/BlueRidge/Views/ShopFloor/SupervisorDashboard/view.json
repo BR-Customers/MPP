@@ -2,7 +2,13 @@
   "custom": {
     "flaggedCount": 0,
     "flaggedShifts": [],
-    "openReturnCount": 0
+    "openReturnCount": 0,
+    "openRunSummary": {
+      "OpenCount": 0,
+      "OldestOpenedAt": null,
+      "OldestAgeDays": null,
+      "MembersStillTagged": 0
+    }
   },
   "params": {},
   "propConfig": {
@@ -26,6 +32,14 @@
       "binding": {
         "config": {
           "expression": "runScript(\"BlueRidge.Lots.VendorReturn.openCount\", 30000)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.openRunSummary": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.openSummaryOrEmpty\", 30000)"
         },
         "type": "expr"
       }
@@ -587,6 +601,100 @@
             },
             "meta": {
               "name": "TileReturns"
+            },
+            "position": {
+              "basis": "240px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "cursor": "pointer",
+                "gap": "6px",
+                "padding": "16px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-label"
+                  },
+                  "text": "Open Super-lots"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "V"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.custom.openRunSummary.OpenCount} > 0, \"pf-kpi-value pf-kpi-value-warn\", \"pf-kpi-value\")"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr({view.custom.openRunSummary.OpenCount})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "S"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Quality.ControlledRun.openSummaryText\", 0, {view.custom.openRunSummary.OpenCount}, {view.custom.openRunSummary.OldestAgeDays}, {view.custom.openRunSummary.MembersStillTagged})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(page=\"/shop-floor/controlled-runs\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileOpenRuns"
             },
             "position": {
               "basis": "240px",

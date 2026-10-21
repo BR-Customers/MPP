@@ -1189,3 +1189,15 @@ def getRunByNumber(runNumber):
     if not t:
         return None
     return BlueRidge.Common.Db.execOne("quality/ControlledRun_GetByNumber", {"runNumber": t})
+
+
+def openSummaryText(openCount, oldestAgeDays, membersStillTagged):
+    """Dashboard tile sub-text from the openSummaryOrEmpty() numbers. Presentation
+       only: 'none open' or 'oldest <n> d <dot> <m> members still CRT <dot> tap to open'."""
+    dot = u" \u00b7 "
+    n = BlueRidge.Common.Util.toIntOrNone(_u(openCount)) or 0
+    if n <= 0:
+        return u"none open"
+    age = BlueRidge.Common.Util.toIntOrNone(_u(oldestAgeDays)) or 0
+    m = BlueRidge.Common.Util.toIntOrNone(_u(membersStillTagged)) or 0
+    return u"oldest %d d%s%d members still CRT%stap to open" % (age, dot, m, dot)
