@@ -2,7 +2,9 @@
 -- Repeatable:  R__Quality_ControlledRun_GetOpenByMember.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
--- Version:     1.0
+-- Version:     1.1
+-- Change Log:  2026-10-21 - 1.1 - Piece 6: the LOT path reads Quality.ufn_OpenControlledRunForLot.
+--                                 Output unchanged.
 -- Description: READ. The OPEN super-lot a LOT or container belongs to, if any
 --              (a unit has at most one open membership -- D4). What a scanned
 --              LTT or container label resolves through on the Quality view.
@@ -20,14 +22,15 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF @ContainerId IS NULL AND @LotId IS NOT NULL
-        SET @ContainerId = (SELECT TOP 1 ContainerId FROM Lots.ContainerTray WHERE FinishedGoodLotId = @LotId);
+    IF @ContainerId IS NULL
+    BEGIN
+        SELECT ControlledRunId AS Id, RunNumber FROM Quality.ufn_OpenControlledRunForLot(@LotId);
+        RETURN;
+    END
 
     SELECT TOP 1 r.Id, r.RunNumber
     FROM Quality.ControlledRunMember m
     INNER JOIN Quality.ControlledRun r ON r.Id = m.ControlledRunId
-    WHERE m.EndedAt IS NULL
-      AND ((@ContainerId IS NOT NULL AND m.ContainerId = @ContainerId)
-        OR (@ContainerId IS NULL AND m.LotId = @LotId));
+    WHERE m.EndedAt IS NULL AND m.ContainerId = @ContainerId;
 END;
 GO
