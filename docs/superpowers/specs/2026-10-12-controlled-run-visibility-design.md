@@ -109,9 +109,7 @@ button binds to it instead of re-deriving the rule in an expression.
 
 ### 3.8 Carried from earlier pieces (decide in section 6)
 
-- **Trim rework destination.** `Lot_MoveToValidated` treats an override move as a
-  rework from the caller's `@OperationTypeCode = 'TrimIn'` alone; it never checks that
-  the destination is a trim location.
+- ~~Trim rework destination check~~ - not wanted (decision 8).
 - **Two narrow timing gaps.** `ControlledRunResult_Record`'s inlined vendor-return mirror
   does not refuse a LOT whose status turned Closed / Scrap under the lock (piece 5); a
   result voided between `ControlledRun_Release`'s check and its write is not re-checked
@@ -144,18 +142,30 @@ button binds to it instead of re-deriving the rule in an expression.
 - Gateway: each changed view renders with no component error for a LOT with no
   super-lot history (the empty-shape case is where these break).
 
-## 6. Decisions for Jacques
+## 6. Decisions (answered by Jacques, 2026-10-21)
 
-1. **Scope and order** of 3.1 to 3.7.
-2. **LOT Detail Super-lots tab:** how much of the results / release / deviation to show
-   per row.
-3. **Per-LOT join / leave history rows (3.2):** agreed?
-4. **Production terminals:** add the run number to the CRT refusal message?
-5. **Report:** one per-super-lot report only, or also a list report?
-6. **Dashboard:** the one tile in 3.5, or other numbers?
-7. **Trim rework destination check (3.8):** add it?
-8. **Timing gaps and small display gaps (3.8):** fix in this piece, or leave as stated
-   limits?
+1. **LOT Detail (3.1): agreed.** Run number beside the CRT pill, opening the super-lot
+   page on that super-lot; a Super-lots tab with every super-lot ever, its results,
+   release signer and deviation.
+2. **LOT history (3.2): yes, and "history" means ALL of it.** Scope of the per-LOT rows
+   is being confirmed (see 6a).
+3. **Genealogy and trace markers (3.3): yes**, including the repack trace fixes.
+4. **Report (3.4): one report per super-lot, with all the details.** No list report.
+5. **Dashboard (3.5): agreed**, the single Open super-lots tile.
+6. **Terminal refusal message: yes.** The CRT refusal names the super-lot, e.g.
+   "(super-lot CR000123)", in every proc that raises it (section 2, Terminal refusals).
+7. **CRT toggle wording: agreed.** Clearing one LOT that is in an open super-lot stays
+   behind the supervisor override; it already is (LOT Detail `doCrtToggle` ->
+   `requireElevation(..., "CrtToggle", ...)` in both directions). The Quality AD role
+   replaces "any supervisor" later; not built, no seam added here beyond the existing
+   elevation action code.
+8. **Trim rework destination check: not needed.** Dropped from 3.8; stays as stated in
+   the piece 5 build notes.
+9. **Timing gaps and display gaps (3.8): fix in this piece**, as small tasks.
+
+### 6a. Open
+
+- What "all history" covers on the LOT (see conversation 2026-10-21).
 
 ## Revision History
 
@@ -163,3 +173,4 @@ button binds to it instead of re-deriving the rule in an expression.
 |---|---|
 | 2026-10-12 | Initial draft, written as a handoff for another agent. Not approved. |
 | 2026-10-20 | Revised against pieces 1-5 as built: section 2 refreshed from code; section 3 rewritten as what this piece adds (no "after piece N" / "(ready)"); piece 4 trace items and piece 5 carry-overs folded in; decisions restated. |
+| 2026-10-21 | Jacques answered decisions 1-9 (section 6); trim destination check dropped; "all history" scope open. |
