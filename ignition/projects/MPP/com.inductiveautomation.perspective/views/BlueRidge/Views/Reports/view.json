@@ -1,9 +1,11 @@
 {
   "custom": {
+    "controlledRunOpts": [],
     "lotOpts": [],
     "rangeEnd": null,
     "rangeStart": null,
     "reportSource": "Downtime Report",
+    "selectedControlledRun": null,
     "selectedDesc": "Loss analysis for one shift, by machine and reason.",
     "selectedKey": "downtime_shift",
     "selectedLot": null,
@@ -12,6 +14,14 @@
   },
   "params": {},
   "propConfig": {
+    "custom.controlledRunOpts": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Reports.controlledRunOptions\")"
+        },
+        "type": "expr"
+      }
+    },
     "custom.lotOpts": {
       "binding": {
         "config": {
@@ -23,7 +33,7 @@
     "custom.reportParams": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Reports.composeParams\", 0, {view.custom.selectedKey}, {view.custom.selectedShift}, {view.custom.rangeStart}, {view.custom.rangeEnd}, {view.custom.selectedLot})"
+          "expression": "runScript(\"BlueRidge.Reports.composeParams\", 0, {view.custom.selectedKey}, {view.custom.selectedShift}, {view.custom.rangeStart}, {view.custom.rangeEnd}, {view.custom.selectedLot}, {view.custom.selectedControlledRun})"
         },
         "type": "expr"
       }
@@ -812,6 +822,74 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Super-lot"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "One super-lot: outcomes, members, deviations, signatures."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"super_lot\", \"Super-lot\", \"One super-lot: outcomes, members, deviations, signatures.\", \"Super-lot\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileSuperLot"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} \u003d \"super_lot\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
           }
         ],
         "meta": {
@@ -1053,6 +1131,51 @@
                 "type": "ia.input.dropdown"
               },
               {
+                "meta": {
+                  "name": "ControlledRunDropdown"
+                },
+                "position": {
+                  "basis": "320px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "meta.visible": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.selectedKey} \u003d \"super_lot\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.controlledRunOpts"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selectedControlledRun"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "allowCustomOptions": true,
+                  "placeholder": "Scan or select super-lot",
+                  "search": true,
+                  "style": {
+                    "classes": "pf-field-select"
+                  }
+                },
+                "type": "ia.input.dropdown"
+              },
+              {
                 "events": {
                   "component": {
                     "onActionPerformed": {
@@ -1180,7 +1303,7 @@
         {
           "name": "printPdf",
           "params": [],
-          "script": "\ttry:\n\t\tsrc \u003d self.view.custom.reportSource\n\t\tsel \u003d self.view.custom.selectedKey\n\t\tparams \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.reportParams) or {}\n\t\tif sel \u003d\u003d \"downtime_shift\" and not params.get(\"ShiftId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a shift\", \"Select a shift before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel in (\"downtime_range\", \"rejects_detail\", \"rejects_summary\", \"rejects_matrix\", \"shipping_history\") and not params.get(\"StartDate\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick dates\", \"Select a date range before printing.\", \"warn\")\n\t\t\treturn\n\t\tif not src:\n\t\t\tBlueRidge.Common.Notify.toast(\"No report\", \"Select a report first.\", \"warn\")\n\t\t\treturn\n\t\tdata \u003d system.report.executeReport(src, \"MPP\", params, \"pdf\")\n\t\tsystem.perspective.download(src + \".pdf\", data)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\"Print failed\", str(e), \"error\")"
+          "script": "\ttry:\n\t\tsrc \u003d self.view.custom.reportSource\n\t\tsel \u003d self.view.custom.selectedKey\n\t\tparams \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.reportParams) or {}\n\t\tif sel \u003d\u003d \"downtime_shift\" and not params.get(\"ShiftId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a shift\", \"Select a shift before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel in (\"downtime_range\", \"rejects_detail\", \"rejects_summary\", \"rejects_matrix\", \"shipping_history\") and not params.get(\"StartDate\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick dates\", \"Select a date range before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel \u003d\u003d \"super_lot\" and not params.get(\"ControlledRunId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a super-lot\", \"Select or scan a super-lot before printing.\", \"warning\")\n\t\t\treturn\n\t\tif not src:\n\t\t\tBlueRidge.Common.Notify.toast(\"No report\", \"Select a report first.\", \"warn\")\n\t\t\treturn\n\t\tdata \u003d system.report.executeReport(src, \"MPP\", params, \"pdf\")\n\t\tsystem.perspective.download(src + \".pdf\", data)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\"Print failed\", str(e), \"error\")"
         }
       ],
       "extensionFunctions": null,

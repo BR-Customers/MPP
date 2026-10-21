@@ -995,6 +995,43 @@
                     }
                   },
                   {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ReportButton"
+                    },
+                    "position": {
+                      "basis": "140px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!isNull({view.custom.selectedRunId})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Print report",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\timport java.lang\n\ttry:\n\t\trunId = self.view.custom.selectedRunId\n\t\tif runId is None:\n\t\t\tBlueRidge.Common.Notify.toast(\"No super-lot\", \"Select a super-lot first.\", \"warning\")\n\t\t\treturn\n\t\tdata = BlueRidge.Reports.generatePdf(\"super_lot\", {\"ControlledRunId\": long(runId)})\n\t\tname = self.view.custom.run.RunNumber or str(runId)\n\t\tsystem.perspective.download(\"Super-lot \" + name + \".pdf\", data)\n\texcept (Exception, java.lang.Throwable) as e:\n\t\tBlueRidge.Common.Notify.toast(\"Report failed\", str(e), \"error\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
                     "type": "ia.container.flex",
                     "meta": {
                       "name": "Spacer"
