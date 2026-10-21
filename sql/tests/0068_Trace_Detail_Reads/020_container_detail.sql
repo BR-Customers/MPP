@@ -26,7 +26,7 @@ CREATE TABLE #CD (
     ContainerId BIGINT, ItemId BIGINT, ItemPartNumber NVARCHAR(100),
     ContainerStatusCode NVARCHAR(50), PieceCount INT, SerialCount INT,
     SourceLotCount INT, OpenedAt DATETIME2(3), CompletedAt DATETIME2(3),
-    AimShipperId NVARCHAR(50), OpenHoldCount INT, TotalHoldCount INT
+    AimShipperId NVARCHAR(50), OpenHoldCount INT, TotalHoldCount INT, RemovedAt DATETIME2(3), RemovedReason NVARCHAR(100), MovedInFromContainerName NVARCHAR(50), ReplacedSerial NVARCHAR(50), ReplacedSerialVoidedAt DATETIME2(3), ReworkOpenedAt DATETIME2(3), ReworkOpenedByInitials NVARCHAR(20)
 );
 IF OBJECT_ID(N'tempdb..#CS') IS NOT NULL DROP TABLE #CS;
 CREATE TABLE #CS (

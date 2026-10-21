@@ -1,8 +1,8 @@
 -- =============================================
 -- Repeatable:  R__Lots_Container_ListShipped.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-25
--- Version:     1.0
+-- Modified:    2026-10-21
+-- Version:     1.1
 -- Description: FDS-12-011 Shipping History -- shipped containers over a date
 --              range, for Honda ASN reconciliation.
 --
@@ -44,6 +44,11 @@
 --              containers keep appearing rather than silently dropping out.
 --
 --              One result set (FDS-11-011).
+--
+--              v1.1 (super-lot piece 6): repack columns LAST, same meaning as
+--              Lots.Container_GetTraceDetail v1.1 (RemovedAt/RemovedReason/
+--              MovedInFromContainerName/ReplacedSerial/ReplacedSerialVoidedAt/
+--              ReworkOpenedAt/ReworkOpenedByInitials). NULL when untouched.
 -- =============================================
 CREATE OR ALTER PROCEDURE Lots.Container_ListShipped
     @FromEt         DATE          = NULL,
@@ -73,7 +78,14 @@ BEGIN
         ISNULL(src.SourceLotCount, 0) AS SourceLotCount,
         CAST(c.OpenedAt    AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS OpenedAt,
         CAST(c.CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CompletedAt,
-        loc.Name             AS CurrentLocationName
+        loc.Name             AS CurrentLocationName,
+        CAST(rem.At AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS RemovedAt,
+        rem.Reason AS RemovedReason,
+        mvin.FromName AS MovedInFromContainerName,
+        rwk.OriginalAimShipperId AS ReplacedSerial,
+        CAST(rwk.VoidedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS ReplacedSerialVoidedAt,
+        CAST(rwk.OpenedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS ReworkOpenedAt,
+        rwk.Initials AS ReworkOpenedByInitials
     FROM Lots.Container c
     INNER JOIN Parts.Item i ON i.Id = c.ItemId
     LEFT  JOIN Location.Location loc ON loc.Id = c.CurrentLocationId
@@ -99,6 +111,38 @@ BEGIN
         WHERE sl.ContainerId = c.Id AND sl.IsVoid = 0
         ORDER BY sl.CreatedAt DESC, sl.Id DESC
     ) lbl
+    OUTER APPLY (
+        -- latest serial taken out of this container by a repack: scrapped first (the more
+        -- significant fact), else the most recent move-out. Rows stay; nothing is filtered.
+        SELECT TOP (1) e.At, e.Reason FROM (
+            SELECT cs.RemovedAt AS At, 1 AS Pri, cs.Id AS Sid,
+                   N'Scrapped (' + ISNULL(dc.Description, N'no defect') + N')' AS Reason
+            FROM Lots.ContainerSerial cs
+            LEFT JOIN Workorder.RejectEvent re ON re.Id = cs.RemovedRejectEventId
+            LEFT JOIN Quality.DefectCode    dc ON dc.Id = re.DefectCodeId
+            WHERE cs.ContainerId = c.Id AND cs.RemovedAt IS NOT NULL
+            UNION ALL
+            SELECT h.MigratedAt, 2, h.ContainerSerialId,
+                   N'Moved to container ' + CAST(h.NewContainerId AS NVARCHAR(20))
+            FROM Lots.ContainerSerialHistory h
+            WHERE h.OldContainerId = c.Id AND h.NewContainerId <> c.Id
+        ) e
+        ORDER BY e.Pri, e.At DESC, e.Sid DESC
+    ) rem
+    OUTER APPLY (
+        SELECT TOP (1) CAST(h.OldContainerId AS NVARCHAR(50)) AS FromName
+        FROM Lots.ContainerSerialHistory h
+        WHERE h.NewContainerId = c.Id AND h.OldContainerId <> c.Id
+        ORDER BY h.MigratedAt DESC, h.Id DESC
+    ) mvin
+    OUTER APPLY (
+        SELECT TOP (1) rw.OpenedAt, rw.OriginalAimShipperId, ap.VoidedAt, u.Initials
+        FROM Lots.ContainerRework rw
+        LEFT JOIN Lots.AimShipperIdPool ap ON ap.AimShipperId = rw.OriginalAimShipperId
+        LEFT JOIN Location.AppUser      u  ON u.Id = rw.OpenedByUserId
+        WHERE rw.ContainerId = c.Id
+        ORDER BY rw.OpenedAt DESC, rw.Id DESC
+    ) rwk
     WHERE c.ContainerStatusCodeId IN (2, 3)    -- 2 Complete, 3 Shipped: see header
       AND c.CompletedAt IS NOT NULL            -- closed is the observable end state
       AND (@FromUtc IS NULL OR c.CompletedAt >= @FromUtc)

@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_GlobalTrace_Resolve.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-10
--- Version:     1.0
+-- Modified:    2026-10-21
+-- Version:     1.1
 -- Description: Arc 2 Phase 9 (FDS-12-001/012/013). Global Trace entry point:
 --              maps ONE scanned/typed identifier to candidate LOT rows. The
 --              Global Trace view then composes the full read-only trace from
@@ -28,6 +28,9 @@
 --              Result set: MatchType, MatchedEntityId, LotId, LotName,
 --              ItemPartNumber, Detail.
 --
+--              v1.1 (super-lot piece 6): + RemovedAt (ET), RemovedReason, MovedInFromContainerName,
+--              filled on 'Serial' rows only (scrapped / moved-in by a container repack); NULL elsewhere.
+--
 --              READ proc: no status row, no OUTPUT params (FDS-11-011).
 --              Empty/blank input or no match = empty result set.
 -- ============================================================
@@ -47,7 +50,10 @@ BEGIN
                CAST(NULL AS BIGINT)        AS LotId,
                CAST(NULL AS NVARCHAR(50))  AS LotName,
                CAST(NULL AS NVARCHAR(50))  AS ItemPartNumber,
-               CAST(NULL AS NVARCHAR(200)) AS Detail
+               CAST(NULL AS NVARCHAR(200)) AS Detail,
+               CAST(NULL AS DATETIME2(3))  AS RemovedAt,
+               CAST(NULL AS NVARCHAR(100)) AS RemovedReason,
+               CAST(NULL AS NVARCHAR(50))  AS MovedInFromContainerName
         WHERE 1 = 0;
         RETURN;
     END
@@ -55,12 +61,14 @@ BEGIN
     DECLARE @ContainerId BIGINT = TRY_CONVERT(BIGINT, @Search);
 
     SELECT TOP (50)
-        x.MatchType, x.MatchedEntityId, x.LotId, x.LotName, x.ItemPartNumber, x.Detail
+        x.MatchType, x.MatchedEntityId, x.LotId, x.LotName, x.ItemPartNumber, x.Detail,
+        x.RemovedAt, x.RemovedReason, x.MovedInFromContainerName
     FROM (
         -- 1. Exact LOT name
         SELECT 1 AS MatchRank, N'Lot' AS MatchType, l.Id AS MatchedEntityId,
                l.Id AS LotId, l.LotName, i.PartNumber AS ItemPartNumber,
-               CAST(sc.Code + N' at ' + loc.Name AS NVARCHAR(200)) AS Detail
+               CAST(sc.Code + N' at ' + loc.Name AS NVARCHAR(200)) AS Detail,
+               CAST(NULL AS DATETIME2(3)) AS RemovedAt, CAST(NULL AS NVARCHAR(100)) AS RemovedReason, CAST(NULL AS NVARCHAR(50)) AS MovedInFromContainerName
         FROM Lots.Lot l
         INNER JOIN Parts.Item         i   ON i.Id   = l.ItemId
         INNER JOIN Lots.LotStatusCode sc  ON sc.Id  = l.LotStatusId
@@ -72,8 +80,20 @@ BEGIN
         -- 2. Serial number -> producing LOT
         SELECT 2, N'Serial', sp.Id,
                l.Id, l.LotName, i.PartNumber,
-               CAST(N'Serial ' + sp.SerialNumber + N' -> producing LOT' AS NVARCHAR(200))
+               CAST(N'Serial ' + sp.SerialNumber + N' -> producing LOT' AS NVARCHAR(200)),
+               CAST(scs.RemovedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)),
+               CASE WHEN scs.RemovedAt IS NULL THEN NULL
+                    ELSE CAST(N'Scrapped (' + ISNULL(sdc.Description, N'no defect') + N')' AS NVARCHAR(100)) END,
+               CAST(smv.OldContainerId AS NVARCHAR(50))
         FROM Lots.SerializedPart sp
+        LEFT JOIN Lots.ContainerSerial   scs ON scs.SerializedPartId = sp.Id
+        LEFT JOIN Workorder.RejectEvent  sre ON sre.Id = scs.RemovedRejectEventId
+        LEFT JOIN Quality.DefectCode     sdc ON sdc.Id = sre.DefectCodeId
+        OUTER APPLY (
+            SELECT TOP (1) h.OldContainerId FROM Lots.ContainerSerialHistory h
+            WHERE h.ContainerSerialId = scs.Id AND h.NewContainerId = scs.ContainerId AND h.OldContainerId <> scs.ContainerId
+            ORDER BY h.MigratedAt DESC, h.Id DESC
+        ) smv
         INNER JOIN Lots.Lot   l ON l.Id = sp.ProducingLotId
         INNER JOIN Parts.Item i ON i.Id = l.ItemId
         WHERE sp.SerialNumber = @Search
@@ -84,7 +104,7 @@ BEGIN
         --    (ContainerTray.FinishedGoodLotId UNION ContainerSerial->ProducingLotId)
         SELECT DISTINCT 3, N'Container', c.Id,
                l.Id, l.LotName, i.PartNumber,
-               CAST(N'Container ' + CAST(c.Id AS NVARCHAR(20)) + N' source LOT' AS NVARCHAR(200))
+               CAST(N'Container ' + CAST(c.Id AS NVARCHAR(20)) + N' source LOT' AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(100)), CAST(NULL AS NVARCHAR(50))
         FROM Lots.Container c
         CROSS APPLY (
             SELECT ct.FinishedGoodLotId AS SrcLotId
@@ -105,7 +125,7 @@ BEGIN
         -- 4. AIM shipper id -> its container's source LOTs (same expansion)
         SELECT DISTINCT 4, N'Shipper', sl.Id,
                l.Id, l.LotName, i.PartNumber,
-               CAST(N'Shipper ' + sl.AimShipperId + N' container ' + CAST(sl.ContainerId AS NVARCHAR(20)) AS NVARCHAR(200))
+               CAST(N'Shipper ' + sl.AimShipperId + N' container ' + CAST(sl.ContainerId AS NVARCHAR(20)) AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(100)), CAST(NULL AS NVARCHAR(50))
         FROM Lots.ShippingLabel sl
         CROSS APPLY (
             SELECT ct.FinishedGoodLotId AS SrcLotId
@@ -126,7 +146,7 @@ BEGIN
         -- 5. LOT name prefix (disambiguation list; exact hit excluded)
         SELECT 5, N'Lot', l.Id,
                l.Id, l.LotName, i.PartNumber,
-               CAST(sc.Code + N' at ' + loc.Name AS NVARCHAR(200))
+               CAST(sc.Code + N' at ' + loc.Name AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(100)), CAST(NULL AS NVARCHAR(50))
         FROM Lots.Lot l
         INNER JOIN Parts.Item         i   ON i.Id   = l.ItemId
         INNER JOIN Lots.LotStatusCode sc  ON sc.Id  = l.LotStatusId

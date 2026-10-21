@@ -29,7 +29,8 @@ CREATE TABLE #SD (
     EtchedAt DATETIME2(3), ProducedAt DATETIME2(3),
     OperatorName NVARCHAR(200), MachineName NVARCHAR(200),
     ContainerId BIGINT, ContainerStatusCode NVARCHAR(50),
-    AimShipperId NVARCHAR(50), CompletedAt DATETIME2(3)
+    AimShipperId NVARCHAR(50), CompletedAt DATETIME2(3),
+    RemovedAt DATETIME2(3), RemovedReason NVARCHAR(100), MovedInFromContainerName NVARCHAR(50)
 );
 GO
 

@@ -1,8 +1,8 @@
 -- =============================================
 -- Repeatable:  R__Lots_SerializedPart_GetTraceDetail.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-25
--- Version:     1.0
+-- Modified:    2026-10-21
+-- Version:     1.1
 -- Description: FDS-12-002 Serialized Item Search payload, rendered as a detail
 --              panel on Global Trace. One result set (FDS-11-011); empty set
 --              means the serial is unknown -- no invented 404.
@@ -14,6 +14,11 @@
 --
 --              Sibling read: Lots.SerializedPart_GetBySerial is retained
 --              unchanged for its existing callers (narrower contract).
+--
+--              v1.1 (super-lot piece 6): RemovedAt (ET) / RemovedReason ('Scrapped (<defect>)')
+--              from ContainerSerial.RemovedAt / RemovedRejectEventId -- the row is KEPT, never
+--              filtered; MovedInFromContainerName = source container of the latest repack move
+--              into the current container. New columns LAST; NULL when untouched.
 -- =============================================
 CREATE OR ALTER PROCEDURE Lots.SerializedPart_GetTraceDetail
     @SerialNumber NVARCHAR(50)
@@ -34,7 +39,11 @@ BEGIN
         cs.ContainerId,
         csc.Code         AS ContainerStatusCode,
         lbl.AimShipperId,
-        CAST(c.CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CompletedAt
+        CAST(c.CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CompletedAt,
+        CAST(cs.RemovedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS RemovedAt,
+        CASE WHEN cs.RemovedAt IS NULL THEN NULL
+             ELSE N'Scrapped (' + ISNULL(dc.Description, N'no defect') + N')' END AS RemovedReason,
+        CAST(mv.OldContainerId AS NVARCHAR(50)) AS MovedInFromContainerName
     FROM Lots.SerializedPart sp
     INNER JOIN Parts.Item i ON i.Id = sp.ItemId
     INNER JOIN Lots.Lot   l ON l.Id = sp.ProducingLotId
@@ -47,6 +56,14 @@ BEGIN
     LEFT JOIN Location.AppUser  op   ON op.Id   = pe.AppUserId
     LEFT JOIN Location.Location term ON term.Id = pe.TerminalLocationId
     LEFT JOIN Lots.ContainerSerial cs ON cs.SerializedPartId = sp.Id
+    LEFT JOIN Workorder.RejectEvent re ON re.Id = cs.RemovedRejectEventId
+    LEFT JOIN Quality.DefectCode    dc ON dc.Id = re.DefectCodeId
+    OUTER APPLY (
+        SELECT TOP (1) h.OldContainerId
+        FROM Lots.ContainerSerialHistory h
+        WHERE h.ContainerSerialId = cs.Id AND h.NewContainerId = cs.ContainerId AND h.OldContainerId <> cs.ContainerId
+        ORDER BY h.MigratedAt DESC, h.Id DESC
+    ) mv
     LEFT JOIN Lots.Container       c  ON c.Id  = cs.ContainerId
     LEFT JOIN Lots.ContainerStatusCode csc ON csc.Id = c.ContainerStatusCodeId
     OUTER APPLY (
