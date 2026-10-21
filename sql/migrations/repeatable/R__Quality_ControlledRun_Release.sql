@@ -7,7 +7,9 @@
 --                                 <initials>[ . Deviation <DV>[, <DV>]]' on its LOT(s)
 --                                 (ControlledRunLotReleased; container: each tray). The
 --                                 deviations named are the run's deviations raised while
---                                 that member was in it (AddedAt .. EndedAt).
+--                                 that member was in it: AddedAt <= RaisedAt AND
+--                                 (EndedAt IS NULL OR RaisedAt < EndedAt) -- the same
+--                                 rule as Deviation_Raise's 'EndedAt IS NULL at signing'.
 -- Description: THE SIGNED BULK RELEASE. Releases the ticked members of an open
 --              super-lot in one action, under one signature, carrying the
 --              confirmation that the Controlled Run Tag was acted on and the
@@ -239,8 +241,8 @@ BEGIN
                              + (SELECT STRING_AGG(d.DeviationNumber, N', ') WITHIN GROUP (ORDER BY d.DeviationNumber)
                                 FROM Quality.ControlledRunDeviation d
                                 WHERE d.ControlledRunId = @Id
-                                  AND d.RaisedAt >= m.AddedAt
-                                  AND d.RaisedAt <= COALESCE(m.EndedAt, SYSUTCDATETIME())), N''), 400)
+                                  AND m.AddedAt <= d.RaisedAt
+                                  AND (m.EndedAt IS NULL OR d.RaisedAt < m.EndedAt)), N''), 400)
         FROM Quality.ControlledRunMember m
         WHERE m.Id IN (SELECT MemberId FROM @T) AND m.ControlledRunId = @Id;
 

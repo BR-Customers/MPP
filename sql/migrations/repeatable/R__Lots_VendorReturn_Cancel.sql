@@ -2,7 +2,8 @@
 -- Repeatable:  R__Lots_VendorReturn_Cancel.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.1
+-- Version:     1.2
+-- Modified:    2026-10-21
 -- Description: Super-lot piece 5 (spec 5.3). Cancels a marked, not yet
 --              confirmed vendor return and puts the taken quantity back on the
 --              LOT: PieceCount += PieceCountTaken, InventoryAvailable +=
@@ -29,6 +30,9 @@
 --   2026-10-19 - 1.0 - Initial version.
 --   2026-10-19 - 1.1 - Voids the linked super-lot result (piece 5). The Closed / Scrap /
 --                      Open LOT guard is repeated on the locked UPDATE (Task 6 review).
+--   2026-10-21 - 1.2 - Super-lot piece 6: the void is also written onto the member's
+--                      LOT ('Result voided . Return to Supplier <qty> (<cancel remarks>)',
+--                      ControlledRunLotResultVoided), as ControlledRunResult_Void v1.2 does.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.VendorReturn_Cancel
     @VendorReturnId     BIGINT,
@@ -160,9 +164,10 @@ BEGIN
             @NewValue           = @NewValue;
 
         -- Super-lot side: the linked ReturnToSupplier entry stops counting with the
-        -- return. Same stamp as Quality.ControlledRunResult_Void (mirror of its UPDATE
-        -- and audit row); voided whether or not the super-lot is still open, because
-        -- the pieces it explained are back on the LOT.
+        -- return. Same stamp as Quality.ControlledRunResult_Void (mirror of its UPDATE,
+        -- its run-level audit row and, v1.2, its per-LOT 'Result voided' row); voided
+        -- whether or not the super-lot is still open, because the pieces it explained
+        -- are back on the LOT.
         IF @ResultId IS NOT NULL
         BEGIN
             UPDATE Quality.ControlledRunResult
@@ -192,6 +197,19 @@ BEGIN
                     @Description        = @RunActivity,
                     @OldValue           = NULL,
                     @NewValue           = @RunNewValue;
+
+                -- v1.2: the void on the member's own LOT timeline (mirror of
+                -- ControlledRunResult_Void v1.2's per-LOT row)
+                DECLARE @VoidMemberJson NVARCHAR(MAX), @VoidText NVARCHAR(400);
+                SELECT @VoidMemberJson = N'[' + CAST(rr.ControlledRunMemberId AS NVARCHAR(20)) + N']',
+                       @VoidText = LEFT(N'Result voided ' + Audit.ufn_MidDot() + N' ' + dc.Name + N' '
+                                        + CAST(rr.Quantity AS NVARCHAR(10)) + N' (' + @CancelRemarks + N')', 400)
+                FROM Quality.ControlledRunResult rr
+                INNER JOIN Quality.DispositionCode dc ON dc.Id = rr.DispositionCodeId
+                WHERE rr.Id = @ResultId;
+                EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+                    @MemberIdsJson = @VoidMemberJson, @LogEventTypeCode = N'ControlledRunLotResultVoided',
+                    @ActionText = @VoidText, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
             END
         END
 

@@ -8,6 +8,11 @@
 --              writes one Lots.LotEventLog row per LOT it touches through
 --              Quality.ControlledRun_LogMemberLotEventsInternal (container
 --              members: one per tray in the container at that moment).
+--              Fix round: the three other paths that touch a member's LOT --
+--              Lots.VendorReturn_Cancel (voids the linked result),
+--              Lots.ContainerRework_Scrap (an applied scrap result) and
+--              Lots.ContainerRework_Void (ends the membership) -- and the one
+--              deviation-cover rule in ControlledRun_Release.
 --              LOTs named TEST-SLV-%.
 -- =============================================
 EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/030_lot_events.sql';
@@ -17,6 +22,7 @@ DECLARE @TdLot TABLE (Id BIGINT PRIMARY KEY);
 INSERT INTO @TdLot (Id) SELECT Id FROM Lots.Lot WHERE LotName LIKE N'TEST-SLV-%';
 DECLARE @TdCon TABLE (Id BIGINT);
 INSERT INTO @TdCon (Id) SELECT DISTINCT ContainerId FROM Lots.ContainerTray WHERE FinishedGoodLotId IN (SELECT Id FROM @TdLot);
+DELETE FROM Lots.VendorReturn WHERE LotId IN (SELECT Id FROM @TdLot);
 DELETE FROM Quality.ControlledRunResult;
 DELETE FROM Quality.ControlledRunLabel;
 DELETE FROM Quality.ControlledRunMember;
@@ -28,6 +34,7 @@ ALTER TABLE Quality.Signature ENABLE TRIGGER TR_Signature_Immutable;
 DELETE FROM Quality.ControlledRun;
 DELETE FROM Quality.HoldEvent WHERE LotId IN (SELECT Id FROM @TdLot) OR ContainerId IN (SELECT Id FROM @TdCon);
 DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM @TdLot);
+DELETE FROM Lots.ContainerRework WHERE ContainerId IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.ContainerTray WHERE ContainerId IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.Container WHERE Id IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM @TdLot);
@@ -237,11 +244,121 @@ SET @n = (SELECT CONCAT(
 EXEC test.Assert_IsEqual @TestName = N'[Events] closed: only open members', @Expected = N'1|1|1', @Actual = @n;
 GO
 
+-- ===== Fix round: the other paths that touch a member's LOT =====
+DECLARE @App  BIGINT = (SELECT TOP 1 Id FROM Location.AppUser WHERE Initials = N'SYS');
+DECLARE @Item BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Term BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
+    JOIN Location.LocationTypeDefinition d ON d.Id = l.LocationTypeDefinitionId
+    WHERE d.Code = N'Terminal' AND l.DeprecatedAt IS NULL AND l.ParentLocationId IS NOT NULL ORDER BY l.Id);
+DECLARE @Line BIGINT = (SELECT ParentLocationId FROM Location.Location WHERE Id = @Term);
+DECLARE @Cfg  BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ISNULL(IsSerialized, 0) = 0 ORDER BY Id);
+DECLARE @Def  BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @DefName NVARCHAR(500) = (SELECT Description FROM Quality.DefectCode WHERE Id = @Def);
+DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @Dot NVARCHAR(1) = Audit.ufn_MidDot();
+DECLARE @n NVARCHAR(600), @exp NVARCHAR(600), @j NVARCHAR(MAX);
+DECLARE @o TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+DECLARE @s TABLE (Status BIT, Message NVARCHAR(500));
+DECLARE @EvLeft   BIGINT = (SELECT Id FROM Audit.LogEventType WHERE Code = N'ControlledRunLotLeft');
+DECLARE @EvResult BIGINT = (SELECT Id FROM Audit.LogEventType WHERE Code = N'ControlledRunLotResult');
+DECLARE @EvVoided BIGINT = (SELECT Id FROM Audit.LogEventType WHERE Code = N'ControlledRunLotResultVoided');
+DECLARE @EvRel    BIGINT = (SELECT Id FROM Audit.LogEventType WHERE Code = N'ControlledRunLotReleased');
+
+DECLARE @Ids TABLE (Name NVARCHAR(50) PRIMARY KEY, Id BIGINT);
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAtTerminalId, CrtActive)
+OUTPUT inserted.LotName, inserted.Id INTO @Ids (Name, Id)
+VALUES (N'TEST-SLV-V1',  @Item, @OriginRcv, 1, 10, 10, @Line, @App, @Term, 0),   -- received LOT: a vendor return, then cancelled
+       (N'TEST-SLV-L1',  @Item, 1,          1, 10, 10, @Line, @App, @Term, 0),   -- joins AFTER the deviation, then released
+       (N'TEST-SLV-RT1', @Item, 1,          4,  2,  0, @Line, @App, @Term, 0),   -- trays of the container under rework
+       (N'TEST-SLV-RT2', @Item, 1,          4,  2,  0, @Line, @App, @Term, 0);
+DECLARE @V1  BIGINT = (SELECT Id FROM @Ids WHERE Name = N'TEST-SLV-V1');
+DECLARE @L1  BIGINT = (SELECT Id FROM @Ids WHERE Name = N'TEST-SLV-L1');
+DECLARE @RT1 BIGINT = (SELECT Id FROM @Ids WHERE Name = N'TEST-SLV-RT1');
+DECLARE @RT2 BIGINT = (SELECT Id FROM @Ids WHERE Name = N'TEST-SLV-RT2');
+INSERT INTO Lots.Container (ItemId, ContainerConfigId, CurrentLocationId, ContainerStatusCodeId, CompletedAt, CreatedByUserId)
+VALUES (@Item, @Cfg, @Line, 2 /*Complete*/, SYSUTCDATETIME(), @App);
+DECLARE @KR BIGINT = SCOPE_IDENTITY();
+DECLARE @KRName NVARCHAR(30) = N'Container ' + CAST(@KR AS NVARCHAR(20));
+INSERT INTO Lots.ContainerTray (ContainerId, TrayPosition, PartsClosedCount, FinishedGoodLotId, ClosedAt, ClosedByUserId)
+VALUES (@KR, 1, 2, @RT1, SYSUTCDATETIME(), @App), (@KR, 2, 2, @RT2, SYSUTCDATETIME(), @App);
+DECLARE @TrayR1 BIGINT = (SELECT Id FROM Lots.ContainerTray WHERE ContainerId = @KR AND TrayPosition = 1);
+DECLARE @TrayR2 BIGINT = (SELECT Id FROM Lots.ContainerTray WHERE ContainerId = @KR AND TrayPosition = 2);
+
+SET @j = (SELECT * FROM (VALUES (@V1, CAST(NULL AS BIGINT)), (NULL, @KR)) v(lotId, containerId) FOR JSON PATH);
+INSERT INTO @o EXEC Quality.ControlledRun_Open @Reason = N'slv fix round', @MembersJson = @j, @AppUserId = @App;
+DECLARE @Run BIGINT = (SELECT NewId FROM @o);
+DECLARE @RunNumber NVARCHAR(15) = (SELECT RunNumber FROM Quality.ControlledRun WHERE Id = @Run);
+DELETE FROM @o;
+DECLARE @MemV1 BIGINT = (SELECT Id FROM Quality.ControlledRunMember WHERE LotId = @V1 AND EndedAt IS NULL);
+SET @n = CASE WHEN @Run IS NOT NULL AND @MemV1 IS NOT NULL AND @Cfg IS NOT NULL AND @OriginRcv IS NOT NULL THEN N'ok' ELSE N'missing' END;
+EXEC test.Assert_IsEqual @TestName = N'[Events] fix fixture: super-lot with a received LOT and a container', @Expected = N'ok', @Actual = @n;
+
+-- ---- VendorReturn_Cancel voids the linked result: on the LOT too ----
+SET @j = (SELECT @MemV1 AS memberId, N'ReturnToSupplier' AS dispositionCode, 3 AS quantity FOR JSON PATH);
+INSERT INTO @o EXEC Quality.ControlledRunResult_Record @ControlledRunId = @Run, @ResultsJson = @j, @AppUserId = @App;
+DELETE FROM @o;
+DECLARE @VR BIGINT = (SELECT Id FROM Lots.VendorReturn WHERE LotId = @V1 AND CancelledAt IS NULL);
+INSERT INTO @s EXEC Lots.VendorReturn_Cancel @VendorReturnId = @VR, @CancelRemarks = N'counted wrong', @AppUserId = @App;
+SET @n = (SELECT CAST(Status AS NVARCHAR(1)) FROM @s);
+EXEC test.Assert_IsEqual @TestName = N'[Events] fix fixture: vendor return cancelled', @Expected = N'1', @Actual = @n;
+DELETE FROM @s;
+SET @exp = N'TEST-SLV-V1 ' + @Dot + N' Super-lot ' + @RunNumber + N' ' + @Dot + N' Result voided ' + @Dot + N' Return to Supplier 3 (counted wrong)';
+SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(CASE WHEN Description = @exp THEN N'ok' ELSE Description END))
+          FROM Lots.LotEventLog WHERE LotId = @V1 AND LogEventTypeId = @EvVoided);
+EXEC test.Assert_IsEqual @TestName = N'[Events] vendor return cancelled: the voided result is on the LOT', @Expected = N'1|ok', @Actual = @n;
+
+-- ---- ContainerRework_Scrap writes an applied scrap result: on each tray ----
+INSERT INTO @o EXEC Lots.ContainerRework_Open @ContainerId = @KR, @AppUserId = @App;
+SET @n = (SELECT CAST(Status AS NVARCHAR(1)) FROM @o);
+EXEC test.Assert_IsEqual @TestName = N'[Events] fix fixture: container opened for rework', @Expected = N'1', @Actual = @n;
+DELETE FROM @o;
+INSERT INTO @o EXEC Lots.ContainerRework_Scrap @ContainerTrayId = @TrayR1, @DefectCodeId = @Def, @Quantity = 2, @AppUserId = @App;
+DELETE FROM @o;
+SET @exp = N'% ' + @Dot + N' ' + @KRName + N' ' + @Dot + N' Result recorded ' + @Dot + N' Scrap 2 (' + @DefName + N')';
+SET @n = (SELECT CONCAT(COUNT(*), N'|', SUM(CASE WHEN Description LIKE @exp THEN 1 ELSE 0 END), N'|', COUNT(DISTINCT LotId))
+          FROM Lots.LotEventLog WHERE LotId IN (@RT1, @RT2) AND LogEventTypeId = @EvResult);
+EXEC test.Assert_IsEqual @TestName = N'[Events] rework scrap: the applied result is on each tray, naming the container', @Expected = N'2|2|2', @Actual = @n;
+
+-- ---- ContainerRework_Void ends the membership: Left on each (emptied) tray ----
+INSERT INTO @o EXEC Lots.ContainerRework_Scrap @ContainerTrayId = @TrayR2, @DefectCodeId = @Def, @Quantity = 2, @AppUserId = @App;
+DELETE FROM @o;
+INSERT INTO @s EXEC Lots.ContainerRework_Void @ContainerId = @KR, @Remarks = N'all scrapped', @AppUserId = @App;
+SET @n = (SELECT CAST(Status AS NVARCHAR(1)) FROM @s);
+EXEC test.Assert_IsEqual @TestName = N'[Events] fix fixture: emptied container voided', @Expected = N'1', @Actual = @n;
+DELETE FROM @s;
+SET @exp = N'% ' + @Dot + N' ' + @KRName + N' ' + @Dot + N' Left (container voided)';
+SET @n = (SELECT CONCAT(COUNT(*), N'|', SUM(CASE WHEN Description LIKE @exp THEN 1 ELSE 0 END), N'|', COUNT(DISTINCT LotId))
+          FROM Lots.LotEventLog WHERE LotId IN (@RT1, @RT2) AND LogEventTypeId = @EvLeft);
+EXEC test.Assert_IsEqual @TestName = N'[Events] container voided: Left on each tray', @Expected = N'2|2|2', @Actual = @n;
+
+-- ---- a member that joins after a deviation is raised: its release names no deviation ----
+INSERT INTO @o EXEC Quality.ControlledRunDeviation_Raise @ControlledRunId = @Run, @Description = N'cosmetic',
+    @Justification = N'no effect on function', @AppUserId = @App;
+DELETE FROM @o;
+SET @j = (SELECT @L1 AS lotId FOR JSON PATH);
+INSERT INTO @s EXEC Quality.ControlledRun_AddMembers @Id = @Run, @MembersJson = @j, @AppUserId = @App;
+DELETE FROM @s;
+DECLARE @MemL1 BIGINT = (SELECT Id FROM Quality.ControlledRunMember WHERE LotId = @L1 AND EndedAt IS NULL);
+SET @j = (SELECT @MemL1 AS memberId, N'Accepted' AS dispositionCode, 10 AS quantity FOR JSON PATH);
+INSERT INTO @o EXEC Quality.ControlledRunResult_Record @ControlledRunId = @Run, @ResultsJson = @j, @AppUserId = @App;
+DELETE FROM @o;
+SET @j = N'[' + CAST(@MemL1 AS NVARCHAR(20)) + N']';
+INSERT INTO @o EXEC Quality.ControlledRun_Release @Id = @Run, @MemberIdsJson = @j, @InspectionConfirmed = 1, @AppUserId = @App;
+SET @n = (SELECT CAST(Status AS NVARCHAR(1)) FROM @o);
+EXEC test.Assert_IsEqual @TestName = N'[Events] fix fixture: late joiner released', @Expected = N'1', @Actual = @n;
+DELETE FROM @o;
+SET @exp = N'TEST-SLV-L1 ' + @Dot + N' Super-lot ' + @RunNumber + N' ' + @Dot + N' Released ' + @Dot + N' signed SYS';
+SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(CASE WHEN Description = @exp THEN N'ok' ELSE Description END))
+          FROM Lots.LotEventLog WHERE LotId = @L1 AND LogEventTypeId = @EvRel);
+EXEC test.Assert_IsEqual @TestName = N'[Events] joined after the deviation: release names no deviation', @Expected = N'1|ok', @Actual = @n;
+GO
+
 -- ---- teardown ----
 DECLARE @TdLot TABLE (Id BIGINT PRIMARY KEY);
 INSERT INTO @TdLot (Id) SELECT Id FROM Lots.Lot WHERE LotName LIKE N'TEST-SLV-%';
 DECLARE @TdCon TABLE (Id BIGINT);
 INSERT INTO @TdCon (Id) SELECT DISTINCT ContainerId FROM Lots.ContainerTray WHERE FinishedGoodLotId IN (SELECT Id FROM @TdLot);
+DELETE FROM Lots.VendorReturn WHERE LotId IN (SELECT Id FROM @TdLot);
 DELETE FROM Quality.ControlledRunResult;
 DELETE FROM Quality.ControlledRunLabel;
 DELETE FROM Quality.ControlledRunMember;
@@ -252,6 +369,7 @@ DELETE FROM Quality.Signature;
 ALTER TABLE Quality.Signature ENABLE TRIGGER TR_Signature_Immutable;
 DELETE FROM Quality.ControlledRun;
 DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM @TdLot);
+DELETE FROM Lots.ContainerRework WHERE ContainerId IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.ContainerTray WHERE ContainerId IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.Container WHERE Id IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM @TdLot);

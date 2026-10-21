@@ -1,8 +1,13 @@
 -- ============================================================
 -- Repeatable:  R__Lots_ContainerRework_Void.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-13
--- Version:     1.0
+-- Modified:    2026-10-21
+-- Version:     1.1
+-- Change Log:  2026-10-21 - 1.1 - Super-lot piece 6: the membership it ends gets
+--                                 'Left (container voided)' (ControlledRunLotLeft) on the
+--                                 container's tray LOTs. The trays stay linked to the
+--                                 voided container (only their pieces are gone), so the
+--                                 rows land on them.
 -- Description: Voids a container under rework that has been EMPTIED (spec D4): its good
 --              parts went into other containers, its bad parts were scrapped. Refused
 --              while it still holds a single piece.
@@ -127,10 +132,19 @@ BEGIN
         CLOSE cleared_cur; DEALLOCATE cleared_cur;
 
         -- ---- it leaves its super-lot: there is nothing left to release ----
+        DECLARE @Ended TABLE (Id BIGINT NOT NULL);
         UPDATE Quality.ControlledRunMember
         SET EndedAt = SYSUTCDATETIME(), EndedByUserId = @AppUserId,
             ControlledRunMemberEndReasonId = 5 /* ContainerVoided */, EndRemarks = @Remarks
+        OUTPUT inserted.Id INTO @Ended (Id)
         WHERE ContainerId = @ContainerId AND EndedAt IS NULL;
+
+        -- v1.1: 'Left (container voided)' on the tray LOTs of the membership just ended
+        DECLARE @LeftJson NVARCHAR(MAX) = (SELECT N'[' + STRING_AGG(CAST(Id AS NVARCHAR(MAX)), N',') + N']' FROM @Ended);
+        IF @LeftJson IS NOT NULL
+            EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+                @MemberIdsJson = @LeftJson, @LogEventTypeCode = N'ControlledRunLotLeft',
+                @ActionText = N'Left (container voided)', @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
         SET @ActRaw = N'Container ' + CAST(@ContainerId AS NVARCHAR(20)) + N' ' + Audit.ufn_MidDot() + N' Voided (emptied by repack)'
                     + CASE WHEN @RunNumber IS NOT NULL THEN N'; left super-lot ' + @RunNumber ELSE N'' END + N': ' + @Remarks;

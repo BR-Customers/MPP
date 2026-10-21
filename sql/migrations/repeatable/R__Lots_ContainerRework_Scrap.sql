@@ -1,8 +1,15 @@
 -- ============================================================
 -- Repeatable:  R__Lots_ContainerRework_Scrap.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-13
--- Version:     1.0
+-- Modified:    2026-10-21
+-- Version:     1.1
+-- Change Log:  2026-10-21 - 1.1 - Super-lot piece 6: when it writes an APPLIED scrap result
+--                                 for a container member, 'Result recorded . Scrap <qty>
+--                                 (<defect>)' goes onto the container's tray LOTs naming the
+--                                 container (ControlledRunLotResult), as
+--                                 ControlledRunResult_Record v1.4 does. Applying an
+--                                 already-recorded result writes nothing new (it was
+--                                 written when recorded).
 -- Description: REAL scrap out of a tray of a container under rework (spec 5). This is
 --              what piece 3 could only record: a bad part found in a finished container.
 --
@@ -168,10 +175,22 @@ BEGIN
             UPDATE Quality.ControlledRunResult SET RejectEventId = @NewId
             WHERE Id = @ControlledRunResultId AND RejectEventId IS NULL;
         ELSE IF @MemberId IS NOT NULL
+        BEGIN
             INSERT INTO Quality.ControlledRunResult
                 (ControlledRunMemberId, DispositionCodeId, Quantity, DefectCodeId, RejectEventId, Remarks,
                  RecordedByUserId, TerminalLocationId)
             VALUES (@MemberId, @ScrapDispositionId, @Quantity, @DefectCodeId, @NewId, @Remarks, @AppUserId, @TerminalLocationId);
+
+            -- v1.1: the new entry on the trays' own timelines (mirror of ControlledRunResult_Record v1.4)
+            DECLARE @ResMemberJson NVARCHAR(MAX) = N'[' + CAST(@MemberId AS NVARCHAR(20)) + N']';
+            DECLARE @ResText NVARCHAR(400) = LEFT(N'Result recorded ' + Audit.ufn_MidDot() + N' '
+                + (SELECT Name FROM Quality.DispositionCode WHERE Id = @ScrapDispositionId) + N' '
+                + CAST(@Quantity AS NVARCHAR(10))
+                + ISNULL(N' (' + (SELECT Description FROM Quality.DefectCode WHERE Id = @DefectCodeId) + N')', N''), 400);
+            EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+                @MemberIdsJson = @ResMemberJson, @LogEventTypeCode = N'ControlledRunLotResult',
+                @ActionText = @ResText, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
+        END
 
         SET @ActRaw = @LotName + N' ' + Audit.ufn_MidDot() + N' Reject ' + Audit.ufn_MidDot()
                     + N' ' + CAST(@Quantity AS NVARCHAR(20)) + N' pcs (' + @DefCode + N'); remaining '
