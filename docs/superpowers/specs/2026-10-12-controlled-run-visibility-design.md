@@ -262,6 +262,32 @@ notes on them are settled as drawn:
 - **Branch:** built on `claude/super-lot-piece-6` (branched from
   `jacques/controlled-run-super-lot`), merged back into it.
 
+## Build notes (2026-10-21)
+
+Where the build differs from the design above, what was verified, and what was not.
+
+- **Deviations from the design as written.**
+  - `Lots.Container_ListSerials` gained an optional `@IncludeRemoved BIT = 0` (default is today's behaviour for every existing caller). The trace passes 1 and gets `RemovedAt` / `RemovedReason` / `MovedInFromContainerName` / `MovedInAt` per serial, so a scrapped serial stays listed, struck through. There is no second proc.
+  - On the three per-container readers (`Container_GetTraceDetail`, `Container_ListShipped`, `Hold_ListAssociatedContainers`) the removed-serial trio is replaced by three counts, `ScrappedSerialCount`, `MovedOutSerialCount`, `MovedInSerialCount`, so one column name never means "this serial" in one proc and "one of several" in another.
+  - Task 3 widened beyond the original proc list: `VendorReturn_Cancel` (result voided), `ContainerRework_Void` (left, container voided) and `ContainerRework_Scrap` (result recorded) also write per-LOT rows ("every super-lot event that touches a LOT").
+  - "Deviation covers a member" is one predicate everywhere: `AddedAt <= RaisedAt AND (EndedAt IS NULL OR RaisedAt < EndedAt)`.
+  - `ControlledRun_ListByLot` returns `JoinedByInitials` / `LeftByInitials`; `ControlledRun_ListHistory` signature `Detail` follows the approved mock (release `<Meaning> - "<Statement>" - <n> members`, deviation `Deviation <DV> - <Description>`).
+  - `ElevationModal` gained an optional `actionNote` (wrapped amber note) and `Session.requireElevation` an optional `note`, so the long release sentence is not squeezed into the modal title (mock 3).
+  - `Quality.ControlledRun_ReportOutcomes` gained an optional `@Section` (`Outcome` / `Defect`) so the report uses two bare-EXEC data sources; the PRINTED time comes from SQL in Eastern, not ReportMill `@Date@`.
+  - The super-lot report counts results of ended members too (it is the complaint record); the screen's `ListMemberResults` shows current members only.
+  - `VendorReturn_Mark`'s fix was applied to `ControlledRunResult_Record` and `ControlledRun_Release` (status re-check under the lock, raise into CATCH).
+  - Global Trace's genealogy table was replaced by the `NodeRow` tree with super-lot chips inside a 320px scrolling box (mock 4); `NodeRow` label and arrow taps open LOT Detail; the container's super-lot chips sit in the container panel header, because the tree proc returns LOTs only. The dead `BlueRidge.Lots.GlobalTrace.genealogyRows` was removed (commit 916810db).
+  - The Lot Detail report is unchanged, as settled in section 6c.
+- **Verified.** Migration `0113` and every changed proc on a clean private database (`MPP_MES_CRTest`): `sql/tests/0113_SuperLotVisibility/` (9 files) plus the existing folders that exercise a changed proc, and one full-suite run at the end (counts in `PROJECT_STATUS.md`). Report data sources executed read-only through pyodbc. Views, named queries and scripts verified from files: JSON parses, Python compiles in memory, every named query and script reference resolves.
+- **NOT verified: no screen, report or named query has run on a gateway.** The gateway reads the main checkout; the walk happens after the branch is merged into `jacques/working`, with `0113` and the changed repeatables applied to `MPP_MES_Dev` additively. Walk-check items:
+  - LOT Detail: no chip and empty Super-lots tab for a LOT never in a super-lot (no Component Error); chip, rows and pill colours for the fixture LOT; rows fit in 64px; the 11-tab strip width; chip and run number reach `/shop-floor/controlled-runs/<RN>`.
+  - Release elevation prompt: `ElevationModal` (540px fixed height plus the amber note) keeps Authenticate on screen; note colours in the modal theme. This and the other typed-credential paths were not driven.
+  - Super-lot page: `/shop-floor/controlled-runs/CR000001` selects the run; `/NOPE` selects nothing and does not error; the bare address is unchanged; the sibling-path binding `{../HistoryRepeater.props.instances}`; History newest first with Signature rows purple; Close enabled from `CanClose` (the blocked-reason tooltip is invisible on touch; consider a visible label); a 48px member row may clip two sub-lines; the URL stays stale after selecting another card; `params.runNumber` onChange at startup.
+  - Genealogy Viewer and Global Trace: no chips and no error for a plain LOT; chips on root and nodes for the fixture, amber Open / grey Released; chip text fits at 170px; the Global Trace tree layout change; repacked container shows the replaced serial struck with "void MM/dd", Repack and Serial changes; struck table cells (`{value, style}` cell objects, unproven here); `lots/Container_ListSerials` with `includeRemoved` (sqlType 6) through JDBC.
+  - Supervisor Dashboard: Open super-lots tile with and without open runs, the 30 s poll, navigation, the datetime in the custom dict.
+  - Super-lot report: tile on the Reports page and the picker (status-agnostic, accepts a typed `CR000001`); every section has content with no `<N/A>` or literal `@token@`; outcome totals equal the Results tab for the same run; PRINTED shows Eastern time; a run with no results or members; PDF pagination ("Page 1 of 3"); text fit for long reason, "Other" and signature statements; Print report disabled with no selection and downloads `Super-lot CRxxxxxx.pdf`; empty-picker toast.
+- **Deferred minors** (recorded in the build ledger, none blocks the merge): the new-column pin in `010_schema.sql` checks at least 13 flagged codes rather than the exact set; join history text is the join method name ("New production"), not "auto-joined"; a Release vs Record/Void lock-order deadlock is possible (victim sees "Unexpected error" 1205); a Void/Record blocked by Release proceeds after it without an `EndedAt` re-check; a moved-in-then-scrapped serial counts in both the moved-in and scrapped counts; `Hold_ListAssociatedContainers` omits containers all of whose LOT serials left; no index on `ContainerSerialHistory` Old/NewContainerId; `getRunByNumber` has no `_refreshToken`; the report's returns/trim reworks are not listed for container tray LOTs.
+
 ## Revision History
 
 | Date | Change |
@@ -272,3 +298,4 @@ notes on them are settled as drawn:
 | 2026-10-21 | 3.2 settled: all super-lot events written per LOT; History tab unions the LOT audit log with a `LogEventType.RepeatsLotTimeline` exclude flag; cost note. |
 | 2026-10-21 | Screen mocks approved as drawn (6b). |
 | 2026-10-21 | Builder check: deviation covers every member still in the super-lot at signing; container rows go to trays in the container at the moment; builder calls listed (6c). Approved for planning. |
+| 2026-10-21 | Build notes added: where the build differs from this design, what was verified (SQL on a private database; views from files) and what was not (no gateway walk yet), with the walk-check list. |
