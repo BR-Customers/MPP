@@ -1,0 +1,289 @@
+{
+  "custom": {},
+  "params": {
+    "row": {
+      "ControlledRunId": null,
+      "RunNumber": "",
+      "Reason": "",
+      "RunStatusCode": "",
+      "MembershipState": "",
+      "JoinMethodName": "",
+      "JoinedAt": null,
+      "LeftAt": null,
+      "LeftReason": "",
+      "ResultsText": "",
+      "ReleasedByInitials": "",
+      "ReleasedAt": null,
+      "DeviationNumbers": "",
+      "ViaContainerName": "",
+      "JoinedByInitials": "",
+      "LeftByInitials": "",
+      "JoinedAtDisplay": "",
+      "LeftAtDisplay": "",
+      "ReleasedAtDisplay": "",
+      "JoinedText": "",
+      "LeftText": "",
+      "ResultsDisplay": "",
+      "ReleaseText": ""
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 64,
+      "width": 1100
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "12px",
+        "overflow": "hidden",
+        "padding": "6px 10px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "RunNumberLink"
+        },
+        "position": {
+          "basis": "110px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "overflow": "hidden",
+            "whiteSpace": "normal",
+            "classes": "pf-field-mono",
+            "cursor": "pointer",
+            "fontWeight": 700,
+            "textDecoration": "underline"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.RunNumber"
+              }
+            }
+          }
+        },
+        "events": {
+          "dom": {
+            "onClick": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\t# Opens the super-lot page already on this super-lot (Task 12 route).\n\trn = self.view.params.row.RunNumber\n\tif rn:\n\t\tsystem.perspective.navigate('/shop-floor/controlled-runs/' + rn)"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ReasonLabel"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "overflow": "hidden",
+            "whiteSpace": "normal"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.Reason"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "StatusCell"
+        },
+        "position": {
+          "basis": "100px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "StatePill"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "borderRadius": "999px",
+                "fontSize": "12px",
+                "fontWeight": 600,
+                "padding": "2px 10px"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.row.MembershipState"
+                  }
+                }
+              },
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.row.MembershipState} = 'Open', 'pf-pill pf-pill-warn', if({view.params.row.MembershipState} = 'Released', 'pf-pill pf-pill-good', 'pf-pill'))"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "JoinedLabel"
+        },
+        "position": {
+          "basis": "190px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "overflow": "hidden",
+            "whiteSpace": "normal"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.JoinedText"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LeftLabel"
+        },
+        "position": {
+          "basis": "190px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "overflow": "hidden",
+            "whiteSpace": "normal"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.LeftText"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ResultsLabel"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "overflow": "hidden",
+            "whiteSpace": "normal"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.ResultsDisplay"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ReleaseLabel"
+        },
+        "position": {
+          "basis": "210px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "overflow": "hidden",
+            "whiteSpace": "normal"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.ReleaseText"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

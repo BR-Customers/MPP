@@ -66,6 +66,10 @@
     },
     "noteDraft": "",
     "notes": [],
+    "openSuperLot": {
+      "Id": null,
+      "RunNumber": ""
+    },
     "parents": [],
     "pauses": [],
     "samples": [],
@@ -79,6 +83,14 @@
     "lotId": 0
   },
   "propConfig": {
+    "custom.openSuperLot": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.openForLotOrEmpty\", 0, {view.params.lotId}, {view.custom.lot.UpdatedAt})"
+        },
+        "type": "expr"
+      }
+    },
     "params.lotId": {
       "onChange": {
         "enabled": true,
@@ -285,6 +297,54 @@
                 "textTransform": "uppercase"
               },
               "text": "CRT Active"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\t# Opens the super-lot page already on this super-lot (Task 12 route).\n\trn = self.view.custom.openSuperLot.RunNumber\n\tif rn:\n\t\tsystem.perspective.navigate('/shop-floor/controlled-runs/' + rn)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SuperLotChip"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "len(coalesce({view.custom.openSuperLot.RunNumber}, '')) > 0"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "'Super-lot ' + coalesce({view.custom.openSuperLot.RunNumber}, '') + ' ' + char(8594)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "borderRadius": "999px",
+                "classes": "pf-pill pf-pill-warn",
+                "cursor": "pointer",
+                "fontSize": "13px",
+                "fontWeight": "600",
+                "padding": "4px 12px"
+              }
             },
             "type": "ia.display.label"
           },
@@ -2039,6 +2099,42 @@
               {
                 "children": [
                   {
+                    "meta": {
+                      "name": "SuperLotsPanelEmbed"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.params.lotId": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.lotId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/SuperLotsPanel"
+                    },
+                    "type": "ia.display.view"
+                  }
+                ],
+                "meta": {
+                  "name": "PanelSuperLots"
+                },
+                "position": {
+                  "tabIndex": 9
+                },
+                "props": {
+                  "direction": "column"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
                     "children": [
                       {
                         "meta": {
@@ -2247,7 +2343,7 @@
                   "name": "PanelNotes"
                 },
                 "position": {
-                  "tabIndex": 9
+                  "tabIndex": 10
                 },
                 "props": {
                   "direction": "column",
@@ -2334,6 +2430,11 @@
                   "disabled": false,
                   "runWhileHidden": true,
                   "text": "Vendor Return"
+                },
+                {
+                  "disabled": false,
+                  "runWhileHidden": true,
+                  "text": "Super-lots"
                 },
                 {
                   "disabled": false,
@@ -2581,7 +2682,7 @@
         {
           "name": "doCrtToggle",
           "params": [],
-          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"No LOT loaded.\", \"warning\")\n\t\treturn\n\t# The mutation targets view.params.lotId - the same id reprintLabel and\n\t# load() use - never the Id carried inside the custom.lot snapshot.\n\t# load() keeps the PREVIOUS snapshot when Lot_Get misses, so a stale one\n\t# would otherwise aim this toggle at whatever LOT was displayed last.\n\t# The snapshot is therefore only consulted once it proves it belongs to\n\t# this lotId, and then only to pick the direction and the prompt label.\n\tlot \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\ttry:\n\t\tsnapId \u003d int(lot.get(\"Id\") or 0)\n\texcept:\n\t\tsnapId \u003d 0\n\ttry:\n\t\tcurId \u003d int(lotId)\n\texcept:\n\t\tcurId \u003d -1\n\tif snapId \u003c 1 or snapId !\u003d curId:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not loaded\", \"This LOT is still loading. Reopen it and try again.\", \"warning\")\n\t\treturn\n\tactive \u003d bool(lot.get(\"CrtActive\"))\n\t# Supervisor-only in BOTH directions (design D7): applying a Controlled Run\n\t# Tag forces the 200% downstream inspection prompt, releasing one drops that\n\t# obligation - neither transition is an operator decision. Per D6 this acts on\n\t# THIS LOT only: no bulk clear, no clear-with-descendants.\n\t# requireElevation stashes the intent and opens the ElevationModal;\n\t# Session.dispatchElevatedAction replays it as the crtToggleRequested page\n\t# message, whose handler calls straight back into this method.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tif active:\n\t\t\tlabel \u003d \"Release the Controlled Run Tag\"\n\t\telse:\n\t\t\tlabel \u003d \"Apply a Controlled Run Tag\"\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"CrtToggle\", label, {})\n\t\treturn\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tif active:\n\t\tresult \u003d BlueRidge.Lots.Lot.clearCrt(lotId, appUserId, termId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"CRT released\")\n\telse:\n\t\tresult \u003d BlueRidge.Lots.Lot.setCrt(lotId, appUserId, termId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"CRT applied\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
+          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"No LOT loaded.\", \"warning\")\n\t\treturn\n\t# The mutation targets view.params.lotId - the same id reprintLabel and\n\t# load() use - never the Id carried inside the custom.lot snapshot.\n\t# load() keeps the PREVIOUS snapshot when Lot_Get misses, so a stale one\n\t# would otherwise aim this toggle at whatever LOT was displayed last.\n\t# The snapshot is therefore only consulted once it proves it belongs to\n\t# this lotId, and then only to pick the direction and the prompt label.\n\tlot \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\ttry:\n\t\tsnapId \u003d int(lot.get(\"Id\") or 0)\n\texcept:\n\t\tsnapId \u003d 0\n\ttry:\n\t\tcurId \u003d int(lotId)\n\texcept:\n\t\tcurId \u003d -1\n\tif snapId \u003c 1 or snapId !\u003d curId:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not loaded\", \"This LOT is still loading. Reopen it and try again.\", \"warning\")\n\t\treturn\n\tactive \u003d bool(lot.get(\"CrtActive\"))\n\t# Supervisor-only in BOTH directions (design D7): applying a Controlled Run\n\t# Tag forces the 200% downstream inspection prompt, releasing one drops that\n\t# obligation - neither transition is an operator decision. Per D6 this acts on\n\t# THIS LOT only: no bulk clear, no clear-with-descendants.\n\t# requireElevation stashes the intent and opens the ElevationModal;\n\t# Session.dispatchElevatedAction replays it as the crtToggleRequested page\n\t# message, whose handler calls straight back into this method.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tif active:\n\t\t\tlabel \u003d \"Release the Controlled Run Tag\"\n\t\t\t# Piece 6 (mock 3): a LOT in an open super-lot gets a prompt that names\n\t\t\t# the super-lot and says this clears the tag on THIS LOT only. Read fresh\n\t\t\t# (not the bound custom.openSuperLot) so it reflects membership now.\n\t\t\tsl \u003d BlueRidge.Quality.ControlledRun.openForLotOrEmpty(lotId) or {}\n\t\t\tif sl.get(\"RunNumber\"):\n\t\t\t\tlabel \u003d \"Release the Controlled Run Tag. %s is in open super-lot %s. This clears the tag on this LOT only; the super-lot is released from the super-lot page.\" % (lot.get(\"LotName\") or \"This LOT\", sl.get(\"RunNumber\"))\n\t\telse:\n\t\t\tlabel \u003d \"Apply a Controlled Run Tag\"\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"CrtToggle\", label, {})\n\t\treturn\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tif active:\n\t\tresult \u003d BlueRidge.Lots.Lot.clearCrt(lotId, appUserId, termId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"CRT released\")\n\telse:\n\t\tresult \u003d BlueRidge.Lots.Lot.setCrt(lotId, appUserId, termId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"CRT applied\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
         }
       ],
       "extensionFunctions": null,

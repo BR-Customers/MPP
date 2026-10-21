@@ -1,0 +1,341 @@
+{
+  "custom": {
+    "rows": []
+  },
+  "params": {
+    "lotId": 0
+  },
+  "propConfig": {
+    "params.lotId": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Second safety net beside onStartup: a lotId change repopulates the tab.\n\tself.rootContainer.applyLot(currentValue.value)"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 520,
+      "width": 1100
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "8px",
+        "overflowY": "auto"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applyLot",
+          "params": [
+            "lotId"
+          ],
+          "script": "\t# Every super-lot this LOT (or, for a tray LOT, its container) was ever in,\n\t# newest first. Display strings are joined in the wrapper; [] when none.\n\tlid = BlueRidge.Common.Util.toIntOrNone(lotId) or 0\n\tself.view.custom.rows = BlueRidge.Quality.ControlledRun.superLotRowInstances(lid) if lid > 0 else []"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "lotScrapPanelLoad",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# LOT Detail's load() broadcasts this after every reload (hold, scrap,\n\t# count, CRT changes); re-read alongside the other embedded tabs.\n\tp = payload or {}\n\tlid = BlueRidge.Common.Util.toIntOrNone(p.get(\"lotId\")) or 0\n\tself.applyLot(lid if lid > 0 else self.view.params.lotId)"
+        }
+      ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# Self-load on mount (the parent's page-scoped broadcast can race the mount).\n\tself.applyLot(self.view.params.lotId)"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Heading"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Super-lots this LOT has been in",
+          "style": {
+            "fontSize": "16px",
+            "fontWeight": 700
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.rows}) > 0"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "EmptyState"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "This LOT has never been part of a super-lot.",
+          "style": {
+            "classes": "pf-empty-state",
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "15px",
+            "padding": "32px",
+            "textAlign": "center"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.rows}) = 0"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "HeaderRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "12px",
+            "overflow": "hidden",
+            "padding": "0 10px"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.rows}) > 0"
+              }
+            }
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HRunNumber"
+            },
+            "position": {
+              "basis": "110px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Super-lot",
+              "style": {
+                "classes": "pf-field-label",
+                "overflow": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HReason"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "text": "Reason",
+              "style": {
+                "classes": "pf-field-label",
+                "overflow": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HStatus"
+            },
+            "position": {
+              "basis": "100px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Status",
+              "style": {
+                "classes": "pf-field-label",
+                "overflow": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HJoined"
+            },
+            "position": {
+              "basis": "190px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Joined",
+              "style": {
+                "classes": "pf-field-label",
+                "overflow": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HLeft"
+            },
+            "position": {
+              "basis": "190px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Left",
+              "style": {
+                "classes": "pf-field-label",
+                "overflow": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HResults"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "text": "Results here",
+              "style": {
+                "classes": "pf-field-label",
+                "overflow": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HRelease"
+            },
+            "position": {
+              "basis": "210px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Release / deviation",
+              "style": {
+                "classes": "pf-field-label",
+                "overflow": "hidden"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "RowsRepeater"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.rows}) > 0"
+              }
+            }
+          },
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.rows"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "elementPosition": {
+            "basis": "64px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/LotDetail/SuperLotRow",
+          "style": {
+            "gap": "6px"
+          },
+          "useDefaultViewHeight": true,
+          "useDefaultViewWidth": false
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Hint"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Newest first. Tapping a super-lot number opens the super-lot page on it. A tray LOT shows the super-lots its container was in.",
+          "style": {
+            "classes": "pf-field-help",
+            "whiteSpace": "normal"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.rows}) > 0"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

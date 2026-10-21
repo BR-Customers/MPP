@@ -1194,6 +1194,7 @@ def getRunByNumber(runNumber):
     return BlueRidge.Common.Db.execOne("quality/ControlledRun_GetByNumber", {"runNumber": t})
 
 
+<<<<<<< HEAD
 def openSummaryText(openCount, oldestAgeDays, membersStillTagged):
     """Dashboard tile sub-text from the openSummaryOrEmpty() numbers. Presentation
        only: 'none open' or 'oldest <n> d <dot> <m> members still CRT <dot> tap to open'."""
@@ -1204,3 +1205,43 @@ def openSummaryText(openCount, oldestAgeDays, membersStillTagged):
     age = BlueRidge.Common.Util.toIntOrNone(_u(oldestAgeDays)) or 0
     m = BlueRidge.Common.Util.toIntOrNone(_u(membersStillTagged)) or 0
     return u"oldest %d d%s%d members still CRT%stap to open" % (age, dot, m, dot)
+=======
+def superLotRowInstances(lotId, _refreshToken=None):
+    """Repeater instances for LOT Detail's Super-lots tab rows (SuperLotRow):
+       listByLotInstances' rows plus four display strings joined here from
+       columns SQL already returned - JoinedText, LeftText, ResultsDisplay,
+       ReleaseText. Nothing is judged: a tray LOT's container results carry the
+       container name beside them (ViaContainerName), so they never read as the
+       tray's own (spec 6c). [] for a LOT that was never in a super-lot."""
+    dot = u" \u00b7 "
+    dash = u"\u2014"
+    out = []
+    for inst in listByLotInstances(lotId):
+        r = dict(inst.get("row") or {})
+        for k in ("RunNumber", "Reason", "MembershipState", "JoinMethodName", "LeftReason",
+                  "ResultsText", "ReleasedByInitials", "DeviationNumbers", "ViaContainerName",
+                  "JoinedByInitials", "LeftByInitials"):
+            r[k] = r.get(k) or ""
+        r["JoinedText"] = dot.join([x for x in (r.get("JoinedAtDisplay"), r["JoinMethodName"],
+                                                r["JoinedByInitials"]) if x]) or dash
+        r["LeftText"] = dot.join([x for x in (r.get("LeftAtDisplay"), r["LeftReason"],
+                                              r["LeftByInitials"]) if x]) or dash
+        results = r["ResultsText"] or dash
+        if r["ViaContainerName"]:
+            results = u"%s %s via %s" % (results, dash, r["ViaContainerName"])
+        r["ResultsDisplay"] = results
+        parts = []
+        if r.get("ReleasedAtDisplay"):
+            parts.append(u" ".join([x for x in (u"Signed", r["ReleasedByInitials"],
+                                                r.get("ReleasedAtDisplay")) if x]))
+        if r["DeviationNumbers"]:
+            parts.append(u"Deviation %s" % r["DeviationNumbers"])
+        if parts:
+            r["ReleaseText"] = dot.join(parts)
+        elif r["MembershipState"] == "Open":
+            r["ReleaseText"] = u"not released yet"
+        else:
+            r["ReleaseText"] = dash
+        out.append({"row": r})
+    return out
+>>>>>>> fe525266 (feat(ignition): super-lot piece 6 -- LOT Detail super-lot chip, Super-lots tab, toggle wording)
