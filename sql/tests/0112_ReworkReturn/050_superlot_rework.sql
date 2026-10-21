@@ -73,7 +73,8 @@ DECLARE @Te TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @o  TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @MR TABLE (MemberId BIGINT, Kind NVARCHAR(10), LotId BIGINT, ContainerId BIGINT, DisplayName NVARCHAR(60), PartNumber NVARCHAR(100),
     CurrentLocationName NVARCHAR(200), PieceCount INT, CrtActive BIT, AcceptedQty INT, ScrapQty INT, ReworkQty INT, ReturnQty INT, UseAsIsQty INT,
-    AppliedScrapQty INT, ResultQty INT, LeftOver INT, HasResult BIT, ReleaseBlockReason NVARCHAR(100), WasCompleteAtJoin BIT, RankLocationId BIGINT);
+    AppliedScrapQty INT, ResultQty INT, LeftOver INT, HasResult BIT, ReleaseBlockReason NVARCHAR(100), WasCompleteAtJoin BIT, RankLocationId BIGINT,
+    AppliedReturnQty INT);
 DECLARE @RW TABLE (MemberId BIGINT, LotReworkId BIGINT, StartedAt DATETIME2(3), ApprovedByInitials NVARCHAR(20));
 
 SET @n = CASE WHEN @Item IS NOT NULL AND @Dest IS NOT NULL AND @Safe IS NOT NULL AND @Sup IS NOT NULL

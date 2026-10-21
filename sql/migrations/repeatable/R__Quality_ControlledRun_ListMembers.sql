@@ -1,8 +1,11 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRun_ListMembers.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-12
--- Version:     1.0
+-- Modified:    2026-10-21
+-- Version:     1.1
+-- Change Log:  2026-10-21 - 1.1 - Piece 6 (spec 3.8): WasCompleteAtJoin appended LAST
+--                                 (the unit was pulled back from finished stock).
+--                                 Callers capture by column list.
 -- Description: READ. The members of one super-lot, in the order they joined.
 --              @IncludeEnded = 0 (default) returns current members only; 1 also
 --              returns members that were removed or ended with the run.
@@ -32,8 +35,10 @@ BEGIN
         jm.Name AS JoinMethodName,
         CAST(ms.AddedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS AddedAt,
         CAST(ms.EndedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS EndedAt,
-        er.Name AS EndReasonName
+        er.Name AS EndReasonName,
+        m.WasCompleteAtJoin
     FROM Quality.ufn_ControlledRunMemberState(@Id) ms
+    INNER JOIN Quality.ControlledRunMember m           ON m.Id  = ms.MemberId
     INNER JOIN Quality.ControlledRunJoinMethod jm      ON jm.Id = ms.ControlledRunJoinMethodId
     LEFT JOIN Quality.ControlledRunMemberEndReason er  ON er.Id = ms.ControlledRunMemberEndReasonId
     LEFT JOIN Parts.Item i                             ON i.Id  = ms.ItemId

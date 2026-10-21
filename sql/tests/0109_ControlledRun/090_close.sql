@@ -111,7 +111,7 @@ DECLARE @G TABLE (Id BIGINT, RunNumber NVARCHAR(15), StatusCode NVARCHAR(20), Re
     SelectionItemId BIGINT, PartNumber NVARCHAR(100), SelectionLocationId BIGINT, LocationName NVARCHAR(200), SelectionFromAt DATETIME2(3),
     SelectionToAt DATETIME2(3), IncludeDescendants BIT, AutoJoinEnabled BIT, AutoJoinEndedAt DATETIME2(3), OpenedByInitials NVARCHAR(20),
     OpenedAt DATETIME2(3), ClosedByInitials NVARCHAR(20), ClosedAt DATETIME2(3), CloseRemarks NVARCHAR(500), MemberCount INT, ClearedCount INT,
-    PieceCount INT, CriteriaText NVARCHAR(400));
+    PieceCount INT, CriteriaText NVARCHAR(400), CanClose BIT, CloseBlockedReason NVARCHAR(200));
 INSERT INTO @G EXEC Quality.ControlledRun_Get @Id = @Run;
 SET @n = (SELECT StatusCode + N'|' + CAST(MemberCount AS NVARCHAR(5)) + N'|' + CAST(ClearedCount AS NVARCHAR(5)) + N'|' + ClosedByInitials FROM @G);
 EXEC test.Assert_IsEqual @TestName = N'[Close] a closed super-lot still reports what it held', @Expected = N'Closed|4|4|SYS', @Actual = @n;

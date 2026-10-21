@@ -73,9 +73,10 @@ DECLARE @G TABLE (Id BIGINT, RunNumber NVARCHAR(15), StatusCode NVARCHAR(20), Re
     SelectionItemId BIGINT, PartNumber NVARCHAR(100), SelectionLocationId BIGINT, LocationName NVARCHAR(200), SelectionFromAt DATETIME2(3),
     SelectionToAt DATETIME2(3), IncludeDescendants BIT, AutoJoinEnabled BIT, AutoJoinEndedAt DATETIME2(3), OpenedByInitials NVARCHAR(20),
     OpenedAt DATETIME2(3), ClosedByInitials NVARCHAR(20), ClosedAt DATETIME2(3), CloseRemarks NVARCHAR(500), MemberCount INT, ClearedCount INT,
-    PieceCount INT, CriteriaText NVARCHAR(400));
+    PieceCount INT, CriteriaText NVARCHAR(400), CanClose BIT, CloseBlockedReason NVARCHAR(200));
 DECLARE @M TABLE (MemberId BIGINT, Kind NVARCHAR(10), LotId BIGINT, ContainerId BIGINT, DisplayName NVARCHAR(60), PartNumber NVARCHAR(100),
-    CurrentLocationName NVARCHAR(200), PieceCount INT, CrtActive BIT, JoinMethodName NVARCHAR(100), AddedAt DATETIME2(3), EndedAt DATETIME2(3), EndReasonName NVARCHAR(100));
+    CurrentLocationName NVARCHAR(200), PieceCount INT, CrtActive BIT, JoinMethodName NVARCHAR(100), AddedAt DATETIME2(3), EndedAt DATETIME2(3), EndReasonName NVARCHAR(100),
+    WasCompleteAtJoin BIT);
 DECLARE @B TABLE (Id BIGINT, RunNumber NVARCHAR(15));
 
 -- ===== List =====

@@ -1,10 +1,15 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRun_Get.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-12
--- Version:     1.1
+-- Modified:    2026-10-21
+-- Version:     1.2
 -- Change Log:  2026-10-13 - 1.1 - Totals count members that left by signed RELEASE,
 --                                 and a released member is cleared for good.
+--              2026-10-21 - 1.2 - Piece 6 (spec 3.7): CanClose BIT and CloseBlockedReason
+--                                 NVARCHAR(200) appended LAST, from Quality.ufn_Controlled
+--                                 RunCloseCheck -- the same rules and words
+--                                 ControlledRun_Close refuses with. The page's Close
+--                                 button binds to CanClose; no rule in the view.
 -- Description: READ. One super-lot header with resolved names, totals and the
 --              selection criteria as a sentence (CriteriaText -- built here so
 --              no view or script assembles prose).
@@ -59,7 +64,9 @@ BEGIN
                  ELSE N'' END
           + CASE WHEN i.PartNumber IS NULL AND NOT (r.IncludeDescendants = 1 AND al.LotName IS NOT NULL)
                  THEN N'Hand-picked' ELSE N'' END
-        ) AS NVARCHAR(400)) AS CriteriaText
+        ) AS NVARCHAR(400)) AS CriteriaText,
+        cc.CanClose,
+        cc.Reason AS CloseBlockedReason
     FROM Quality.ControlledRun r
     INNER JOIN Quality.ControlledRunStatusCode sc ON sc.Id = r.ControlledRunStatusId
     LEFT JOIN Lots.Lot al          ON al.Id = r.AnchorLotId
@@ -77,6 +84,7 @@ BEGIN
         FROM Quality.ufn_ControlledRunMemberState(r.Id) ms
         WHERE ms.EndedAt IS NULL OR ms.ControlledRunMemberEndReasonId IN (2 /* RunClosed */, 4 /* Released */, 5 /* ContainerVoided */)
     ) tot
+    OUTER APPLY Quality.ufn_ControlledRunCloseCheck(r.Id) cc
     WHERE r.Id = @Id;
 END;
 GO

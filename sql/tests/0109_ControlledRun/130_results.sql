@@ -82,7 +82,8 @@ EXEC test.Assert_IsEqual @TestName = N'[Results] fixture: five members', @Expect
 
 DECLARE @MR TABLE (MemberId BIGINT, Kind NVARCHAR(10), LotId BIGINT, ContainerId BIGINT, DisplayName NVARCHAR(60), PartNumber NVARCHAR(100),
     CurrentLocationName NVARCHAR(200), PieceCount INT, CrtActive BIT, AcceptedQty INT, ScrapQty INT, ReworkQty INT, ReturnQty INT, UseAsIsQty INT,
-    AppliedScrapQty INT, ResultQty INT, LeftOver INT, HasResult BIT, ReleaseBlockReason NVARCHAR(100), WasCompleteAtJoin BIT, RankLocationId BIGINT);
+    AppliedScrapQty INT, ResultQty INT, LeftOver INT, HasResult BIT, ReleaseBlockReason NVARCHAR(100), WasCompleteAtJoin BIT, RankLocationId BIGINT,
+    AppliedReturnQty INT);
 DECLARE @RL TABLE (ResultId BIGINT, MemberId BIGINT, DisplayName NVARCHAR(60), DispositionCode NVARCHAR(50), DispositionName NVARCHAR(100),
     Quantity INT, DefectCode NVARCHAR(50), DefectDescription NVARCHAR(500), Remarks NVARCHAR(500), RecordedByInitials NVARCHAR(20),
     RecordedAt DATETIME2(3), IsApplied BIT, IsVoided BIT, CanVoid BIT);
