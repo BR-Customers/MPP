@@ -64,6 +64,12 @@ SET @n = ISNULL((SELECT STRING_AGG(Code, N',') FROM Audit.LogEventType
 EXEC test.Assert_IsEqual @TestName = N'[Label] LotRework codes are kind Rework', @Expected = N'', @Actual = @n;
 SET @n = ISNULL((SELECT CAST(LotTimelineKind AS NVARCHAR(20)) FROM Audit.LogEventType WHERE Code = N'MaterialSubstituteOverride'), N'(null)');
 EXEC test.Assert_IsEqual @TestName = N'[Label] an unlabelled code keeps a NULL kind (reads as Event)', @Expected = N'(null)', @Actual = @n;
+SET @n = ISNULL((SELECT STRING_AGG(i.name + N':' + c.name, N',') WITHIN GROUP (ORDER BY i.name)
+          FROM sys.indexes i
+          JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id AND ic.key_ordinal = 1
+          JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+          WHERE i.object_id = OBJECT_ID(N'Lots.ContainerSerialHistory') AND i.name IN (N'IX_CSH_OldContainer', N'IX_CSH_NewContainer')), N'');
+EXEC test.Assert_IsEqual @TestName = N'[Index] ContainerSerialHistory by-container indexes lead on Old/NewContainerId', @Expected = N'IX_CSH_NewContainer:NewContainerId,IX_CSH_OldContainer:OldContainerId', @Actual = @n;
 GO
 
 EXEC test.EndTestFile;

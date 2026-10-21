@@ -1,8 +1,8 @@
 -- =============================================
 -- Repeatable:  R__Lots_Container_ListSerials.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-22
--- Version:     1.2
+-- Modified:    2026-10-21
+-- Version:     1.3
 -- Description: Sibling read to Lots.Container_GetTraceDetail -- the container's
 --              serialized parts, in tray-position order. A SEPARATE proc
 --              because one proc returns one result set (FDS-11-011); the
@@ -20,6 +20,13 @@
 --              move of this serial INTO this container), MovedInAt (ET, when that move
 --              happened; NULL when not moved in). v1.2 added MovedInAt. Moves are any
 --              Lots.ContainerSerialHistory row: a repack OR a Sort Cage migration.
+--
+--              v1.3 (final review): the rows are drawn from a candidate set -- the
+--              container's own ContainerSerial rows UNION (at @IncludeRemoved = 1) the
+--              serials whose history shows a move OUT of it (ContainerSerialHistory
+--              WHERE OldContainerId = @ContainerId, a seek on IX_CSH_OldContainer,
+--              migration 0114) -- instead of an OR over every ContainerSerial row.
+--              The outer WHERE is unchanged, so the result is identical.
 -- =============================================
 CREATE OR ALTER PROCEDURE Lots.Container_ListSerials
     @ContainerId    BIGINT,
@@ -38,7 +45,16 @@ BEGIN
         x.RemovedReason,
         CAST(mv.OldContainerId AS NVARCHAR(50)) AS MovedInFromContainerName,
         CAST(mv.MigratedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS MovedInAt
-    FROM Lots.ContainerSerial cs
+    FROM (
+        SELECT c.Id
+        FROM Lots.ContainerSerial c
+        WHERE c.ContainerId = @ContainerId AND (c.RemovedAt IS NULL OR @IncludeRemoved = 1)
+        UNION
+        SELECT h.ContainerSerialId
+        FROM Lots.ContainerSerialHistory h
+        WHERE @IncludeRemoved = 1 AND h.OldContainerId = @ContainerId AND h.NewContainerId <> @ContainerId
+    ) cand
+    INNER JOIN Lots.ContainerSerial cs ON cs.Id = cand.Id
     INNER JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId
     INNER JOIN Lots.Lot            l  ON l.Id  = sp.ProducingLotId
     LEFT JOIN Workorder.RejectEvent re ON re.Id = cs.RemovedRejectEventId

@@ -14,6 +14,12 @@
 --   Audit.LogEventType.LotTimelineKind NVARCHAR(20) NULL
 --       The label the History tab shows for the audit row. NULL reads as 'Event'.
 --   Six per-LOT super-lot event codes (entity 'Lot' -> Lots.LotEventLog).
+--   Lots.ContainerSerialHistory: IX_CSH_OldContainer / IX_CSH_NewContainer for the
+--   by-container move lookups (final review).
+--
+--   Numbered 0114: 0113 is 0113_interfacelog_context on jacques/working (the merge
+--   target), already applied on MPP_MES_Dev. This file was never applied anywhere
+--   under 0113.
 --
 --   Record-table streams of Lot_GetAttributeHistory: LotAttributeChange,
 --   LotStatusHistory, LotMovement, PauseEvent, LotGenealogy, LotLabel,
@@ -111,14 +117,29 @@ WHERE Code IN (N'ControlledRunLotJoined', N'ControlledRunLotLeft', N'ControlledR
                N'ControlledRunLotResultVoided', N'ControlledRunLotDeviation', N'ControlledRunLotReleased');
 GO
 
+-- ---- 4. Container-history lookups by container (final review) ----
+-- Container_ListSerials (@IncludeRemoved = 1), Container_GetTraceDetail and the
+-- Global Trace serial rows find moves OUT of / INTO a container by
+-- OldContainerId / NewContainerId. The only index so far (IX_CSH_ContainerSerial,
+-- 0029) leads on ContainerSerialId.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Lots.ContainerSerialHistory') AND name = N'IX_CSH_OldContainer')
+    CREATE NONCLUSTERED INDEX IX_CSH_OldContainer ON Lots.ContainerSerialHistory (OldContainerId)
+        INCLUDE (NewContainerId, ContainerSerialId, MigratedAt);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Lots.ContainerSerialHistory') AND name = N'IX_CSH_NewContainer')
+    CREATE NONCLUSTERED INDEX IX_CSH_NewContainer ON Lots.ContainerSerialHistory (NewContainerId)
+        INCLUDE (OldContainerId, ContainerSerialId, MigratedAt);
+GO
+
 IF (SELECT COUNT(*) FROM Audit.LogEventType WHERE LotTimelineKind = N'Super-lot') <> 6
    OR (SELECT COUNT(*) FROM Audit.LogEventType WHERE RepeatsLotTimeline = 1) < 13
-    THROW 51000, 'Migration 0114: LogEventType flags / super-lot codes did not land.', 1;
+   OR (SELECT COUNT(*) FROM sys.indexes WHERE object_id = OBJECT_ID(N'Lots.ContainerSerialHistory')
+       AND name IN (N'IX_CSH_OldContainer', N'IX_CSH_NewContainer')) <> 2
+    THROW 51000, 'Migration 0114: LogEventType flags / super-lot codes / ContainerSerialHistory indexes did not land.', 1;
 GO
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0114_super_lot_visibility')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
     VALUES (N'0114_super_lot_visibility',
-            N'Super-lot piece 6: Audit.LogEventType.RepeatsLotTimeline + LotTimelineKind, flags/labels, six ControlledRunLot* codes. Do NOT deploy alone.');
+            N'Super-lot piece 6: Audit.LogEventType.RepeatsLotTimeline + LotTimelineKind, flags/labels, six ControlledRunLot* codes, ContainerSerialHistory by-container indexes. Do NOT deploy alone.');
 GO
 PRINT 'Migration 0114 (super_lot_visibility) applied.';
 GO
