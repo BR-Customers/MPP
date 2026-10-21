@@ -2,7 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_ListByLot.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
--- Version:     1.0
+-- Version:     1.1
 -- Description: READ. Super-lot piece 6 (spec 3.1) -- LOT Detail's Super-lots tab.
 --              Every super-lot membership this LOT has had, open and ended, NEWEST
 --              FIRST (AddedAt DESC): as a LOT member itself, or as a tray LOT of a
@@ -22,6 +22,8 @@
 --                was open (AddedAt <= RaisedAt AND (EndedAt IS NULL OR RaisedAt <
 --                EndedAt) -- the cover rule of ControlledRun_Release), ', '-joined.
 --              ViaContainerName: 'Container <Id>' when the LOT is in it as a tray.
+--              JoinedByInitials / LeftByInitials (v1.1, LAST columns): the user who added
+--              / ended the membership (ControlledRunMember.AddedByUserId / EndedByUserId).
 --
 --              Times Eastern. No status row, no OUTPUT params (FDS-11-011).
 --              Empty set = never in a super-lot (or unknown LOT).
@@ -46,7 +48,9 @@ BEGIN
         ru.Initials AS ReleasedByInitials,
         CAST(rl.ReleasedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS ReleasedAt,
         dev.DeviationNumbers,
-        CAST(CASE WHEN f.ViaContainerId IS NOT NULL THEN N'Container ' + CAST(f.ViaContainerId AS NVARCHAR(20)) END AS NVARCHAR(60)) AS ViaContainerName
+        CAST(CASE WHEN f.ViaContainerId IS NOT NULL THEN N'Container ' + CAST(f.ViaContainerId AS NVARCHAR(20)) END AS NVARCHAR(60)) AS ViaContainerName,
+        ju.Initials AS JoinedByInitials,
+        lu.Initials AS LeftByInitials
     FROM Quality.ufn_ControlledRunMembershipsForLot(@LotId) f
     INNER JOIN Quality.ControlledRunMember m           ON m.Id  = f.ControlledRunMemberId
     INNER JOIN Quality.ControlledRun r                 ON r.Id  = f.ControlledRunId
@@ -55,6 +59,8 @@ BEGIN
     LEFT JOIN Quality.ControlledRunMemberEndReason er  ON er.Id = m.ControlledRunMemberEndReasonId
     LEFT JOIN Quality.ControlledRunRelease rl          ON rl.Id = m.ControlledRunReleaseId
     LEFT JOIN Location.AppUser ru                      ON ru.Id = rl.ReleasedByUserId
+    LEFT JOIN Location.AppUser ju                      ON ju.Id = m.AddedByUserId
+    LEFT JOIN Location.AppUser lu                      ON lu.Id = m.EndedByUserId
     OUTER APPLY Quality.ufn_ControlledRunMembershipState(m.Id) st
     OUTER APPLY (
         SELECT STRING_AGG(CAST(dc.Name + N' ' + CAST(rr.Quantity AS NVARCHAR(10))

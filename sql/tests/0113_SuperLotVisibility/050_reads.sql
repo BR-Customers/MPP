@@ -59,7 +59,8 @@ DECLARE @s TABLE (Status BIT, Message NVARCHAR(500));
 
 DECLARE @BL TABLE (Seq INT IDENTITY(1,1), ControlledRunId BIGINT, RunNumber NVARCHAR(15), Reason NVARCHAR(500), RunStatusCode NVARCHAR(20),
     MembershipState NVARCHAR(10), JoinMethodName NVARCHAR(100), JoinedAt DATETIME2(3), LeftAt DATETIME2(3), LeftReason NVARCHAR(700),
-    ResultsText NVARCHAR(MAX), ReleasedByInitials NVARCHAR(20), ReleasedAt DATETIME2(3), DeviationNumbers NVARCHAR(MAX), ViaContainerName NVARCHAR(60));
+    ResultsText NVARCHAR(MAX), ReleasedByInitials NVARCHAR(20), ReleasedAt DATETIME2(3), DeviationNumbers NVARCHAR(MAX), ViaContainerName NVARCHAR(60),
+    JoinedByInitials NVARCHAR(20), LeftByInitials NVARCHAR(20));
 DECLARE @MK TABLE (NodeKind NVARCHAR(10), NodeId BIGINT, RunNumber NVARCHAR(15), ControlledRunId BIGINT, MembershipState NVARCHAR(10));
 DECLARE @H TABLE (Seq INT IDENTITY(1,1), EventAt DATETIME2(3), Kind NVARCHAR(20), Detail NVARCHAR(1000), ByInitials NVARCHAR(20));
 DECLARE @SM TABLE (OpenCount INT, OldestOpenedAt DATETIME2(3), OldestAgeDays INT, MembersStillTagged INT);
@@ -132,7 +133,8 @@ EXEC test.Assert_IsEqual @TestName = N'[Reads] fixture: R1 opened, A removed and
 
 -- ===== ListByLot: never in a super-lot =====
 INSERT INTO @BL (ControlledRunId, RunNumber, Reason, RunStatusCode, MembershipState, JoinMethodName, JoinedAt, LeftAt, LeftReason,
-                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName)
+                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName,
+                 JoinedByInitials, LeftByInitials)
 EXEC Quality.ControlledRun_ListByLot @LotId = @N0;
 SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @BL);
 EXEC test.Assert_IsEqual @TestName = N'[ListByLot] never in a super-lot: empty', @Expected = N'0', @Actual = @n;
@@ -140,13 +142,16 @@ EXEC test.Assert_IsEqual @TestName = N'[ListByLot] never in a super-lot: empty',
 -- ===== ListByLot: two memberships, newest first =====
 DELETE FROM @BL;
 INSERT INTO @BL (ControlledRunId, RunNumber, Reason, RunStatusCode, MembershipState, JoinMethodName, JoinedAt, LeftAt, LeftReason,
-                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName)
+                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName,
+                 JoinedByInitials, LeftByInitials)
 EXEC Quality.ControlledRun_ListByLot @LotId = @A;
 SET @n = (SELECT STRING_AGG(CONCAT(RunNumber, N'|', Reason, N'|', RunStatusCode, N'|', MembershipState, N'|', JoinMethodName, N'|',
                                    ISNULL(LeftReason, N'-'), N'|', CASE WHEN LeftAt IS NULL THEN N'open' ELSE N'left' END, N'|',
                                    ISNULL(ViaContainerName, N'direct')), N' / ') WITHIN GROUP (ORDER BY Seq) FROM @BL);
 SET @exp = @RN1 + N'|reads one|Open|Open|Scanned in|-|open|direct / ' + @RN1 + N'|reads one|Open|Removed|Selected|Removed: wrong part|left|direct';
 EXEC test.Assert_IsEqual @TestName = N'[ListByLot] two memberships newest first incl. re-join after removal', @Expected = @exp, @Actual = @n;
+SET @n = (SELECT STRING_AGG(CONCAT(ISNULL(JoinedByInitials, N'NULL'), N'>', ISNULL(LeftByInitials, N'NULL')), N' / ') WITHIN GROUP (ORDER BY Seq) FROM @BL);
+EXEC test.Assert_IsEqual @TestName = N'[ListByLot] JoinedByInitials / LeftByInitials (open: no leaver; removed: both)', @Expected = N'SYS>NULL / SYS>SYS', @Actual = @n;
 SET @exp = (SELECT CONVERT(NVARCHAR(30), CAST(AddedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)), 121) + N'|'
                  + CONVERT(NVARCHAR(30), CAST(EndedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)), 121)
             FROM Quality.ControlledRunMember WHERE Id = @MemA1);
@@ -156,7 +161,8 @@ EXEC test.Assert_IsEqual @TestName = N'[ListByLot] JoinedAt / LeftAt are Eastern
 -- ===== ListByLot: a tray LOT shows its container's membership =====
 DELETE FROM @BL;
 INSERT INTO @BL (ControlledRunId, RunNumber, Reason, RunStatusCode, MembershipState, JoinMethodName, JoinedAt, LeftAt, LeftReason,
-                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName)
+                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName,
+                 JoinedByInitials, LeftByInitials)
 EXEC Quality.ControlledRun_ListByLot @LotId = @T1;
 SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(RunNumber), N'|', MIN(MembershipState), N'|', MIN(ViaContainerName)) FROM @BL);
 SET @exp = N'1|' + @RN1 + N'|Open|' + @KName;
@@ -178,7 +184,8 @@ EXEC test.Assert_IsEqual @TestName = N'[Reads] fixture: three result entries on 
 
 DELETE FROM @BL;
 INSERT INTO @BL (ControlledRunId, RunNumber, Reason, RunStatusCode, MembershipState, JoinMethodName, JoinedAt, LeftAt, LeftReason,
-                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName)
+                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName,
+                 JoinedByInitials, LeftByInitials)
 EXEC Quality.ControlledRun_ListByLot @LotId = @A;
 SET @n = (SELECT ISNULL(ResultsText, N'NULL') + N' / ' + ISNULL((SELECT ResultsText FROM @BL WHERE Seq = (SELECT MIN(Seq) + 1 FROM @BL)), N'NULL') FROM @BL WHERE Seq = (SELECT MIN(Seq) FROM @BL));
 SET @exp = N'Scrap 2 (' + @DefName + N'), Accepted 5 / NULL';
@@ -198,7 +205,8 @@ DELETE FROM @o;
 
 DELETE FROM @BL;
 INSERT INTO @BL (ControlledRunId, RunNumber, Reason, RunStatusCode, MembershipState, JoinMethodName, JoinedAt, LeftAt, LeftReason,
-                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName)
+                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName,
+                 JoinedByInitials, LeftByInitials)
 EXEC Quality.ControlledRun_ListByLot @LotId = @A;
 SET @exp = (SELECT N'Released|Released|SYS|' + CONVERT(NVARCHAR(30), CAST(rl.ReleasedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)), 121)
                  + N'|' + @DV + N' / NULL'
@@ -211,7 +219,8 @@ EXEC test.Assert_IsEqual @TestName = N'[ListByLot] release + deviation (the remo
 
 DELETE FROM @BL;
 INSERT INTO @BL (ControlledRunId, RunNumber, Reason, RunStatusCode, MembershipState, JoinMethodName, JoinedAt, LeftAt, LeftReason,
-                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName)
+                 ResultsText, ReleasedByInitials, ReleasedAt, DeviationNumbers, ViaContainerName,
+                 JoinedByInitials, LeftByInitials)
 EXEC Quality.ControlledRun_ListByLot @LotId = @T2;
 SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(DeviationNumbers), N'|', ISNULL(MIN(ReleasedByInitials), N'-')) FROM @BL);
 SET @exp = N'1|' + @DV + N'|-';
@@ -259,8 +268,12 @@ SET @exp = (SELECT sm.Name + N' ' + @Dot + N' "' + sg.Statement + N'"'
             JOIN Quality.Signature sg ON sg.Id = rl.SignatureId
             JOIN Quality.SignatureMeaning sm ON sm.Id = sg.SignatureMeaningId
             WHERE rl.ControlledRunId = @R1);
+SET @exp = @exp + N' ' + @Dot + N' ' + CAST((SELECT MemberCount FROM Quality.ControlledRunRelease WHERE ControlledRunId = @R1) AS NVARCHAR(10)) + N' members';
 SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(ByInitials)) FROM @H WHERE Kind = N'Signature' AND Detail = @exp);
-EXEC test.Assert_IsEqual @TestName = N'[History] newest first, signature rows carry the statement', @Expected = N'1|SYS', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[History] release signature Detail: meaning, statement, member count', @Expected = N'1|SYS', @Actual = @n;
+SET @exp = N'Deviation ' + @DV + N' ' + @Dot + N' cosmetic only';
+SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(ByInitials)) FROM @H WHERE Kind = N'Signature' AND Detail = @exp);
+EXEC test.Assert_IsEqual @TestName = N'[History] deviation signature Detail: number and description', @Expected = N'1|SYS', @Actual = @n;
 SET @exp = (SELECT CONVERT(NVARCHAR(30), CAST(ol.LoggedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)), 121)
             FROM Audit.OperationLog ol
             JOIN Audit.LogEntityType et ON et.Id = ol.LogEntityTypeId AND et.Code = N'ControlledRun'

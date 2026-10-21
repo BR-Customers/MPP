@@ -2,7 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_ListHistory.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
--- Version:     1.0
+-- Version:     1.1
 -- Description: READ. Super-lot piece 6 (spec 3.6) -- the super-lot page's History
 --              tab: the run's audit trail merged with its signatures, NEWEST FIRST.
 --
@@ -22,8 +22,10 @@
 --                 '<RunNumber> . ' subject (the page already names the run).
 --              2. Quality.Signature rows behind this run's releases
 --                 (ControlledRunRelease.SignatureId) and deviations
---                 (ControlledRunDeviation.SignatureId), Kind 'Signature', Detail
---                 '<SignatureMeaning.Name> . "<Statement>"'.
+--                 (ControlledRunDeviation.SignatureId), Kind 'Signature'. Detail (v1.1):
+--                   release   '<SignatureMeaning.Name> . "<Statement>" . <n> members'
+--                             (n = ControlledRunRelease.MemberCount)
+--                   deviation 'Deviation <DeviationNumber> . <Description>'
 --              Refused attempts are in Audit.FailureLog, not here.
 --
 --              Result: EventAt (Eastern), Kind, Detail, ByInitials.
@@ -75,18 +77,26 @@ BEGIN
         SELECT
             CAST(sg.SignedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)),
             CAST(N'Signature' AS NVARCHAR(20)),
-            CAST(sm.Name + N' ' + Audit.ufn_MidDot() + N' "' + sg.Statement + N'"' AS NVARCHAR(1000)),
+            CAST(s.Detail AS NVARCHAR(1000)),
             u.Initials,
             sg.SignedAt,
             1,
             sg.Id
         FROM (
-            SELECT rl.SignatureId FROM Quality.ControlledRunRelease rl WHERE rl.ControlledRunId = @Id
-            UNION
-            SELECT d.SignatureId FROM Quality.ControlledRunDeviation d WHERE d.ControlledRunId = @Id
+            SELECT rl.SignatureId,
+                   sm2.Name + N' ' + Audit.ufn_MidDot() + N' "' + sg2.Statement + N'"' + N' ' + Audit.ufn_MidDot() + N' '
+                       + CAST(rl.MemberCount AS NVARCHAR(10)) + N' members' AS Detail
+            FROM Quality.ControlledRunRelease rl
+            INNER JOIN Quality.Signature sg2         ON sg2.Id = rl.SignatureId
+            INNER JOIN Quality.SignatureMeaning sm2  ON sm2.Id = sg2.SignatureMeaningId
+            WHERE rl.ControlledRunId = @Id
+            UNION ALL
+            SELECT d.SignatureId,
+                   N'Deviation ' + d.DeviationNumber + N' ' + Audit.ufn_MidDot() + N' ' + d.Description
+            FROM Quality.ControlledRunDeviation d
+            WHERE d.ControlledRunId = @Id
         ) s
         INNER JOIN Quality.Signature sg         ON sg.Id = s.SignatureId
-        INNER JOIN Quality.SignatureMeaning sm  ON sm.Id = sg.SignatureMeaningId
         LEFT JOIN Location.AppUser u            ON u.Id  = sg.AppUserId
     ) h
     ORDER BY h.SortAt DESC, h.SortGroup ASC, h.SortId DESC;
