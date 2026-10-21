@@ -102,6 +102,10 @@
       "title": "Super-lots",
       "viewPath": "BlueRidge/Views/ShopFloor/ControlledRuns"
     },
+    "/shop-floor/controlled-runs/:runNumber": {
+      "title": "Super-lots",
+      "viewPath": "BlueRidge/Views/ShopFloor/ControlledRuns"
+    },
     "/shop-floor/cutover-scan": {
       "title": "Inventory Cutover Scan",
       "viewPath": "BlueRidge/Views/ShopFloor/CutoverScan"

@@ -33,11 +33,15 @@
       "MemberCount": 0,
       "ClearedCount": 0,
       "PieceCount": 0,
-      "CriteriaText": ""
+      "CriteriaText": "",
+      "CanClose": false,
+      "CloseBlockedReason": ""
     },
     "activeTab": "members"
   },
-  "params": {},
+  "params": {
+    "runNumber": ""
+  },
   "propConfig": {
     "custom.run": {
       "binding": {
@@ -46,6 +50,13 @@
           "expression": "runScript(\"BlueRidge.Quality.ControlledRun.getRunOrEmpty\", 0, if(isNull({view.custom.selectedRunId}), 0, {view.custom.selectedRunId}), {view.custom.refreshToken})"
         }
       }
+    },
+    "params.runNumber": {
+      "onChange": {
+        "enabled": true,
+        "script": "\t# A later navigation to another /shop-floor/controlled-runs/<RunNumber> while this\n\t# page is open (same view, new param). The first value is handled by onStartup.\n\tif previousValue is not None and currentValue is not None and currentValue.value != previousValue.value:\n\t\tself.rootContainer.openRunNumber(currentValue.value)"
+      },
+      "paramDirection": "input"
     }
   },
   "root": {
@@ -1110,7 +1121,11 @@
                   {
                     "type": "ia.input.button",
                     "meta": {
-                      "name": "CloseRunButton"
+                      "name": "CloseRunButton",
+                      "tooltip": {
+                        "enabled": false,
+                        "text": ""
+                      }
                     },
                     "position": {
                       "basis": "170px",
@@ -1129,7 +1144,23 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "{view.custom.run.StatusCode} = 'Open' && !{view.custom.run.AutoJoinEnabled} && {view.custom.run.ClearedCount} = {view.custom.run.MemberCount}"
+                            "expression": "{view.custom.run.CanClose}"
+                          }
+                        }
+                      },
+                      "meta.tooltip.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.run.CanClose}"
+                          }
+                        }
+                      },
+                      "meta.tooltip.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "coalesce({view.custom.run.CloseBlockedReason}, '')"
                           }
                         }
                       }
@@ -1383,7 +1414,7 @@
                       "alignItems": "center",
                       "style": {
                         "classes": "pf-tab",
-                        "opacity": "0.45"
+                        "cursor": "pointer"
                       }
                     },
                     "children": [
@@ -1398,24 +1429,29 @@
                             "fontWeight": "600"
                           }
                         }
-                      },
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "TabHistoryLater"
-                        },
-                        "props": {
-                          "text": "later piece",
-                          "style": {
-                            "fontSize": "11px",
-                            "marginLeft": "6px",
-                            "padding": "1px 6px",
-                            "border": "1px dashed var(--mpp-border-default)",
-                            "borderRadius": "6px"
+                      }
+                    ],
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.activeTab} = 'history', 'pf-tab pf-tab-active', 'pf-tab')"
                           }
                         }
                       }
-                    ]
+                    },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.activeTab = \"history\""
+                          }
+                        }
+                      }
+                    }
                   }
                 ]
               },
@@ -1733,6 +1769,79 @@
               {
                 "type": "ia.display.label",
                 "meta": {
+                  "name": "HistoryEmpty"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'history' && len({../HistoryRepeater.props.instances}) = 0"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "No history yet.",
+                  "style": {
+                    "fontSize": "14px",
+                    "color": "var(--mpp-text-tertiary)",
+                    "padding": "12px 0"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "HistoryRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Quality.ControlledRun.historyInstances\", 0, if(isNull({view.custom.selectedRunId}), 0, {view.custom.selectedRunId}), {view.custom.refreshToken})"
+                      }
+                    }
+                  },
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'history'"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
+                  "useDefaultViewHeight": true,
+                  "elementPosition": {
+                    "basis": "56px",
+                    "shrink": 0
+                  },
+                  "elementStyle": {
+                    "overflow": "hidden"
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunHistoryRow",
+                  "instances": [],
+                  "style": {
+                    "overflowY": "auto"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
                   "name": "DetailFoot"
                 },
                 "position": {
@@ -1801,6 +1910,15 @@
       }
     ],
     "scripts": {
+      "customMethods": [
+        {
+          "name": "openRunNumber",
+          "params": [
+            "runNumber"
+          ],
+          "script": "\t# Arrive on one super-lot by its number: /shop-floor/controlled-runs/<RunNumber>.\n\t# An empty or unknown number changes nothing: no selection, no error.\n\tfrom java.lang import Throwable\n\tt = BlueRidge.Common.Util.extractQualifiedValues(runNumber)\n\tif not t:\n\t\treturn\n\trow = None\n\ttry:\n\t\trow = BlueRidge.Quality.ControlledRun.getRunByNumber(t)\n\texcept (Exception, Throwable) as e:\n\t\tBlueRidge.Common.Util.log(\"super-lot open by number failed: %s\" % e, level=\"warn\")\n\tif not row or row.get(\"Id\") is None:\n\t\treturn\n\trid = row.get(\"Id\")\n\tv = self.view\n\t# A closed or cancelled super-lot is not in the Open list: show All so its card is there.\n\tif row.get(\"StatusCode\") != \"Open\":\n\t\tv.custom.filter = {\"statusCode\": \"All\", \"text\": v.custom.filter.text}\n\t# Same as the controlledRunSelect handler: select, then bring members up to date.\n\tv.custom.selectedRunId = rid\n\tv.custom.selectedMemberId = None\n\tv.custom.selectedMemberName = \"\"\n\ttry:\n\t\tBlueRidge.Quality.ControlledRun.sync(rid, BlueRidge.Common.Util.systemAppUserId())\n\texcept (Exception, Throwable) as e:\n\t\tBlueRidge.Common.Util.log(\"super-lot sync on open by number failed: %s\" % e, level=\"warn\")\n\tv.custom.refreshToken = (v.custom.refreshToken or 0) + 1"
+        }
+      ],
       "extensionFunctions": null,
       "messageHandlers": [
         {
@@ -1839,7 +1957,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tBlueRidge.Common.Session.setElevationProfile(self.session, \"Quality\")"
+            "script": "\tBlueRidge.Common.Session.setElevationProfile(self.session, \"Quality\")\n\tself.view.rootContainer.openRunNumber(self.view.params.runNumber)"
           }
         },
         "onShutdown": {

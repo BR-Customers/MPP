@@ -13,7 +13,8 @@
       "useAsIs": 0,
       "leftOver": 0,
       "hasResult": false,
-      "atTrim": ""
+      "atTrim": "",
+      "appliedReturn": 0
     }
   },
   "propConfig": {
@@ -38,31 +39,85 @@
     },
     "children": [
       {
-        "type": "ia.display.label",
+        "type": "ia.container.flex",
         "meta": {
-          "name": "C_name"
+          "name": "NameCell"
         },
         "position": {
           "grow": 1,
           "basis": "190px",
           "shrink": 1
         },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.params.row.name"
+        "props": {
+          "direction": "column",
+          "justify": "center",
+          "style": {
+            "gap": "1px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "C_name"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.row.name"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "crt-part crt-mono",
+                "overflow": "hidden"
+              }
+            },
+            "position": {
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "AppliedReturnLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "600",
+                "color": "var(--mpp-state-info-fg)",
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Returned to vendor, applied: ' + toStr({view.params.row.appliedReturn})"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.row.appliedReturn} > 0"
+                  }
+                }
               }
             }
           }
-        },
-        "props": {
-          "style": {
-            "classes": "crt-part crt-mono",
-            "overflow": "hidden"
-          }
-        }
+        ]
       },
       {
         "type": "ia.display.label",

@@ -13,7 +13,8 @@
     "added": "",
     "selected": false,
     "containerId": null,
-    "rework": ""
+    "rework": "",
+    "pulledBack": false
   },
   "propConfig": {
     "params.memberId": {
@@ -53,6 +54,9 @@
       "paramDirection": "input"
     },
     "params.rework": {
+      "paramDirection": "input"
+    },
+    "params.pulledBack": {
       "paramDirection": "input"
     }
   },
@@ -197,6 +201,34 @@
                   "type": "expr",
                   "config": {
                     "expression": "len({view.params.rework}) > 0"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PulledBackLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Pulled back from finished stock",
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "600",
+                "color": "var(--mpp-state-info-fg)",
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.pulledBack"
                   }
                 }
               }

@@ -71,6 +71,7 @@ _EMPTY_RUN = {
     "IncludeDescendants": False, "AutoJoinEnabled": False, "AutoJoinEndedAt": None,
     "OpenedByInitials": "", "OpenedAt": None, "ClosedByInitials": "", "ClosedAt": None,
     "CloseRemarks": "", "MemberCount": 0, "ClearedCount": 0, "PieceCount": 0, "CriteriaText": "",
+    "CanClose": False, "CloseBlockedReason": "",          # piece 6: SQL answers Close
 }
 
 
@@ -403,6 +404,7 @@ def memberInstances(runId, selectedMemberId, _refreshToken=None):
             "added":    _fmt(r.get("AddedAt"), "EEE HH:mm"),
             "selected": r.get("MemberId") == sel,
             "rework":   _reworkText(rework.get(str(r.get("MemberId")))),   # piece 5; "" when none
+            "pulledBack": bool(r.get("WasCompleteAtJoin")),   # piece 6: pulled back from finished stock
         })
     return out
 
@@ -699,6 +701,7 @@ def resultItems(runId, currentItems, runOpen, token):
             "useAsIs":  int(r.get("UseAsIsQty") or 0),
             "leftOver": left,
             "hasResult": bool(r.get("HasResult")),
+            "appliedReturn": int(r.get("AppliedReturnQty") or 0),   # piece 6: returns already off the LOT
         }
         items.append({
             "expanded": mid in keep,
