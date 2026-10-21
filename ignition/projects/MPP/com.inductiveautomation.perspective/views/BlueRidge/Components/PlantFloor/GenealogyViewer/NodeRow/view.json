@@ -68,17 +68,6 @@
         }
       }
     },
-    "events": {
-      "component": {
-        "onActionPerformed": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.LotId))"
-          }
-        }
-      }
-    },
     "children": [
       {
         "type": "ia.display.label",
@@ -88,6 +77,17 @@
         "position": {
           "basis": "auto",
           "shrink": 0
+        },
+        "events": {
+          "dom": {
+            "onClick": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.LotId))"
+              }
+            }
+          }
         },
         "propConfig": {
           "props.text": {
@@ -114,6 +114,17 @@
         },
         "position": {
           "grow": 1
+        },
+        "events": {
+          "dom": {
+            "onClick": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.LotId))"
+              }
+            }
+          }
         },
         "propConfig": {
           "props.text": {

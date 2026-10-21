@@ -3780,7 +3780,8 @@
                     "border": "1px solid var(--mpp-border-subtle)",
                     "borderRadius": "6px",
                     "gap": "0",
-                    "overflow": "hidden"
+                    "maxHeight": "320px",
+                    "overflowY": "auto"
                   },
                   "useDefaultViewHeight": false,
                   "useDefaultViewWidth": false

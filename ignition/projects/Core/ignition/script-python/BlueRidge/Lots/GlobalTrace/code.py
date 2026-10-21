@@ -10,12 +10,12 @@
      resolve(searchText, _refreshToken=None)         -> list[dict] (raw proc rows)
      resolveForTable(searchText, _refreshToken=None) -> CandidateRow repeater instances
      productionEventRows(lotId, _refreshToken=None)  -> table rows, dates preformatted
-     genealogyRows(lotId, _refreshToken=None)        -> table rows (Relation/LotName/...)
      traceTree(lotId, containerId)                   -> genealogy NodeRow rows + super-lot markers
      serialRows(containerId)                         -> container serial-table rows (incl. removed)
      loadDetail(matchType, matchedEntityId, serial)  -> serial / container panel payloads"""
 
 import system
+import java.lang
 
 
 def _u(value):
@@ -94,26 +94,6 @@ def productionEventRows(lotId, _refreshToken=None):
     return out
 
 
-def genealogyRows(lotId, _refreshToken=None):
-    """Genealogy summary rows for the trace view (Lot_GetGenealogyTree, Both
-       directions). Depth is informational, not authoritative shortest-path.
-       Columns: Relation, LotName, Item, Depth."""
-    lotId = _u(lotId)
-    if not lotId:
-        return []
-    rows = BlueRidge.Lots.Lot.getGenealogyTree(lotId, "Both") or []
-    out = []
-    for r in rows:
-        r = r or {}
-        out.append({
-            "Relation": r.get("Direction") or "",
-            "LotName":  r.get("LotName") or "",
-            "Item":     r.get("ItemCode") or "",
-            "Depth":    r.get("Depth"),
-        })
-    return out
-
-
 def traceTree(lotId, containerId=None, _refreshToken=None):
     """The LOT's genealogy (Lot_GetGenealogyTree, Both directions -- the tree
        read itself is untouched) as GenealogyViewer/NodeRow params, plus the
@@ -151,7 +131,7 @@ def _date(value, pattern="MM/dd"):
         return ""
     try:
         return system.date.format(value, pattern)
-    except:
+    except (Exception, java.lang.Exception):
         return ("%s" % value)[:10]
 
 
@@ -189,13 +169,17 @@ def serialRows(containerId):
        Container_ListSerials @IncludeRemoved = 1 (piece 6, spec 6b): a serial
        scrapped out or moved away stays listed, struck through, with SQL's
        RemovedReason and the date; a serial a repack moved in says where from.
-       Cells that carry a style are {'value', 'style'} table-cell objects.
+       SerialNumber and State are ALWAYS {'value', 'style'} table-cell objects
+       (empty style when plain) so each column holds one type and sorts.
+       TrayPosition is blank on a serial moved to another container: the
+       position SQL returns is the one in THAT container.
        Columns: SerialNumber, TrayPosition, ProducingLotName, State."""
     out = []
     for r in BlueRidge.Lots.Container.listSerials(containerId, includeRemoved=True):
         r = r or {}
         serial = r.get("SerialNumber") or ""
         reason = r.get("RemovedReason") or ""
+        tray = r.get("TrayPosition")
         if r.get("RemovedAt") is not None or reason:
             # SQL's reason with the date after its first word:
             # 'Scrapped (Porosity)' -> 'Scrapped 10/15 (Porosity)',
@@ -203,6 +187,8 @@ def serialRows(containerId):
             when = _date(r.get("RemovedAt"))
             head, _, tail = reason.partition(u" ")
             text = u" ".join([x for x in (head, when, tail) if x]) or u"Removed"
+            if reason.startswith(u"Moved"):
+                tray = None
             serialCell = {"value": serial,
                           "style": {"textDecoration": "line-through",
                                     "color": "var(--mpp-text-secondary)"}}
@@ -211,14 +197,14 @@ def serialRows(containerId):
             when = _date(r.get("MovedInAt"))
             text = u" ".join([x for x in (u"Moved in", when, u"from container",
                                           u"%s" % r.get("MovedInFromContainerName")) if x])
-            serialCell = serial
+            serialCell = {"value": serial, "style": {}}
             stateCell = {"value": text, "style": {"color": "var(--mpp-accent-60)"}}
         else:
-            serialCell = serial
+            serialCell = {"value": serial, "style": {}}
             stateCell = {"value": u"Packed", "style": {"color": "var(--pf-status-good-fg)"}}
         out.append({
             "SerialNumber":     serialCell,
-            "TrayPosition":     r.get("TrayPosition"),
+            "TrayPosition":     tray,
             "ProducingLotName": r.get("ProducingLotName") or "",
             "State":            stateCell,
         })
