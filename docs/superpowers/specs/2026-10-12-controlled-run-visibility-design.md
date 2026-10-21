@@ -1,7 +1,6 @@
 # Super-lot piece 6 — visibility: LOT Detail, genealogy, reports, dashboards
 
-> **Status: DRAFT, revised 2026-10-20. NOT APPROVED. NOT BUILT.** Decisions in section 6
-> are open. Pieces 1 to 5 are built on `jacques/controlled-run-super-lot`; this piece reads
+> **Status: APPROVED 2026-10-21. NOT BUILT.** Decisions in section 6. Pieces 1 to 5 are built on `jacques/controlled-run-super-lot`; this piece reads
 > what they write and adds no new quality behaviour of its own.
 
 **Read first:** `notes/2026-10-12_crt-super-lot-and-nonconformance-overview.md`; the build
@@ -104,7 +103,7 @@ to the timeline. This reverses the earlier choice on purpose.
   partitioned monthly (240 partitions at full retention); the read adds
   `LoggedAt >= Lot.CreatedAt` (nothing can be logged against a LOT before it exists, so
   this loses nothing) to touch only the months the LOT has lived.
-- The same change reaches the Lot Detail report wherever it uses this read.
+- The Lot Detail report is not changed (6c): it already reads the raw `LotEventLog`.
 
 ### 3.3 Genealogy and trace
 
@@ -215,6 +214,54 @@ notes on them are settled as drawn:
 - The super-lot page gains an address that arrives on one super-lot:
   `/shop-floor/controlled-runs/<RunNumber>` (alongside the existing bare address).
 
+### 6c. Builder check (2026-10-21)
+
+**Answered by Jacques:**
+
+- **What a deviation "covers".** `Quality.ControlledRunDeviation` is run-level (no link to
+  members or results). A deviation covers **every member still in the super-lot when it
+  is signed**: `ControlledRunDeviation_Raise` writes a "Deviation <DV> raised" row onto
+  each of those LOTs (container members: their trays). No schema change. The report
+  lists Use-as-is pieces as their own outcome; it does not claim which Use-as-is entry
+  falls under which deviation. Mock 7's "covers 30 pieces on 2 members" is wrong and is
+  read as "Use as is: 30 pieces" plus the deviation text.
+- **Container members.** Every per-LOT row for a container member goes onto the tray
+  LOTs **in the container at the moment of the event** (`Lots.ContainerTray` as it stands
+  then). A tray that arrives later by a repack does not inherit the container's earlier
+  super-lot rows; its genealogy points back to its source. The same point-in-time rule
+  drives the Super-lots tab fold (a tray LOT shows the super-lots its container was in
+  while the tray was in it) and the trace markers. A container-level result is written
+  onto each tray naming the container, e.g. "Container 20031 · Result recorded · Scrap 3
+  (Porosity)", so it never reads as each tray losing 3; when piece 4 later applies the
+  scrap to one tray, that tray gets its ordinary reject row.
+
+**Settled by the builder (Claude's calls, open to Jacques's objection):**
+
+- **Lot Detail report: no change.** It reads `Lots.Lot_GetLifecycle`, which already
+  returns the raw `LotEventLog`, so the new per-LOT rows reach it with no work. It does
+  not use the History-tab read; matching the tab exactly would be a `data.bin` layout
+  change and is not in scope. (Mock 2's note "the report shows the same rows" overstated
+  this.)
+- **Scrapped serials: all five readers** named in the piece 4 build notes are fixed:
+  `Container_GetTraceDetail`, `SerializedPart_GetTraceDetail`, `GlobalTrace_Resolve`,
+  `Container_ListShipped`, `Hold_ListAssociatedContainers`.
+- **History-tab kind labels come from SQL** (a column on `Audit.LogEventType` or a CASE in
+  the read), never Python, with a fallback label for any other unflagged type.
+- **"Super-lot closed / cancelled" rows** go only to members still in the super-lot at
+  that moment; released or removed members have already left.
+- **The two timing gaps** get the `VendorReturn_Mark` v1.2 fix: re-check under the lock,
+  raise into CATCH.
+- **No backfill** of per-LOT rows for super-lots that already exist on Dev.
+- **Run-number address:** page URL parameter `/shop-floor/controlled-runs/:runNumber`
+  beside the bare route; the dashboard tile opens the bare route with the Open filter.
+- **Marker read** takes the node ids as one comma-separated string (a list argument to
+  `runScript` arrives as `QualifiedValue[]` and throws).
+- **CRT refusal text** changes in every proc that raises it today: `Lot_MoveTo`,
+  `Lot_MoveToValidated`, `Assembly_ScanIn`, `MachiningIn_RecordPick`, `MachiningOut_Mint`,
+  `Lot_Split`, and `Lot_Merge` (which names the offending LOTs).
+- **Branch:** built on `claude/super-lot-piece-6` (branched from
+  `jacques/controlled-run-super-lot`), merged back into it.
+
 ## Revision History
 
 | Date | Change |
@@ -224,3 +271,4 @@ notes on them are settled as drawn:
 | 2026-10-21 | Jacques answered decisions 1-9 (section 6); trim destination check dropped; "all history" scope open. |
 | 2026-10-21 | 3.2 settled: all super-lot events written per LOT; History tab unions the LOT audit log with a `LogEventType.RepeatsLotTimeline` exclude flag; cost note. |
 | 2026-10-21 | Screen mocks approved as drawn (6b). |
+| 2026-10-21 | Builder check: deviation covers every member still in the super-lot at signing; container rows go to trays in the container at the moment; builder calls listed (6c). Approved for planning. |
