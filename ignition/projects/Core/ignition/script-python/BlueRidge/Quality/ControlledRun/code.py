@@ -1194,7 +1194,6 @@ def getRunByNumber(runNumber):
     return BlueRidge.Common.Db.execOne("quality/ControlledRun_GetByNumber", {"runNumber": t})
 
 
-<<<<<<< HEAD
 def openSummaryText(openCount, oldestAgeDays, membersStillTagged):
     """Dashboard tile sub-text from the openSummaryOrEmpty() numbers. Presentation
        only: 'none open' or 'oldest <n> d <dot> <m> members still CRT <dot> tap to open'."""
@@ -1205,7 +1204,7 @@ def openSummaryText(openCount, oldestAgeDays, membersStillTagged):
     age = BlueRidge.Common.Util.toIntOrNone(_u(oldestAgeDays)) or 0
     m = BlueRidge.Common.Util.toIntOrNone(_u(membersStillTagged)) or 0
     return u"oldest %d d%s%d members still CRT%stap to open" % (age, dot, m, dot)
-=======
+
 def superLotRowInstances(lotId, _refreshToken=None):
     """Repeater instances for LOT Detail's Super-lots tab rows (SuperLotRow):
        listByLotInstances' rows plus four display strings joined here from
@@ -1244,4 +1243,3 @@ def superLotRowInstances(lotId, _refreshToken=None):
             r["ReleaseText"] = dash
         out.append({"row": r})
     return out
->>>>>>> fe525266 (feat(ignition): super-lot piece 6 -- LOT Detail super-lot chip, Super-lots tab, toggle wording)
