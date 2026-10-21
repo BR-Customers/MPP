@@ -1,8 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetAttributeHistory.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-19
--- Version:     1.4
+-- Modified:    2026-10-21
+-- Version:     1.5
+--
+--              v1.5 (2026-10-21, super-lot piece 6): new stream 11 - the LOT's own
+--                audit log (Lots.LotEventLog) for event types that do NOT repeat a
+--                record stream (Audit.LogEventType.RepeatsLotTimeline = 0), so super-lot
+--                joins/results/releases, CRT, vendor-return and rework events show on
+--                the History tab. EventKind = LogEventType.LotTimelineKind, or 'Event'
+--                for a type added later with no label. UserId is nullable on the audit
+--                log, so the user join is LEFT. Rows older than Lot.CreatedAt are
+--                excluded. Cost: one extra seek on the (LotId, LoggedAt) clustered key.
 --
 --              v1.3 (2026-07-29, Task 7 / Die-Cast Per-Cavity Lifecycle plan):
 --                * New stream 10 'Contribution' - Workorder.DieCastContribution
@@ -53,17 +62,25 @@
 --                EventAt    DATETIME2(3)
 --                EventKind  NVARCHAR(20)   ('Attribute'|'Status'|'Movement'|'Pause'
 --                                           |'Resume'|'Genealogy'|'Label'|'Production'
---                                           |'Reject'|'Contribution')
+--                                           |'Reject'|'Contribution'|'Super-lot'|'CRT'
+--                                           |'Vendor return'|'Rework'|'Event')
 --                Detail     NVARCHAR(500)
 --                ByUserId   BIGINT         (the acting AppUser id)
 --                ByUserName NVARCHAR(200)  (Location.AppUser.DisplayName)
 --
 --              Every branch CASTs every column to identical types so the UNION
---              cannot fail on a type mismatch. The audit stream (Lots.LotEventLog)
---              is intentionally NOT unioned -- this is the lifecycle timeline, not
---              the audit trail; the Audit Browser surfaces the audit log. All Detail
---              strings are ASCII (no non-ASCII glyphs) -- '->' / '<-' arrows and
---              parenthesized reasons (sqlcmd codepage would mojibake a middle-dot).
+--              cannot fail on a type mismatch.
+--
+--              AUDIT STREAM (reversed 2026-10-21). Until v1.4 the audit stream
+--              (Lots.LotEventLog) was intentionally NOT unioned: this is the lifecycle
+--              timeline, and the Audit Browser surfaces the audit log. That left super-lot
+--              events (and CRT / vendor-return / rework) invisible on the LOT itself,
+--              so an operator reading a LOT's History could not see why it was held or
+--              released. Stream 11 now unions the audit log, filtered to event types
+--              that do not already have a record stream here (RepeatsLotTimeline = 0);
+--              flagged types (LotMoved, LotStatusChanged, ...) are skipped so nothing
+--              appears twice. All Detail strings are ASCII (no non-ASCII glyphs) -- '->' / '<-'
+--              arrows and parenthesized reasons (sqlcmd codepage would mojibake a middle-dot).
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.Lot_GetAttributeHistory
@@ -71,6 +88,8 @@ CREATE OR ALTER PROCEDURE Lots.Lot_GetAttributeHistory
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    DECLARE @LotCreatedAt DATETIME2(3) = (SELECT CreatedAt FROM Lots.Lot WHERE Id = @LotId);
 
     -- EventAt converted UTC -> Eastern for display (matches the Audit Browser
     -- tz convention). Inner branches keep raw UTC so ORDER BY stays correct.
@@ -262,6 +281,23 @@ BEGIN
         LEFT  JOIN Oee.Shift s          ON s.Id = c.ShiftId
         LEFT  JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId
         WHERE c.LotId = @LotId
+
+        UNION ALL
+
+        -- ---- Stream 11 (v1.5): the LOT's audit log, minus types the record streams repeat ----
+        SELECT
+            l.LoggedAt                            AS EventAt,
+            CAST(11 AS INT)                       AS SortRank,
+            CAST(ISNULL(et.LotTimelineKind, N'Event') AS NVARCHAR(20)) AS EventKind,
+            CAST(l.Description AS NVARCHAR(500))  AS Detail,
+            CAST(l.UserId AS BIGINT)              AS ByUserId,
+            CAST(au.DisplayName AS NVARCHAR(200))  AS ByUserName
+        FROM Lots.LotEventLog l
+        INNER JOIN Audit.LogEventType et ON et.Id = l.LogEventTypeId
+        LEFT  JOIN Location.AppUser   au ON au.Id = l.UserId
+        WHERE l.LotId = @LotId
+          AND et.RepeatsLotTimeline = 0
+          AND l.LoggedAt >= @LotCreatedAt
     ) u
     ORDER BY u.EventAt ASC, u.SortRank ASC;
 END;
