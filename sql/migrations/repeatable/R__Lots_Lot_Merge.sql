@@ -1,8 +1,11 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Merge.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-20
--- Version:     1.2
+-- Modified:    2026-10-21
+-- Version:     1.3 (2026-10-21, super-lot piece 6) - each named CRT source that is in an open
+--              super-lot is followed by ' (super-lot <RN>)' (Quality.ufn_OpenControlledRunForLot);
+--              a source in none is named bare, as before. The 380-char clip still applies.
+--              1.2
 --
 -- v1.2 (2026-08-20): the CRT source-name list is marked with '...' when it had to be
 -- clipped to fit the NVARCHAR(500) Message, instead of ending mid-name with no sign
@@ -326,11 +329,12 @@ BEGIN
         -- seam every other CRT guard uses) via CROSS APPLY -- it is an inline TVF, so
         -- it folds into this one query rather than running row-by-row. ----
         DECLARE @CrtSourceNames NVARCHAR(MAX) = (
-            SELECT STRING_AGG(CAST(l.LotName AS NVARCHAR(MAX)), N', ')
+            SELECT STRING_AGG(CAST(l.LotName + ISNULL(N' (super-lot ' + o.RunNumber + N')', N'') AS NVARCHAR(MAX)), N', ')
                    WITHIN GROUP (ORDER BY l.LotName)
             FROM @Sources s
             INNER JOIN Lots.Lot l ON l.Id = s.LotId
             CROSS APPLY Lots.ufn_CrtBlocksAdvance(s.LotId) b
+            OUTER APPLY Quality.ufn_OpenControlledRunForLot(s.LotId) o
             WHERE b.Blocked = 1);
 
         IF @CrtSourceNames IS NOT NULL

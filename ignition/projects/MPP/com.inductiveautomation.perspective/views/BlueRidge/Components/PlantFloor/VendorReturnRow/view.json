@@ -1,0 +1,271 @@
+{
+  "custom": {
+    "busyId": null
+  },
+  "params": {
+    "row": {
+      "vendorReturnId": null,
+      "lotId": null,
+      "lotName": "",
+      "part": "",
+      "vendorLot": "",
+      "quantity": 0,
+      "marked": "",
+      "remarks": "",
+      "where": ""
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 52
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "12px",
+        "overflow": "hidden",
+        "padding": "6px 10px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LotCell"
+        },
+        "props": {
+          "style": {
+            "overflow": "hidden",
+            "classes": "pf-field-mono"
+          }
+        },
+        "position": {
+          "basis": "140px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.lotName"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PartCell"
+        },
+        "props": {
+          "style": {
+            "overflow": "hidden"
+          }
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.part"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "VendorLotCell"
+        },
+        "props": {
+          "style": {
+            "overflow": "hidden"
+          }
+        },
+        "position": {
+          "basis": "120px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.vendorLot"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "QtyCell"
+        },
+        "props": {
+          "style": {
+            "fontWeight": 700,
+            "textAlign": "right"
+          }
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.quantity})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "MarkedCell"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "1px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "MarkedLabel"
+            },
+            "props": {
+              "style": {
+                "overflow": "hidden",
+                "classes": "pf-field-mono"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.row.marked"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "RemarksLabel"
+            },
+            "props": {
+              "style": {
+                "overflow": "hidden",
+                "classes": "pf-field-help"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.row.remarks"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.params.row.remarks}) > 0"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "position": {
+          "basis": "170px",
+          "shrink": 1
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "WhereCell"
+        },
+        "props": {
+          "style": {
+            "overflow": "hidden"
+          }
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.where"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "ConfirmButton"
+        },
+        "props": {
+          "text": "Confirm returned",
+          "style": {
+            "classes": "pf-btn pf-btn-primary"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\t# A physical event, not a protected action: no AD prompt (approved mock).\n\t# Recorded against whoever is signed in at this terminal.\n\t# Double-tap guard keyed by the return id: the repeater reuses row views, so\n\t# a disabled-button flag would stick to whatever row lands here next.\n\tvrId = self.view.params.row.vendorReturnId\n\tif vrId is None or self.view.custom.busyId == vrId:\n\t\treturn\n\tself.view.custom.busyId = vrId\n\ttid = None\n\ttry:\n\t\ttid = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttid = None\n\tres = BlueRidge.Lots.VendorReturn.confirm(vrId,\n\t\tBlueRidge.Common.Session.currentAppUserId(self.session), tid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Return confirmed\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"vendorReturnsChanged\", payload={}, scope=\"page\")\n\telse:\n\t\tself.view.custom.busyId = None"
+              }
+            }
+          }
+        },
+        "position": {
+          "basis": "170px",
+          "shrink": 0
+        }
+      }
+    ]
+  }
+}

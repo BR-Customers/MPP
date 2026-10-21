@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_ScanIn.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-20
+-- Modified:    2026-10-21
 -- Description: Assembly IN (Arc 2 Phase 6; FDS-06-008 uncoupled path). Moves a machined
 --              component LOT into an Assembly Cell's FIFO queue so it can be consumed at
 --              the fill (FDS-06-013). Unlike Machining IN, there is NO rename -- the LOT
@@ -14,6 +14,8 @@
 --              ROLLBACK site. Reuses the 'LotMoved' audit event.
 --
 -- Change Log:
+--   2026-10-21 - Super-lot piece 6: the CRT refusal names the open super-lot
+--                ('is marked CRT (super-lot <RN>)'); no open super-lot = unchanged text.
 --   2026-08-20 - Part-scoped CRT (design D5): added the Lots.ufn_CrtBlocksMoveTo
 --                guard. This proc inlines its own move, so it never inherited
 --                Lot_MoveTo's guard; an Assembly IN scan of a CRT LOT used to
@@ -113,7 +115,8 @@ BEGIN
         IF (SELECT Blocked FROM Lots.ufn_CrtBlocksMoveTo(@LotId, @CellLocationId)) = 1
         BEGIN
             SET @Message = N'LOT ' + ISNULL(@LotName, N'?')
-                         + N' is marked CRT and cannot be moved to a production location until Quality clears it.';
+                         + N' is marked CRT' + ISNULL(N' (super-lot ' + (SELECT RunNumber FROM Quality.ufn_OpenControlledRunForLot(@LotId)) + N')', N'')
+                         + N' and cannot be moved to a production location until Quality clears it.';
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END

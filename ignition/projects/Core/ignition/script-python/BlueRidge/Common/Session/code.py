@@ -39,6 +39,8 @@
 #                      from the session object the view already holds: the
 #                      PIN sign-in on the plant floor, the AD login in the
 #                      Configuration Tool.
+#   2026-10-20 - 2.1 - Adds the VendorReturn replay entry (super-lot piece 5:
+#                      LOT Detail Vendor return tab, mark and cancel).
 # =============================================================================
 
 
@@ -118,6 +120,10 @@ def loadPolicyIntoSession(session):
         "operatorPresenceTimeoutSeconds": p.get("OperatorPresenceTimeoutSeconds") or 1800,
         "elevationTimeoutSeconds":        p.get("ElevationTimeoutSeconds") or 300,
         "elevationMaxSeconds":            p.get("ElevationMaxSeconds") or 1800,
+        # The longer window Quality screens use (migration 0110). See
+        # setElevationProfile.
+        "qualityElevationTimeoutSeconds": p.get("QualityElevationTimeoutSeconds") or 1800,
+        "qualityElevationMaxSeconds":     p.get("QualityElevationMaxSeconds") or 14400,
     }
 
 
@@ -141,11 +147,41 @@ def isElevated(session):
         return False
 
 
-def _elevationSeconds(session):
+QUALITY_PROFILE = "Quality"
+
+
+def _isQualityProfile(session):
+    """True while the session is on a Quality screen (see setElevationProfile)."""
+    try:
+        return session.custom.elevationProfile == QUALITY_PROFILE
+    except Exception:
+        return False
+
+
+def _standardElevationSeconds(session):
     try:
         return (session.custom.policy or {}).get("elevationTimeoutSeconds") or 300
     except Exception:
         return 300
+
+
+def _standardElevationMaxSeconds(session):
+    try:
+        v = (session.custom.policy or {}).get("elevationMaxSeconds") or 1800
+    except Exception:
+        v = 1800
+    return max(v, _standardElevationSeconds(session))
+
+
+def _elevationSeconds(session):
+    """The rolling idle timeout in force: the Quality value on a Quality screen,
+    the standard one everywhere else."""
+    if _isQualityProfile(session):
+        try:
+            return (session.custom.policy or {}).get("qualityElevationTimeoutSeconds") or 1800
+        except Exception:
+            return 1800
+    return _standardElevationSeconds(session)
 
 
 def _elevationMaxSeconds(session):
@@ -153,11 +189,13 @@ def _elevationMaxSeconds(session):
     proc and a CHECK constraint both enforce that, and this max() is the third
     line of defence so a hand-edited row cannot produce a window that is over
     before it starts."""
-    try:
-        v = (session.custom.policy or {}).get("elevationMaxSeconds") or 1800
-    except Exception:
-        v = 1800
-    return max(v, _elevationSeconds(session))
+    if _isQualityProfile(session):
+        try:
+            v = (session.custom.policy or {}).get("qualityElevationMaxSeconds") or 14400
+        except Exception:
+            v = 14400
+        return max(v, _elevationSeconds(session))
+    return _standardElevationMaxSeconds(session)
 
 
 def beginElevatedWindow(session, payload):
@@ -173,8 +211,54 @@ def beginElevatedWindow(session, payload):
     }
     session.custom.appUserId = p.get("appUserId")
     now = nowMs()
+    session.custom.elevatedGrantedAt = now
     session.custom.elevatedUntil     = now + _elevationSeconds(session) * 1000
     session.custom.elevatedHardUntil = now + _elevationMaxSeconds(session) * 1000
+
+
+def setElevationProfile(session, profile):
+    """A Quality screen calls this with QUALITY_PROFILE when it opens and with ""
+    when it closes (events.system.onStartup / onShutdown of the view).
+
+    While the profile is set, an elevation window GRANTED ON THAT SCREEN idles out
+    after policy.qualityElevationTimeoutSeconds (30 minutes) under its own ceiling
+    (policy.qualityElevationMaxSeconds), instead of the plant-floor 5 minutes.
+    Inspection work is long stretches of looking at parts, not at the terminal.
+
+    ENTERING never widens a window that is already open: the ceiling stamped at
+    grant stays where it is, so walking in and out of the page cannot renew an
+    elevation. Only the rolling deadline starts using the longer idle time, and
+    touchElevation still clamps it to that ceiling.
+
+    LEAVING pulls both clocks back to the standard policy, measured from the
+    moment the window was granted. beginElevatedWindow makes the signed-in person
+    the terminal's user, so a 30-minute window must never follow them to a line
+    screen: if the standard ceiling has already passed, the elevation ends here."""
+    want = QUALITY_PROFILE if profile == QUALITY_PROFILE else ""
+    try:
+        session.custom.elevationProfile = want
+    except (Exception, java.lang.Exception):
+        return
+    if want or not isElevated(session):
+        return
+    now = nowMs()
+    rolling = now + _standardElevationSeconds(session) * 1000
+    try:
+        granted = session.custom.elevatedGrantedAt
+    except Exception:
+        granted = None
+    hard = (granted if granted is not None else now) + _standardElevationMaxSeconds(session) * 1000
+    try:
+        curHard = session.custom.elevatedHardUntil
+        if curHard is not None and curHard < hard:
+            hard = curHard
+        curUntil = session.custom.elevatedUntil
+        if curUntil is not None and curUntil < rolling:
+            rolling = curUntil
+    except Exception:
+        pass
+    session.custom.elevatedHardUntil = hard
+    session.custom.elevatedUntil = min(rolling, hard)
 
 
 def touchElevation(session):
@@ -210,7 +294,7 @@ def activeTimeoutSeconds(session):
     operator-presence."""
     pol = session.custom.policy or {}
     if isElevated(session):
-        return pol.get("elevationTimeoutSeconds") or 300
+        return _elevationSeconds(session)      # Quality-aware (setElevationProfile)
     return pol.get("operatorPresenceTimeoutSeconds") or 1800
 
 
@@ -278,10 +362,13 @@ def resetTerminal(session):
 PENDING_ACTION_TTL_MS = 120000
 
 
-def requireElevation(session, code, label, params=None):
+def requireElevation(session, code, label, params=None, note=None):
     """Style-2 gate for a param-carrying protected action. If already elevated, act
     immediately; otherwise stash the intent and open the ElevationModal (the
-    app-shell elevationResult handler replays the stash on success)."""
+    app-shell elevationResult handler replays the stash on success).
+    note: optional sentence the modal shows as a wrapped amber note under its
+    prompt (e.g. LOT Detail CRT release of a LOT in an open super-lot). The
+    replay path only re-dispatches code + params, so the note needs no stash."""
     if isElevated(session):
         dispatchElevatedAction(session, code, params)
     else:
@@ -289,7 +376,7 @@ def requireElevation(session, code, label, params=None):
             "code": code, "params": params, "expiresAt": nowMs() + PENDING_ACTION_TTL_MS}
         system.perspective.openPopup(
             "mpp-elevation-modal", "BlueRidge/Components/PlantFloor/ElevationModal",
-            params={"actionCode": code, "actionLabel": label,
+            params={"actionCode": code, "actionLabel": label, "actionNote": note or "",
                     "popupId": "mpp-elevation-modal", "replyMessage": "elevationResult"},
             modal=True, showCloseIcon=True, overlayDismiss=True)
 
@@ -307,6 +394,8 @@ _ELEVATED_REPLAY_MESSAGES = {
     "DieMount":           "dieMountRequested",          # Die Cast - open the Die Mount popup, then mount / release
     "DieCastReconcile":   "dieCastReconcileRequested",  # Die Cast - enter the shift reconciliation screen
     "LowInventoryRelease": "lowInventoryReleaseRequested",  # Assembly OUT - supervisor release of the low-inventory lock
+    "ControlledRun":      "controlledRunAction",        # Super-lots - any change inside the Quality sign-in window
+    "VendorReturn":       "vendorReturnRequested",      # LOT Detail - mark / cancel a return to vendor (params carry "intent")
 }
 
 # NOTE on "DieMount": it is the first replay whose handler is NOT on an already

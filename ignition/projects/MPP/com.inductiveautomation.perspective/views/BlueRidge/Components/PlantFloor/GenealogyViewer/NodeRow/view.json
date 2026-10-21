@@ -5,7 +5,8 @@
     "LotName": "",
     "ItemCode": "",
     "Depth": 0,
-    "Direction": ""
+    "Direction": "",
+    "MarkersJson": ""
   },
   "propConfig": {
     "params.LotId": {
@@ -21,6 +22,9 @@
       "paramDirection": "input"
     },
     "params.Direction": {
+      "paramDirection": "input"
+    },
+    "params.MarkersJson": {
       "paramDirection": "input"
     }
   },
@@ -64,17 +68,6 @@
         }
       }
     },
-    "events": {
-      "component": {
-        "onActionPerformed": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.LotId))"
-          }
-        }
-      }
-    },
     "children": [
       {
         "type": "ia.display.label",
@@ -84,6 +77,17 @@
         "position": {
           "basis": "auto",
           "shrink": 0
+        },
+        "events": {
+          "dom": {
+            "onClick": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.LotId))"
+              }
+            }
+          }
         },
         "propConfig": {
           "props.text": {
@@ -111,6 +115,17 @@
         "position": {
           "grow": 1
         },
+        "events": {
+          "dom": {
+            "onClick": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.LotId))"
+              }
+            }
+          }
+        },
         "propConfig": {
           "props.text": {
             "binding": {
@@ -127,6 +142,41 @@
             "fontSize": "14px",
             "fontFamily": "monospace"
           }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "MarkerChips"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "expression": "runScript(\"BlueRidge.Quality.ControlledRun.markerChipInstances\", 0, {view.params.MarkersJson})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": {
+            "basis": "auto",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/SuperLotMarkerChip",
+          "style": {
+            "gap": "6px"
+          },
+          "useDefaultViewHeight": true,
+          "useDefaultViewWidth": true,
+          "wrap": "wrap"
         }
       },
       {

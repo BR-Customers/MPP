@@ -1,0 +1,701 @@
+{
+  "custom": {
+    "adAccount": "",
+    "password": "",
+    "description": "",
+    "justification": "",
+    "defectCodeId": null,
+    "affectedQuantity": "",
+    "externalReference": "",
+    "busy": false,
+    "statement": ""
+  },
+  "params": {
+    "popupId": "mpp-controlled-run-deviation",
+    "runId": null,
+    "runNumber": "",
+    "terminalLocationId": null
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.runId": {
+      "paramDirection": "input"
+    },
+    "params.runNumber": {
+      "paramDirection": "input"
+    },
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "custom.statement": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.signatureStatement\", 0, \"DeviationApproval\")"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Raise deviation - ' + {view.params.runNumber}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "classes": "modal-body",
+            "gap": "12px",
+            "overflowY": "auto"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "DescField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "DescFieldLabel"
+                },
+                "props": {
+                  "text": "What deviates (required)",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-area",
+                "meta": {
+                  "name": "DescInput"
+                },
+                "position": {
+                  "basis": "80px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.description",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "JustField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "JustFieldLabel"
+                },
+                "props": {
+                  "text": "Why it does not affect part performance (required)",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-area",
+                "meta": {
+                  "name": "JustInput"
+                },
+                "position": {
+                  "basis": "80px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.justification",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Row3"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "flex-start",
+              "style": {
+                "gap": "12px",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "DefectField"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 2
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "DefectFieldLabel"
+                    },
+                    "props": {
+                      "text": "Defect (optional)",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {
+                      "name": "DefectDropdown"
+                    },
+                    "position": {
+                      "basis": "45px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.defectCodeId",
+                            "bidirectional": true
+                          }
+                        }
+                      },
+                      "props.options": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Quality.ControlledRun.defectOptions\", 0)"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "options": [],
+                      "search": true,
+                      "showClearIcon": true,
+                      "placeholder": {
+                        "text": "None"
+                      },
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "QtyField"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "QtyFieldLabel"
+                    },
+                    "props": {
+                      "text": "Pieces affected (optional)",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "QtyInput"
+                    },
+                    "position": {
+                      "basis": "45px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.affectedQuantity",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "RefField"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "RefFieldLabel"
+                    },
+                    "props": {
+                      "text": "MPP reference (optional)",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "RefInput"
+                    },
+                    "position": {
+                      "basis": "45px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.externalReference",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Statement"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.statement"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "borderLeft": "4px solid var(--mpp-accent-60)",
+                "borderRadius": "8px",
+                "padding": "12px 14px",
+                "fontSize": "16px",
+                "whiteSpace": "normal"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "AccountField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "AccountFieldLabel"
+                },
+                "props": {
+                  "text": "Your network user name",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "AccountInput"
+                },
+                "position": {
+                  "basis": "45px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.adAccount",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "domain\\username",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PasswordField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PasswordFieldLabel"
+                },
+                "props": {
+                  "text": "Password",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.password-field",
+                "meta": {
+                  "name": "PasswordInput"
+                },
+                "position": {
+                  "basis": "45px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.password",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "Password",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CredsNote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "A signature always asks for the password, even inside a Quality sign-in.",
+              "style": {
+                "fontSize": "12px",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          },
+          "justify": "flex-end"
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "basis": "110px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Cancel"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "SignButton"
+            },
+            "position": {
+              "basis": "200px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!{view.custom.busy} && len({view.custom.description}) > 0 && len({view.custom.justification}) > 0 && len({view.custom.adAccount}) > 0 && len({view.custom.password}) > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              },
+              "text": "Sign deviation"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tpw = v.custom.password\n\t\tv.custom.password = \"\"   # cleared BEFORE the call: nothing below can leave it in the view\n\t\tel = BlueRidge.Location.AppUser.elevate(v.custom.adAccount, pw, \"DeviationApproval\", tid)\n\t\tpw = None\n\t\tif not el or not el.get(\"success\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Not signed\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")\n\t\t\treturn\n\t\tsigner = el.get(\"appUserId\")   # THE SIGNER: straight to the proc, never onto the session\n\t\tres = BlueRidge.Quality.ControlledRun.raiseDeviation(v.params.runId, {\"description\": v.custom.description, \"justification\": v.custom.justification,\n\t\t\t\"defectCodeId\": v.custom.defectCodeId, \"affectedQuantity\": v.custom.affectedQuantity,\n\t\t\t\"externalReference\": v.custom.externalReference}, signer, tid)\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot %s\" % v.params.runNumber)\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"runId\": v.params.runId}, scope=\"page\")\n\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 780,
+      "width": 900
+    }
+  }
+}

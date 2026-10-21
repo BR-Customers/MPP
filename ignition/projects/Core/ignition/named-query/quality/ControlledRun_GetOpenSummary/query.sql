@@ -1,0 +1,1 @@
+EXEC Quality.ControlledRun_GetOpenSummary

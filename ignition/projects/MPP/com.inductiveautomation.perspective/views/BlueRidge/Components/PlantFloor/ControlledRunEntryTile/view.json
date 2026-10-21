@@ -1,0 +1,193 @@
+{
+  "custom": {},
+  "params": {
+    "memberId": null,
+    "key": "",
+    "label": "",
+    "sub": "",
+    "quantity": 0,
+    "selected": false
+  },
+  "propConfig": {
+    "params.memberId": {
+      "paramDirection": "input"
+    },
+    "params.key": {
+      "paramDirection": "input"
+    },
+    "params.label": {
+      "paramDirection": "input"
+    },
+    "params.sub": {
+      "paramDirection": "input"
+    },
+    "params.quantity": {
+      "paramDirection": "input"
+    },
+    "params.selected": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root",
+      "tooltip": {
+        "text": "Tap to add 1"
+      }
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.selected}, 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "cursor": "pointer",
+        "minHeight": "64px",
+        "overflow": "hidden",
+        "padding": "4px 6px",
+        "textAlign": "center"
+      },
+      "justify": "space-between"
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"crEntryChanged\", payload={\"memberId\": self.view.params.memberId, \"key\": self.view.params.key, \"delta\": 1}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "TitleLabel"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.label"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "fontWeight": "600",
+            "overflow": "hidden",
+            "textAlign": "center",
+            "whiteSpace": "normal",
+            "textTransform": "none",
+            "letterSpacing": "normal"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "MetaRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "6px",
+            "overflow": "hidden"
+          },
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SubLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.sub"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-toggle-btn-meta",
+                "fontSize": "11px",
+                "overflow": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CountLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.quantity} > 0"
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "toStr({view.params.quantity})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent-90)",
+                "fontSize": "13px",
+                "fontWeight": "700",
+                "overflow": "hidden"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 64,
+      "width": 152
+    }
+  }
+}

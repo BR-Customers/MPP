@@ -1,0 +1,394 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Super-lot (Controlled Run) - Quality view mock</title><style>
+:root{
+  --mpp-neutral-10:#0B1220; --mpp-neutral-20:#111A2E; --mpp-neutral-30:#172238;
+  --mpp-neutral-40:#1F2C44; --mpp-neutral-50:#2C3A55; --mpp-neutral-60:#425270;
+  --mpp-neutral-70:#697A98; --mpp-neutral-80:#9AA8BF; --mpp-neutral-90:#C9D2E0;
+  --mpp-neutral-100:#F0F3F8;
+  --mpp-accent-20:#093240; --mpp-accent-40:#126680; --mpp-accent-50:#1888A8;
+  --mpp-accent-60:#22A8CC; --mpp-accent-70:#4BC2E0; --mpp-accent-90:#B0E5F3;
+  --bad:#F87171; --warn:#F4B343; --good:#4ADE80;
+  --card:var(--mpp-neutral-30); --raised:var(--mpp-neutral-20);
+  --border:var(--mpp-neutral-50); --t1:var(--mpp-neutral-100); --t2:var(--mpp-neutral-90); --t3:var(--mpp-neutral-80);
+  --mono:'JetBrains Mono','Roboto Mono',Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#05080f;color:var(--t1);font-family:Inter,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.4}
+button{font-family:inherit;color:inherit}
+.mockbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 16px;background:#0a0f1a;border-bottom:1px dashed var(--mpp-neutral-60);font-size:13px;color:var(--t3)}
+.mockbar b{color:var(--warn);letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.seg{display:inline-flex;border:1px solid var(--mpp-neutral-60);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{background:none;border:0;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--t3)}
+.seg button.on{background:var(--mpp-accent-40);color:#fff}
+.stage{padding:14px;overflow:hidden}
+.scaler{transform-origin:0 0}
+.screen{width:1920px;height:1080px;position:relative;background:var(--mpp-neutral-10);border:1px solid var(--mpp-neutral-60);overflow:hidden;font-size:17px;display:flex;flex-direction:column}
+
+/* app header */
+.apph{height:64px;flex:none;display:flex;align-items:center;gap:18px;padding:0 24px;background:var(--mpp-neutral-20);border-bottom:1px solid var(--border)}
+.apph .ttl{font-size:24px;font-weight:700}
+.apph .crumb{color:var(--t3);font-size:15px}
+.apph .sp{flex:1}
+.apph .who{border:1px solid var(--mpp-neutral-60);border-radius:8px;padding:8px 14px;font-size:15px}
+
+.main{flex:1;min-height:0;display:grid;grid-template-columns:540px minmax(0,1fr)}
+.left{border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0;padding:18px;gap:14px}
+.scan{display:flex;align-items:center;gap:10px;min-height:60px;border:2px solid var(--mpp-accent-50);border-radius:10px;background:var(--mpp-neutral-10);padding:0 14px;color:var(--t3);font-size:16px}
+.scan .ic{width:26px;height:26px;border:2px solid var(--mpp-accent-70);border-radius:4px;position:relative;flex:none}
+.scan .ic:after{content:"";position:absolute;left:3px;right:3px;top:9px;height:2px;background:var(--mpp-accent-70)}
+.row{display:flex;gap:10px;align-items:center}
+.btn{min-height:56px;border-radius:10px;border:1px solid var(--mpp-neutral-60);background:var(--card);font-size:16px;font-weight:600;cursor:pointer;padding:0 18px;white-space:nowrap}
+.btn.primary{background:var(--mpp-accent-50);border-color:var(--mpp-accent-60);color:#fff}
+.btn.warn{border-color:var(--warn);color:var(--warn)}
+.btn.sm{min-height:44px;font-size:14px;padding:0 14px}
+.btn:disabled,.btn.off{opacity:.4;cursor:not-allowed}
+.seg2{display:inline-flex;border:1px solid var(--mpp-neutral-60);border-radius:10px;overflow:hidden;flex:1}
+.seg2 span{flex:1;text-align:center;padding:14px 0;font-size:15px;font-weight:600;color:var(--t3)}
+.seg2 span.on{background:var(--mpp-accent-40);color:#fff}
+.runs{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;min-height:0}
+.run{background:var(--raised);border:2px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.run.on{background:var(--mpp-accent-20);border-color:var(--mpp-accent-60)}
+.run .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.run .no{font-family:var(--mono);font-weight:700;font-size:20px}
+.run .why{font-size:14px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.run .meta{display:flex;justify-content:space-between;font-size:13px;color:var(--t3)}
+.bar{height:8px;border-radius:4px;background:var(--mpp-neutral-50);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--good)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border:1px solid}
+.pill.open{color:var(--warn);border-color:var(--warn)}
+.pill.roll{color:var(--mpp-accent-90);border-color:var(--mpp-accent-60);background:var(--mpp-accent-20)}
+.pill.roll:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--mpp-accent-70);animation:bl 1.4s ease-in-out infinite}
+.pill.done{color:var(--good);border-color:var(--good)}
+.pill.bad{color:var(--bad);border-color:var(--bad)}
+.pill.mut{color:var(--t3);border-color:var(--mpp-neutral-60)}
+@keyframes bl{50%{opacity:.25}}
+
+.right{display:flex;flex-direction:column;min-height:0;padding:18px 24px;gap:14px}
+.rh{display:flex;gap:20px;align-items:flex-start}
+.rh .id{flex:1;min-width:0}
+.rh .big{font-family:var(--mono);font-size:44px;font-weight:700;line-height:1.05;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.rh .reason{font-size:19px;margin-top:6px}
+.rh .crit{font-size:15px;color:var(--t3);margin-top:4px}
+.stats{display:flex;gap:10px;flex:none}
+.stat{background:var(--raised);border:1px solid var(--border);border-radius:12px;padding:10px 16px;min-width:128px}
+.stat .n{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .l{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)}
+.acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.acts .sp{flex:1}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.tabs span{padding:12px 20px;font-size:16px;font-weight:600;color:var(--t3);border-bottom:3px solid transparent}
+.tabs span.on{color:var(--t1);border-bottom-color:var(--mpp-accent-60)}
+.tabs span.later{opacity:.45;font-weight:500}
+.tabs span.later em{font-style:normal;font-size:11px;border:1px dashed var(--mpp-neutral-60);border-radius:6px;padding:1px 6px;margin-left:6px}
+.tbl{flex:1;min-height:0;overflow:auto;border:1px solid var(--border);border-radius:12px;background:var(--raised)}
+table{width:100%;border-collapse:collapse;font-size:16px}
+th{position:sticky;top:0;background:var(--mpp-neutral-40);text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:10px 14px;font-weight:600}
+td{padding:11px 14px;border-top:1px solid var(--mpp-neutral-40);white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td .mono{font-family:var(--mono);font-weight:700}
+tr.sel td{background:var(--mpp-accent-20)}
+tr.inel td{color:var(--mpp-neutral-70)}
+tr.inel td .mono{font-weight:500}
+.kind{display:inline-block;width:92px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--t3)}
+.cb{width:26px;height:26px;border:2px solid var(--mpp-neutral-60);border-radius:6px;display:inline-block;vertical-align:middle;position:relative}
+.cb.on{background:var(--mpp-accent-50);border-color:var(--mpp-accent-60)}
+.cb.on:after{content:"";position:absolute;left:7px;top:2px;width:7px;height:14px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg)}
+.cb.no{border-style:dashed;opacity:.5}
+.foot{font-size:13px;color:var(--t3)}
+
+/* overlays */
+.dim{position:absolute;inset:0;background:rgba(5,8,15,.72);display:none;z-index:3}
+.pop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--raised);border:1px solid var(--mpp-accent-60);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.65);display:none;flex-direction:column;z-index:4;overflow:hidden}
+.pop .ph{display:flex;align-items:center;gap:16px;padding:16px 22px;border-bottom:1px solid var(--border)}
+.pop .ph h1{margin:0;font-size:22px}
+.steps{display:flex;gap:8px;margin-left:auto}
+.steps span{font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;border:1px solid var(--mpp-neutral-60);color:var(--t3)}
+.steps span.on{background:var(--mpp-accent-40);border-color:var(--mpp-accent-60);color:#fff}
+.pop .pb{padding:20px 22px;flex:1;min-height:0;display:flex;flex-direction:column;gap:16px;overflow:auto}
+.pop .pf{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--border);align-items:center}
+.pop .pf .sp{flex:1}
+.lbl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:6px}
+.fld{min-height:56px;border:1px solid var(--mpp-neutral-60);border-radius:10px;background:var(--mpp-neutral-10);padding:0 14px;display:flex;align-items:center;font-size:17px}
+.fld.ph{color:var(--t3)}
+.fld.tall{min-height:92px;align-items:flex-start;padding-top:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g4{display:grid;grid-template-columns:1.2fr 1.4fr 1fr 1fr;gap:16px}
+.chk{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.chk b{display:block;font-size:16px}
+.chk small{color:var(--t3);font-size:13px}
+.sum{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.note{background:#3a2a08;border:1px solid var(--warn);color:#ffe2a8;border-radius:10px;padding:10px 14px;font-size:14px}
+
+/* scenes */
+.screen[data-scene="new1"] .dim,.screen[data-scene="new2"] .dim,.screen[data-scene="new3"] .dim,.screen[data-scene="label"] .dim{display:block}
+.screen[data-scene="new1"] #pNew1,.screen[data-scene="new2"] #pNew2,.screen[data-scene="new3"] #pNew3,.screen[data-scene="label"] #pLabel{display:flex}
+.screen[data-scene="closed"] .openonly{display:none}
+.screen:not([data-scene="closed"]) .closedonly{display:none}
+
+/* the printed label: 4in x 3in at 203dpi drawn at 0.6 scale */
+.labels{display:flex;gap:26px;align-items:center;justify-content:center;padding:6px 0}
+.stack{position:relative;width:520px;height:400px;flex:none}
+.zl{position:absolute;width:487px;height:365px;background:#fff;color:#000;border-radius:6px;box-shadow:0 6px 22px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden;font-family:Arial,Helvetica,sans-serif}
+.zl.c4{left:33px;top:35px;opacity:.35}.zl.c3{left:22px;top:23px;opacity:.55}.zl.c2{left:11px;top:11px;opacity:.8}.zl.c1{left:0;top:0}
+.zl .band{background:#000;color:#fff;font-weight:900;text-align:center;letter-spacing:.14em;font-size:44px;line-height:1;padding:10px 0}
+.zl .no{font-weight:900;font-size:70px;text-align:center;line-height:1;padding:10px 0 4px;letter-spacing:.02em}
+.zl .bc{height:74px;margin:0 30px;background:repeating-linear-gradient(90deg,#000 0 3px,#fff 3px 5px,#000 5px 6px,#fff 6px 10px,#000 10px 14px,#fff 14px 15px,#000 15px 17px,#fff 17px 21px)}
+.zl .txt{padding:8px 30px 0;font-size:15px;line-height:1.35;flex:1}
+.zl .txt b{font-size:17px}
+.zl .foot2{background:#000;color:#fff;text-align:center;font-weight:800;font-size:15px;letter-spacing:.08em;padding:7px 0}
+.lside{max-width:520px;font-size:15px;color:var(--t2)}
+.lside li{margin:7px 0}
+
+.notes{max-width:1280px;margin:0 auto;padding:0 16px 60px;color:var(--t2);font-size:14px}
+.notes h2{font-size:15px;margin:18px 0 8px;color:var(--t1)} .notes li{margin:5px 0}
+.notes code{font-family:var(--mono);font-size:12.5px;color:var(--mpp-accent-90)}
+</style></head><body>
+<div class="mockbar"><b>Mock controls</b>
+  <span>Scene <span class="seg" id="segScene">
+    <button data-v="main" class="on">1 - Super-lot open</button>
+    <button data-v="new1">2 - New: what</button>
+    <button data-v="new2">3 - New: preview</button>
+    <button data-v="new3">4 - New: confirm</button>
+    <button data-v="label">5 - Label</button>
+    <button data-v="closed">6 - Ready to close</button>
+  </span></span>
+  <span>Nothing here is wired. Every part, LOT, container, person and line is made up.</span>
+</div>
+<div class="stage" id="stage"><div class="scaler" id="scaler"><div class="screen" id="screen" data-scene="main">
+
+  <div class="apph">
+    <div class="ttl">Super-lots</div><div class="crumb">Quality &middot; Controlled runs</div>
+    <div class="sp"></div>
+    <div class="who">QA Office terminal</div><div class="who">KM &middot; signed in</div>
+  </div>
+
+  <div class="main">
+    <div class="left">
+      <div class="scan"><span class="ic"></span>Scan a super-lot label, an LTT or a container label</div>
+      <div class="row">
+        <div class="seg2"><span class="on">Open (3)</span><span>Closed</span><span>All</span></div>
+        <button class="btn primary">+ New super-lot</button>
+      </div>
+      <div class="runs">
+        <div class="run on">
+          <div class="top"><span class="no">CR000123</span>
+            <span><span class="pill roll openonly">Window open</span><span class="pill mut closedonly">Window ended</span></span></div>
+          <div class="why">Customer report: porosity at bore, traced to MESL3000412</div>
+          <div class="bar"><i class="openonly" style="width:35%"></i><i class="closedonly" style="width:100%"></i></div>
+          <div class="meta"><span>6MA-CH-01 &middot; MS Line 2</span>
+            <span class="openonly">7 of 20 cleared</span><span class="closedonly">21 of 21 cleared</span></div>
+        </div>
+        <div class="run">
+          <div class="top"><span class="no">CR000122</span><span class="pill mut">Window ended</span></div>
+          <div class="why">Vision camera down on Assembly 4 - count by hand</div>
+          <div class="bar"><i style="width:80%"></i></div>
+          <div class="meta"><span>5K8-OP-02 &middot; Assembly 4</span><span>8 of 10 cleared</span></div>
+        </div>
+        <div class="run">
+          <div class="top"><span class="no">CR000119</span><span class="pill mut">Window ended</span></div>
+          <div class="why">Trim flash found at Machining IN, DM0124 cavity b</div>
+          <div class="bar"><i style="width:0%"></i></div>
+          <div class="meta"><span>5J6-CS-03 &middot; hand-picked</span><span>0 of 6 cleared</span></div>
+        </div>
+      </div>
+      <div class="foot">Sorted by oldest open first.</div>
+    </div>
+
+    <div class="right">
+      <div class="rh">
+        <div class="id">
+          <div class="big">CR000123
+            <span class="pill open">Open</span>
+            <span class="pill roll openonly">Adding new production</span>
+            <span class="pill mut closedonly">Window ended 14:52</span>
+          </div>
+          <div class="reason">Customer report: porosity at bore, traced to MESL3000412</div>
+          <div class="crit">6MA-CH-01 made on <b>MS Line 2</b> since <b>Mon 06:10</b>, plus everything made from <b>MESL3000412</b>. Opened by KM, Mon 10:42.</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="n openonly">20</div><div class="n closedonly">21</div><div class="l">Members</div></div>
+          <div class="stat"><div class="n openonly">7</div><div class="n closedonly">21</div><div class="l">Cleared</div></div>
+          <div class="stat"><div class="n openonly">2,316</div><div class="n closedonly">2,436</div><div class="l">Pieces</div></div>
+        </div>
+      </div>
+
+      <div class="acts">
+        <button class="btn">Add (scan)</button>
+        <button class="btn off">Remove</button>
+        <button class="btn">Print 4 labels</button>
+        <div class="sp"></div>
+        <button class="btn warn openonly">End window</button>
+        <button class="btn off openonly" title="13 members are still tagged">Close super-lot</button>
+        <button class="btn primary closedonly">Close super-lot</button>
+      </div>
+      <div class="note openonly">Close is unavailable: 13 members are still CRT-tagged, and the window is still open.</div>
+      <div class="note closedonly" style="background:#0f2a1a;border-color:var(--good);color:#c8f5d8">Every member is cleared and the window has ended. This super-lot can be closed.</div>
+
+      <div class="tabs"><span class="on">Members</span><span class="later">Results<em>later piece</em></span><span class="later">Sign-off<em>later piece</em></span><span class="later">History<em>later piece</em></span></div>
+
+      <div class="tbl"><table>
+        <thead><tr><th style="width:44px"></th><th>Member</th><th>Part</th><th>Where it is now</th><th class="num">Pieces</th><th>Tag</th><th>How it joined</th><th>Added</th></tr></thead>
+        <tbody id="members"></tbody>
+      </table></div>
+      <div class="foot">Tap a LOT row to open LOT Detail. Clearing a tag is done there (or per container) until the sign-off piece is built.</div>
+    </div>
+  </div>
+
+  <div class="dim"></div>
+
+  <!-- New super-lot: step 1 -->
+  <div class="pop" id="pNew1" style="width:1180px">
+    <div class="ph"><h1>New super-lot</h1><div class="steps"><span class="on">1 What</span><span>2 Preview</span><span>3 Confirm</span></div></div>
+    <div class="pb">
+      <div><div class="lbl">Reason (required)</div><div class="fld tall">Customer report: porosity at bore, traced to MESL3000412</div></div>
+      <div class="g2">
+        <div><div class="lbl">Suspect LOT (optional) - scan or type</div><div class="fld"><span style="font-family:var(--mono);font-weight:700">MESL3000412</span>&nbsp;&nbsp;<span style="color:var(--t3)">6MA-CH-01 &middot; made Mon 06:10 at MS Line 2</span></div></div>
+        <div><div class="lbl">&nbsp;</div><div class="fld ph">The fields below were filled in from this LOT. Change any of them.</div></div>
+      </div>
+      <div class="g4">
+        <div><div class="lbl">Part</div><div class="fld">6MA-CH-01</div></div>
+        <div><div class="lbl">Made at (line or area)</div><div class="fld">MS Line 2</div></div>
+        <div><div class="lbl">From</div><div class="fld">Mon 06:10</div></div>
+        <div><div class="lbl">To</div><div class="fld ph">Now</div></div>
+      </div>
+      <div class="g2">
+        <div class="chk"><span class="cb on"></span><div><b>Include everything made from this LOT</b><small>Follows the genealogy: sub-assemblies and finished containers it went into, wherever they are.</small></div></div>
+        <div class="chk"><span class="cb on"></span><div><b>Keep adding new production</b><small>New LOTs of this part made on this line are tagged and added until you press End window.</small></div></div>
+      </div>
+    </div>
+    <div class="pf"><button class="btn">Cancel</button><div class="sp"></div><button class="btn primary">Preview</button></div>
+  </div>
+
+  <!-- step 2 -->
+  <div class="pop" id="pNew2" style="width:1560px;height:900px">
+    <div class="ph"><h1>New super-lot</h1><div class="steps"><span>1 What</span><span class="on">2 Preview</span><span>3 Confirm</span></div></div>
+    <div class="pb">
+      <div class="sum">
+        <div class="stat"><div class="n">14</div><div class="l">LOTs</div></div>
+        <div class="stat"><div class="n">6</div><div class="l">Containers</div></div>
+        <div class="stat"><div class="n">2,316</div><div class="l">Pieces</div></div>
+        <div class="stat" style="border-color:var(--bad)"><div class="n" style="color:var(--bad)">3</div><div class="l">Cannot be added</div></div>
+        <div style="flex:1"></div>
+        <button class="btn sm">Tick all</button><button class="btn sm">Untick all</button>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th style="width:44px"></th><th>Candidate</th><th>Part</th><th>Where it is now</th><th>Status</th><th class="num">Pieces</th><th>Made</th><th>Found by</th><th>Note</th></tr></thead>
+        <tbody id="preview"></tbody>
+      </table></div>
+      <div class="foot">Oldest first. Rows that cannot be added stay on the list so you can see what the window missed.</div>
+    </div>
+    <div class="pf"><button class="btn">Back</button><div class="sp"></div><span class="foot">20 ticked</span><button class="btn primary">Continue</button></div>
+  </div>
+
+  <!-- step 3 -->
+  <div class="pop" id="pNew3" style="width:760px">
+    <div class="ph"><h1>New super-lot</h1><div class="steps"><span>1 What</span><span>2 Preview</span><span class="on">3 Confirm</span></div></div>
+    <div class="pb">
+      <div style="font-size:18px">This will put <b>14 LOTs</b> and <b>6 containers</b> (2,316 pieces) on CRT and group them as one super-lot. Tagged material cannot be used or shipped until it is cleared.</div>
+      <div class="note">New 6MA-CH-01 made on MS Line 2 will keep being added until the window is ended.</div>
+      <div><div class="lbl">Your network user name</div><div class="fld ph">user name</div></div>
+      <div><div class="lbl">Password</div><div class="fld ph">password</div></div>
+    </div>
+    <div class="pf"><button class="btn">Back</button><div class="sp"></div><button class="btn primary">Open super-lot</button></div>
+  </div>
+
+  <!-- label -->
+  <div class="pop" id="pLabel" style="width:1240px">
+    <div class="ph"><h1>Print 4 labels &middot; CR000123</h1></div>
+    <div class="pb">
+      <div class="labels">
+        <div class="stack">
+          <div class="zl c4"></div><div class="zl c3"></div><div class="zl c2"></div>
+          <div class="zl c1">
+            <div class="band">SUPER-LOT</div>
+            <div class="no">CR000123</div>
+            <div class="bc"></div>
+            <div class="txt"><b>6MA-CH-01</b><br>Customer report: porosity at bore, traced to MESL3000412<br>Opened Mon 10/12 10:42 by KM</div>
+            <div class="foot2">QUALITY - DO NOT USE - SCAN FOR STATUS</div>
+          </div>
+        </div>
+        <ul class="lside">
+          <li>One design for the whole super-lot. Four identical copies per press; press again for four more.</li>
+          <li>Any copy can go on any basket, container or rack in the group.</li>
+          <li>The barcode is the super-lot number. Scanning it in this view opens the super-lot.</li>
+          <li>No LOT number and no count: the group changes while the window is open.</li>
+          <li>The normal LTT and the plain CRT banner still print as they do today.</li>
+        </ul>
+      </div>
+      <div><div class="lbl">Printer</div><div class="fld">QA Office Zebra</div></div>
+    </div>
+    <div class="pf"><button class="btn">Cancel</button><div class="sp"></div><button class="btn primary">Print 4 labels</button></div>
+  </div>
+
+</div></div></div>
+
+<div class="notes">
+  <h2>What this mock is for</h2>
+  <ul>
+    <li>Layout and flow of the dedicated Quality view at <code>/shop-floor/controlled-runs</code>, drawn at a 1920 x 1080 terminal. Spec: <code>docs/superpowers/specs/2026-10-12-controlled-run-super-lot-design.md</code>.</li>
+    <li>Scenes 1 to 6 are the same page in different states. Use the scene buttons at the top.</li>
+  </ul>
+  <h2>Things to react to</h2>
+  <ul>
+    <li><b>One page, list on the left, the super-lot on the right.</b> A scan anywhere on the page selects the super-lot it belongs to.</li>
+    <li><b>Results, Sign-off and History tabs are placeholders.</b> They show where the later pieces would sit; nothing about them is designed yet.</li>
+    <li><b>Preview shows what cannot be added</b> (already shipped, already in another super-lot, scrapped) instead of hiding it.</li>
+    <li><b>"Keep adding new production"</b> is the open decision in the spec (section 9, item 3). Scene 1 shows it on; scene 6 shows the window ended.</li>
+    <li><b>Close is refused</b> until every member is cleared and the window has ended, and the page says why.</li>
+    <li><b>The label</b> is a drawing, not a ZPL render. Proportions are a 4 x 3 inch label; the real stock size needs confirming.</li>
+  </ul>
+</div>
+
+<script>
+var M=[
+ ["LOT","MESL3000412","6MA-CH-01","QA Inspection","118","tag","Suspect LOT","Mon 10:42"],
+ ["LOT","MESL3000415","6MA-CH-01","MS Line 2","120","tag","Selected","Mon 10:42"],
+ ["LOT","MESL3000419","6MA-CH-01","MS Line 2","120","tag","Selected","Mon 10:42"],
+ ["LOT","MESL3000423","6MA-CH-01","Trim 3","96","clr","Selected","Mon 10:42"],
+ ["LOT","MESL3000431","6MA-SA-01","Assembly 2","110","tag","Made from MESL3000412","Mon 10:42"],
+ ["CONTAINER","Container 8812","6MA-FG-01","Warehouse A","144","tag","Made from MESL3000412","Mon 10:42"],
+ ["CONTAINER","Container 8815","6MA-FG-01","Warehouse A","144","clr","Made from MESL3000412","Mon 10:42"],
+ ["CONTAINER","Container 8819","6MA-FG-01","Shipping Dock","144","tag","Made from MESL3000412","Mon 10:42"],
+ ["LOT","MESL3000448","6MA-CH-01","MS Line 2","120","tag","New production","Mon 11:15"],
+ ["LOT","MESL3000455","6MA-CH-01","MS Line 2","120","tag","New production","Mon 12:03"],
+ ["LOT","MESL3000457","6MA-CH-01","QA Inspection","120","clr","Scanned in","Mon 12:20"],
+ ["LOT","MESL3000462","6MA-CH-01","MS Line 2","120","tag","New production","Mon 13:31"]
+];
+var P=[
+ [1,"LOT","MESL3000412","6MA-CH-01","MS Line 2","Good","118","Mon 06:10","Suspect LOT",""],
+ [1,"LOT","MESL3000415","6MA-CH-01","MS Line 2","Good","120","Mon 06:48","Line + time",""],
+ [1,"LOT","MESL3000419","6MA-CH-01","MS Line 2","Good","120","Mon 07:22","Line + time",""],
+ [0,"LOT","MESL3000421","6MA-CH-01","-","Scrap","0","Mon 07:40","Line + time","Scrapped"],
+ [1,"LOT","MESL3000423","6MA-CH-01","Trim 3","Good","96","Mon 07:55","Line + time",""],
+ [1,"LOT","MESL3000431","6MA-SA-01","Assembly 2","Good","110","Mon 08:30","Made from suspect LOT",""],
+ [1,"CONTAINER","Container 8812","6MA-FG-01","Warehouse A","Complete","144","Mon 08:52","Made from suspect LOT",""],
+ [0,"CONTAINER","Container 8813","6MA-FG-01","Shipped","Shipped","144","Mon 09:05","Made from suspect LOT","Already shipped"],
+ [1,"CONTAINER","Container 8815","6MA-FG-01","Warehouse A","Complete","144","Mon 09:20","Made from suspect LOT",""],
+ [0,"LOT","MESL3000436","6MA-CH-01","MS Line 2","Good","120","Mon 09:31","Line + time","Already in CR000119"],
+ [1,"CONTAINER","Container 8819","6MA-FG-01","Shipping Dock","Complete","144","Mon 09:48","Made from suspect LOT",""],
+ [1,"LOT","MESL3000440","6MA-CH-01","MS Line 2","Good","120","Mon 10:05","Line + time",""]
+];
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+document.getElementById("members").innerHTML=M.map(function(r,i){
+  var tag=r[5]==="tag"?'<span class="pill open openonly">CRT</span><span class="pill done closedonly">Cleared</span>':'<span class="pill done">Cleared</span>';
+  return '<tr'+(i===1?' class="sel"':'')+'><td><span class="cb'+(i===1?' on':'')+'"></span></td><td><span class="kind">'+r[0]+'</span><span class="mono">'+esc(r[1])+'</span></td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td><td class="num">'+r[4]+'</td><td>'+tag+'</td><td>'+esc(r[6])+'</td><td>'+esc(r[7])+'</td></tr>';
+}).join("");
+document.getElementById("preview").innerHTML=P.map(function(r){
+  var ok=r[0]===1;
+  return '<tr'+(ok?'':' class="inel"')+'><td><span class="cb '+(ok?'on':'no')+'"></span></td><td><span class="kind">'+r[1]+'</span><span class="mono">'+esc(r[2])+'</span></td><td>'+esc(r[3])+'</td><td>'+esc(r[4])+'</td><td>'+esc(r[5])+'</td><td class="num">'+r[6]+'</td><td>'+esc(r[7])+'</td><td>'+esc(r[8])+'</td><td>'+(ok?'':'<span class="pill bad">'+esc(r[9])+'</span>')+'</td></tr>';
+}).join("");
+var seg=document.getElementById("segScene"),screenEl=document.getElementById("screen");
+seg.addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  [].forEach.call(seg.children,function(x){x.classList.toggle("on",x===b)});
+  screenEl.setAttribute("data-scene",b.getAttribute("data-v"));
+});
+function fit(){
+  var st=document.getElementById("stage"),sc=document.getElementById("scaler");
+  var k=Math.min(1,(st.clientWidth-28)/1922);
+  sc.style.transform="scale("+k+")"; st.style.height=(1082*k+28)+"px";
+}
+window.addEventListener("resize",fit); fit();
+</script>
+</body></html>

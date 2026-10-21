@@ -80,7 +80,7 @@ GO
 -- =============================================
 -- Test 1: exact LotName resolves first (prefix sibling ranks after)
 -- =============================================
-CREATE TABLE #R (Ord INT IDENTITY(1,1), MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200));
+CREATE TABLE #R (Ord INT IDENTITY(1,1), MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(500), MovedInFromContainerName NVARCHAR(50));
 INSERT INTO #R EXEC Lots.GlobalTrace_Resolve @SearchText = N'P9T-TRC-A';
 DECLARE @C INT = (SELECT COUNT(*) FROM #R);
 EXEC test.Assert_RowCount @TestName = N'[Trace] exact name: exact + prefix sibling = 2 rows', @ExpectedCount = 2, @ActualCount = @C;
@@ -98,7 +98,7 @@ GO
 -- =============================================
 -- Test 2: serial number -> producing LOT
 -- =============================================
-CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200));
+CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(500), MovedInFromContainerName NVARCHAR(50));
 INSERT INTO #R EXEC Lots.GlobalTrace_Resolve @SearchText = N'P9SER-0001';
 DECLARE @C INT = (SELECT COUNT(*) FROM #R);
 EXEC test.Assert_RowCount @TestName = N'[Trace] serial resolves to 1 row', @ExpectedCount = 1, @ActualCount = @C;
@@ -114,7 +114,7 @@ GO
 -- =============================================
 DECLARE @Con BIGINT = (SELECT TOP 1 c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P9-QC-TEST' ORDER BY c.Id DESC);
 DECLARE @ConStr NVARCHAR(100) = CAST(@Con AS NVARCHAR(100));
-CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200));
+CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(500), MovedInFromContainerName NVARCHAR(50));
 INSERT INTO #R EXEC Lots.GlobalTrace_Resolve @SearchText = @ConStr;
 DECLARE @C INT = (SELECT COUNT(*) FROM #R WHERE MatchType = N'Container');
 EXEC test.Assert_RowCount @TestName = N'[Trace] container expands to 2 source LOTs', @ExpectedCount = 2, @ActualCount = @C;
@@ -130,7 +130,7 @@ GO
 -- =============================================
 -- Test 4: AIM shipper id -> its container's source LOTs
 -- =============================================
-CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200));
+CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(500), MovedInFromContainerName NVARCHAR(50));
 INSERT INTO #R EXEC Lots.GlobalTrace_Resolve @SearchText = N'P9AIM-XYZ';
 DECLARE @C INT = (SELECT COUNT(*) FROM #R WHERE MatchType = N'Shipper');
 EXEC test.Assert_RowCount @TestName = N'[Trace] shipper id expands to 2 source LOTs', @ExpectedCount = 2, @ActualCount = @C;
@@ -144,7 +144,7 @@ GO
 -- =============================================
 -- Test 5: prefix -> disambiguation list (multiple rows)
 -- =============================================
-CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200));
+CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(500), MovedInFromContainerName NVARCHAR(50));
 INSERT INTO #R EXEC Lots.GlobalTrace_Resolve @SearchText = N'P9T-TRC';
 DECLARE @C INT = (SELECT COUNT(*) FROM #R);
 EXEC test.Assert_RowCount @TestName = N'[Trace] prefix returns all 3 LOTs (disambiguation)', @ExpectedCount = 3, @ActualCount = @C;
@@ -156,7 +156,7 @@ GO
 -- =============================================
 -- Test 6: garbage and blank input -> 0 rows
 -- =============================================
-CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200));
+CREATE TABLE #R (MatchType NVARCHAR(20), MatchedEntityId BIGINT, LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50), Detail NVARCHAR(200), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(500), MovedInFromContainerName NVARCHAR(50));
 INSERT INTO #R EXEC Lots.GlobalTrace_Resolve @SearchText = N'ZZZ-NO-MATCH-999';
 DECLARE @C1 INT = (SELECT COUNT(*) FROM #R);
 EXEC test.Assert_RowCount @TestName = N'[Trace] garbage input -> 0 rows', @ExpectedCount = 0, @ActualCount = @C1;

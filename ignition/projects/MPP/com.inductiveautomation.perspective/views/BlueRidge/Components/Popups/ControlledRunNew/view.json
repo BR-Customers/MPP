@@ -1,0 +1,1950 @@
+{
+  "custom": {
+    "step": 1,
+    "draft": {
+      "reason": "",
+      "anchorText": "",
+      "anchorLotId": null,
+      "anchorLotName": "",
+      "anchorInfo": "",
+      "itemId": null,
+      "locationId": null,
+      "fromAtEastern": null,
+      "toAtEastern": null,
+      "includeDescendants": false,
+      "autoJoinEnabled": false
+    },
+    "rowsJson": "",
+    "partOptions": [],
+    "locationOptions": [],
+    "totals": {
+      "lots": 0,
+      "containers": 0,
+      "pieces": 0,
+      "ineligible": 0,
+      "ticked": 0
+    },
+    "adAccount": "",
+    "password": "",
+    "busy": false
+  },
+  "params": {
+    "popupId": "mpp-controlled-run-new",
+    "terminalLocationId": null
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "custom.partOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.partOptions\", 0)"
+        }
+      }
+    },
+    "custom.locationOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.locationOptions\", 0)"
+        }
+      }
+    },
+    "custom.totals": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.previewTotals\", 0, {view.custom.rowsJson})"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "8px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "New super-lot",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Step1"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.step} = 1, 'pf-pill pf-pill-good', 'pf-pill')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "1 What",
+              "style": {
+                "classes": "pf-pill"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Step2"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.step} = 2, 'pf-pill pf-pill-good', 'pf-pill')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "2 Preview",
+              "style": {
+                "classes": "pf-pill"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Step3"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.step} = 3, 'pf-pill pf-pill-good', 'pf-pill')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "3 Confirm",
+              "style": {
+                "classes": "pf-pill"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Step1"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.step} = 1"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch"
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Step1Body"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "modal-body",
+                "gap": "14px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ReasonField"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ReasonLabel"
+                    },
+                    "props": {
+                      "text": "Reason (required)",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-area",
+                    "meta": {
+                      "name": "ReasonInput"
+                    },
+                    "position": {
+                      "basis": "84px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.draft.reason",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "Why is this super-lot being opened?",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "AnchorRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "flex-end",
+                  "style": {
+                    "gap": "12px",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "AnchorField"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "AnchorFieldLabel"
+                        },
+                        "props": {
+                          "text": "Suspect LOT (optional) - scan or type",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.text-field",
+                        "meta": {
+                          "name": "AnchorInput"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.draft.anchorText",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "deferUpdates": false,
+                          "placeholder": "LOT ticket number",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "FindButton"
+                    },
+                    "position": {
+                      "basis": "110px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Find",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary",
+                        "height": "45px"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tv = self.view\n\td = dict(BlueRidge.Common.Util.extractQualifiedValues(v.custom.draft))\n\tt = (d.get(\"anchorText\") or \"\").strip()\n\tlot = BlueRidge.Lots.Lot.getByName(t) if t else None\n\tif lot and lot.get(\"Id\"):\n\t\td[\"anchorLotId\"] = lot.get(\"Id\")\n\t\td[\"anchorLotName\"] = lot.get(\"LotName\") or t\n\t\td[\"anchorInfo\"] = \"Found %s (%s). Part filled in below; From left blank means from when this LOT was made.\" % (\n\t\t\tlot.get(\"LotName\") or t, lot.get(\"ItemPartNumber\") or \"\")\n\t\td[\"itemId\"] = lot.get(\"ItemId\")\n\t\td[\"fromAtEastern\"] = None\n\t\td[\"includeDescendants\"] = True\n\telse:\n\t\td[\"anchorLotId\"] = None\n\t\td[\"anchorLotName\"] = \"\"\n\t\td[\"anchorInfo\"] = \"No LOT named %s.\" % t if t else \"\"\n\tv.custom.draft = d\t  # ONE write: no half-filled draft is ever bound"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "AnchorInfo"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.anchorInfo"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px",
+                    "color": "var(--mpp-text-secondary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "CriteriaRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "style": {
+                    "gap": "14px",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "PartField"
+                    },
+                    "position": {
+                      "grow": 1.2,
+                      "basis": "0"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "PartFieldLabel"
+                        },
+                        "props": {
+                          "text": "Part",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": {
+                          "name": "PartDropdown"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.partOptions"
+                              }
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.draft.itemId",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "Any part",
+                          "search": {
+                            "enabled": true
+                          },
+                          "showClearIcon": true,
+                          "style": {
+                            "minHeight": "45px"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "LineField"
+                    },
+                    "position": {
+                      "grow": 1.4,
+                      "basis": "0"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "LineFieldLabel"
+                        },
+                        "props": {
+                          "text": "Made at (line or press)",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": {
+                          "name": "LineDropdown"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.locationOptions"
+                              }
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.draft.locationId",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "Anywhere",
+                          "search": {
+                            "enabled": true
+                          },
+                          "showClearIcon": true,
+                          "style": {
+                            "minHeight": "45px"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "FromField"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "FromFieldLabel"
+                        },
+                        "props": {
+                          "text": "From (Eastern)",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.date-time-input",
+                        "meta": {
+                          "name": "FromInput"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.draft.fromAtEastern",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "dismissOnSelect": false,
+                          "format": "YYYY-MM-DD HH:mm",
+                          "style": {
+                            "boxSizing": "border-box",
+                            "width": "100%"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "ToField"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ToFieldLabel"
+                        },
+                        "props": {
+                          "text": "To (blank = now)",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.date-time-input",
+                        "meta": {
+                          "name": "ToInput"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.draft.toAtEastern",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "dismissOnSelect": false,
+                          "format": "YYYY-MM-DD HH:mm",
+                          "style": {
+                            "boxSizing": "border-box",
+                            "width": "100%"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "OptionsRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "style": {
+                    "gap": "14px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "Descendants"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "gap": "4px",
+                        "padding": "10px 14px",
+                        "borderRadius": "10px",
+                        "border": "1px solid var(--mpp-border-subtle)",
+                        "backgroundColor": "var(--mpp-surface-raised)"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.input.checkbox",
+                        "meta": {
+                          "name": "DescendantsBox"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.draft.includeDescendants",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "Include everything made from the suspect LOT",
+                          "style": {
+                            "fontWeight": "600"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "DescendantsHelp"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Follows the genealogy: sub-assemblies and finished containers it went into, wherever they are.",
+                          "style": {
+                            "fontSize": "13px",
+                            "color": "var(--mpp-text-tertiary)"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "AutoJoin"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "gap": "4px",
+                        "padding": "10px 14px",
+                        "borderRadius": "10px",
+                        "border": "1px solid var(--mpp-border-subtle)",
+                        "backgroundColor": "var(--mpp-surface-raised)"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.input.checkbox",
+                        "meta": {
+                          "name": "AutoJoinBox"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.draft.autoJoinEnabled",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "Keep adding new production",
+                          "style": {
+                            "fontWeight": "600"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "AutoJoinHelp"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "New LOTs of this part made on this line are tagged CRT and added until you press End window. Needs a part.",
+                          "style": {
+                            "fontSize": "13px",
+                            "color": "var(--mpp-text-tertiary)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Step1Footer"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "modal-footer",
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "CancelButton"
+                },
+                "position": {
+                  "basis": "110px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Cancel",
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Spacer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "row"
+                },
+                "children": []
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "PreviewButton"
+                },
+                "position": {
+                  "basis": "160px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Preview",
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tv = self.view\n\td = BlueRidge.Common.Util.extractQualifiedValues(v.custom.draft)\n\tif not (d.get(\"reason\") or \"\").strip():\n\t\tBlueRidge.Common.Notify.toast(\"Reason needed\", \"Say why this super-lot is being opened.\", \"warning\")\n\t\treturn\n\trows = BlueRidge.Quality.ControlledRun.preview(d)\n\tv.custom.rowsJson = BlueRidge.Quality.ControlledRun.previewEncode(rows)\n\tv.custom.step = 2"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Step2"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.step} = 2"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch"
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Step2Body"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "modal-body",
+                "gap": "8px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Totals"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "10px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "KpiLots"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-kpi"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiLotsValue"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "toStr({view.custom.totals.lots})"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-value"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiLotsLabel"
+                        },
+                        "props": {
+                          "text": "LOTs",
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "KpiContainers"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-kpi"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiContainersValue"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "toStr({view.custom.totals.containers})"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-value"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiContainersLabel"
+                        },
+                        "props": {
+                          "text": "Containers",
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "KpiPieces"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-kpi"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiPiecesValue"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "numberFormat({view.custom.totals.pieces}, '#,##0')"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-value"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiPiecesLabel"
+                        },
+                        "props": {
+                          "text": "Pieces",
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "KpiIneligible"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-kpi"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiIneligibleValue"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "toStr({view.custom.totals.ineligible})"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-value pf-kpi-value-bad"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiIneligibleLabel"
+                        },
+                        "props": {
+                          "text": "Cannot be added",
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "Spacer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "row"
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "TickAll"
+                    },
+                    "position": {
+                      "basis": "120px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Tick all",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.rowsJson = BlueRidge.Quality.ControlledRun.previewSetAll(self.view.custom.rowsJson, True)"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "UntickAll"
+                    },
+                    "position": {
+                      "basis": "120px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Untick all",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.rowsJson = BlueRidge.Quality.ControlledRun.previewSetAll(self.view.custom.rowsJson, False)"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "PreviewHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "crt-list-header",
+                    "gap": "12px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr0"
+                    },
+                    "position": {
+                      "basis": "44px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": ""
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr1"
+                    },
+                    "position": {
+                      "basis": "96px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Kind"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr2"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "150px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Candidate"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr3"
+                    },
+                    "position": {
+                      "basis": "190px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Part"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr4"
+                    },
+                    "position": {
+                      "basis": "200px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Where it is now"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr5"
+                    },
+                    "position": {
+                      "basis": "100px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Status"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr6"
+                    },
+                    "position": {
+                      "basis": "80px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Pieces"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr7"
+                    },
+                    "position": {
+                      "basis": "110px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Made"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr8"
+                    },
+                    "position": {
+                      "basis": "200px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Found by"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr9"
+                    },
+                    "position": {
+                      "basis": "210px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Note"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "EmptyState"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.totals.ticked} = 0 && {view.custom.totals.ineligible} = 0 && len({view.custom.rowsJson}) < 3"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Nothing matched. Go back and widen the selection, or keep adding new production.",
+                  "style": {
+                    "classes": "pf-empty-state"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "PreviewRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Quality.ControlledRun.previewInstances\", 0, {view.custom.rowsJson})"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
+                  "useDefaultViewHeight": true,
+                  "elementPosition": {
+                    "basis": "48px",
+                    "shrink": 0
+                  },
+                  "elementStyle": {
+                    "overflow": "hidden"
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunPreviewRow",
+                  "style": {
+                    "overflowY": "auto"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PreviewFoot"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Oldest first. Rows that cannot be added stay on the list so you can see what the window missed.",
+                  "style": {
+                    "fontSize": "13px",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Step2Footer"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "modal-footer",
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BackButton"
+                },
+                "position": {
+                  "basis": "110px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Back",
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.custom.step = 1"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Spacer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "row"
+                },
+                "children": []
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "TickedCount"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "toStr({view.custom.totals.ticked}) + ' ticked'"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "ContinueButton"
+                },
+                "position": {
+                  "basis": "160px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Continue",
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tv = self.view\n\tt = BlueRidge.Common.Util.extractQualifiedValues(v.custom.totals) or {}\n\td = BlueRidge.Common.Util.extractQualifiedValues(v.custom.draft) or {}\n\tif not t.get(\"ticked\") and not d.get(\"autoJoinEnabled\"):\n\t\tBlueRidge.Common.Notify.toast(\"Nothing ticked\", \"Tick at least one row, or go back and keep adding new production.\", \"warning\")\n\t\treturn\n\tv.custom.step = 3"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Step3"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.step} = 3"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch"
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Step3Body"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "modal-body",
+                "gap": "14px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Summary"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "'This will put ' + toStr({view.custom.totals.lots}) + ' LOTs and ' + toStr({view.custom.totals.containers}) + ' containers (' + numberFormat({view.custom.totals.pieces}, '#,##0') + ' pieces) on CRT and group them as one super-lot. Tagged material cannot be used or shipped until it is cleared.'"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "17px"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "AutoJoinNote"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.autoJoinEnabled"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "New production of this part will keep being tagged and added until the window is ended.",
+                  "style": {
+                    "classes": "pf-pill pf-pill-warn",
+                    "whiteSpace": "normal"
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "AccountField"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "AccountFieldLabel"
+                    },
+                    "props": {
+                      "text": "Your network user name",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "AccountInput"
+                    },
+                    "position": {
+                      "basis": "45px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.adAccount",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "domain\\username",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "PasswordField"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "PasswordFieldLabel"
+                    },
+                    "props": {
+                      "text": "Password",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.password-field",
+                    "meta": {
+                      "name": "PasswordInput"
+                    },
+                    "position": {
+                      "basis": "45px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.password",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "Password",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Step3Footer"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "modal-footer",
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BackButton"
+                },
+                "position": {
+                  "basis": "110px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Back",
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.custom.step = 2"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Spacer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "row"
+                },
+                "children": []
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "OpenButton"
+                },
+                "position": {
+                  "basis": "200px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!{view.custom.busy}"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Open super-lot",
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tv = self.view\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\ttid = v.params.terminalLocationId\n\t\tpw = v.custom.password\n\t\tv.custom.password = \"\"   # cleared BEFORE the call: nothing below can leave it in the view\n\t\tel = BlueRidge.Location.AppUser.elevate(v.custom.adAccount, pw, \"ControlledRun\", tid)\n\t\tpw = None\n\t\tif not el or not el.get(\"success\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Not authorised\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")\n\t\t\treturn\n\t\tCR = BlueRidge.Quality.ControlledRun\n\t\tres = CR.open(v.custom.draft, CR.previewTicked(v.custom.rowsJson), el.get(\"appUserId\"), tid)\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Super-lot\")\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"controlledRunSelect\", payload={\"runId\": res.get(\"NewId\")}, scope=\"page\")\n\t\t\tsystem.perspective.closePopup(v.params.popupId)\n\tfinally:\n\t\tv.custom.busy = False"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "controlledRunPreviewToggle",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = payload or {}\n\tself.view.custom.rowsJson = BlueRidge.Quality.ControlledRun.previewToggle(self.view.custom.rowsJson, p.get(\"index\"))"
+        }
+      ]
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 860,
+      "width": 1500
+    }
+  }
+}

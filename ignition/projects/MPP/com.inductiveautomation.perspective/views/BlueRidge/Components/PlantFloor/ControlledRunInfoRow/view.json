@@ -1,0 +1,124 @@
+{
+  "custom": {},
+  "params": {
+    "title": "",
+    "text": "",
+    "meta": ""
+  },
+  "propConfig": {
+    "params.title": {
+      "paramDirection": "input"
+    },
+    "params.text": {
+      "paramDirection": "input"
+    },
+    "params.meta": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "background": "var(--mpp-surface-raised)",
+        "border": "1px solid var(--mpp-border-subtle)",
+        "borderRadius": "10px",
+        "padding": "8px 12px",
+        "gap": "2px",
+        "overflow": "hidden"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Title"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.title"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "14px",
+            "fontWeight": "700",
+            "overflow": "hidden"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Text"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.text"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "color": "var(--mpp-text-secondary)",
+            "whiteSpace": "normal",
+            "overflow": "hidden"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Meta"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.meta"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "12px",
+            "color": "var(--mpp-text-tertiary)"
+          }
+        }
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 84,
+      "width": 460
+    }
+  }
+}

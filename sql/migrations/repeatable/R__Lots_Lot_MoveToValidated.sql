@@ -1,8 +1,23 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_MoveToValidated.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-20
--- Version:     1.1 (2026-08-20, part-scoped CRT) - D5 enforcement, identical to the
+-- Modified:    2026-10-21
+-- Version:     1.4 (2026-10-21, super-lot piece 6) - CRT refusal names the open super-lot ('is marked CRT (super-lot <RN>)', via
+--              Quality.ufn_OpenControlledRunForLot); no open super-lot = the text is unchanged.
+--              1.3 (2026-10-20, final review M-3) - one captured @Now is the LotMovement's
+--              MovedAt AND the LotRework's StartedAt (spec 4.3: StartedAt = the movement
+--              time), instead of the rework row taking its own clock read from its default.
+--              1.2 (2026-10-19, super-lot piece 5) - a backward move into TRIM IN with a
+--              supervisor override IS a rework: the LOT's route is re-entered at its
+--              TrimIn step, so a Lots.LotRework row is written (unless one is already
+--              open -- a second override move during a rework just happens). A rework
+--              move is exempt from rule 6 (CRT): the LOT is going back to be fixed, not
+--              forward to be used (also exempt: a TrimIn override move while a rework
+--              is already open). The override user must exist in Location.AppUser. The
+--              next-pending computation now runs whether or not an override was given.
+--              Movement audit reads '(trim rework, approved by <Initials>)'.
+--              Rule 4b's condition is unchanged.
+--              1.1 (2026-08-20, part-scoped CRT) - D5 enforcement, identical to the
 --              guard added to Lots.Lot_MoveTo: a CRT LOT is refused a PRODUCTION
 --              destination (Lots.ufn_CrtBlocksMoveTo); inspection / inventory /
 --              support destinations still succeed. Placed LAST among the rejecting
@@ -151,6 +166,20 @@ BEGIN
             RETURN;
         END
 
+        -- ---- 4a. A supplied override user must exist (it is recorded on the rework row). ----
+        IF (@OverrideAppUserId IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @OverrideAppUserId))
+        BEGIN
+            SET @Message = N'Override user not found.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = @LotId, @LogEventTypeCode = N'LotMoved',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
         -- ---- 4b. Forward-only ROUTE guard (operation-aware). ----
         -- When the caller supplies the operation this move is FOR (@OperationTypeCode --
         -- e.g. the Trim receive screen supplies 'TrimIn'), reject a BACKWARD move: one
@@ -160,9 +189,12 @@ BEGIN
         -- storage / hold move => never route-guarded. The next-pending computation
         -- MIRRORS Lots.Lot_GetWipQueueByLocation (Advance pending until a matching
         -- ProductionEvent; ConsumeMint always pending; OriginMint never pending).
-        IF @OperationTypeCode IS NOT NULL AND @OverrideAppUserId IS NULL
+        DECLARE @AttemptedSeq INT = NULL;
+        DECLARE @NextPendingSeq INT = NULL;
+        DECLARE @IsRework BIT = 0;
+        IF @OperationTypeCode IS NOT NULL
         BEGIN
-            DECLARE @AttemptedSeq INT = (
+            SET @AttemptedSeq = (
                 SELECT MIN(rs.SequenceNumber)
                 FROM Parts.RouteTemplate rt
                 INNER JOIN Parts.RouteStep rs        ON rs.RouteTemplateId = rt.Id
@@ -172,11 +204,19 @@ BEGIN
                   AND oty.Code = @OperationTypeCode);
 
             -- One shared definition of "next pending step" (formerly inlined here).
-            DECLARE @NextPendingSeq INT = (
+            SET @NextPendingSeq = (
                 SELECT SequenceNumber FROM Lots.ufn_NextPendingRouteStep(@LotId));
 
+            -- Rework: an override move back into TrimIn (route re-entered at its TrimIn step),
+            -- or ANY override TrimIn move while a rework is already open (spec 4.4).
+            IF (@OverrideAppUserId IS NOT NULL AND @OperationTypeCode = N'TrimIn'
+                AND ((@AttemptedSeq IS NOT NULL AND @NextPendingSeq IS NOT NULL AND @AttemptedSeq < @NextPendingSeq)
+                     OR EXISTS (SELECT 1 FROM Lots.ufn_OpenLotRework(@LotId))))
+                SET @IsRework = 1;
+
             -- Guard only when both resolve and the attempted step is strictly behind.
-            IF @AttemptedSeq IS NOT NULL AND @NextPendingSeq IS NOT NULL AND @AttemptedSeq < @NextPendingSeq
+            IF (@OverrideAppUserId IS NULL
+                AND @AttemptedSeq IS NOT NULL AND @NextPendingSeq IS NOT NULL AND @AttemptedSeq < @NextPendingSeq)
             BEGIN
                 SET @Message = N'Backward move blocked: the ' + @OperationTypeCode
                     + N' step is already complete for this LOT (a later step is pending). A supervisor override is required to move it back.';
@@ -222,10 +262,11 @@ BEGIN
         -- eligibility, forward-only route, MaxParts) keeps precedence, and still BEFORE
         -- BEGIN TRANSACTION because a ROLLBACK inside an INSERT-EXEC-captured proc
         -- throws Msg 3915. ----
-        IF (SELECT Blocked FROM Lots.ufn_CrtBlocksMoveTo(@LotId, @ToLocationId)) = 1
+        IF (@IsRework = 0 AND (SELECT Blocked FROM Lots.ufn_CrtBlocksMoveTo(@LotId, @ToLocationId)) = 1)
         BEGIN
             SET @Message = N'LOT ' + ISNULL(@LotName, N'?')
-                         + N' is marked CRT and cannot be moved to a production location until Quality clears it.';
+                         + N' is marked CRT' + ISNULL(N' (super-lot ' + (SELECT RunNumber FROM Quality.ufn_OpenControlledRunForLot(@LotId)) + N')', N'')
+                         + N' and cannot be moved to a production location until Quality clears it.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @LotId, @LogEventTypeCode = N'LotMoved',
@@ -251,19 +292,47 @@ BEGIN
         DECLARE @ActivityRaw NVARCHAR(MAX) =
             @LotName + N' ' + Audit.ufn_MidDot() + N' Movement ' + Audit.ufn_MidDot()
             + N' ' + ISNULL(@FromName, N'(none)') + NCHAR(8594) + @ToName
-            + CASE WHEN @OverrideAppUserId IS NOT NULL THEN N' (backward-move supervisor override)' ELSE N'' END;
+            + CASE WHEN @IsRework = 1
+                   THEN N' (trim rework, approved by ' + ISNULL((SELECT Initials FROM Location.AppUser WHERE Id = @OverrideAppUserId), N'?') + N')'
+                   WHEN @OverrideAppUserId IS NOT NULL THEN N' (backward-move supervisor override)'
+                   ELSE N'' END;
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- One clock read: the movement time is also the rework's StartedAt.
+        DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 
         BEGIN TRANSACTION;
 
         UPDATE Lots.Lot
         SET CurrentLocationId = @ToLocationId,
-            UpdatedAt         = SYSUTCDATETIME(),
+            UpdatedAt         = @Now,
             UpdatedByUserId   = @AppUserId
         WHERE Id = @LotId;
 
         INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
-        VALUES (@LotId, @FromLocationId, @ToLocationId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+        VALUES (@LotId, @FromLocationId, @ToLocationId, @AppUserId, @TerminalLocationId, @Now);
+        DECLARE @MovementId BIGINT = SCOPE_IDENTITY();
+
+        -- Trim rework starts here. One OPEN rework per LOT: a second override move
+        -- while one is open writes nothing new.
+        IF @IsRework = 1 AND NOT EXISTS (SELECT 1 FROM Lots.ufn_OpenLotRework(@LotId))
+        BEGIN
+            INSERT INTO Lots.LotRework (LotId, ReEntrySequenceNumber, LotMovementId, StartedAt, MovedByUserId, ApprovedByUserId, TerminalLocationId)
+            VALUES (@LotId, @AttemptedSeq, @MovementId, @Now, @AppUserId, @OverrideAppUserId, @TerminalLocationId);
+
+            DECLARE @ReworkDesc NVARCHAR(500) = Audit.ufn_TruncateActivity(
+                @LotName + N' ' + Audit.ufn_MidDot() + N' Rework ' + Audit.ufn_MidDot()
+                + N' Trim rework started, re-entering at route step ' + CAST(@AttemptedSeq AS NVARCHAR(10)));
+            EXEC Audit.Audit_LogOperation
+                @AppUserId          = @AppUserId,
+                @TerminalLocationId = @TerminalLocationId,
+                @LocationId         = @ToLocationId,
+                @LogEntityTypeCode  = N'Lot',
+                @EntityId           = @LotId,
+                @LogEventTypeCode   = N'LotReworkStarted',
+                @LogSeverityCode    = N'Info',
+                @Description        = @ReworkDesc;
+        END
 
         EXEC Audit.Audit_LogOperation
             @AppUserId          = @AppUserId,

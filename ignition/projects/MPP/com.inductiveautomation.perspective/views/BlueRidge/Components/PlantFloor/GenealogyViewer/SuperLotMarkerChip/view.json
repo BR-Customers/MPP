@@ -1,0 +1,109 @@
+{
+  "custom": {},
+  "params": {
+    "runNumber": "",
+    "text": "",
+    "isOpen": false
+  },
+  "propConfig": {
+    "params.runNumber": {
+      "paramDirection": "input"
+    },
+    "params.text": {
+      "paramDirection": "input"
+    },
+    "params.isOpen": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 26,
+      "width": 170
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "overflow": "visible"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Chip",
+          "tooltip": {
+            "enabled": true,
+            "text": "Open this super-lot"
+          }
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "events": {
+          "dom": {
+            "onClick": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\t# Opens the super-lot page already on this super-lot (Task 12 route).\n\trn = self.view.params.runNumber\n\tif rn:\n\t\tsystem.perspective.navigate('/shop-floor/controlled-runs/' + rn)"
+              }
+            }
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.text"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.isOpen}, 'pf-pill pf-pill-warn', 'pf-pill')"
+              }
+            }
+          },
+          "props.style.backgroundColor": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.isOpen}, '', 'var(--mpp-surface-raised)')"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.isOpen}, '', 'var(--mpp-text-secondary)')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "borderRadius": "999px",
+            "cursor": "pointer",
+            "fontSize": "12px",
+            "fontWeight": "600",
+            "padding": "2px 10px",
+            "textTransform": "none",
+            "whiteSpace": "nowrap"
+          }
+        }
+      }
+    ]
+  }
+}

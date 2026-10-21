@@ -20,6 +20,20 @@ python tools/reports/build_lot_detail_report.py
 .\scan.ps1
 ```
 
+Source of truth for the Super-lot report (super-lot piece 6):
+
+| File | What |
+|---|---|
+| `super_lot/layout.py` | ReportMill page layout, generated (3 pages: header + outcomes, members, deviations + signatures) |
+| `super_lot/queries.py` | Parameter `ControlledRunId` + data sources (each EXECs the super-lot page's read proc) |
+| `build_super_lot_report.py` | Assembles them onto the donor envelope |
+
+```
+python tools/reports/build_super_lot_report.py
+python tools/reports/verify_lot_detail_report.py "ignition/projects/MPP/com.inductiveautomation.reporting/reports/Super-lot/data.bin"
+.\scan.ps1
+```
+
 `scan.ps1` DOES reload a changed report `data.bin` — no gateway restart.
 
 Three things that fail silently and cost hours:

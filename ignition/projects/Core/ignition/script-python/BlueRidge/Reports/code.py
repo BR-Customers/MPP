@@ -77,6 +77,15 @@ def registry():
          "available": True, "project": "MPP", "reportPath": "Shipping History",
          "params": [{"id": "StartDate", "label": "Start", "kind": "dateRange"},
                     {"id": "EndDate", "label": "End", "kind": "dateRange"}]},
+
+        # ---- Super-lot piece 6 ----
+        # One super-lot (controlled run): outcomes, scrap by defect, members,
+        # deviations and signatures. Also printed from the super-lot page.
+        {"key": "super_lot", "title": "Super-lot",
+         "desc": "One super-lot: outcomes, members, deviations, signatures.",
+         "available": True, "project": "MPP", "reportPath": "Super-lot",
+         "params": [{"id": "ControlledRunId", "label": "Super-lot",
+                     "kind": "controlledRun", "required": True}]},
     ]
 
 
@@ -125,6 +134,57 @@ def lotOptions():
         return []
 
 
+def controlledRunOptions():
+    """Dropdown options for the super-lot picker (label "<RunNumber> - <Reason>",
+    value ControlledRunId), every status, in the proc's order (open oldest first,
+    then closed newest first). Wraps the Core NQ quality/ControlledRun_List.
+    Safe [] on any DB/JDBC error."""
+    try:
+        ds = system.db.runNamedQuery("quality/ControlledRun_List",
+                                     {"statusCode": "All", "text": ""})
+        out = []
+        for r in range(ds.getRowCount()):
+            out.append({"label": u"%s - %s" % (ds.getValueAt(r, "RunNumber"),
+                                               ds.getValueAt(r, "Reason") or u""),
+                        "value": ds.getValueAt(r, "Id")})
+        return out
+    except (Exception, _JavaThrowable) as e:
+        logger.warn("controlledRunOptions failed: %s" % str(e))
+        return []
+
+
+def _resolveControlledRunId(runId):
+    """Resolve the super-lot picker's value to a ControlledRunId.
+
+    Same two shapes as the LOT picker: an option VALUE (numeric Id) or a STRING
+    the operator scanned or typed -- a run number such as 'CR000001'. A string is
+    looked up BY NUMBER first and only falls back to int() for a raw Id typed by
+    hand. Returns 0 when unresolvable, so the report renders empty rather than
+    the Report Viewer rejecting the params."""
+    if runId is None:
+        return 0
+    if isinstance(runId, basestring):
+        text = runId.strip()
+        if not text:
+            return 0
+        try:
+            row = BlueRidge.Quality.ControlledRun.getRunByNumber(text)
+            if row and row.get("Id"):
+                return int(row.get("Id"))
+        except (Exception, _JavaThrowable) as e:
+            logger.warn("_resolveControlledRunId lookup failed for %r: %s" % (text, str(e)))
+        try:
+            return int(text)
+        except (ValueError, TypeError):
+            logger.warn("_resolveControlledRunId could not resolve %r to a super-lot" % text)
+            return 0
+    try:
+        return int(runId)
+    except (ValueError, TypeError):
+        logger.warn("_resolveControlledRunId got an unusable picker value %r" % (runId,))
+        return 0
+
+
 def _resolveLotId(lotId):
     """Resolve the LOT picker's value to an internal LotId.
 
@@ -167,7 +227,7 @@ def _resolveLotId(lotId):
         return 0
 
 
-def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None):
+def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None, controlledRunId=None):
     """Build the report-parameter dict for the Report Viewer from the landing page's
     inputs, keyed by which report is selected. Bound (runScript) to view.custom.reportParams.
     NEVER returns an empty dict (the Report Viewer rejects a report given empty params)."""
@@ -180,6 +240,8 @@ def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None):
             return {"MinShots": 0}
         if selectedKey == "lot_detail":
             return {"LotId": _resolveLotId(lotId)}
+        if selectedKey == "super_lot":
+            return {"ControlledRunId": _resolveControlledRunId(controlledRunId)}
         if selectedKey == "line_perf":
             return {"WeeksBack": 8}
         # The date-ranged aggregate reports. These MUST be listed explicitly:

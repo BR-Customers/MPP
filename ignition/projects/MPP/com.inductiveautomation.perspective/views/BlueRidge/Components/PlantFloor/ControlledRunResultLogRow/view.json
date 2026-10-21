@@ -1,0 +1,348 @@
+{
+  "custom": {},
+  "params": {
+    "resultId": null,
+    "when": "",
+    "member": "",
+    "outcome": "",
+    "quantity": 0,
+    "defect": "",
+    "by": "",
+    "remarks": "",
+    "state": "",
+    "canVoid": false
+  },
+  "propConfig": {
+    "params.resultId": {
+      "paramDirection": "input"
+    },
+    "params.when": {
+      "paramDirection": "input"
+    },
+    "params.member": {
+      "paramDirection": "input"
+    },
+    "params.outcome": {
+      "paramDirection": "input"
+    },
+    "params.quantity": {
+      "paramDirection": "input"
+    },
+    "params.defect": {
+      "paramDirection": "input"
+    },
+    "params.by": {
+      "paramDirection": "input"
+    },
+    "params.remarks": {
+      "paramDirection": "input"
+    },
+    "params.state": {
+      "paramDirection": "input"
+    },
+    "params.canVoid": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "crt-row",
+        "gap": "12px",
+        "overflow": "hidden"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_when"
+        },
+        "position": {
+          "basis": "96px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.when"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_member"
+        },
+        "position": {
+          "basis": "190px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.member"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-part crt-mono",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_outcome"
+        },
+        "position": {
+          "basis": "140px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.outcome"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_quantity"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.quantity})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_defect"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.defect"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_by"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.by"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_remarks"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.remarks"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "State"
+        },
+        "position": {
+          "basis": "130px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.params.state}) > 0"
+              }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.state"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.state} = 'Applied', 'pf-pill pf-pill-good', 'pf-pill pf-pill-warn')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-pill"
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "VoidButton"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.canVoid}"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "maxHeight": "34px",
+            "minHeight": "30px",
+            "padding": "0"
+          },
+          "text": "Void"
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"voidResult\", \"resultId\": self.view.params.resultId,\n\t\t \"memberName\": \"%s %s on %s\" % (self.view.params.outcome, self.view.params.quantity, self.view.params.member)})"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 42,
+      "width": 1300
+    }
+  }
+}

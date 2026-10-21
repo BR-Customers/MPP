@@ -1,0 +1,466 @@
+<title>Piece 6 Screen Mocks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column of three terminal frames, each with a "what changes" note beside it (stacks under it when narrow).
+   Single dark look on purpose: these are the MPP plant-floor screens, which are dark-only (Core stylesheet --mpp-* tokens). */
+:root {
+  color-scheme: dark;
+  --page:      #070C17;
+  --n10: #0B1220; --n20: #111A2E; --n30: #172238; --n40: #1F2C44; --n50: #2C3A55; --n60: #425270;
+  --n70: #697A98; --n80: #9AA8BF; --n90: #C9D2E0; --n100: #F0F3F8;
+  --accent: #22A8CC; --accent-soft: #093240; --accent-line: #126680; --accent-fg: #4BC2E0;
+  --good-bg: #0F3A2A; --good-bd: #15532D; --good-fg: #4ADE80;
+  --warn-bg: #3A2E0A; --warn-bd: #5C4510; --warn-fg: #FACC15;
+  --bad-bg:  #3A1416; --bad-bd:  #5C1E22; --bad-fg:  #F87171;
+  --new: #C4A8FF; --new-bg: #2A1D45; --new-bd: #3F2D66;
+  --sans: 'Inter', 'Noto Sans', -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', 'Roboto Mono', Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--page); color: var(--n90); font-family: var(--sans); font-size: 14px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 44px; }
+header.intro { display: grid; gap: 10px; max-width: 70ch; }
+header.intro h1 { margin: 0; font-size: 26px; color: var(--n100); letter-spacing: -0.01em; text-wrap: balance; }
+header.intro p { margin: 0; color: var(--n80); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 12px; color: var(--n80); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px dashed var(--new); background: var(--new-bg); }
+
+section.mock { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 960px) { section.mock { grid-template-columns: minmax(0, 1fr); } }
+.mock-head { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mock-head h2 { margin: 0; font-size: 18px; color: var(--n100); }
+.mock-head .where { font-family: var(--mono); font-size: 12px; color: var(--n70); }
+
+/* the terminal frame */
+.screen { background: var(--n10); border: 1px solid var(--n40); border-radius: 10px; overflow: hidden; min-width: 0; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; background: var(--n20); border-bottom: 1px solid var(--n40); flex-wrap: wrap; }
+.bar .ttl { font-weight: 600; color: var(--n100); }
+.bar .op { font-family: var(--mono); font-size: 12px; color: var(--n80); }
+.body { padding: 16px; display: grid; gap: 14px; }
+
+.pill { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+.pill.good { background: var(--good-bg); border-color: var(--good-bd); color: var(--good-fg); }
+.pill.warn { background: var(--warn-bg); border-color: var(--warn-bd); color: var(--warn-fg); }
+.pill.bad  { background: var(--bad-bg);  border-color: var(--bad-bd);  color: var(--bad-fg); }
+.pill.info { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-fg); }
+.pill.mute { background: var(--n30); border-color: var(--n50); color: var(--n80); }
+
+.new { outline: 1px dashed var(--new); outline-offset: 3px; border-radius: 6px; }
+.tag-new { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--new); background: var(--new-bg); border: 1px solid var(--new-bd); border-radius: 4px; padding: 1px 6px; }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.kpi { background: var(--n20); border: 1px solid var(--n40); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.kpi .l { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--n70); }
+.kpi .v { font-family: var(--mono); color: var(--n100); font-size: 15px; overflow-wrap: anywhere; }
+
+.tabs { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--n40); }
+.tab { padding: 8px 12px; font-size: 13px; color: var(--n80); white-space: nowrap; border-bottom: 2px solid transparent; }
+.tab.on { color: var(--n100); border-bottom-color: var(--accent); }
+.tab.new { outline-offset: -2px; }
+
+.panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 16px; }
+@media (max-width: 720px) { .panel { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--n20); border: 1px solid var(--n40); border-radius: 8px; padding: 12px; display: grid; gap: 10px; min-width: 0; }
+.card h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--n80); font-weight: 600; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 12px; color: var(--n70); }
+.input { background: var(--n10); border: 1px solid var(--n50); border-radius: 6px; padding: 10px 12px; font-family: var(--mono); color: var(--n100); min-height: 42px; }
+.input.ph { color: var(--n60); font-family: var(--sans); }
+.hint { font-size: 12px; color: var(--n70); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 18px; border-radius: 8px; font-weight: 600; border: 1px solid var(--n50); background: var(--n30); color: var(--n100); white-space: nowrap; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #04121A; }
+.btn.small { min-height: 34px; padding: 0 12px; font-size: 13px; }
+.btn.danger { background: var(--bad-bg); border-color: var(--bad-bd); color: var(--bad-fg); }
+.row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lock { font-size: 12px; color: var(--warn-fg); }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--n70); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--n40); white-space: nowrap; }
+td { padding: 8px; border-bottom: 1px solid var(--n30); vertical-align: middle; white-space: nowrap; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+td.mono { font-family: var(--mono); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.tile { background: var(--n20); border: 1px solid var(--n40); border-radius: 8px; padding: 12px; display: grid; gap: 2px; min-height: 96px; }
+.tile .l { font-size: 12px; color: var(--n80); }
+.tile .v { font-family: var(--mono); font-size: 26px; color: var(--n100); font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 11px; color: var(--n70); }
+.tile.dim .v { color: var(--n60); font-size: 18px; }
+.tile.call { border-color: var(--warn-bd); background: linear-gradient(var(--warn-bg), var(--n20) 70%); }
+.tile.call .v { color: var(--warn-fg); }
+
+.popup { margin: 4px auto 0; width: min(760px, 100%); background: var(--n20); border: 1px solid var(--n50); border-radius: 10px; box-shadow: 0 18px 40px rgba(0,0,0,.45); overflow: hidden; }
+.popup .bar { background: var(--n30); }
+.connector { text-align: center; font-size: 12px; color: var(--n70); }
+
+.member { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--n20); border: 1px solid var(--n40); border-radius: 8px; padding: 10px 12px; }
+.member.sel { border-color: var(--accent-line); background: linear-gradient(90deg, var(--accent-soft), var(--n20) 60%); }
+.member .name { font-family: var(--mono); color: var(--n100); }
+.member .sub { font-size: 12px; color: var(--n70); }
+.member .status { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.outcomes { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+.otile { border: 1px solid var(--n50); background: var(--n30); border-radius: 8px; padding: 14px 10px; text-align: center; font-weight: 600; color: var(--n100); min-height: 64px; display: grid; place-items: center; gap: 2px; }
+.otile small { font-weight: 400; font-size: 11px; color: var(--n70); }
+.otile.on { border-color: var(--accent); background: var(--accent-soft); }
+.otile.gone { border-style: dashed; color: var(--n60); background: transparent; text-decoration: line-through; }
+.otile.gone small { text-decoration: none; display: block; }
+.cols2 { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 14px; }
+@media (max-width: 720px) { .cols2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* side notes */
+aside.notes { display: grid; gap: 12px; align-content: start; font-size: 13px; color: var(--n80); min-width: 0; }
+aside.notes h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--n70); }
+aside.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+aside.notes .ask { border: 1px solid var(--warn-bd); background: var(--warn-bg); color: var(--n90); border-radius: 8px; padding: 10px 12px; }
+aside.notes .ask b { color: var(--warn-fg); }
+code { font-family: var(--mono); font-size: 12px; color: var(--accent-fg); }
+</style>
+
+<style>
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--warn-bd); background: var(--warn-bg); color: var(--warn-fg); white-space: nowrap; }
+.chip .arrow { color: var(--n80); font-weight: 400; }
+.hdr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hdr .t { font-size: 18px; font-weight: 600; color: var(--n100); font-family: var(--mono); margin-right: 6px; }
+.tl { display: grid; gap: 6px; }
+.tlr { display: grid; grid-template-columns: 92px 120px minmax(0,1fr) 52px; gap: 10px; align-items: baseline; background: var(--n20); border: 1px solid var(--n40); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+@media (max-width: 720px) { .tlr { grid-template-columns: 80px minmax(0,1fr); } .tlr .k { grid-column: 2; } .tlr .d { grid-column: 1 / -1; } }
+.tlr .w { font-family: var(--mono); color: var(--n80); font-size: 12px; }
+.tlr .k { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--n70); }
+.tlr .k.q { color: var(--new); }
+.tlr .d { color: var(--n90); overflow-wrap: anywhere; }
+.tlr .u { font-family: var(--mono); color: var(--n70); font-size: 12px; text-align: right; }
+.tlr.new { background: linear-gradient(90deg, var(--new-bg), var(--n20) 55%); }
+.tree { display: grid; gap: 4px; font-size: 13px; }
+.node { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 10px; border-radius: 6px; background: var(--n20); border: 1px solid var(--n40); }
+.node .nm { font-family: var(--mono); color: var(--n100); }
+.node .s { color: var(--n70); font-size: 12px; }
+.ind1 { margin-left: 22px; } .ind2 { margin-left: 44px; } .ind3 { margin-left: 66px; }
+.strike { text-decoration: line-through; color: var(--n60); }
+.modal { margin: 0 auto; width: min(520px, 100%); background: var(--n20); border: 1px solid var(--n50); border-radius: 10px; box-shadow: 0 18px 40px rgba(0,0,0,.45); overflow: hidden; }
+.modal .body { gap: 12px; }
+.warnbox { border: 1px solid var(--warn-bd); background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; color: var(--n90); font-size: 13px; }
+.toast { width: min(420px, 100%); margin-left: auto; background: var(--n20); border: 1px solid var(--bad-bd); border-left: 4px solid var(--bad-fg); border-radius: 8px; padding: 10px 14px; display: grid; gap: 4px; }
+.toast b { color: var(--bad-fg); }
+/* paper report */
+.paper { background: #FBFBF8; color: #1A1D22; border-radius: 4px; padding: 28px 32px; font-family: var(--sans); font-size: 12px; line-height: 1.4; display: grid; gap: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.4); min-width: 0; }
+.paper h5 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #59606B; border-bottom: 1px solid #C9CDD3; padding-bottom: 3px; }
+.paper .ph { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid #1A1D22; padding-bottom: 8px; }
+.paper .ph .big { font-size: 20px; font-weight: 700; font-family: var(--mono); }
+.paper .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px 16px; }
+.paper .kv div span { display: block; font-size: 10px; color: #6B7280; text-transform: uppercase; letter-spacing: .05em; }
+.paper table { font-size: 11px; color: #1A1D22; }
+.paper th { color: #59606B; border-bottom: 1px solid #C9CDD3; }
+.paper td { border-bottom: 1px solid #E5E7EB; padding: 4px 8px; }
+.paper .sig { border: 1px solid #C9CDD3; border-radius: 4px; padding: 8px 10px; display: grid; gap: 2px; }
+.paper .sig .m { font-weight: 700; }
+.paper .foot { font-size: 10px; color: #6B7280; display: flex; justify-content: space-between; border-top: 1px solid #C9CDD3; padding-top: 6px; }
+.paper .table-wrap { overflow-x: auto; }
+</style>
+
+<div class="wrap">
+
+<header class="intro">
+  <h1>Super-lot piece 6: what shows outside the super-lot page</h1>
+  <p>Static mocks of every screen piece 6 adds or changes, plus the report page. Nothing here changes how super-lots work; it only makes what is already recorded visible on LOT Detail, in trace, on the dashboard, at the terminals and on paper.</p>
+  <div class="legend">
+    <span><i class="swatch"></i> Dashed outline = new or changed in piece 6</span>
+    <span>Example data only (LOT names, part numbers, initials). All times Eastern.</span>
+  </div>
+</header>
+
+<!-- ============ 1. LOT Detail header + Super-lots tab ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>1. LOT Detail: super-lot marker and a Super-lots tab</h2><span class="where">Views/ShopFloor/LotDetail</span></div>
+
+  <div class="screen">
+    <div class="bar"><span class="ttl">LOT Detail</span><span class="op">5G0 Machining &middot; JP</span></div>
+    <div class="body">
+      <div class="hdr">
+        <span class="t">MESL3004127</span>
+        <span class="pill info">Good</span>
+        <span class="pill bad">CRT Active</span>
+        <span class="chip new">Super-lot CR000014 <span class="arrow">&rarr;</span></span>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Item</div><div class="v">12232-5G0-A000</div></div>
+        <div class="kpi"><div class="l">Piece count</div><div class="v">96</div></div>
+        <div class="kpi"><div class="l">Current location</div><div class="v">5G0 Machining</div></div>
+        <div class="kpi"><div class="l">Total scrap</div><div class="v">4</div></div>
+      </div>
+      <div class="tabs">
+        <span class="tab">History</span><span class="tab">Genealogy</span><span class="tab">Paused-at</span><span class="tab">Container</span><span class="tab">Inspections</span><span class="tab">Hold</span><span class="tab">Scrap</span><span class="tab">Correct count</span><span class="tab">Vendor return</span>
+        <span class="tab on new">Super-lots <span class="tag-new">new</span></span>
+        <span class="tab">Notes</span>
+      </div>
+      <div class="card new">
+        <h3>Super-lots this LOT has been in</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Super-lot</th><th>Reason</th><th>Status</th><th>Joined</th><th>Left</th><th>Results here</th><th>Release / deviation</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">CR000014</td><td>Porosity on bore, Honda 10/17</td><td><span class="pill warn">Open</span></td><td>10/17 08:12 &middot; selected &middot; MB</td><td>&mdash;</td><td>Scrap 4 (Porosity)</td><td><span class="hint">not released yet</span></td></tr>
+            <tr><td class="mono">CR000009</td><td>Die DM0124 cavity c flash</td><td><span class="pill good">Released</span></td><td>10/03 14:40 &middot; auto-joined</td><td>10/06 10:15 &middot; released</td><td>Accepted 96</td><td>Signed MB 10/06 10:15 &middot; Deviation DV000003</td></tr>
+            <tr><td class="mono">CR000005</td><td>Line 3 trim press check</td><td><span class="pill mute">Closed</span></td><td>09/28 07:02 &middot; scanned in &middot; DS</td><td>09/28 09:30 &middot; removed: wrong part</td><td>&mdash;</td><td>&mdash;</td></tr>
+          </tbody>
+        </table></div>
+        <span class="hint">Newest first. Tapping a super-lot number opens the super-lot page on it. A tray LOT shows the super-lots its container was in.</span>
+      </div>
+      <div class="card" style="border-style:dashed">
+        <h3>A LOT that has never been in a super-lot</h3>
+        <span class="hint">This LOT has never been part of a super-lot.</span>
+      </div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h4>What changes</h4>
+    <ul>
+      <li><b>Amber chip</b> beside the CRT pill while the LOT, or its container, is in an <b>open</b> super-lot. Tapping it opens the super-lot page already on CR000014 (new address <code>/shop-floor/controlled-runs/CR000014</code>).</li>
+      <li>When the super-lot ends, the chip goes away. The tab keeps the full record.</li>
+      <li><b>Super-lots tab</b>: every super-lot the LOT was ever in, open or ended, with how it joined and left, its results there, the release signer and any deviation.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 2. LOT Detail History tab ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>2. LOT Detail History tab: all history</h2><span class="where">Lots.Lot_GetAttributeHistory + Lots.LotEventLog</span></div>
+
+  <div class="screen">
+    <div class="bar"><span class="ttl">LOT Detail &middot; History</span><span class="op">MESL3004127</span></div>
+    <div class="body">
+      <div class="tl">
+        <div class="tlr"><span class="w">10/17 09:05</span><span class="k">Reject</span><span class="d">Rejected 4 pc (Porosity)</span><span class="u">MB</span></div>
+        <div class="tlr new"><span class="w">10/17 09:05</span><span class="k q">Super-lot</span><span class="d">CR000014 &middot; Result recorded &middot; Scrap 4 (Porosity)</span><span class="u">MB</span></div>
+        <div class="tlr new"><span class="w">10/17 08:12</span><span class="k q">CRT</span><span class="d">CRT &middot; Activated (super-lot CR000014)</span><span class="u">MB</span></div>
+        <div class="tlr new"><span class="w">10/17 08:12</span><span class="k q">Super-lot</span><span class="d">CR000014 &middot; Joined (selected) &middot; Porosity on bore, Honda 10/17</span><span class="u">MB</span></div>
+        <div class="tlr"><span class="w">10/09 13:20</span><span class="k">Movement</span><span class="d">5G0 Trim (T5G0) -&gt; 5G0 Machining (M5G0) [via 5G0-MIN-1]</span><span class="u">JP</span></div>
+        <div class="tlr new"><span class="w">10/06 10:15</span><span class="k q">CRT</span><span class="d">CRT &middot; Cleared</span><span class="u">MB</span></div>
+        <div class="tlr new"><span class="w">10/06 10:15</span><span class="k q">Super-lot</span><span class="d">CR000009 &middot; Released &middot; signed MB &middot; Deviation DV000003</span><span class="u">MB</span></div>
+        <div class="tlr new"><span class="w">10/05 16:40</span><span class="k q">Super-lot</span><span class="d">CR000009 &middot; Deviation DV000003 raised &middot; covers this LOT</span><span class="u">MB</span></div>
+        <div class="tlr new"><span class="w">10/05 11:02</span><span class="k q">Super-lot</span><span class="d">CR000009 &middot; Result recorded &middot; Accepted 96</span><span class="u">RK</span></div>
+        <div class="tlr new"><span class="w">10/03 14:40</span><span class="k q">Super-lot</span><span class="d">CR000009 &middot; Joined (auto-joined, new production on Line 3)</span><span class="u">SYS</span></div>
+        <div class="tlr"><span class="w">10/03 14:40</span><span class="k">Status</span><span class="d">(none) -&gt; Good</span><span class="u">JP</span></div>
+      </div>
+      <span class="hint">Shown here newest first for the mock; the tab keeps its current order. Plain rows already show today; the purple ones are new.</span>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h4>What changes</h4>
+    <ul>
+      <li>The tab now also reads the LOT's audit log. CRT on/off, vendor returns, trim rework and the missed-inspection flag show here for the first time.</li>
+      <li>Every super-lot event that touches the LOT gets its own row: joined, result recorded or voided, deviation raised, released, removed, super-lot closed or cancelled.</li>
+      <li>Audit events that repeat a line already in the timeline (created, moved, status changed, die cast pieces added) are left out by the new flag on the event type, so nothing shows twice.</li>
+      <li>The Lot Detail report shows the same rows.</li>
+    </ul>
+    <div class="ask"><b>Check:</b> the kind column reads "Super-lot", "CRT", "Vendor return", "Rework" for the new rows. Good, or would you rather they all say "Quality"?</div>
+  </aside>
+</section>
+
+<!-- ============ 3. CRT toggle + terminal refusal ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>3. Clearing CRT on one LOT, and the terminal refusal</h2><span class="where">LotDetail doCrtToggle &middot; CRT refusal messages</span></div>
+
+  <div class="screen">
+    <div class="bar"><span class="ttl">LOT Detail &middot; Disable CRT</span><span class="op">MESL3004127</span></div>
+    <div class="body">
+      <div class="modal">
+        <div class="bar"><span class="ttl">Supervisor sign-in required</span><span class="op">&times;</span></div>
+        <div class="body">
+          <div><b>Release the Controlled Run Tag</b></div>
+          <div class="warnbox new">MESL3004127 is in open super-lot <b>CR000014</b>. This clears the tag on <b>this LOT only</b>. The super-lot is released, with its signature, from the super-lot page.</div>
+          <div class="field"><label for="el-u">Network user name</label><div class="input" id="el-u">dsmith</div></div>
+          <div class="field"><label for="el-p">Password</label><div class="input ph" id="el-p">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div>
+          <div class="row-actions"><span class="btn">Cancel</span><span class="btn primary">Sign in and clear</span></div>
+        </div>
+      </div>
+
+      <div class="connector">at a production terminal, scanning a tagged LOT</div>
+
+      <div class="toast new">
+        <b>Not allowed</b>
+        <span>LOT MESL3004127 is marked CRT <span style="color:var(--warn-fg)">(super-lot CR000014)</span> and cannot be used until Quality clears it.</span>
+      </div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h4>What changes</h4>
+    <ul>
+      <li>The toggle still needs a supervisor sign-in in both directions, as it does today. Later, the Quality AD role takes the place of "any supervisor".</li>
+      <li>When the LOT is in an open super-lot, the sign-in box adds the amber note. Otherwise it looks as it does today.</li>
+      <li>Every terminal refusal for a CRT LOT names the super-lot when there is one: move, Machining IN pick, Machining OUT, Assembly scan-in, split, merge.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 4. Genealogy + trace ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>4. Genealogy and Global Trace: super-lot markers and repacked containers</h2><span class="where">GenealogyViewer &middot; GlobalTrace</span></div>
+
+  <div class="screen">
+    <div class="bar"><span class="ttl">Global Trace &middot; MESL3004090</span><span class="op">Quality &middot; MB</span></div>
+    <div class="body">
+      <div class="tree">
+        <div class="node"><span class="nm">MESL3004090</span><span class="s">die cast basket &middot; 12232-5G0 &middot; Closed</span><span class="chip new">CR000014 &middot; open</span></div>
+        <div class="node ind1"><span class="nm">MESL3004127</span><span class="s">machined &middot; 96 pcs</span><span class="chip new">CR000014 &middot; open</span><span class="pill mute new">CR000009 &middot; released</span></div>
+        <div class="node ind2"><span class="nm">MESL3004201</span><span class="s">finished-good tray &middot; 16 pcs</span><span class="chip new">CR000014 &middot; open</span></div>
+        <div class="node ind3"><span class="nm">Container 20031</span><span class="s">serial 13218047 &middot; Complete</span><span class="chip new">CR000014 &middot; open</span></div>
+        <div class="node ind1"><span class="nm">MESL3004128</span><span class="s">machined &middot; 95 pcs</span></div>
+      </div>
+
+      <div class="card new">
+        <h3>Container 20031: detail panel after a repack</h3>
+        <div class="kpis">
+          <div class="kpi"><div class="l">Shipper serial</div><div class="v">13218047</div></div>
+          <div class="kpi"><div class="l">Replaced serial</div><div class="v"><span class="strike">13218012</span> void 10/15</div></div>
+          <div class="kpi"><div class="l">Repack</div><div class="v">10/15 &middot; MB</div></div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Part serial</th><th>Tray LOT</th><th>State</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">5G0-88412</td><td class="mono">MESL3004201</td><td><span class="pill good">Packed</span></td></tr>
+            <tr><td class="mono strike">5G0-88413</td><td class="mono">MESL3004201</td><td><span class="pill bad">Scrapped 10/15 (Porosity)</span></td></tr>
+            <tr><td class="mono">5G0-90120</td><td class="mono">MESL3004388</td><td><span class="pill info">Moved in 10/15 from container 20044</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h4>What changes</h4>
+    <ul>
+      <li>Every node that is or was in a super-lot carries a marker: amber while open, grey once released, closed or cancelled. A node can carry several.</li>
+      <li>The tree query itself is untouched. The markers come from a second read keyed by the node ids.</li>
+      <li>After a repack, the container detail shows the voided serial beside the new one. Scrapped serials show as scrapped, not as still packed, and moved-in parts say where they came from.</li>
+      <li>The Genealogy viewer gets the same markers.</li>
+    </ul>
+    <div class="ask"><b>Check:</b> a scrapped serial stays in the list, struck through and marked "Scrapped" (as mocked), rather than being hidden. Agreed?</div>
+  </aside>
+</section>
+
+<!-- ============ 5. Super-lot page History tab ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>5. Super-lot page: the History tab goes live</h2><span class="where">Views/ShopFloor/ControlledRuns</span></div>
+
+  <div class="screen">
+    <div class="bar"><span class="ttl">Super-lot CR000009 <span class="pill good" style="margin-left:8px">Released</span></span><span class="op">Quality &middot; MB</span></div>
+    <div class="body">
+      <div class="tabs"><span class="tab">Members</span><span class="tab">Results</span><span class="tab">Sign-off</span><span class="tab on new">History</span></div>
+      <div class="tl new">
+        <div class="tlr"><span class="w">10/06 10:30</span><span class="k">Closed</span><span class="d">Super-lot closed &middot; all members cleared</span><span class="u">MB</span></div>
+        <div class="tlr"><span class="w">10/06 10:15</span><span class="k q">Signature</span><span class="d">Release &middot; "I confirm the controlled run inspection was carried out on every released member." &middot; 12 members</span><span class="u">MB</span></div>
+        <div class="tlr"><span class="w">10/05 16:40</span><span class="k q">Signature</span><span class="d">Deviation DV000003 &middot; flash under 0.3 mm on cavity c accepted, does not affect fit</span><span class="u">MB</span></div>
+        <div class="tlr"><span class="w">10/05 11:02</span><span class="k">Result</span><span class="d">MESL3004127 &middot; Accepted 96</span><span class="u">RK</span></div>
+        <div class="tlr"><span class="w">10/04 09:10</span><span class="k">Window</span><span class="d">Auto-join window ended</span><span class="u">MB</span></div>
+        <div class="tlr"><span class="w">10/03 14:40</span><span class="k">Member</span><span class="d">MESL3004127 added (auto-joined)</span><span class="u">SYS</span></div>
+        <div class="tlr"><span class="w">10/03 08:00</span><span class="k">Label</span><span class="d">4 labels printed</span><span class="u">MB</span></div>
+        <div class="tlr"><span class="w">10/03 07:55</span><span class="k">Opened</span><span class="d">Die DM0124 cavity c flash &middot; 12232-5G0 on Line 3 from 10/02 22:00, keep adding new production</span><span class="u">MB</span></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h4>What changes</h4>
+    <ul>
+      <li>The greyed-out History tab becomes the super-lot's full trail, newest first: opened, members added and removed, window changes, labels, results and voids, deviations, release, close or cancel.</li>
+      <li>Signatures are merged in with their meaning and the statement that was signed.</li>
+      <li>Also on this page, not drawn: <b>Close super-lot</b> is enabled from SQL's answer, and the Members tab shows "pulled back from finished stock". Applied returns show on Results.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 6. Dashboard tile ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>6. Supervisor Dashboard: Open super-lots tile</h2><span class="where">Views/ShopFloor/SupervisorDashboard</span></div>
+
+  <div class="screen">
+    <div class="bar"><span class="ttl">Supervisor Dashboard</span><span class="op">Madison Facility &middot; DS</span></div>
+    <div class="body">
+      <div class="tiles">
+        <div class="tile"><span class="l">Open Downtime</span><span class="v">3</span><span class="s">2 die cast, 1 trim</span></div>
+        <div class="tile"><span class="l">Shifts Not Reconciled</span><span class="v">1</span><span class="s">last 7 days</span></div>
+        <div class="tile call"><span class="l">Parts to Return</span><span class="v">3</span><span class="s">marked, not yet confirmed</span></div>
+        <div class="tile call new"><span class="l">Open Super-lots <span class="tag-new">new</span></span><span class="v">2</span><span class="s">oldest 4 d &middot; 37 members still CRT &middot; tap to open</span></div>
+      </div>
+      <div class="tiles">
+        <div class="tile new"><span class="l">Open Super-lots</span><span class="v">0</span><span class="s">none open</span></div>
+      </div>
+      <span class="hint">Second row: the same tile with nothing open. Tap opens <code>/shop-floor/controlled-runs</code> with the Open filter.</span>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h4>What changes</h4>
+    <ul>
+      <li>One tile beside Parts to Return, on the same 30-second refresh.</li>
+      <li>It shows how many super-lots are open, how old the oldest is, and how many members are still CRT across them.</li>
+      <li>Amber while any are open, plain when none are.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 7. Report ============ -->
+<section class="mock">
+  <div class="mock-head"><h2>7. Super-lot report (PDF, one per super-lot)</h2><span class="where">Reporting Module &middot; /shop-floor/reports + Print on the super-lot page</span></div>
+
+  <div class="paper new">
+    <div class="ph"><span><span class="big">Super-lot CR000009</span> &nbsp; Controlled Run report</span><span>Madison Precision Products &middot; printed 10/21/2026 09:14 ET</span></div>
+    <div class="kv">
+      <div><span>Status</span>Released, closed 10/06 10:30</div>
+      <div><span>Reason</span>Die DM0124 cavity c flash</div>
+      <div><span>Selection</span>12232-5G0 made on Line 3 from 10/02 22:00; new production added until 10/04 09:10</div>
+      <div><span>Opened</span>10/03 07:55 &middot; M. Brooks</div>
+      <div><span>Members</span>12 (10 LOTs, 2 containers)</div>
+      <div><span>Pieces</span>1,140</div>
+    </div>
+
+    <h5>Results by outcome</h5>
+    <div class="table-wrap"><table><thead><tr><th>Outcome</th><th>Pieces</th></tr></thead><tbody>
+      <tr><td>Accepted</td><td class="num">1,092</td></tr><tr><td>Use as is (DV000003)</td><td class="num">30</td></tr><tr><td>Scrap</td><td class="num">14</td></tr><tr><td>Returned to vendor</td><td class="num">4</td></tr>
+    </tbody></table></div>
+
+    <h5>Scrap by defect code</h5>
+    <div class="table-wrap"><table><thead><tr><th>Defect</th><th>Pieces</th></tr></thead><tbody>
+      <tr><td>Flash</td><td class="num">11</td></tr><tr><td>Porosity</td><td class="num">3</td></tr>
+    </tbody></table></div>
+
+    <h5>Members</h5>
+    <div class="table-wrap"><table><thead><tr><th>Member</th><th>Part</th><th>Pcs</th><th>Joined</th><th>Left</th><th>Accepted</th><th>Scrap</th><th>Other</th></tr></thead><tbody>
+      <tr><td class="mono">MESL3004127</td><td>12232-5G0-A000</td><td class="num">96</td><td>auto 10/03</td><td>released 10/06</td><td class="num">96</td><td class="num">0</td><td></td></tr>
+      <tr><td class="mono">Container 20031</td><td>17111-5G0-A000</td><td class="num">64</td><td>selected 10/03</td><td>released 10/06</td><td class="num">61</td><td class="num">3</td><td>repacked: 13218012 &rarr; 13218047</td></tr>
+      <tr><td class="mono">MESL3003655</td><td>12232-5G0-A000</td><td class="num">95</td><td>selected 10/03</td><td>released 10/06</td><td class="num">90</td><td class="num">5</td><td>trim rework 10/04</td></tr>
+      <tr><td colspan="8" class="hint" style="color:#6B7280">&hellip; one row per member</td></tr>
+    </tbody></table></div>
+
+    <h5>Deviation</h5>
+    <div>DV000003: flash under 0.3 mm on cavity c accepted; does not affect fit. Covers 30 pieces on 2 members.</div>
+
+    <h5>Signatures</h5>
+    <div class="sig"><span class="m">Deviation approval &middot; M. Brooks &middot; 10/05 16:40</span><span>"I approve use of the material described under this deviation."</span></div>
+    <div class="sig"><span class="m">Release &middot; M. Brooks &middot; 10/06 10:15</span><span>"I confirm the controlled run inspection was carried out on every released member."</span></div>
+
+    <div class="foot"><span>CR000009 &middot; page 1 of 2</span><span>All times Eastern</span></div>
+  </div>
+
+  <aside class="notes">
+    <h4>What's in it</h4>
+    <ul>
+      <li>Header, results by outcome, scrap by defect, one row per member (how it joined and left, its counts, any repack, rework or return), the deviation text, and every signature with its meaning and the exact statement signed.</li>
+      <li>Listed on the Reports landing page (pick a super-lot), and printable from the super-lot page.</li>
+      <li>Its numbers come from the same SQL as the super-lot page, and a test checks they match.</li>
+    </ul>
+    <div class="ask"><b>Check:</b> should the report also carry each member's full event history (as in mock 2), or is the member summary enough? Full history could make a big super-lot many pages long.</div>
+  </aside>
+</section>
+
+</div>

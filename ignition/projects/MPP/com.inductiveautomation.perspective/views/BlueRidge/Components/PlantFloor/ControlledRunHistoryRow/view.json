@@ -1,0 +1,179 @@
+{
+  "custom": {},
+  "params": {
+    "row": {
+      "EventAt": null,
+      "EventAtDisplay": "",
+      "Kind": "",
+      "Detail": "",
+      "ByInitials": ""
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "crt-row",
+        "gap": "12px",
+        "overflow": "hidden"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_when"
+        },
+        "position": {
+          "basis": "120px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.EventAtDisplay"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta crt-mono",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_kind"
+        },
+        "position": {
+          "basis": "110px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.Kind"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.Kind} = 'Signature', 'var(--mpp-cat-purple-fg)', 'var(--mpp-text-tertiary)')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "11px",
+            "fontWeight": "700",
+            "letterSpacing": "0.06em",
+            "textTransform": "uppercase",
+            "color": "var(--mpp-text-tertiary)",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_detail",
+          "tooltip": {
+            "enabled": true,
+            "text": ""
+          }
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.Detail"
+              }
+            }
+          },
+          "meta.tooltip.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.Detail"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "14px",
+            "lineHeight": "1.3",
+            "overflow": "hidden",
+            "whiteSpace": "normal",
+            "overflowWrap": "anywhere"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "C_by"
+        },
+        "position": {
+          "basis": "56px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.ByInitials"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta crt-mono",
+            "textAlign": "right",
+            "overflow": "hidden",
+            "whiteSpace": "nowrap"
+          }
+        }
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 56,
+      "width": 1200
+    }
+  }
+}

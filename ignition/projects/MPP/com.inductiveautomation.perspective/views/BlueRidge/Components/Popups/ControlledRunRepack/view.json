@@ -1,0 +1,1718 @@
+{
+  "custom": {
+    "token": 0,
+    "info": {
+      "ContainerId": null,
+      "StatusCode": "",
+      "StatusName": "",
+      "ItemId": null,
+      "PartNumber": "",
+      "ItemDescription": "",
+      "CurrentLocationId": null,
+      "CurrentLocationName": "",
+      "IsSerialized": false,
+      "TargetParts": 0,
+      "Pieces": 0,
+      "ShortBy": 0,
+      "LiveAimShipperId": "",
+      "OriginalAimShipperId": "",
+      "ReworkOpenedAt": null,
+      "ReworkOpenedByInitials": "",
+      "RunNumber": "",
+      "ControlledRunId": null,
+      "MemberId": null,
+      "InRework": false,
+      "CanOpen": false,
+      "CanScrapOrMove": false,
+      "CanSetFilling": false,
+      "CanSetProcessing": false,
+      "CanCompleteHere": false,
+      "CanVoid": false
+    },
+    "selectedTrayId": null,
+    "selectedSerialId": null,
+    "mode": "scrap",
+    "defectCodeId": null,
+    "quantity": "",
+    "intentId": null,
+    "targetId": null,
+    "lineId": null,
+    "remarks": "",
+    "busy": false
+  },
+  "params": {
+    "popupId": "mpp-controlled-run-repack",
+    "containerId": null,
+    "terminalLocationId": null
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.containerId": {
+      "paramDirection": "input"
+    },
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "custom.info": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.ContainerRework.getOrEmpty\", 0, if(isNull({view.params.containerId}), 0, {view.params.containerId}), {view.custom.token})"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Repack - Container ' + toStr({view.params.containerId})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "StatusPill"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.info.StatusName"
+                  }
+                }
+              },
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.info.StatusCode} = 'Complete', 'pf-pill pf-pill-good', 'pf-pill pf-pill-warn')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-pill"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Summary"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.info.PartNumber} + ' - ' + toStr({view.custom.info.Pieces}) + ' of ' + toStr({view.custom.info.TargetParts}) + ' pieces' + if({view.custom.info.ShortBy} > 0, ', short by ' + toStr({view.custom.info.ShortBy}), '') + if(len({view.custom.info.LiveAimShipperId}) > 0, ' - serial ' + {view.custom.info.LiveAimShipperId}, if(len({view.custom.info.OriginalAimShipperId}) > 0, ' - old serial ' + {view.custom.info.OriginalAimShipperId} + ' voided', '')) + if(len({view.custom.info.CurrentLocationName}) > 0, ' - at ' + {view.custom.info.CurrentLocationName}, '')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "14px",
+                "color": "var(--mpp-text-secondary)",
+                "whiteSpace": "normal"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "stretch",
+          "style": {
+            "classes": "modal-body",
+            "gap": "18px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "LeftCol"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "gap": "8px",
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "TraysHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Trays - tap the one the parts come out of",
+                  "style": {
+                    "fontSize": "12px",
+                    "fontWeight": "700",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "TrayRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Lots.ContainerRework.trayInstances\", 0, if(isNull({view.params.containerId}), 0, {view.params.containerId}), if(isNull({view.custom.selectedTrayId}), 0, {view.custom.selectedTrayId}), {view.custom.token})"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
+                  "useDefaultViewHeight": true,
+                  "elementPosition": {
+                    "basis": "46px",
+                    "shrink": 0
+                  },
+                  "elementStyle": {
+                    "overflow": "hidden"
+                  },
+                  "style": {
+                    "overflowY": "auto"
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ReworkTrayRow"
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "SerialsHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.info.IsSerialized}"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Serials - a serialized part is handled one serial at a time",
+                  "style": {
+                    "fontSize": "12px",
+                    "fontWeight": "700",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "SerialRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.info.IsSerialized}"
+                      }
+                    }
+                  },
+                  "props.instances": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Lots.ContainerRework.serialInstances\", 0, if(isNull({view.params.containerId}), 0, {view.params.containerId}), if(isNull({view.custom.selectedSerialId}), 0, {view.custom.selectedSerialId}), {view.custom.token})"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
+                  "useDefaultViewHeight": true,
+                  "elementPosition": {
+                    "basis": "46px",
+                    "shrink": 0
+                  },
+                  "elementStyle": {
+                    "overflow": "hidden"
+                  },
+                  "style": {
+                    "overflowY": "auto"
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ReworkSerialRow"
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "RightCol"
+            },
+            "position": {
+              "basis": "440px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "gap": "10px",
+                "overflowY": "auto"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "StageHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Container",
+                  "style": {
+                    "fontSize": "12px",
+                    "fontWeight": "700",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "StageRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px",
+                    "flexWrap": "wrap"
+                  },
+                  "wrap": "wrap"
+                },
+                "children": [
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "OpenButton"
+                    },
+                    "position": {
+                      "basis": "170px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.info.CanOpen}"
+                          }
+                        }
+                      },
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.busy}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      },
+                      "text": "Open for rework"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.act(\"open\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "FillingButton"
+                    },
+                    "position": {
+                      "basis": "170px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.info.CanSetFilling}"
+                          }
+                        }
+                      },
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.busy}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      },
+                      "text": "Refill-ready"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.act(\"filling\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ProcessingButton"
+                    },
+                    "position": {
+                      "basis": "170px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.info.CanSetProcessing}"
+                          }
+                        }
+                      },
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.busy}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      },
+                      "text": "Back to processing"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.act(\"processing\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "CompleteButton"
+                    },
+                    "position": {
+                      "basis": "170px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.info.CanCompleteHere}"
+                          }
+                        }
+                      },
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.busy}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      },
+                      "text": "Complete here"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.act(\"complete\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "VoidButton"
+                    },
+                    "position": {
+                      "basis": "170px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.info.CanVoid}"
+                          }
+                        }
+                      },
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.busy} && (len({view.custom.remarks}) > 0)"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      },
+                      "text": "Void (empty)"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.act(\"void\")"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "OpenNote"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.info.CanOpen}"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Opening voids this container's shipper serial and label. Remove the old paper label.",
+                  "style": {
+                    "fontSize": "13px",
+                    "color": "var(--mpp-text-tertiary)",
+                    "whiteSpace": "normal"
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "SendRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.info.CanSetFilling} || {view.custom.info.CanSetProcessing}"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "flex-end",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "LineField"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "LineFieldLabel"
+                        },
+                        "props": {
+                          "text": "Send to a line to be finished there",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": {
+                          "name": "LineDropdown"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.lineId",
+                                "bidirectional": true
+                              }
+                            }
+                          },
+                          "props.options": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Lots.ContainerRework.lineOptions\", 0)"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "options": [],
+                          "search": true,
+                          "showClearIcon": true,
+                          "placeholder": {
+                            "text": "Pick a line"
+                          },
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "SendButton"
+                    },
+                    "position": {
+                      "basis": "110px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.busy} && (!isNull({view.custom.lineId}))"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      },
+                      "text": "Send"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.act(\"send\")"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "WorkHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.info.CanScrapOrMove}"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Parts",
+                  "style": {
+                    "fontSize": "12px",
+                    "fontWeight": "700",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ModeRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.info.CanScrapOrMove}"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ModeScrap"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.mode} = 'scrap', 'pf-btn pf-btn-primary', 'pf-btn pf-btn-secondary')"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      },
+                      "text": "Scrap"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.mode = \"scrap\""
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ModeMove"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 2
+                    },
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.mode} = 'move', 'pf-btn pf-btn-primary', 'pf-btn pf-btn-secondary')"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      },
+                      "text": "Move to another container"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.mode = \"move\""
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ScrapPane"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.info.CanScrapOrMove} && {view.custom.mode} = 'scrap'"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "IntentField"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!isNull({view.custom.info.MemberId})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "IntentFieldLabel"
+                        },
+                        "props": {
+                          "text": "A scrap already recorded on Results (optional)",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": {
+                          "name": "IntentDropdown"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.intentId",
+                                "bidirectional": true
+                              }
+                            }
+                          },
+                          "props.options": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Lots.ContainerRework.recordedScrapOptions\", 0, if(isNull({view.custom.info.ControlledRunId}), 0, {view.custom.info.ControlledRunId}), if(isNull({view.custom.info.MemberId}), 0, {view.custom.info.MemberId}), {view.custom.token})"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "options": [],
+                          "search": true,
+                          "showClearIcon": true,
+                          "placeholder": {
+                            "text": "None - enter it below"
+                          },
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ApplyButton"
+                    },
+                    "position": {
+                      "basis": "48px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!isNull({view.custom.intentId})"
+                          }
+                        }
+                      },
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.busy}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      },
+                      "text": "Apply the recorded scrap to the selected tray"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.act(\"apply\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "DefectField"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "isNull({view.custom.intentId})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "DefectFieldLabel"
+                        },
+                        "props": {
+                          "text": "Defect",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": {
+                          "name": "DefectDropdown"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.defectCodeId",
+                                "bidirectional": true
+                              }
+                            }
+                          },
+                          "props.options": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Quality.ControlledRun.defectOptions\", 0)"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "options": [],
+                          "search": true,
+                          "showClearIcon": true,
+                          "placeholder": {
+                            "text": "Pick a defect"
+                          },
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "QtyField"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.info.IsSerialized}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "QtyFieldLabel"
+                        },
+                        "props": {
+                          "text": "Quantity",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.text-field",
+                        "meta": {
+                          "name": "QtyInput"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.quantity",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "deferUpdates": false,
+                          "placeholder": "pieces",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "RemarksField"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "RemarksFieldLabel"
+                        },
+                        "props": {
+                          "text": "Remarks (optional)",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.text-field",
+                        "meta": {
+                          "name": "RemarksInput"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.remarks",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "deferUpdates": false,
+                          "placeholder": "",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ScrapButton"
+                    },
+                    "position": {
+                      "basis": "48px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "isNull({view.custom.intentId})"
+                          }
+                        }
+                      },
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.busy} && (!isNull({view.custom.defectCodeId}) && ({view.custom.info.IsSerialized} || len({view.custom.quantity}) > 0))"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      },
+                      "text": "Scrap"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.act(\"scrap\")"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "MovePane"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.info.CanScrapOrMove} && {view.custom.mode} = 'move'"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "TargetField"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TargetFieldLabel"
+                        },
+                        "props": {
+                          "text": "Into (refill-ready containers of this part with room)",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": {
+                          "name": "TargetDropdown"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.targetId",
+                                "bidirectional": true
+                              }
+                            }
+                          },
+                          "props.options": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Lots.ContainerRework.targetOptions\", 0, if(isNull({view.params.containerId}), 0, {view.params.containerId}), {view.custom.token})"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "options": [],
+                          "search": true,
+                          "showClearIcon": true,
+                          "placeholder": {
+                            "text": "Pick a container"
+                          },
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "MoveQtyField"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.info.IsSerialized}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-field",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "MoveQtyFieldLabel"
+                        },
+                        "props": {
+                          "text": "Quantity",
+                          "style": {
+                            "classes": "pf-field-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.text-field",
+                        "meta": {
+                          "name": "MoveQtyInput"
+                        },
+                        "position": {
+                          "basis": "45px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.quantity",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "deferUpdates": false,
+                          "placeholder": "pieces",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "MoveButton"
+                    },
+                    "position": {
+                      "basis": "48px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.busy} && (!isNull({view.custom.targetId}) && ({view.custom.info.IsSerialized} || len({view.custom.quantity}) > 0))"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      },
+                      "text": "Move"
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.act(\"move\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "MoveNote"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "A move is recorded against the tray LOT the parts came from, so each part still traces to where it was made.",
+                      "style": {
+                        "fontSize": "13px",
+                        "color": "var(--mpp-text-tertiary)",
+                        "whiteSpace": "normal"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "VoidRemarksField"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.info.CanVoid}"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "VoidRemarksFieldLabel"
+                    },
+                    "props": {
+                      "text": "Reason (required to void an emptied container)",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "VoidRemarksInput"
+                    },
+                    "position": {
+                      "basis": "45px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.remarks",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          },
+          "justify": "flex-end"
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CloseButton"
+            },
+            "position": {
+              "basis": "110px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "act",
+          "params": [
+            "kind"
+          ],
+          "script": "\t# ONE entry point for every action on this popup. Each is a thin call; the procs\n\t# decide. Everything runs as the Quality sign-in user (the popup is opened through\n\t# Common.Session.requireElevation).\n\tv = self.view\n\tS = BlueRidge.Common.Session\n\tif not S.isElevated(self.session):\n\t\tBlueRidge.Common.Notify.toast(\"Sign-in ended\", \"Your Quality sign-in has ended. Close this and open Repack again.\", \"warning\")\n\t\treturn\n\tif v.custom.busy:\n\t\treturn\n\tv.custom.busy = True\n\ttry:\n\t\tRW = BlueRidge.Lots.ContainerRework\n\t\tuid = self.session.custom.appUserId\n\t\ttid = v.params.terminalLocationId\n\t\tcid = v.params.containerId\n\t\tinfo = v.custom.info\n\t\tserialized = bool(info.IsSerialized)\n\t\ttray = v.custom.selectedTrayId\n\t\tserial = v.custom.selectedSerialId if serialized else None\n\t\tqty = 1 if serialized else v.custom.quantity\n\t\tif kind in (\"scrap\", \"apply\", \"move\") and tray is None:\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a tray\", \"Select the serial to work on.\" if serialized else \"Select the tray the parts come out of.\", \"warning\")\n\t\t\treturn\n\t\tif kind == \"open\":\n\t\t\tres = RW.open(cid, uid, tid)\n\t\telif kind == \"filling\":\n\t\t\tres = RW.setStage(cid, \"Filling\", None, uid, tid)\n\t\telif kind == \"processing\":\n\t\t\tres = RW.setStage(cid, \"Processing\", None, uid, tid)\n\t\telif kind == \"send\":\n\t\t\tres = RW.setStage(cid, \"Filling\", v.custom.lineId, uid, tid)\n\t\telif kind == \"complete\":\n\t\t\tres = RW.completeHere(cid, uid, tid)\n\t\telif kind == \"void\":\n\t\t\tres = RW.void(cid, v.custom.remarks, uid, tid)\n\t\telif kind == \"scrap\":\n\t\t\tres = RW.scrap(tray, v.custom.defectCodeId, qty, serial, v.custom.remarks, uid, tid)\n\t\telif kind == \"apply\":\n\t\t\tres = RW.applyRecordedScrap(tray, v.custom.intentId, serial, uid, tid)\n\t\telif kind == \"move\":\n\t\t\tres = RW.move(tray, v.custom.targetId, qty, serial, uid, tid)\n\t\telse:\n\t\t\tres = {\"Status\": 0, \"Message\": \"Unknown action.\"}\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Container %s\" % cid, (res or {}).get(\"Message\"))\n\t\tif res and res.get(\"Status\"):\n\t\t\tv.custom.quantity = \"\"\n\t\t\tv.custom.intentId = None\n\t\t\tv.custom.selectedSerialId = None\n\t\t\tif kind in (\"void\", \"complete\"):\n\t\t\t\tv.custom.remarks = \"\"\n\t\t\tv.custom.token = (v.custom.token or 0) + 1\n\t\t\tsystem.perspective.sendMessage(\"controlledRunChanged\", payload={\"containerId\": cid}, scope=\"page\")\n\tfinally:\n\t\tv.custom.busy = False"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "reworkTraySelect",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tv = self.view\n\tt = (payload or {}).get(\"trayId\")\n\tv.custom.selectedTrayId = None if v.custom.selectedTrayId == t else t\n\tv.custom.selectedSerialId = None"
+        },
+        {
+          "messageType": "reworkSerialSelect",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tv = self.view\n\tp = payload or {}\n\tif v.custom.selectedSerialId == p.get(\"serialId\"):\n\t\tv.custom.selectedSerialId = None\n\t\tv.custom.selectedTrayId = None\n\telse:\n\t\tv.custom.selectedSerialId = p.get(\"serialId\")\n\t\tv.custom.selectedTrayId = p.get(\"trayId\")"
+        }
+      ],
+      "extensionFunctions": null
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 760,
+      "width": 1180
+    }
+  }
+}

@@ -1,7 +1,10 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
--- Version:     2.6 (2026-09-15, reject identity) - the Machining OUT scrap rows now
+-- Modified:    2026-10-21
+-- Version:     2.7 (2026-10-21, super-lot piece 6) - CRT refusal names the open super-lot ('is marked CRT (super-lot <RN>)', via
+--              Quality.ufn_OpenControlledRunForLot); no open super-lot = the text is unchanged.
+--              2.6 (2026-09-15, reject identity) - the Machining OUT scrap rows now
 --              STAMP ItemId + CellLocationId + TerminalLocationId. 0084 made a reject
 --              row carry its own identity rather than be resolved through the LOT, and
 --              updated two writers; this one kept the pre-0084 column list. Because
@@ -144,7 +147,7 @@ BEGIN
         -- covers @SourceLotId, the handle the operator scanned, NOT the whole FIFO
         -- queue; see the version header.
         IF (SELECT Blocked FROM Lots.ufn_CrtBlocksAdvance(@SourceLotId)) = 1
-        BEGIN SET @Message=N'LOT '+ISNULL(@SrcLotName,N'?')+N' is marked CRT and cannot be used until Quality clears it.';
+        BEGIN SET @Message=N'LOT '+ISNULL(@SrcLotName,N'?')+N' is marked CRT'+ISNULL(N' (super-lot ' + (SELECT RunNumber FROM Quality.ufn_OpenControlledRunForLot(@SourceLotId)) + N')', N'')+N' and cannot be used until Quality clears it.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
 
         -- ---- Scrap lines (pre-txn): parse + validate (mirror TrimOut_Record). One

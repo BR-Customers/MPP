@@ -1,0 +1,501 @@
+{
+  "custom": {},
+  "params": {
+    "memberId": null,
+    "kind": "",
+    "lotId": null,
+    "name": "",
+    "part": "",
+    "where": "",
+    "pieces": 0,
+    "tagged": false,
+    "joined": "",
+    "added": "",
+    "selected": false,
+    "containerId": null,
+    "rework": "",
+    "pulledBack": false
+  },
+  "propConfig": {
+    "params.memberId": {
+      "paramDirection": "input"
+    },
+    "params.kind": {
+      "paramDirection": "input"
+    },
+    "params.lotId": {
+      "paramDirection": "input"
+    },
+    "params.name": {
+      "paramDirection": "input"
+    },
+    "params.part": {
+      "paramDirection": "input"
+    },
+    "params.where": {
+      "paramDirection": "input"
+    },
+    "params.pieces": {
+      "paramDirection": "input"
+    },
+    "params.tagged": {
+      "paramDirection": "input"
+    },
+    "params.joined": {
+      "paramDirection": "input"
+    },
+    "params.added": {
+      "paramDirection": "input"
+    },
+    "params.selected": {
+      "paramDirection": "input"
+    },
+    "params.containerId": {
+      "paramDirection": "input"
+    },
+    "params.rework": {
+      "paramDirection": "input"
+    },
+    "params.pulledBack": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root",
+      "tooltip": {
+        "text": "Tap to select. The arrow opens LOT Detail."
+      }
+    },
+    "propConfig": {
+      "props.style.backgroundColor": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.selected}, 'var(--mpp-surface-selected)', 'var(--mpp-surface-raised)')"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "crt-row",
+        "gap": "12px",
+        "overflow": "hidden",
+        "cursor": "pointer"
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"controlledRunMemberSelect\",\n\t\tpayload={\"memberId\": self.view.params.memberId, \"name\": self.view.params.name}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Kind"
+        },
+        "position": {
+          "basis": "84px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.kind"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "12px",
+            "fontWeight": "700",
+            "letterSpacing": "0.05em",
+            "color": "var(--mpp-text-tertiary)"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "NameCell"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "150px",
+          "shrink": 1
+        },
+        "props": {
+          "direction": "column",
+          "justify": "center",
+          "style": {
+            "gap": "1px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Name"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.name"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "crt-part crt-mono"
+              }
+            },
+            "position": {
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ReworkLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "600",
+                "color": "var(--mpp-state-warn-fg)",
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.rework"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.params.rework}) > 0"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PulledBackLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Pulled back from finished stock",
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "600",
+                "color": "var(--mpp-state-info-fg)",
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.pulledBack"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Part"
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.part"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Where"
+        },
+        "position": {
+          "basis": "190px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.where"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Pieces"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.pieces})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Tag"
+        },
+        "position": {
+          "basis": "92px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.tagged}, 'pf-pill pf-pill-warn', 'pf-pill pf-pill-good')"
+              }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.tagged}, 'CRT', 'CLEARED')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-pill"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Joined"
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.joined"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Added"
+        },
+        "position": {
+          "basis": "84px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.added"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "OpenCell"
+        },
+        "position": {
+          "basis": "40px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "justify": "center"
+        },
+        "children": [
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "OpenLot"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.params.lotId})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "path": "material/open_in_new",
+              "style": {
+                "cursor": "pointer",
+                "height": "28px",
+                "width": "28px"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tif self.view.params.lotId is not None:\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(int(self.view.params.lotId)))"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "Repack",
+              "tooltip": {
+                "text": "Repack this container"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.params.containerId})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "path": "material/build",
+              "style": {
+                "cursor": "pointer",
+                "height": "28px",
+                "width": "28px"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tif self.view.params.containerId is not None:\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t\t{\"action\": \"repack\", \"containerId\": int(self.view.params.containerId)})"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 48,
+      "width": 1300
+    }
+  }
+}

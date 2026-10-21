@@ -71,7 +71,7 @@ DECLARE @SpD BIGINT = SCOPE_IDENTITY();
 INSERT INTO Lots.ContainerSerial (ContainerId, SerializedPartId) VALUES (@C3, @SpD);
 
 -- ---- Path A: FG-tray LOT A -> container C1, kind FinishedGoodTray ----
-DECLARE @A TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(200), CurrentLocationName NVARCHAR(200), ContainerStatusCode NVARCHAR(50), AssociationKind NVARCHAR(30));
+DECLARE @A TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(200), CurrentLocationName NVARCHAR(200), ContainerStatusCode NVARCHAR(50), AssociationKind NVARCHAR(30), ScrappedSerialCount INT, MovedOutSerialCount INT, MovedInSerialCount INT);
 INSERT INTO @A EXEC Quality.Hold_ListAssociatedContainers @LotId = @LotA;
 DECLARE @AC NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @A);
 DECLARE @ACid NVARCHAR(20) = (SELECT CAST(ContainerId AS NVARCHAR(20)) FROM @A);
@@ -82,7 +82,7 @@ EXEC test.Assert_IsEqual @TestName = N'[QH170] LOT A container is C1', @Expected
 EXEC test.Assert_IsEqual @TestName = N'[QH170] LOT A kind = FinishedGoodTray', @Expected = N'FinishedGoodTray', @Actual = @AKind;
 
 -- ---- Path B: producing LOT B -> container C2, kind SerializedPart ----
-DECLARE @B TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(200), CurrentLocationName NVARCHAR(200), ContainerStatusCode NVARCHAR(50), AssociationKind NVARCHAR(30));
+DECLARE @B TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(200), CurrentLocationName NVARCHAR(200), ContainerStatusCode NVARCHAR(50), AssociationKind NVARCHAR(30), ScrappedSerialCount INT, MovedOutSerialCount INT, MovedInSerialCount INT);
 INSERT INTO @B EXEC Quality.Hold_ListAssociatedContainers @LotId = @LotB;
 DECLARE @BC NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @B);
 DECLARE @BCid NVARCHAR(20) = (SELECT CAST(ContainerId AS NVARCHAR(20)) FROM @B);
@@ -93,13 +93,13 @@ EXEC test.Assert_IsEqual @TestName = N'[QH170] LOT B container is C2', @Expected
 EXEC test.Assert_IsEqual @TestName = N'[QH170] LOT B kind = SerializedPart', @Expected = N'SerializedPart', @Actual = @BKind;
 
 -- ---- No containers: LOT Z -> empty ----
-DECLARE @Z TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(200), CurrentLocationName NVARCHAR(200), ContainerStatusCode NVARCHAR(50), AssociationKind NVARCHAR(30));
+DECLARE @Z TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(200), CurrentLocationName NVARCHAR(200), ContainerStatusCode NVARCHAR(50), AssociationKind NVARCHAR(30), ScrappedSerialCount INT, MovedOutSerialCount INT, MovedInSerialCount INT);
 INSERT INTO @Z EXEC Quality.Hold_ListAssociatedContainers @LotId = @LotZ;
 DECLARE @ZC NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Z);
 EXEC test.Assert_IsEqual @TestName = N'[QH170] LOT Z (no containers) -> empty', @Expected = N'0', @Actual = @ZC;
 
 -- ---- Distinctness: LOT D linked via BOTH paths to C3 -> returned ONCE (kind FinishedGoodTray wins) ----
-DECLARE @D TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(200), CurrentLocationName NVARCHAR(200), ContainerStatusCode NVARCHAR(50), AssociationKind NVARCHAR(30));
+DECLARE @D TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(200), CurrentLocationName NVARCHAR(200), ContainerStatusCode NVARCHAR(50), AssociationKind NVARCHAR(30), ScrappedSerialCount INT, MovedOutSerialCount INT, MovedInSerialCount INT);
 INSERT INTO @D EXEC Quality.Hold_ListAssociatedContainers @LotId = @LotD;
 DECLARE @DC NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @D);
 DECLARE @DCid NVARCHAR(20) = (SELECT CAST(ContainerId AS NVARCHAR(20)) FROM @D);

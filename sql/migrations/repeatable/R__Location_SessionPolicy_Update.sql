@@ -29,7 +29,12 @@ CREATE OR ALTER PROCEDURE Location.SessionPolicy_Update
     @OperatorPresenceTimeoutSeconds INT,
     @ElevationTimeoutSeconds        INT,
     @ElevationMaxSeconds            INT,
-    @AppUserId                      BIGINT
+    @AppUserId                      BIGINT,
+    -- 0110: the Quality-screen window. OPTIONAL on purpose, and NULL means "leave
+    -- it as it is" -- never "use a default". The Configuration Tool's session
+    -- panel does not send these, and it must keep saving the other three.
+    @QualityElevationTimeoutSeconds INT = NULL,
+    @QualityElevationMaxSeconds     INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
@@ -69,27 +74,45 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message; RETURN;
         END
 
-        DECLARE @OldOp INT, @OldElev INT, @OldMax INT;
+        DECLARE @OldOp INT, @OldElev INT, @OldMax INT, @OldQ INT, @OldQMax INT;
         SELECT TOP 1 @OldOp = OperatorPresenceTimeoutSeconds, @OldElev = ElevationTimeoutSeconds,
-                     @OldMax = ElevationMaxSeconds
+                     @OldMax = ElevationMaxSeconds,
+                     @OldQ = QualityElevationTimeoutSeconds, @OldQMax = QualityElevationMaxSeconds
         FROM Location.SessionPolicy ORDER BY Id;
+
+        -- Quality window (0110): omitted = unchanged. Validated as the pair that
+        -- will be stored, so changing one cannot leave the ceiling below the timeout.
+        DECLARE @NewQ INT = ISNULL(@QualityElevationTimeoutSeconds, @OldQ);
+        DECLARE @NewQMax INT = ISNULL(@QualityElevationMaxSeconds, @OldQMax);
+        IF @NewQ NOT BETWEEN 30 AND 3600 OR @NewQMax NOT BETWEEN 30 AND 28800 OR @NewQMax < @NewQ
+        BEGIN
+            SET @Message = N'The Quality window must be 30 to 3600 seconds idle, with a ceiling of at least that and at most 28800 seconds.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'SessionPolicy',
+                @EntityId=1, @LogEventTypeCode=N'Updated', @FailureReason=@Message,
+                @ProcedureName=@ProcName, @AttemptedParameters=@Params;
+            SELECT @Status AS Status, @Message AS Message; RETURN;
+        END
 
         DECLARE @Arrow NCHAR(1) = NCHAR(8594);
         DECLARE @Fields NVARCHAR(MAX) = STUFF(CONCAT(
             CASE WHEN @OldOp <> @OperatorPresenceTimeoutSeconds THEN N', Operator presence ' + CAST(@OldOp AS NVARCHAR(10)) + N's ' + @Arrow + N' ' + CAST(@OperatorPresenceTimeoutSeconds AS NVARCHAR(10)) + N's' ELSE N'' END,
             CASE WHEN @OldElev <> @ElevationTimeoutSeconds THEN N', Elevation ' + CAST(@OldElev AS NVARCHAR(10)) + N's ' + @Arrow + N' ' + CAST(@ElevationTimeoutSeconds AS NVARCHAR(10)) + N's' ELSE N'' END,
-            CASE WHEN @OldMax <> @ElevationMaxSeconds THEN N', Elevation ceiling ' + CAST(@OldMax AS NVARCHAR(10)) + N's ' + @Arrow + N' ' + CAST(@ElevationMaxSeconds AS NVARCHAR(10)) + N's' ELSE N'' END),
+            CASE WHEN @OldMax <> @ElevationMaxSeconds THEN N', Elevation ceiling ' + CAST(@OldMax AS NVARCHAR(10)) + N's ' + @Arrow + N' ' + CAST(@ElevationMaxSeconds AS NVARCHAR(10)) + N's' ELSE N'' END,
+            CASE WHEN @OldQ <> @NewQ THEN N', Quality window ' + CAST(@OldQ AS NVARCHAR(10)) + N's ' + @Arrow + N' ' + CAST(@NewQ AS NVARCHAR(10)) + N's' ELSE N'' END,
+            CASE WHEN @OldQMax <> @NewQMax THEN N', Quality ceiling ' + CAST(@OldQMax AS NVARCHAR(10)) + N's ' + @Arrow + N' ' + CAST(@NewQMax AS NVARCHAR(10)) + N's' ELSE N'' END),
             1, 2, N'');
         IF @Fields IS NULL OR @Fields = N'' SET @Fields = N'no changes';
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(N'Session Policy ' + Audit.ufn_MidDot() + N' Updated ' + @Fields);
-        DECLARE @OldJson NVARCHAR(MAX) = (SELECT @OldOp AS OperatorPresenceTimeoutSeconds, @OldElev AS ElevationTimeoutSeconds, @OldMax AS ElevationMaxSeconds FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-        DECLARE @NewJson NVARCHAR(MAX) = (SELECT @OperatorPresenceTimeoutSeconds AS OperatorPresenceTimeoutSeconds, @ElevationTimeoutSeconds AS ElevationTimeoutSeconds, @ElevationMaxSeconds AS ElevationMaxSeconds FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        DECLARE @OldJson NVARCHAR(MAX) = (SELECT @OldOp AS OperatorPresenceTimeoutSeconds, @OldElev AS ElevationTimeoutSeconds, @OldMax AS ElevationMaxSeconds, @OldQ AS QualityElevationTimeoutSeconds, @OldQMax AS QualityElevationMaxSeconds FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        DECLARE @NewJson NVARCHAR(MAX) = (SELECT @OperatorPresenceTimeoutSeconds AS OperatorPresenceTimeoutSeconds, @ElevationTimeoutSeconds AS ElevationTimeoutSeconds, @ElevationMaxSeconds AS ElevationMaxSeconds, @NewQ AS QualityElevationTimeoutSeconds, @NewQMax AS QualityElevationMaxSeconds FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
         BEGIN TRANSACTION;
         UPDATE Location.SessionPolicy
         SET OperatorPresenceTimeoutSeconds = @OperatorPresenceTimeoutSeconds,
             ElevationTimeoutSeconds        = @ElevationTimeoutSeconds,
             ElevationMaxSeconds            = @ElevationMaxSeconds,
+            QualityElevationTimeoutSeconds = @NewQ,
+            QualityElevationMaxSeconds     = @NewQMax,
             UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId;
         EXEC Audit.Audit_LogConfigChange @AppUserId=@AppUserId, @LogEntityTypeCode=N'SessionPolicy',
             @EntityId=1, @LogEventTypeCode=N'Updated', @LogSeverityCode=N'Info',

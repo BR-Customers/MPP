@@ -5761,6 +5761,1247 @@ BEGIN
 END
 GO
 
+-- Quality.ControlledRunStatusCode
+IF OBJECT_ID(N'[Quality].[ControlledRunStatusCode]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunStatusCode]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Read-only code table. Change-order addition (super-lot), not MVP.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunStatusCode';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Read-only code table. Change-order addition (super-lot), not MVP.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunStatusCode';
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunStatusCode]', N'Code') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunStatusCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunStatusCode]'), N'Code', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Open, Closed, Cancelled',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunStatusCode',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Open, Closed, Cancelled',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunStatusCode',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+    END
+END
+GO
+
+-- Quality.ControlledRunJoinMethod
+IF OBJECT_ID(N'[Quality].[ControlledRunJoinMethod]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunJoinMethod]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Read-only code table. How a member came to be in a super-lot.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunJoinMethod';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Read-only code table. How a member came to be in a super-lot.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunJoinMethod';
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunJoinMethod]', N'Code') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunJoinMethod]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunJoinMethod]'), N'Code', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Selected (from the preview), Manual (scanned in), AutoJoined (new production in the window), Descendant (made from a member)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunJoinMethod',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Selected (from the preview), Manual (scanned in), AutoJoined (new production in the window), Descendant (made from a member)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunJoinMethod',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+    END
+END
+GO
+
+-- Quality.ControlledRunMemberEndReason
+IF OBJECT_ID(N'[Quality].[ControlledRunMemberEndReason]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMemberEndReason]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Read-only code table. Why a membership ended.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunMemberEndReason';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Read-only code table. Why a membership ended.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunMemberEndReason';
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMemberEndReason]', N'Code') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMemberEndReason]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMemberEndReason]'), N'Code', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Removed, RunClosed, RunCancelled',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMemberEndReason',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Removed, RunClosed, RunCancelled',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMemberEndReason',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+    END
+END
+GO
+
+-- Quality.ControlledRun
+IF OBJECT_ID(N'[Quality].[ControlledRun]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'A super-lot: one quality case grouping LOTs and containers placed on a Controlled Run Tag for the same reason. Change-order addition, not MVP. The run is a stored member list, not a rule; the selection columns record how the members were chosen. Membership never blocks by itself - joining sets Lots.Lot.CrtActive.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRun';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'A super-lot: one quality case grouping LOTs and containers placed on a Controlled Run Tag for the same reason. Change-order addition, not MVP. The run is a stored member list, not a rule; the selection columns record how the members were chosen. Membership never blocks by itself - joining sets Lots.Lot.CrtActive.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRun';
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'RunNumber') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'RunNumber', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Human-facing number (CR000123), minted from Lots.IdentifierSequence code ControlledRun. Also the barcode on the super-lot label',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'RunNumber';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Human-facing number (CR000123), minted from Lots.IdentifierSequence code ControlledRun. Also the barcode on the super-lot label',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'RunNumber';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'ControlledRunStatusId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'ControlledRunStatusId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Open, Closed or Cancelled',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'ControlledRunStatusId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Open, Closed or Cancelled',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'ControlledRunStatusId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'Reason') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'Reason', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Why the super-lot was opened. Printed on the label',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'Reason';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Why the super-lot was opened. Printed on the label',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'Reason';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'AnchorLotId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'AnchorLotId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The suspect LOT the selection started from, if any',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'AnchorLotId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The suspect LOT the selection started from, if any',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'AnchorLotId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'SelectionItemId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'SelectionItemId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Part the selection covered. Required for the rolling window',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'SelectionItemId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Part the selection covered. Required for the rolling window',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'SelectionItemId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'SelectionLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'SelectionLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Line or press the material was MINTED at (not where it is now)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'SelectionLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Line or press the material was MINTED at (not where it is now)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'SelectionLocationId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'SelectionFromAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'SelectionFromAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Start of the selection window (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'SelectionFromAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Start of the selection window (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'SelectionFromAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'SelectionToAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'SelectionToAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'End of the selection window (UTC). NULL = up to when it was opened',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'SelectionToAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'End of the selection window (UTC). NULL = up to when it was opened',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'SelectionToAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'IncludeDescendants') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'IncludeDescendants', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'1 = everything made from the suspect LOT (and, later, CRT descendants of members) belongs to the run',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'IncludeDescendants';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'1 = everything made from the suspect LOT (and, later, CRT descendants of members) belongs to the run',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'IncludeDescendants';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'AutoJoinEnabled') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'AutoJoinEnabled', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'1 = the rolling window is open: new LOTs of SelectionItemId minted at SelectionLocationId are tagged CRT at mint and added. Read by Lots.ufn_CrtForMint on every mint',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'AutoJoinEnabled';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'1 = the rolling window is open: new LOTs of SelectionItemId minted at SelectionLocationId are tagged CRT at mint and added. Read by Lots.ufn_CrtForMint on every mint',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'AutoJoinEnabled';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'AutoJoinEndedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'AutoJoinEndedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'When the rolling window was ended (UTC). Cleared if it is resumed',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'AutoJoinEndedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'When the rolling window was ended (UTC). Cleared if it is resumed',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'AutoJoinEndedAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'AutoJoinEndedByUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'AutoJoinEndedByUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Who ended the rolling window',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'AutoJoinEndedByUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Who ended the rolling window',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'AutoJoinEndedByUserId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'OpenedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'OpenedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'OpenedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'OpenedAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'OpenedAtTerminalId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'OpenedAtTerminalId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Terminal where the super-lot was opened',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'OpenedAtTerminalId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Terminal where the super-lot was opened',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'OpenedAtTerminalId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'ClosedByUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'ClosedByUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Who closed or cancelled it',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'ClosedByUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Who closed or cancelled it',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'ClosedByUserId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'ClosedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'ClosedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'When it was closed or cancelled (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'When it was closed or cancelled (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'CloseRemarks') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'CloseRemarks', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Close remarks, or the cancel reason',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'CloseRemarks';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Close remarks, or the cancel reason',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'CloseRemarks';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRun]', N'RowVersion') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRun]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRun]'), N'RowVersion', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Optimistic-lock token',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'RowVersion';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Optimistic-lock token',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRun',
+                         @level2type = N'COLUMN', @level2name = N'RowVersion';
+    END
+END
+GO
+
+-- Quality.ControlledRunMember
+IF OBJECT_ID(N'[Quality].[ControlledRunMember]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'One LOT or one container in a super-lot (never both). WIP is listed as LOTs; packed finished goods as the container, whose tray LOTs are implied. A unit has at most one open membership across all super-lots (two filtered unique indexes).',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunMember';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'One LOT or one container in a super-lot (never both). WIP is listed as LOTs; packed finished goods as the container, whose tray LOTs are implied. A unit has at most one open membership across all super-lots (two filtered unique indexes).',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunMember';
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'LotId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'LotId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Set for a LOT member. Exactly one of LotId / ContainerId is set',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'LotId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Set for a LOT member. Exactly one of LotId / ContainerId is set',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'LotId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'ContainerId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'ContainerId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Set for a container member',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'ContainerId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Set for a container member',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'ContainerId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'ControlledRunJoinMethodId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'ControlledRunJoinMethodId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'How it joined',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'ControlledRunJoinMethodId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'How it joined',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'ControlledRunJoinMethodId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'CrtSetByRun') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'CrtSetByRun', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'1 = joining set the Controlled Run Tag; 0 = it was already tagged. A completed container''s Closed tray LOTs ARE tagged on join (0110)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'CrtSetByRun';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'1 = joining set the Controlled Run Tag; 0 = it was already tagged. A completed container''s Closed tray LOTs ARE tagged on join (0110)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'CrtSetByRun';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'WasCompleteAtJoin') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'WasCompleteAtJoin', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'1 = a container that was already complete when it joined, i.e. pulled back from finished stock. Recorded at join because nothing else can tell once a container is reopened',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'WasCompleteAtJoin';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'1 = a container that was already complete when it joined, i.e. pulled back from finished stock. Recorded at join because nothing else can tell once a container is reopened',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'WasCompleteAtJoin';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'AddedByUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'AddedByUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The system user for members added by the background sync',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'AddedByUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The system user for members added by the background sync',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'AddedByUserId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'AddedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'AddedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'AddedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'AddedAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'EndedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'EndedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'NULL = currently a member. Set when removed, released under a signature, or when the run closes or is cancelled',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'EndedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'NULL = currently a member. Set when removed, released under a signature, or when the run closes or is cancelled',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'EndedAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'EndRemarks') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'EndRemarks', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The reason given when a member was removed by hand',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'EndRemarks';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The reason given when a member was removed by hand',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'EndRemarks';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunMember]', N'ControlledRunReleaseId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunMember]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunMember]'), N'ControlledRunReleaseId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The signed release that ended this membership (end reason Released)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'ControlledRunReleaseId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The signed release that ended this membership (end reason Released)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunMember',
+                         @level2type = N'COLUMN', @level2name = N'ControlledRunReleaseId';
+    END
+END
+GO
+
+-- Quality.ControlledRunLabel
+IF OBJECT_ID(N'[Quality].[ControlledRunLabel]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunLabel]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Append-only log of super-lot label print requests. The label belongs to the super-lot, not to a member: one row per request, Copies labels each.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunLabel';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Append-only log of super-lot label print requests. The label belongs to the super-lot, not to a member: one row per request, Copies labels each.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunLabel';
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunLabel]', N'Copies') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunLabel]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunLabel]'), N'Copies', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Labels in the request (4)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunLabel',
+                         @level2type = N'COLUMN', @level2name = N'Copies';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Labels in the request (4)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunLabel',
+                         @level2type = N'COLUMN', @level2name = N'Copies';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunLabel]', N'ZplContent') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunLabel]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunLabel]'), N'ZplContent', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The rendered ZPL that was sent',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunLabel',
+                         @level2type = N'COLUMN', @level2name = N'ZplContent';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The rendered ZPL that was sent',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunLabel',
+                         @level2type = N'COLUMN', @level2name = N'ZplContent';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunLabel]', N'TerminalLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunLabel]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunLabel]'), N'TerminalLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Terminal where the print was requested',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunLabel',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Terminal where the print was requested',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunLabel',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunLabel]', N'PrintedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunLabel]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunLabel]'), N'PrintedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunLabel',
+                         @level2type = N'COLUMN', @level2name = N'PrintedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunLabel',
+                         @level2type = N'COLUMN', @level2name = N'PrintedAt';
+    END
+END
+GO
+
+-- Quality.SignatureMeaning
+IF OBJECT_ID(N'[Quality].[SignatureMeaning]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[SignatureMeaning]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Read-only code table: what a signature means and the exact statement shown to the signer.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'SignatureMeaning';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Read-only code table: what a signature means and the exact statement shown to the signer.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'SignatureMeaning';
+
+    IF COL_LENGTH(N'[Quality].[SignatureMeaning]', N'Code') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[SignatureMeaning]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[SignatureMeaning]'), N'Code', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'ControlledRunRelease, DeviationApproval',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'SignatureMeaning',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'ControlledRunRelease, DeviationApproval',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'SignatureMeaning',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+    END
+
+    IF COL_LENGTH(N'[Quality].[SignatureMeaning]', N'Statement') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[SignatureMeaning]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[SignatureMeaning]'), N'Statement', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The words shown before signing. COPIED onto Signature at signing, so rewording a row never changes what somebody already signed',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'SignatureMeaning',
+                         @level2type = N'COLUMN', @level2name = N'Statement';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The words shown before signing. COPIED onto Signature at signing, so rewording a row never changes what somebody already signed',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'SignatureMeaning',
+                         @level2type = N'COLUMN', @level2name = N'Statement';
+    END
+END
+GO
+
+-- Quality.Signature
+IF OBJECT_ID(N'[Quality].[Signature]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[Signature]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'An elevated electronic signature: who approved what, with what meaning, in what words, when. Written only after an AD password check at the moment of signing; the signer''s id goes straight to the proc and is never taken from the session. Append-only - trigger TR_Signature_Immutable refuses UPDATE and DELETE. Quality.ufn_SignatureAllowed(@AppUserId, @MeaningCode) is the single place that decides who may sign; today it passes any active AD-mapped user (no plant AD roles exist yet).',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'Signature';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'An elevated electronic signature: who approved what, with what meaning, in what words, when. Written only after an AD password check at the moment of signing; the signer''s id goes straight to the proc and is never taken from the session. Append-only - trigger TR_Signature_Immutable refuses UPDATE and DELETE. Quality.ufn_SignatureAllowed(@AppUserId, @MeaningCode) is the single place that decides who may sign; today it passes any active AD-mapped user (no plant AD roles exist yet).',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'Signature';
+
+    IF COL_LENGTH(N'[Quality].[Signature]', N'AppUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[Signature]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[Signature]'), N'AppUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The signer',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'AppUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The signer',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'AppUserId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[Signature]', N'SignedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[Signature]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[Signature]'), N'SignedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'SignedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'SignedAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[Signature]', N'Statement') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[Signature]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[Signature]'), N'Statement', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The statement as it read when signed',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'Statement';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The statement as it read when signed',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'Statement';
+    END
+
+    IF COL_LENGTH(N'[Quality].[Signature]', N'LogEntityTypeId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[Signature]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[Signature]'), N'LogEntityTypeId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'What kind of thing was signed (ControlledRun)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'LogEntityTypeId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'What kind of thing was signed (ControlledRun)',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'LogEntityTypeId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[Signature]', N'EntityId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[Signature]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[Signature]'), N'EntityId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Its id',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'EntityId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Its id',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'EntityId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[Signature]', N'TerminalLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[Signature]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[Signature]'), N'TerminalLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Terminal where it was signed',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Terminal where it was signed',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'Signature',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+END
+GO
+
+-- Quality.ControlledRunRelease
+IF OBJECT_ID(N'[Quality].[ControlledRunRelease]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunRelease]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'One signed release of some or all members of a super-lot. Released members point here through ControlledRunMember.ControlledRunReleaseId.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunRelease';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'One signed release of some or all members of a super-lot. Released members point here through ControlledRunMember.ControlledRunReleaseId.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunRelease';
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunRelease]', N'SignatureId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunRelease]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunRelease]'), N'SignatureId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Meaning ControlledRunRelease',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'SignatureId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Meaning ControlledRunRelease',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'SignatureId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunRelease]', N'InspectionConfirmed') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunRelease]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunRelease]'), N'InspectionConfirmed', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The recorded fact that the CRT was acted on and the 200% inspection was completed. The system never forces the inspection; it records that Quality said it was done',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'InspectionConfirmed';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The recorded fact that the CRT was acted on and the 200% inspection was completed. The system never forces the inspection; it records that Quality said it was done',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'InspectionConfirmed';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunRelease]', N'MemberCount') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunRelease]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunRelease]'), N'MemberCount', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Members released by this action',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'MemberCount';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Members released by this action',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'MemberCount';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunRelease]', N'ReleasedByUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunRelease]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunRelease]'), N'ReleasedByUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The signer',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'ReleasedByUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The signer',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'ReleasedByUserId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunRelease]', N'ReleasedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunRelease]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunRelease]'), N'ReleasedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'ReleasedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunRelease',
+                         @level2type = N'COLUMN', @level2name = N'ReleasedAt';
+    END
+END
+GO
+
+-- Quality.ControlledRunResult
+IF OBJECT_ID(N'[Quality].[ControlledRunResult]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunResult]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'One inspection result entry against a super-lot member: an outcome and a quantity. Never edited; a wrong entry is voided (the three Void columns, all or none) and entered again. A member''s quantities need not add up to its piece count.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunResult';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'One inspection result entry against a super-lot member: an outcome and a quantity. Never edited; a wrong entry is voided (the three Void columns, all or none) and entered again. A member''s quantities need not add up to its piece count.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunResult';
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunResult]', N'DispositionCodeId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunResult]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunResult]'), N'DispositionCodeId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Accepted, Scrap, Rework, ReturnToSupplier, UseAsIs',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'DispositionCodeId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Accepted, Scrap, Rework, ReturnToSupplier, UseAsIs',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'DispositionCodeId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunResult]', N'DefectCodeId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunResult]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunResult]'), N'DefectCodeId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Required for Scrap',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'DefectCodeId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Required for Scrap',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'DefectCodeId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunResult]', N'RejectEventId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunResult]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunResult]'), N'RejectEventId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The Workorder.RejectEvent a Scrap entry produced when it took pieces off a LOT. NULL = nothing was taken off a LOT (a count-only outcome, or scrap recorded against a container, which is applied by the repack piece). Pointer, no FK',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'RejectEventId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The Workorder.RejectEvent a Scrap entry produced when it took pieces off a LOT. NULL = nothing was taken off a LOT (a count-only outcome, or scrap recorded against a container, which is applied by the repack piece). Pointer, no FK',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'RejectEventId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunResult]', N'RecordedByUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunResult]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunResult]'), N'RecordedByUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The Quality sign-in user',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'RecordedByUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The Quality sign-in user',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'RecordedByUserId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunResult]', N'RecordedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunResult]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunResult]'), N'RecordedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'RecordedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'RecordedAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunResult]', N'VoidedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunResult]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunResult]'), N'VoidedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Set once when the entry is voided. An entry with a RejectEventId cannot be voided',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'VoidedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Set once when the entry is voided. An entry with a RejectEventId cannot be voided',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'VoidedAt';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunResult]', N'VoidRemarks') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunResult]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunResult]'), N'VoidRemarks', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Required when voided',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'VoidRemarks';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Required when voided',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
+                         @level2type = N'COLUMN', @level2name = N'VoidRemarks';
+    END
+END
+GO
+
+-- Quality.ControlledRunDeviation
+IF OBJECT_ID(N'[Quality].[ControlledRunDeviation]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunDeviation]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'A signed deviation on a super-lot: a condition the inspection found and Quality judged not to affect part performance (what MPP call the nonconformance). A member with a Use-As-Is result cannot be released until its super-lot carries one.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'A signed deviation on a super-lot: a condition the inspection found and Quality judged not to affect part performance (what MPP call the nonconformance). A member with a Use-As-Is result cannot be released until its super-lot carries one.',
+                     @level0type = N'SCHEMA', @level0name = N'Quality',
+                     @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation';
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunDeviation]', N'DeviationNumber') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunDeviation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunDeviation]'), N'DeviationNumber', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'DV000123, minted from Lots.IdentifierSequence code ControlledRunDeviation',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'DeviationNumber';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'DV000123, minted from Lots.IdentifierSequence code ControlledRunDeviation',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'DeviationNumber';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunDeviation]', N'ExternalReference') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunDeviation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunDeviation]'), N'ExternalReference', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'MPP''s own reference, free text',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'ExternalReference';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'MPP''s own reference, free text',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'ExternalReference';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunDeviation]', N'Description') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunDeviation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunDeviation]'), N'Description', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'What deviates',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'Description';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'What deviates',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'Description';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunDeviation]', N'Justification') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunDeviation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunDeviation]'), N'Justification', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Why it does not affect part performance',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'Justification';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Why it does not affect part performance',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'Justification';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunDeviation]', N'SignatureId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunDeviation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunDeviation]'), N'SignatureId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Meaning DeviationApproval',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'SignatureId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Meaning DeviationApproval',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'SignatureId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunDeviation]', N'RaisedByUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunDeviation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunDeviation]'), N'RaisedByUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The signer',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'RaisedByUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The signer',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'RaisedByUserId';
+    END
+
+    IF COL_LENGTH(N'[Quality].[ControlledRunDeviation]', N'RaisedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunDeviation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunDeviation]'), N'RaisedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'RaisedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Quality',
+                         @level1type = N'TABLE',  @level1name = N'ControlledRunDeviation',
+                         @level2type = N'COLUMN', @level2name = N'RaisedAt';
+    END
+END
+GO
+
 -- OEE.DowntimeReasonType
 IF OBJECT_ID(N'[OEE].[DowntimeReasonType]', 'U') IS NOT NULL
 BEGIN
@@ -7541,4 +8782,4 @@ BEGIN
 END
 GO
 
--- 73 table descriptions, 362 column descriptions
+-- 85 table descriptions, 434 column descriptions

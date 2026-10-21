@@ -46,6 +46,12 @@ def postOne(aimShipperId):
         if row.get("PostedAt") is not None:
             return {"ok": True, "outcome": "already_posted", "error": None,
                     "itemPartNumber": row.get("ItemPartNumber")}
+        # Voided (migration 0111): the container was opened for rework and this
+        # serial will never be used. Nothing is owed and nothing is sent; the
+        # container posts its NEW serial when it completes again.
+        if row.get("VoidedAt") is not None:
+            return {"ok": True, "outcome": "voided", "error": None,
+                    "itemPartNumber": row.get("ItemPartNumber")}
 
         customerPart = row.get("CustomerPartNumber")
         itemPartNumber = row.get("ItemPartNumber")

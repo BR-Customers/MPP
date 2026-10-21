@@ -8,6 +8,7 @@
   "params": {
     "actionCode": "",
     "actionLabel": "Protected Action",
+    "actionNote": "",
     "popupId": "mpp-elevation-modal",
     "replyMessage": "elevationResult"
   },
@@ -17,6 +18,10 @@
       "persistent": true
     },
     "params.actionLabel": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.actionNote": {
       "paramDirection": "input",
       "persistent": true
     },
@@ -106,6 +111,39 @@
                 "fontSize": "13px"
               },
               "text": "Enter your Active Directory credentials to authorize this action."
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ActionNote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "len(coalesce({view.params.actionNote}, '')) > 0"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.actionNote"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-inv-warn",
+                "whiteSpace": "normal"
+              }
             },
             "type": "ia.display.label"
           },

@@ -1,6 +1,6 @@
 # MPP MES — Data Model Reference
 
-**Version:** v2.2 working draft (rev 2026-09-03 — **§7 Tools: `Tool.ShotCount` + `ShotLimit` documented (migration `0050`); the superseded "no shot counter" rationale marked as reversed; `Tool_Duplicate` config-vs-asset split + the cross-database natural-key rule added**; rev 2026-07-29 — **die-cast per-cavity Open → accumulate → release lifecycle: new `Open` `Lots.LotStatusCode` + new `Workorder.DieCastContribution` per-shift net-good ledger (migration `0045`)**; rev 2026-07-06u — **assembly finished-good LOT: `Lots.ContainerTray.FinishedGoodLotId` added (BIGINT NULL FK → Lot.Id, filtered-unique; tray = LOT, 1:1); assembly-out consumption now targets the finished-good LOT via `Workorder.ConsumptionEvent.ProducedLotId`**; rev 2026-07-02t — **operation-type restructure: `OperationTemplate.AreaLocationId` dropped, `OperationTypeId` FK added; new `Parts.OperationType` + `Parts.OperationCategory` code tables (migrations 0032/0033)**; rev 2026-06-09s — **Scaling Decisions (OI-35)** section added; OI-35 architecture gate signed off 2026-06-08 (B2 monthly partitioning + TRUNCATE sliding-window, B4 closure, B5 materialized qty, B6 row-locked sequence, B7 OperationLog split, B8 filtered indexes; B1 retention → FDS §11); rev 2026-06-08q - **section 3 `Lot.CrtActive BIT`** added (FDS-10-012 Controlled Run Tag hook, MVP-ratified 2026-06-08); rev 2026-06-08p - Location `CoupledDownstreamCellLocationId` typed-FK promotion + `QualityResult.NumericValue`; rev 2026-06-05o — **§7 `Tools.ToolType.CompatibleLocationTypeDefinitionId`** added (migration `0018`) for the Mount-to-Cell tool-type→cell-kind dropdown filter; `Die → DieCastMachine` seeded. Earlier: rev 2026-06-04n — sub-LOT split relocated from Trim OUT to **Machining OUT** per FDS v1.3 / Phased Plan v1.1; `Parts.OperationTemplate.RequiresSubLotSplit` now controls the Machining OUT outbound flow (FDS-05-009), and the ALTER lands in Phase 5 migration `0018` rather than Phase 4 `0017`. v1.9m (2026-04-29) had added the column under the prior Trim-OUT design. See revision history.)
+**Version:** v3.9 (rev 2026-10-21 -- merged with `jacques/working` (Assembly Out scale station = 3.8 / 3.9); 3.7: super-lot piece 6, visibility: `Audit.LogEventType` gains `RepeatsLotTimeline` / `LotTimelineKind` and six `ControlledRunLot*` codes (migration `0114`); the LOT History read now includes the LOT's audit stream. The full per-revision narrative is in the Revision History below.)
 **Schemas:** 8 | **Tables:** ~75
 **Target:** Microsoft SQL Server 2022 Standard Edition
 
@@ -10,8 +10,13 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
-| 3.4 | 2026-10-20 | Blue Ridge Automation | **Assembly Out scale station (migration `0113_interfacelog_context`).** `Audit.InterfaceLog` += `LocationId` / `ItemId` / `LotId` (nullable FKs, partition-aligned index `IX_InterfaceLog_Location_LoggedAt`): every integration row can now be tied to a terminal, a part and the LOT it produced; shift derives from `LocationId` + `LoggedAt`. The EPrint watcher writes them on every press with a JSON `RequestPayload` (`v`=1). New terminal attribute `ScaleRunningItemId` (LTD 7, the per-terminal running-part override) and `Audit.LogEventType` `ScaleRunningPartChanged`. New procs: `Workorder.ufn_ScaleStationEligibleParts` (eligible = set up at the line, By Weight pack-out, at least one cast line and 60% of other BOM lines covered for one tray), `Workorder.ScaleStation_GetRunningPart` / `_ListEligibleParts` / `_GetPressLog` / `_GetShiftTally` / `_GetRecentBoxes`, `Location.Terminal_SetScaleRunningPart`; `Audit.Audit_LogInterfaceCall` v1.1. Spec: `docs/superpowers/specs/2026-10-19-assembly-out-scale-station-design.md`. |
-| 3.3 | 2026-10-19 | Blue Ridge Automation | **IND570 option C: scale flags are a logged second opinion.** No schema change. `Parts.ContainerConfig_JudgeWeight` v1.1 takes optional `@ScaleUnder` / `@ScaleOver` / `@ScaleOk` (the UNDER / OVER / OK flags a Template 3 head prints) and returns three more columns: `ScaleVerdict` (`Ok` / `Under` / `Over` / `NoTarget` when all three are 0 / `Invalid` / NULL), `FlagsAgree` (BIT, only when both sides are Ok/Under/Over) and `FlagsMessage`. `Verdict` is unchanged by them. The EPrint watcher logs flags + agreement in every `Audit.InterfaceLog.RequestPayload` and writes a `Scale flags warning` row whenever `FlagsMessage` is set (`ErrorCondition` documented on InterfaceLog). Also documents `Parts.ContainerConfig.ToleranceWeight` (migration `0068`), which this doc had missed. Spec: `docs/superpowers/specs/2026-08-31-ind570-eprint-demand-output-design.md` § 5.4. |
+| 3.9 | 2026-10-20 | Blue Ridge Automation | **Assembly Out scale station (migration `0113_interfacelog_context`).** `Audit.InterfaceLog` += `LocationId` / `ItemId` / `LotId` (nullable FKs, partition-aligned index `IX_InterfaceLog_Location_LoggedAt`): every integration row can now be tied to a terminal, a part and the LOT it produced; shift derives from `LocationId` + `LoggedAt`. The EPrint watcher writes them on every press with a JSON `RequestPayload` (`v`=1). New terminal attribute `ScaleRunningItemId` (LTD 7, the per-terminal running-part override) and `Audit.LogEventType` `ScaleRunningPartChanged`. New procs: `Workorder.ufn_ScaleStationEligibleParts` (eligible = set up at the line, By Weight pack-out, at least one cast line and 60% of other BOM lines covered for one tray), `Workorder.ScaleStation_GetRunningPart` / `_ListEligibleParts` / `_GetPressLog` / `_GetShiftTally` / `_GetRecentBoxes`, `Location.Terminal_SetScaleRunningPart`; `Audit.Audit_LogInterfaceCall` v1.1. Spec: `docs/superpowers/specs/2026-10-19-assembly-out-scale-station-design.md`. *(Merged 2026-10-21 with the super-lot branch: numbered 3.4 on `jacques/working`; renumbered so the super-lot revisions 3.3-3.7 keep the numbers their specs and status entries cite.)* |
+| 3.8 | 2026-10-19 | Blue Ridge Automation | **IND570 option C: scale flags are a logged second opinion.** No schema change. `Parts.ContainerConfig_JudgeWeight` v1.1 takes optional `@ScaleUnder` / `@ScaleOver` / `@ScaleOk` (the UNDER / OVER / OK flags a Template 3 head prints) and returns three more columns: `ScaleVerdict` (`Ok` / `Under` / `Over` / `NoTarget` when all three are 0 / `Invalid` / NULL), `FlagsAgree` (BIT, only when both sides are Ok/Under/Over) and `FlagsMessage`. `Verdict` is unchanged by them. The EPrint watcher logs flags + agreement in every `Audit.InterfaceLog.RequestPayload` and writes a `Scale flags warning` row whenever `FlagsMessage` is set (`ErrorCondition` documented on InterfaceLog). Also documents `Parts.ContainerConfig.ToleranceWeight` (migration `0068`), which this doc had missed. Spec: `docs/superpowers/specs/2026-08-31-ind570-eprint-demand-output-design.md` § 5.4. *(Merged 2026-10-21 with the super-lot branch: numbered 3.3 on `jacques/working`; renumbered so the super-lot revisions 3.3-3.7 keep the numbers their specs and status entries cite.)* |
+| 3.7 | 2026-10-21 | Blue Ridge Automation | **Super-lot piece 6: visibility** (migration `0114_super_lot_visibility`; spec `docs/superpowers/specs/2026-10-12-controlled-run-visibility-design.md`) - CHANGE-ORDER ADDITION, still not deployable until all six pieces are in. `Audit.LogEventType` gains `RepeatsLotTimeline BIT NOT NULL DEFAULT 0` (1 = the event's fact is already a row in one of the LOT history streams, so the audit stream must not repeat it) and `LotTimelineKind NVARCHAR(20) NULL` (the History-tab kind label for an unflagged event; NULL shows as `Event`). Six new event codes, entity `Lot`, written to `Lots.LotEventLog`: `ControlledRunLotJoined`, `ControlledRunLotLeft`, `ControlledRunLotResult`, `ControlledRunLotResultVoided`, `ControlledRunLotDeviation`, `ControlledRunLotReleased` (kind `Super-lot`); existing CRT, vendor-return and rework codes get kinds `CRT`, `Vendor return`, `Rework`. `Lots.Lot_GetAttributeHistory` v1.5 gains an eleventh stream, the LOT's `LotEventLog` rows where `RepeatsLotTimeline = 0`. No new table and no change to any existing column. New reads (all read-only): `Quality.ControlledRun_ListByLot`, `_ListHistory`, `_ListMarkers`, `_GetOpenSummary`, `_ReportMembers`, `_ReportOutcomes`; helpers `Quality.ufn_OpenControlledRunForLot`, `ufn_ControlledRunMembershipState`, `ufn_zz_ControlledRunMembershipsForLot`, `ufn_zzz_ControlledRunCloseCheck` and the internal writer `Quality.ControlledRun_LogMemberLotEventsInternal`. `Lots.Container_ListSerials` gains `@IncludeRemoved` (scrapped and moved-out serials); the container trace readers return `ScrappedSerialCount` / `MovedOutSerialCount` / `MovedInSerialCount`. `Lots.ContainerSerialHistory` gains two nonclustered indexes, `IX_CSH_OldContainer (OldContainerId)` and `IX_CSH_NewContainer (NewContainerId)`, for the by-container move lookups. |
+| 3.6 | 2026-10-20 | Blue Ridge Automation | **Super-lot piece 5: trim rework and return to vendor** (migration `0112_rework_and_vendor_return`; spec `docs/superpowers/specs/2026-10-12-controlled-run-rework-and-return-design.md`) - CHANGE-ORDER ADDITION, still not deployable until all six pieces are in. New `Lots.LotRework` (one row each time a LOT is moved back into trim by a supervisor-approved override move; at most one open per LOT, closed by the Trim OUT that re-runs it) and `Lots.VendorReturn` (part of a Received / ReceivedOffsite LOT marked for return to the vendor, then confirmed or cancelled; `PieceCountTaken` / `InventoryTaken` record exactly what was removed so a Cancel restores it). `Quality.ControlledRunResult`: a Rework entry is no longer accepted (rework is the move into trim, not a result), and a ReturnToSupplier entry is applied at record time through `Lots.VendorReturn.ControlledRunResultId`. Five audit event codes: `LotReworkStarted`, `LotReworkCompleted`, `VendorReturnMarked`, `VendorReturnConfirmed`, `VendorReturnCancelled`. No existing column changed. Final review (same date): `LotRework.LotMovementId` / `ApprovedByUserId` NOT NULL; filtered unique `UQ_VendorReturn_Result`; new inline TVF `Lots.ufn_LotReturnableToVendor` and read `Lots.VendorReturn_GetEligibility`; `ufn_NextPendingRouteStep` v1.3 (a rework lowers the effective entry point). |
+| 3.5 | 2026-10-13 | Blue Ridge Automation | **Super-lot piece 4: container repack** (migration `0111_container_rework`; spec `docs/superpowers/specs/2026-10-12-controlled-run-container-repack-design.md`) - CHANGE-ORDER ADDITION, in neither change order's wording, still not deployable until all six pieces are in. `Lots.ContainerStatusCode` gains `ReworkProcessing` and `ReworkFilling`. New `Lots.ContainerRework` (one row each time a completed container is opened for rework). `Lots.AimShipperIdPool` gains `VoidedAt` / `VoidedByUserId` / `VoidReason` (a voided serial; AIM is told nothing yet - `Lots.AimShipperIdPool_ListVoided` is the worklist for a future cancellation post). `Lots.ContainerSerial` gains `RemovedAt` / `RemovedRejectEventId` (a serial scrapped out of a container). `Quality.ControlledRunMemberEndReason` gains `ContainerVoided`. No piece-move table: a move is a `Workorder.ConsumptionEvent` with `Consumption` genealogy into a newly minted, Closed, Manufactured tray LOT. Tray LOTs stay Closed throughout a rework. |
+| 3.4 | 2026-10-13 | Blue Ridge Automation | **Super-lot pieces 2 and 3** (migration `0110_controlled_run_results_signoff`; specs `docs/superpowers/specs/2026-10-12-controlled-run-completed-containers-design.md` and `2026-10-12-controlled-run-results-and-signoff-design.md`) - CHANGE-ORDER ADDITION, still not deployable until all six pieces are in. Section 5 Quality gains `SignatureMeaning` (read-only), `Signature` (append-only, enforced by trigger `TR_Signature_Immutable` - the first trigger in the schema, deliberate), `ControlledRunRelease` (one signed bulk release; `InspectionConfirmed` is the recorded fact that the 200% inspection was completed), `ControlledRunResult` (one inspection result entry per row; voided, never edited) and `ControlledRunDeviation` (the signed deviation MPP call the nonconformance). `ControlledRunMember` gains `WasCompleteAtJoin` and `ControlledRunReleaseId`; a completed container's Closed tray LOTs are now tagged when it joins, so `CrtSetByRun` is 1 for it. `DispositionCode` gains `Accepted`; `ControlledRunMemberEndReason` gains `Released`. `Location.SessionPolicy` gains `QualityElevationTimeoutSeconds` (1800) and `QualityElevationMaxSeconds` (14400): the longer elevation window Quality screens use. **`Quality.NonConformance` is marked as never built**: it was described here but no migration ever created it, and the super-lot deviation takes its place for now. |
+| 3.3 | 2026-10-12 | Blue Ridge Automation | **Super-lot (Controlled Run)** (migration `0109_controlled_run`, spec `docs/superpowers/specs/2026-10-12-controlled-run-super-lot-design.md`) - CHANGE-ORDER ADDITION, outside the accepted baseline; piece 1 of 6 and not deployable on its own. Section 5 Quality gains `ControlledRun` (the case: run number, reason, selection criteria, rolling-window state), `ControlledRunMember` (a LOT XOR a container, one open membership per unit), `ControlledRunLabel` (append-only print log) and three read-only code tables (`ControlledRunStatusCode`, `ControlledRunJoinMethod`, `ControlledRunMemberEndReason`). Membership never blocks by itself: joining sets the existing `Lots.Lot.CrtActive`, so every CRT block applies unchanged. `Lots.ufn_CrtForMint` gains a fourth arm (an open super-lot window tags new production of its part). No existing table changed. |
 | 3.2 | 2026-10-06 | Blue Ridge Automation | **`Lots.LotNote`** (migration `0107_lot_note`) — append-only free-text notes against a LOT, written from the LOT Detail *Notes* tab. Any signed-in user may add one; there is no edit and no delete. Each row carries the author, the terminal, whether an elevation window was open, a **snapshot of the LOT at write time** (status, location, piece count, stamped by `Lots.LotNote_Add` itself) and a `ContextJson` blob of the session the note came from. No `Audit.*` rows: the table is the record. Procs `Lots.LotNote_Add` v1.0, `Lots.LotNote_ListByLot` v1.0. Also this session, no schema change: `Lots.Lot_SearchAdvanced` v1.3 returns `ItemDescription`, matches free text against it, and takes `@ExcludeFinishedGoods BIT = 0`. |
 | 3.1 | 2026-09-22 | Blue Ridge Automation | **Die cast shift reconciliation** (migration `0097`, spec `docs/superpowers/specs/2026-09-21-diecast-shift-reconciliation-design.md`). A team lead settles one past `(Shift, Press, Die)` against its press sheet: production that was never entered, entries filed against the wrong shift, and numbers that disagree — in either direction. New `Workorder.DieCastShiftReconciliation` (header), `DieCastReconciliationMove` (what was re-filed) and `DieCastReconciliationReason`; `ReconciliationId` on `DieCastContribution`, `RejectEvent` and `DieCastCounterAnchor`; `RejectEvent.ApprovedByUserId` (the sheet's QAS). `CK_DieCastContribution_DeltaNonNeg` relaxed so a **reconciliation row, and only a reconciliation row**, may carry a negative delta — corrections are compensating rows, never edits to recorded history. |
 | 3.0 | 2026-09-22 | Blue Ridge Automation | **Trim partial checkpoint (migration `0096`).** `Workorder.ProductionEvent.ShiftId` added. A blast operator can record the total trimmed so far on the LOT at shift end (`Workorder.TrimPartial_Record`, route `TrimIn` template, LOT does not move); Trim OUT is unchanged for the operator and now stamps the shift. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. |
@@ -1448,6 +1453,8 @@ Specification-driven inspections, non-conformance, hold management.
 
 ### NonConformance
 
+> **NEVER BUILT (confirmed 2026-10-13).** No migration created this table, and `HoldEvent.NonConformanceId` / `QualityAttachment.NonConformanceId` do not exist either. It is kept here as the original design intent. What MPP call a nonconformance - a deviation found by a Controlled Run inspection and accepted for use as is - is built as `ControlledRunDeviation` below, a child of the super-lot. If a nonconformance with no super-lot behind it is ever needed, that is the time to generalise.
+
 | Column | Type | Constraints | Description |
 |---|---|---|---|
 | Id | BIGINT | PK | |
@@ -1478,6 +1485,247 @@ A hold placed on a LOT. Same lifecycle pattern as `DowntimeEvent` — created on
 | ReleasedByUserId | BIGINT | FK → AppUser.Id, NULL | |
 | ReleasedAt | DATETIME2(3) | NULL | NULL while hold is active |
 | ReleaseRemarks | NVARCHAR(500) | NULL | |
+
+### ControlledRunStatusCode
+
+Read-only code table. Change-order addition (super-lot), not MVP.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | Open, Closed, Cancelled |
+| Name | NVARCHAR(100) | NOT NULL | |
+
+### ControlledRunJoinMethod
+
+Read-only code table. How a member came to be in a super-lot.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | Selected (from the preview), Manual (scanned in), AutoJoined (new production in the window), Descendant (made from a member) |
+| Name | NVARCHAR(100) | NOT NULL | |
+
+### ControlledRunMemberEndReason
+
+Read-only code table. Why a membership ended.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | Removed, RunClosed, RunCancelled |
+| Name | NVARCHAR(100) | NOT NULL | |
+
+### ControlledRun
+
+A super-lot: one quality case grouping LOTs and containers placed on a Controlled Run Tag for the same reason. Change-order addition, not MVP. The run is a stored member list, not a rule; the selection columns record how the members were chosen. Membership never blocks by itself - joining sets `Lots.Lot.CrtActive`.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| RunNumber | NVARCHAR(15) | NOT NULL, UNIQUE | Human-facing number (CR000123), minted from Lots.IdentifierSequence code ControlledRun. Also the barcode on the super-lot label |
+| ControlledRunStatusId | BIGINT | FK -> ControlledRunStatusCode.Id, NOT NULL | Open, Closed or Cancelled |
+| Reason | NVARCHAR(500) | NOT NULL | Why the super-lot was opened. Printed on the label |
+| AnchorLotId | BIGINT | FK -> Lot.Id, NULL | The suspect LOT the selection started from, if any |
+| SelectionItemId | BIGINT | FK -> Item.Id, NULL | Part the selection covered. Required for the rolling window |
+| SelectionLocationId | BIGINT | FK -> Location.Id, NULL | Line or press the material was MINTED at (not where it is now) |
+| SelectionFromAt | DATETIME2(3) | NULL | Start of the selection window (UTC) |
+| SelectionToAt | DATETIME2(3) | NULL | End of the selection window (UTC). NULL = up to when it was opened |
+| IncludeDescendants | BIT | NOT NULL, DEFAULT 0 | 1 = everything made from the suspect LOT (and, later, CRT descendants of members) belongs to the run |
+| AutoJoinEnabled | BIT | NOT NULL, DEFAULT 0 | 1 = the rolling window is open: new LOTs of SelectionItemId minted at SelectionLocationId are tagged CRT at mint and added. Read by Lots.ufn_CrtForMint on every mint |
+| AutoJoinEndedAt | DATETIME2(3) | NULL | When the rolling window was ended (UTC). Cleared if it is resumed |
+| AutoJoinEndedByUserId | BIGINT | FK -> AppUser.Id, NULL | Who ended the rolling window |
+| OpenedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
+| OpenedAt | DATETIME2(3) | NOT NULL | UTC |
+| OpenedAtTerminalId | BIGINT | FK -> Location.Id (Terminal), NULL | Terminal where the super-lot was opened |
+| ClosedByUserId | BIGINT | FK -> AppUser.Id, NULL | Who closed or cancelled it |
+| ClosedAt | DATETIME2(3) | NULL | When it was closed or cancelled (UTC) |
+| CloseRemarks | NVARCHAR(500) | NULL | Close remarks, or the cancel reason |
+| RowVersion | ROWVERSION | NOT NULL | Optimistic-lock token |
+
+### ControlledRunMember
+
+One LOT or one container in a super-lot (never both). WIP is listed as LOTs; packed finished goods as the container, whose tray LOTs are implied. A unit has at most one open membership across all super-lots (two filtered unique indexes).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunId | BIGINT | FK -> ControlledRun.Id, NOT NULL | |
+| LotId | BIGINT | FK -> Lot.Id, NULL | Set for a LOT member. Exactly one of LotId / ContainerId is set |
+| ContainerId | BIGINT | FK -> Container.Id, NULL | Set for a container member |
+| ControlledRunJoinMethodId | BIGINT | FK -> ControlledRunJoinMethod.Id, NOT NULL | How it joined |
+| CrtSetByRun | BIT | NOT NULL | 1 = joining set the Controlled Run Tag; 0 = it was already tagged. A completed container's Closed tray LOTs ARE tagged on join (0110) |
+| WasCompleteAtJoin | BIT | NOT NULL, DEFAULT 0 | 1 = a container that was already complete when it joined, i.e. pulled back from finished stock. Recorded at join because nothing else can tell once a container is reopened |
+| AddedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The system user for members added by the background sync |
+| AddedAt | DATETIME2(3) | NOT NULL | UTC |
+| EndedAt | DATETIME2(3) | NULL | NULL = currently a member. Set when removed, released under a signature, or when the run closes or is cancelled |
+| EndedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| ControlledRunMemberEndReasonId | BIGINT | FK -> ControlledRunMemberEndReason.Id, NULL | |
+| EndRemarks | NVARCHAR(500) | NULL | The reason given when a member was removed by hand |
+| ControlledRunReleaseId | BIGINT | FK -> ControlledRunRelease.Id, NULL | The signed release that ended this membership (end reason Released) |
+
+### ControlledRunLabel
+
+Append-only log of super-lot label print requests. The label belongs to the super-lot, not to a member: one row per request, Copies labels each.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunId | BIGINT | FK -> ControlledRun.Id, NOT NULL | |
+| Copies | INT | NOT NULL | Labels in the request (4) |
+| ZplContent | NVARCHAR(MAX) | NOT NULL | The rendered ZPL that was sent |
+| PrinterName | NVARCHAR(100) | NULL | |
+| PrintedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | Terminal where the print was requested |
+| PrintedAt | DATETIME2(3) | NOT NULL | UTC |
+
+### ContainerRework (Lots schema; listed here with the rest of the super-lot feature)
+
+One row each time a completed container is opened for rework (super-lot piece 4). It records what the container was before parts were taken out. The current rework of a container is its latest row. A container under rework has status `ReworkProcessing` (parts being taken out) or `ReworkFilling` (refill-ready); once resumed at a line it reads `Open` with `ResumedAt` set until it completes again. Tray LOTs stay Closed throughout; the `Lots.ContainerRework_*` procs change them directly, gated on these statuses.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ContainerId | BIGINT | FK -> Container.Id, NOT NULL | |
+| OpenedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
+| OpenedAt | DATETIME2(3) | NOT NULL | UTC |
+| OpenedAtTerminalId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+| OriginalCompletedAt | DATETIME2(3) | NULL | Container.CompletedAt before it was cleared |
+| OriginalAimShipperId | NVARCHAR(50) | NULL | The serial that was voided |
+| OriginalShippingLabelId | BIGINT | NULL | The label that was voided |
+| OriginalPieceCount | INT | NOT NULL | Pieces in the container when it was opened |
+| ResumedAt | DATETIME2(3) | NULL | Set when it was made the open container at a cell; cleared if recalled |
+| ResumedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| ResumedAtLocationId | BIGINT | FK -> Location.Id, NULL | |
+| VoidedAt | DATETIME2(3) | NULL | Set when the emptied container was voided |
+| VoidedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| VoidRemarks | NVARCHAR(500) | NULL | |
+
+Also from migration `0111`: `Lots.AimShipperIdPool.VoidedAt` / `VoidedByUserId` / `VoidReason` (a serial voided on the MES side; never posted afterwards, and listed by `Lots.AimShipperIdPool_ListVoided`), and `Lots.ContainerSerial.RemovedAt` / `RemovedRejectEventId` (a serialized part scrapped out of its container; the row is kept so the record that it was packed there survives).
+
+### LotRework (Lots schema; listed here with the rest of the super-lot feature)
+
+One row each time a LOT is moved back into trim for rework (super-lot piece 5). The rework starts at the supervisor-approved override move into a Trim IN location (`Lots.Lot_MoveToValidated`) and ends at the Trim OUT that re-runs it. There is no separate cancel: a move that nobody runs leaves the rework open, and a zero-scrap Trim OUT is the undo. At most one rework is open per LOT (filtered unique index `UQ_LotRework_OpenPerLot`); a second override move while one is open writes no second row. While a rework is open the LOT's route steps from `ReEntrySequenceNumber` upward count as pending again (`Lots.ufn_NextPendingRouteStep`). The latest rework also lowers the LOT's effective entry point to `ReEntrySequenceNumber` when that is below `Lot.EntryRouteSequence` (v1.3), so a LOT counted in at cutover above trim can still be reworked and closed; steps below the effective entry stay ignored, and a super-lot release is blocked with "At trim rework". The rework pass has its own trim count and is not shift production. `Lots.ufn_OpenLotRework(@LotId)` returns the open row.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| LotId | BIGINT | FK -> Lot.Id, NOT NULL | At most one row per LOT with CompletedAt NULL |
+| ReEntrySequenceNumber | INT | NOT NULL | The route step the LOT re-enters at (its TrimIn step) |
+| LotMovementId | BIGINT | NOT NULL | The override move that started it. Pointer, no FK (`Lots.LotMovement` is partitioned) |
+| StartedAt | DATETIME2(3) | NOT NULL | UTC. Equal to the starting movement's `MovedAt` (one clock reading) |
+| MovedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | Who made the move |
+| ApprovedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The supervisor whose AD sign-in approved the override |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+| CompletedAt | DATETIME2(3) | NULL | Set by the Trim OUT that closes it |
+| CompletedProductionEventId | BIGINT | NULL | That Trim OUT's `Workorder.ProductionEvent`. Pointer, no FK (partitioned). CompletedAt and this column are both set or both NULL |
+
+### VendorReturn (Lots schema; listed here with the rest of the super-lot feature)
+
+One row per return of part of a LOT's quantity to the vendor (super-lot piece 5). Only Received and ReceivedOffsite LOTs can be returned; a LOT that is Open, Closed or Scrap is refused. That rule has one definition, the inline TVF `Lots.ufn_LotReturnableToVendor(@LotId)` (`CanReturnToVendor`, `Reason`), read by `VendorReturn_Mark`, `ControlledRunResult_Record`, `ControlledRun_ListMemberOrigin` and `Lots.VendorReturn_GetEligibility` (the LOT Detail tab). **Mark** takes the pieces off at once (`PieceCount` and `InventoryAvailable` together, closing a Good LOT at zero) and writes no `RejectEvent`; **Confirm** records that they went back; **Cancel** (LOT Detail only, supervisor AD sign-in, remarks required) puts back exactly what was taken. A row is confirmed or cancelled, never both. `Quantity` may exceed `InventoryAvailable` as long as it does not exceed `PieceCount`: stock is floored at zero, which is why `PieceCountTaken` and `InventoryTaken` are kept separately.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| LotId | BIGINT | FK -> Lot.Id, NOT NULL | |
+| Quantity | INT | NOT NULL, CHECK > 0 | Pieces returned |
+| PieceCountTaken | INT | NOT NULL, CHECK >= 0 | What was removed from `Lot.PieceCount` |
+| InventoryTaken | INT | NOT NULL, CHECK >= 0 | What was removed from `Lot.InventoryAvailable` (can be less than Quantity) |
+| Remarks | NVARCHAR(500) | NULL | |
+| ControlledRunResultId | BIGINT | FK -> Quality.ControlledRunResult.Id, NULL; filtered UNIQUE `UQ_VendorReturn_Result` (WHERE NOT NULL) | Set when the return came from a super-lot ReturnToSupplier result entry. At most one return per result, so `ufn_ControlledRunMemberResults` cannot double-count it. Cancelling the return voids that result, even after the super-lot has closed (append-only: the void and its remarks keep the history) |
+| MarkedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | |
+| MarkedAt | DATETIME2(3) | NOT NULL | UTC |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+| ConfirmedAt | DATETIME2(3) | NULL | The parts physically went back. Set with ConfirmedByUserId |
+| ConfirmedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| CancelledAt | DATETIME2(3) | NULL | Marked by mistake. Set with CancelledByUserId; never together with ConfirmedAt |
+| CancelledByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| CancelRemarks | NVARCHAR(500) | NULL | Required by `VendorReturn_Cancel` |
+
+### SignatureMeaning
+
+Read-only code table: what a signature means and the exact statement shown to the signer.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(30) | NOT NULL, UNIQUE | ControlledRunRelease, DeviationApproval |
+| Name | NVARCHAR(100) | NOT NULL | |
+| Statement | NVARCHAR(500) | NOT NULL | The words shown before signing. COPIED onto Signature at signing, so rewording a row never changes what somebody already signed |
+
+### Signature
+
+An elevated electronic signature: who approved what, with what meaning, in what words, when. Written only after an AD password check at the moment of signing; the signer's id goes straight to the proc and is never taken from the session. **Append-only** - trigger `TR_Signature_Immutable` refuses UPDATE and DELETE. `Quality.ufn_SignatureAllowed(@AppUserId, @MeaningCode)` is the single place that decides who may sign; today it passes any active AD-mapped user (no plant AD roles exist yet).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| SignatureMeaningId | BIGINT | FK -> SignatureMeaning.Id, NOT NULL | |
+| AppUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The signer |
+| SignedAt | DATETIME2(3) | NOT NULL | UTC |
+| Statement | NVARCHAR(500) | NOT NULL | The statement as it read when signed |
+| LogEntityTypeId | BIGINT | FK -> Audit.LogEntityType.Id, NOT NULL | What kind of thing was signed (ControlledRun) |
+| EntityId | BIGINT | NOT NULL | Its id |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | Terminal where it was signed |
+
+### ControlledRunRelease
+
+One signed release of some or all members of a super-lot. Released members point here through `ControlledRunMember.ControlledRunReleaseId`.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunId | BIGINT | FK -> ControlledRun.Id, NOT NULL | |
+| SignatureId | BIGINT | FK -> Signature.Id, NOT NULL | Meaning ControlledRunRelease |
+| InspectionConfirmed | BIT | NOT NULL, CHECK = 1 | The recorded fact that the CRT was acted on and the 200% inspection was completed. The system never forces the inspection; it records that Quality said it was done |
+| MemberCount | INT | NOT NULL, CHECK > 0 | Members released by this action |
+| Remarks | NVARCHAR(500) | NULL | |
+| ReleasedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The signer |
+| ReleasedAt | DATETIME2(3) | NOT NULL | UTC |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+
+### ControlledRunResult
+
+One inspection result entry against a super-lot member: an outcome and a quantity. Never edited; a wrong entry is voided (the three Void columns, all or none) and entered again. A member's quantities need not add up to its piece count.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunMemberId | BIGINT | FK -> ControlledRunMember.Id, NOT NULL | |
+| DispositionCodeId | BIGINT | FK -> DispositionCode.Id, NOT NULL | Accepted, Scrap, ReturnToSupplier, UseAsIs. **Rework is no longer accepted as an entry** (piece 5: rework is the override move into trim, tracked in `Lots.LotRework`). **ReturnToSupplier is applied at record time** (piece 5): `ControlledRunResult_Record` takes the pieces off the LOT and writes a `Lots.VendorReturn` row pointing back here through `VendorReturn.ControlledRunResultId`; such an entry cannot be voided, the return is cancelled instead |
+| Quantity | INT | NOT NULL, CHECK > 0 | |
+| DefectCodeId | BIGINT | FK -> DefectCode.Id, NULL | Required for Scrap |
+| RejectEventId | BIGINT | NULL | The Workorder.RejectEvent a Scrap entry produced when it took pieces off a LOT. NULL = nothing was taken off a LOT (a count-only outcome, or scrap recorded against a container, which is applied by the repack piece). Pointer, no FK |
+| Remarks | NVARCHAR(500) | NULL | |
+| RecordedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The Quality sign-in user |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+| RecordedAt | DATETIME2(3) | NOT NULL | UTC |
+| VoidedAt | DATETIME2(3) | NULL | Set once when the entry is voided. An entry with a RejectEventId cannot be voided |
+| VoidedByUserId | BIGINT | FK -> AppUser.Id, NULL | |
+| VoidRemarks | NVARCHAR(500) | NULL | Required when voided |
+
+### ControlledRunDeviation
+
+A signed deviation on a super-lot: a condition the inspection found and Quality judged not to affect part performance (what MPP call the nonconformance). A member with a Use-As-Is result cannot be released until its super-lot carries one.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| ControlledRunId | BIGINT | FK -> ControlledRun.Id, NOT NULL | |
+| DeviationNumber | NVARCHAR(15) | NOT NULL, UNIQUE | DV000123, minted from Lots.IdentifierSequence code ControlledRunDeviation |
+| ExternalReference | NVARCHAR(50) | NULL | MPP's own reference, free text |
+| Description | NVARCHAR(1000) | NOT NULL | What deviates |
+| Justification | NVARCHAR(1000) | NOT NULL | Why it does not affect part performance |
+| DefectCodeId | BIGINT | FK -> DefectCode.Id, NULL | |
+| AffectedQuantity | INT | NULL, CHECK > 0 | |
+| SignatureId | BIGINT | FK -> Signature.Id, NOT NULL | Meaning DeviationApproval |
+| RaisedByUserId | BIGINT | FK -> AppUser.Id, NOT NULL | The signer |
+| RaisedAt | DATETIME2(3) | NOT NULL | UTC |
+| TerminalLocationId | BIGINT | FK -> Location.Id (Terminal), NULL | |
+
+### Super-lot read surface (piece 6, no new tables)
+
+Piece 6 adds reads over the tables above; none changes a column. `Quality.ControlledRun_ListByLot(@LotId)` is every super-lot a LOT has ever been in (a tray LOT folds in its container's memberships for the time the tray was in it), with join and leave initials, results, release signer and deviation numbers. `ControlledRun_ListHistory(@Id)` is the super-lot page's History tab (run, member, result, release, deviation and signature events). `ControlledRun_ListMarkers(@LotIdsCsv, @ContainerIdsCsv)` returns the latest membership per node and run for the genealogy and trace chips. `ControlledRun_GetOpenSummary` feeds the Supervisor Dashboard tile. `ControlledRun_ReportMembers` and `ControlledRun_ReportOutcomes(@Id, @Section)` feed the Super-lot PDF report; the report counts results of ended members too, whereas `ControlledRun_ListMemberResults` shows current members only. `ControlledRun_Get` returns `CanClose` and `CloseBlockedReason`, from `Quality.ufn_zzz_ControlledRunCloseCheck`. `Quality.ufn_OpenControlledRunForLot(@LotId)` returns the open super-lot (if any) that names a LOT in the CRT refusal text of `Lot_MoveTo`, `Lot_MoveToValidated`, `Assembly_ScanIn`, `MachiningIn_RecordPick`, `MachiningOut_Mint`, `Lot_Split` and `Lot_Merge`.
 
 ---
 
@@ -1891,6 +2139,10 @@ Normalized vocabulary for what happened. Shared across all log tables.
 | Code | NVARCHAR(50) | NOT NULL, UNIQUE | LotCreated, LotMoved, ProductionRecorded, HoldPlaced, etc. |
 | Name | NVARCHAR(200) | NOT NULL | |
 | Description | NVARCHAR(500) | NULL | |
+| RepeatsLotTimeline | BIT | NOT NULL, DEFAULT 0 | Super-lot piece 6 (migration `0114`). 1 = this event's fact is already a row in one of the LOT history streams (movement, status, attribute change, genealogy, die-cast contribution, production event), so the History tab must not show the audit row as well. 0 = the audit row is the only record and is shown. The inventory of which codes carry 1 is pinned by `sql/tests/0114_SuperLotVisibility/010_schema.sql`. |
+| LotTimelineKind | NVARCHAR(20) | NULL | The History-tab kind label for an unflagged event: `Super-lot`, `CRT`, `Vendor return`, `Rework`. NULL on an unflagged type shows as `Event`. Labels come from SQL, never Python. |
+
+**Codes added by super-lot piece 6** (entity `Lot`, written to `Lots.LotEventLog`, `RepeatsLotTimeline = 0`, kind `Super-lot`): `ControlledRunLotJoined`, `ControlledRunLotLeft`, `ControlledRunLotResult`, `ControlledRunLotResultVoided`, `ControlledRunLotDeviation`, `ControlledRunLotReleased`. Every proc that joins or ends a membership, or records or voids a result, a deviation or a release, writes one per affected LOT through `Quality.ControlledRun_LogMemberLotEventsInternal`, inside its own transaction. A container member's rows go onto the tray LOTs in the container at that moment, prefixed `Container <Id> -`. **LOT history read:** `Lots.Lot_GetAttributeHistory` v1.5 unions the LOT's `LotEventLog` rows where `RepeatsLotTimeline = 0` (and `LoggedAt >= Lot.CreatedAt`) as an eleventh stream, `EventKind = ISNULL(LotTimelineKind, 'Event')`. This reverses the earlier rule that the audit stream was never unioned into the History tab.
 
 ### LogEntityType
 

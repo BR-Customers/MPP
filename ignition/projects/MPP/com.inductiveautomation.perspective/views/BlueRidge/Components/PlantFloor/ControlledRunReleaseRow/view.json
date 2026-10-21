@@ -1,0 +1,285 @@
+{
+  "custom": {},
+  "params": {
+    "memberId": null,
+    "kind": "",
+    "name": "",
+    "pieces": 0,
+    "results": "",
+    "leftOver": 0,
+    "ready": false,
+    "reason": "",
+    "tagged": false,
+    "ticked": false
+  },
+  "propConfig": {
+    "params.memberId": {
+      "paramDirection": "input"
+    },
+    "params.kind": {
+      "paramDirection": "input"
+    },
+    "params.name": {
+      "paramDirection": "input"
+    },
+    "params.pieces": {
+      "paramDirection": "input"
+    },
+    "params.results": {
+      "paramDirection": "input"
+    },
+    "params.leftOver": {
+      "paramDirection": "input"
+    },
+    "params.ready": {
+      "paramDirection": "input"
+    },
+    "params.reason": {
+      "paramDirection": "input"
+    },
+    "params.tagged": {
+      "paramDirection": "input"
+    },
+    "params.ticked": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root",
+      "tooltip": {
+        "text": "Tap to tick a member that is ready."
+      }
+    },
+    "propConfig": {
+      "props.style.backgroundColor": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.ticked}, 'var(--mpp-surface-selected)', 'var(--mpp-surface-raised)')"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "crt-row",
+        "gap": "12px",
+        "overflow": "hidden",
+        "cursor": "pointer"
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"crReleaseTick\", payload={\"memberId\": self.view.params.memberId}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Tick"
+        },
+        "position": {
+          "basis": "40px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "justify": "center"
+        },
+        "children": [
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "TickIcon"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.path": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.ticked}, 'material/check_box', 'material/check_box_outline_blank')"
+                  }
+                }
+              },
+              "props.color": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.ready}, 'var(--mpp-accent-60)', 'var(--mpp-text-tertiary)')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "height": "26px",
+                "width": "26px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Kind"
+        },
+        "position": {
+          "basis": "84px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.kind"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "12px",
+            "fontWeight": "700",
+            "letterSpacing": "0.05em",
+            "color": "var(--mpp-text-tertiary)"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Name"
+        },
+        "position": {
+          "basis": "190px",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.name"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-part crt-mono"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Pieces"
+        },
+        "position": {
+          "basis": "64px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.pieces})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontVariantNumeric": "tabular-nums",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Results"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.results"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "crt-meta",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Ready"
+        },
+        "position": {
+          "basis": "230px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.ready}, 'READY', {view.params.reason})"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.ready}, 'pf-pill pf-pill-good', 'pf-pill pf-pill-warn')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-pill"
+          }
+        }
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 48,
+      "width": 820
+    }
+  }
+}

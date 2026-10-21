@@ -31,7 +31,9 @@ def getPolicy():
         BlueRidge.Common.Util.log("getPolicy failed: %s" % str(e), level="warn")
     return {"OperatorPresenceTimeoutSeconds": 1800,
             "ElevationTimeoutSeconds": 300,
-            "ElevationMaxSeconds": 1800}
+            "ElevationMaxSeconds": 1800,
+            "QualityElevationTimeoutSeconds": 1800,
+            "QualityElevationMaxSeconds": 14400}
 
 
 def updatePolicy(data, appUserId=None):

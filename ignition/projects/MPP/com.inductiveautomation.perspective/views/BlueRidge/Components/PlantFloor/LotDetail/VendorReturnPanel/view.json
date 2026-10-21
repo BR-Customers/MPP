@@ -1,0 +1,741 @@
+{
+  "custom": {
+    "lot": {
+      "Id": null,
+      "LotName": "",
+      "ItemId": null,
+      "ItemPartNumber": "",
+      "PieceCount": 0,
+      "MaxPieceCount": 0,
+      "InventoryAvailable": 0,
+      "TotalInProcess": 0,
+      "LotStatusCode": "",
+      "LotStatusName": "",
+      "LotOriginTypeCode": "",
+      "CurrentLocationId": null,
+      "CurrentLocationName": "",
+      "CrtActive": null,
+      "ToolId": null,
+      "ToolCode": "",
+      "ToolName": "",
+      "ToolCavityCode": ""
+    },
+    "eligibility": {
+      "LotId": null,
+      "CanReturnToVendor": false,
+      "Reason": ""
+    },
+    "draft": {
+      "quantity": "",
+      "remarks": ""
+    },
+    "cancel": {
+      "vendorReturnId": null,
+      "quantity": 0,
+      "remarks": ""
+    },
+    "returns": [],
+    "busyUntil": 0
+  },
+  "params": {
+    "lotId": 0
+  },
+  "propConfig": {
+    "params.lotId": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Second safety net beside onStartup: a lotId change repopulates the panel.\n\tself.rootContainer.applyLot(currentValue.value)"
+      }
+    },
+    "custom.eligibility": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.VendorReturn.getEligibilityOrEmpty\", 0, coalesce({view.custom.lot.Id}, 0), {view.custom.lot.LotStatusCode}, {view.custom.lot.PieceCount})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 520,
+      "width": 900
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "overflowY": "auto"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applyLot",
+          "params": [
+            "lotId"
+          ],
+          "script": "\tlid = BlueRidge.Common.Util.toIntOrNone(lotId) or 0\n\tself.view.custom.lot = BlueRidge.Lots.Lot.getOrEmpty(lid if lid > 0 else None)\n\tself.reload()"
+        },
+        {
+          "name": "reload",
+          "params": [],
+          "script": "\t# Re-reads the LOT and its returns. Leaves the forms alone, so a reload\n\t# triggered by another tab never wipes what is being typed here.\n\tlot = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\tlid = lot.get(\"Id\")\n\tif lid:\n\t\tself.view.custom.lot = BlueRidge.Lots.Lot.getOrEmpty(lid)\n\tself.view.custom.returns = BlueRidge.Lots.VendorReturn.listByLotInstances(lid) if lid else []"
+        },
+        {
+          "name": "clearForms",
+          "params": [],
+          "script": "\tself.view.custom.draft = {\"quantity\": \"\", \"remarks\": \"\"}\n\tself.view.custom.cancel = {\"vendorReturnId\": None, \"quantity\": 0, \"remarks\": \"\"}"
+        },
+        {
+          "name": "requestMark",
+          "params": [],
+          "script": "\t# Supervisor AD sign-in (approved mock). requireElevation acts at once when the\n\t# window is already open, otherwise it opens the ElevationModal and the replay\n\t# arrives as the vendorReturnRequested page message (Session._ELEVATED_REPLAY_MESSAGES).\n\t# Either way the write happens in perform(), which re-tests the elevation.\n\tlot = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif not lot.get(\"Id\"):\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No LOT loaded.\"}, \"Return to vendor\")\n\t\treturn\n\tBlueRidge.Common.Session.requireElevation(self.session, \"VendorReturn\", \"Return to vendor\",\n\t\t{\"intent\": \"mark\", \"lotId\": lot.get(\"Id\"), \"quantity\": d.get(\"quantity\"), \"remarks\": d.get(\"remarks\")})"
+        },
+        {
+          "name": "requestCancel",
+          "params": [],
+          "script": "\tlot = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\tc = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.cancel) or {}\n\tif not lot.get(\"Id\") or not c.get(\"vendorReturnId\"):\n\t\treturn\n\tBlueRidge.Common.Session.requireElevation(self.session, \"VendorReturn\", \"Cancel a return to vendor\",\n\t\t{\"intent\": \"cancel\", \"lotId\": lot.get(\"Id\"), \"vendorReturnId\": c.get(\"vendorReturnId\"), \"remarks\": c.get(\"remarks\")})"
+        },
+        {
+          "name": "perform",
+          "params": [
+            "payload"
+          ],
+          "script": "\t# The ONLY place this tab writes. Reached from requestMark / requestCancel\n\t# through the elevation gate; re-tests it so a replayed or stray message can\n\t# never write without an open window.\n\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tlot = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\tlid = lot.get(\"Id\")\n\tif not lid or BlueRidge.Common.Util.toIntOrNone(p.get(\"lotId\")) != BlueRidge.Common.Util.toIntOrNone(lid):\n\t\treturn\n\tS = BlueRidge.Common.Session\n\tif not S.isElevated(self.session):\n\t\treturn\n\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\ttid = None\n\ttry:\n\t\ttid = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttid = None\n\tappUserId = S.currentAppUserId(self.session)\n\tVR = BlueRidge.Lots.VendorReturn\n\tif p.get(\"intent\") == \"mark\":\n\t\tres = VR.mark(lid, p.get(\"quantity\"), p.get(\"remarks\"), appUserId, tid)\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Marked for return\")\n\telif p.get(\"intent\") == \"cancel\":\n\t\tres = VR.cancel(p.get(\"vendorReturnId\"), p.get(\"remarks\"), appUserId, tid)\n\t\tBlueRidge.Common.Ui.notifyResult(res, \"Return cancelled\")\n\telse:\n\t\tres = None\n\tself.view.custom.busyUntil = 0\n\tif res and res.get(\"Status\"):\n\t\tself.clearForms()\n\t\tself.reload()\n\t\t# The piece count changed: LOT Detail reloads its header on lotCountChanged.\n\t\tsystem.perspective.sendMessage(\"lotCountChanged\", payload={\"lotId\": lid}, scope=\"page\")"
+        },
+        {
+          "name": "pickCancel",
+          "params": [
+            "payload"
+          ],
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tlot = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\tif BlueRidge.Common.Util.toIntOrNone(p.get(\"lotId\")) != BlueRidge.Common.Util.toIntOrNone(lot.get(\"Id\")):\n\t\treturn\n\tself.view.custom.cancel = {\"vendorReturnId\": p.get(\"vendorReturnId\"),\n\t\t\"quantity\": BlueRidge.Common.Util.toIntOrNone(p.get(\"quantity\")) or 0, \"remarks\": \"\"}"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "vendorReturnRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# Elevation replay hook (Session._ELEVATED_REPLAY_MESSAGES[\"VendorReturn\"]).\n\tself.perform(payload)"
+        },
+        {
+          "messageType": "vendorReturnCancelPick",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.pickCancel(payload)"
+        },
+        {
+          "messageType": "lotScrapPanelLoad",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# LOT Detail's load() broadcasts this after every reload (hold, scrap,\n\t# count, CRT changes). A page-scoped message reaches every handler of\n\t# that name, so this tab re-reads alongside the Scrap tab. reload()\n\t# leaves the forms alone.\n\tp = payload or {}\n\tlid = BlueRidge.Common.Util.toIntOrNone(p.get(\"lotId\")) or 0\n\tlot = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\tif lid > 0 and lid == BlueRidge.Common.Util.toIntOrNone(lot.get(\"Id\")):\n\t\tself.reload()\n\telse:\n\t\tself.applyLot(lid)"
+        }
+      ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# Self-load on mount (the parent's page-scoped broadcast can race the mount),\n\t# as ScrapPanel does.\n\tself.clearForms()\n\tself.applyLot(self.view.params.lotId)"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ContextRow"
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "wrap": "wrap",
+          "style": {
+            "gap": "14px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "TargetLabel"
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": 700,
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.lot.LotName}"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ContextLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-help"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.lot.ItemPartNumber} + ' · ' + if({view.custom.lot.LotOriginTypeCode} = '', 'origin unknown', {view.custom.lot.LotOriginTypeCode}) + ' · ' + {view.custom.lot.LotStatusName} + ' · on hand ' + toStr({view.custom.lot.PieceCount}) + ' pc'"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "position": {
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "NotReturnable"
+        },
+        "props": {
+          "style": {
+            "whiteSpace": "normal",
+            "classes": "pf-empty-state"
+          }
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.eligibility.Reason}"
+              }
+            }
+          },
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "coalesce({view.custom.lot.Id}, 0) > 0 && !{view.custom.eligibility.CanReturnToVendor}"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "MarkSection"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "8px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "MarkHeading"
+            },
+            "props": {
+              "text": "Mark for return to vendor",
+              "style": {
+                "classes": "pf-panel-header"
+              }
+            },
+            "position": {
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "EntryRow"
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "flex-end",
+              "wrap": "wrap",
+              "style": {
+                "gap": "12px",
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "QtyField"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "L"
+                    },
+                    "props": {
+                      "text": "Quantity to return",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "Quantity"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.draft.quantity",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "0",
+                      "deferUpdates": false,
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "basis": "140px",
+                  "shrink": 0
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "RemarksField"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "L"
+                    },
+                    "props": {
+                      "text": "Remarks (optional)",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "Remarks"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.draft.remarks",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "e.g. porosity on bore, vendor notified",
+                      "deferUpdates": false,
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "basis": "320px",
+                  "shrink": 0
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "MarkButton"
+                },
+                "props": {
+                  "text": "Mark for return",
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.requestMark()"
+                      }
+                    }
+                  }
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len(trim(toStr({view.custom.draft.quantity}))) > 0"
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "position": {
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "QtyHelp"
+            },
+            "props": {
+              "style": {
+                "whiteSpace": "normal",
+                "classes": "pf-field-help"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Up to ' + toStr({view.custom.lot.PieceCount}) + '. The pieces come off available stock as soon as you save. Needs a supervisor AD sign-in.'"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "coalesce({view.custom.lot.Id}, 0) > 0 && {view.custom.eligibility.CanReturnToVendor}"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "CancelStrip"
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "flex-end",
+          "wrap": "wrap",
+          "style": {
+            "gap": "12px",
+            "overflow": "hidden",
+            "padding": "10px",
+            "border": "1px solid var(--mpp-state-warn-fg)",
+            "borderRadius": "6px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CancelPrompt"
+            },
+            "props": {
+              "style": {
+                "fontWeight": 600,
+                "whiteSpace": "normal"
+              }
+            },
+            "position": {
+              "basis": "100%",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Cancel the return of ' + toStr({view.custom.cancel.quantity}) + ' pieces? They go back on the LOT.'"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "CancelReasonField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "text": "Reason (required)",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "CancelReason"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.cancel.remarks",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Why is this return cancelled?",
+                  "deferUpdates": false,
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "360px",
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ConfirmCancelButton"
+            },
+            "props": {
+              "text": "Cancel return",
+              "style": {
+                "classes": "pf-btn pf-btn-danger"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.requestCancel()"
+                  }
+                }
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len(trim(toStr({view.custom.cancel.remarks}))) > 0"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "KeepButton"
+            },
+            "props": {
+              "text": "Keep it",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.custom.cancel = {\"vendorReturnId\": None, \"quantity\": 0, \"remarks\": \"\"}"
+                  }
+                }
+              }
+            },
+            "position": {
+              "shrink": 0
+            }
+          }
+        ],
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!isNull({view.custom.cancel.vendorReturnId})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ListHeading"
+        },
+        "props": {
+          "text": "Returns on this LOT",
+          "style": {
+            "classes": "pf-panel-header"
+          }
+        },
+        "position": {
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "EmptyState"
+        },
+        "props": {
+          "text": "No returns on this LOT.",
+          "style": {
+            "classes": "pf-empty-state"
+          }
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.returns}) = 0"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "ReturnsRepeater"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.returns"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "elementPosition": {
+            "basis": "52px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/LotDetail/VendorReturnLotRow",
+          "style": {
+            "gap": "6px"
+          },
+          "useDefaultViewHeight": true,
+          "useDefaultViewWidth": false
+        }
+      }
+    ]
+  }
+}

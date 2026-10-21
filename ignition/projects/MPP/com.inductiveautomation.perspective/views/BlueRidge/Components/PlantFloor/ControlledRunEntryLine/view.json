@@ -1,0 +1,265 @@
+{
+  "custom": {},
+  "params": {
+    "memberId": null,
+    "key": "",
+    "title": "",
+    "sub": "",
+    "quantity": 0
+  },
+  "propConfig": {
+    "params.memberId": {
+      "paramDirection": "input"
+    },
+    "params.key": {
+      "paramDirection": "input"
+    },
+    "params.title": {
+      "paramDirection": "input"
+    },
+    "params.sub": {
+      "paramDirection": "input"
+    },
+    "params.quantity": {
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "background": "var(--mpp-surface-card)",
+        "border": "1px solid var(--mpp-border-subtle)",
+        "borderRadius": "var(--mpp-radius-md)",
+        "gap": "6px",
+        "overflow": "hidden",
+        "padding": "4px 6px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Info"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "8px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "TitleLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.title"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 700,
+                "overflow": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SubLabel"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.sub"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-help",
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "MinusButton"
+        },
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "maxHeight": "34px",
+            "minHeight": "30px",
+            "padding": "0",
+            "fontSize": "18px",
+            "fontWeight": 700
+          },
+          "text": "-"
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"crEntryChanged\", payload={\"memberId\": self.view.params.memberId, \"key\": self.view.params.key, \"delta\": -1}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "QtyButton"
+        },
+        "position": {
+          "basis": "72px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.quantity})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "maxHeight": "34px",
+            "minHeight": "30px",
+            "padding": "0",
+            "fontSize": "18px",
+            "fontWeight": 700
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"crEntryChanged\", payload={\"memberId\": self.view.params.memberId, \"key\": self.view.params.key, \"edit\": True}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "PlusButton"
+        },
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "maxHeight": "34px",
+            "minHeight": "30px",
+            "padding": "0",
+            "fontSize": "18px",
+            "fontWeight": 700
+          },
+          "text": "+"
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"crEntryChanged\", payload={\"memberId\": self.view.params.memberId, \"key\": self.view.params.key, \"delta\": 1}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "RemoveButton"
+        },
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "maxHeight": "34px",
+            "minHeight": "30px",
+            "padding": "0",
+            "fontSize": "18px",
+            "fontWeight": 700,
+            "color": "var(--mpp-state-bad-fg)"
+          },
+          "text": "x"
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"crEntryChanged\", payload={\"memberId\": self.view.params.memberId, \"key\": self.view.params.key, \"quantity\": 0}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "props": {
+    "defaultSize": {
+      "height": 44,
+      "width": 420
+    }
+  }
+}

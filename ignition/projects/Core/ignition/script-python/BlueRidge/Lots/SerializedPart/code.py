@@ -40,6 +40,9 @@ _EMPTY_TRACE_DETAIL = {
     "ProducedAt": None, "OperatorName": None, "MachineName": None,
     "ContainerId": None, "ContainerStatusCode": None, "AimShipperId": None,
     "CompletedAt": None,
+    # super-lot piece 6: per-serial removal / move-in (proc columns LAST; None
+    # when untouched). The Global Trace serial panel shows one status line.
+    "RemovedAt": None, "RemovedReason": None, "MovedInFromContainerName": None,
 }
 
 

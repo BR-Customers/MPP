@@ -269,6 +269,7 @@
       },
       {
         "children": [
+      {"events": {"component": {"onActionPerformed": {"config": {"script": "\tsystem.perspective.openPopup(\"mpp-rework-pick\", \"BlueRidge/Components/Popups/ReworkContainerPick\",\n\t\tparams\u003d{\"popupId\": \"mpp-rework-pick\", \"locationId\": self.view.custom.locationId},\n\t\tposition\u003d{\"width\": \"900px\", \"height\": \"60%\"},\n\t\tmodal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue, viewportBound\u003dTrue)"}, "scope": "G", "type": "script"}}}, "meta": {"name": "ReworkWaitingButton", "tooltip": {"text": "A reworked container is waiting to be filled at this line"}}, "position": {"shrink": 0}, "propConfig": {"position.display": {"binding": {"config": {"expression": "runScript(\"BlueRidge.Lots.ContainerRework.waitingCount\", 15000, {view.custom.locationId}, {view.custom.refreshToken}) \u003e 0"}, "type": "expr"}}, "props.text": {"binding": {"config": {"expression": "\u0027Rework container waiting (\u0027 + toStr(runScript(\"BlueRidge.Lots.ContainerRework.waitingCount\", 15000, {view.custom.locationId}, {view.custom.refreshToken})) + \u0027)\u0027"}, "type": "expr"}}}, "props": {"style": {"classes": "pf-btn pf-btn-primary pf-inv-btn", "width": "auto"}, "text": "Rework container waiting"}, "type": "ia.input.button"},
           {
             "meta": {
               "name": "FootText"

@@ -2,7 +2,12 @@
 -- Repeatable:  R__Workorder_TrimPartial_Record.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.0
+-- Version:     1.1
+-- Change:      v1.1 (2026-10-19, super-lot piece 5) - guard 8 reads the previous count
+--              from Workorder.ufn_TrimPassPreviousCount (a rework pass starts its own
+--              count); while a Lots.LotRework is open the checkpoint carries ShiftId
+--              NULL (rework output is not shift trim production). The required
+--              @ShiftId still validates and still stamps the scrap rows.
 -- Description: Trim partial checkpoint at shift end
 --              (docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md).
 --              Writes ONE cumulative Workorder.ProductionEvent on the LOT with the
@@ -136,13 +141,7 @@ BEGIN
 
         -- ---- 8. Cumulative: never below the LOT's last TRIM checkpoint ----
         IF @Message IS NULL
-            SELECT TOP 1 @PrevShot = pe.ShotCount
-            FROM Workorder.ProductionEvent pe
-            INNER JOIN Parts.OperationTemplate ot ON ot.Id = pe.OperationTemplateId
-            INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
-            WHERE pe.LotId = @LotId AND pe.ShotCount IS NOT NULL
-              AND oty.Code IN (N'TrimIn', N'TrimOut')
-            ORDER BY pe.EventAt DESC, pe.Id DESC;
+            SELECT @PrevShot = ShotCount FROM Workorder.ufn_TrimPassPreviousCount(@LotId);
 
         IF @Message IS NULL AND @PrevShot IS NOT NULL AND @ShotCount < @PrevShot
             SET @Message = N'Trimmed so far (' + CAST(@ShotCount AS NVARCHAR(20))
@@ -183,7 +182,8 @@ BEGIN
         VALUES (
             @LotId, @OperationTemplateId, NULL, SYSUTCDATETIME(),
             @ShotCount, @ScrapTotal, NULL,
-            NULL, NULL, @AppUserId, @TerminalLocationId, N'Partial trim - shift end', @ShiftId
+            NULL, NULL, @AppUserId, @TerminalLocationId, N'Partial trim - shift end',
+            CASE WHEN EXISTS (SELECT 1 FROM Lots.ufn_OpenLotRework(@LotId)) THEN NULL ELSE @ShiftId END
         );
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 

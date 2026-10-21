@@ -1,0 +1,2016 @@
+{
+  "custom": {
+    "filter": {
+      "statusCode": "Open",
+      "text": ""
+    },
+    "selectedRunId": null,
+    "selectedMemberId": null,
+    "selectedMemberName": "",
+    "scanText": "",
+    "refreshToken": 0,
+    "run": {
+      "Id": null,
+      "RunNumber": "",
+      "StatusCode": "",
+      "Reason": "",
+      "AnchorLotId": null,
+      "AnchorLotName": "",
+      "SelectionItemId": null,
+      "PartNumber": "",
+      "SelectionLocationId": null,
+      "LocationName": "",
+      "SelectionFromAt": null,
+      "SelectionToAt": null,
+      "IncludeDescendants": false,
+      "AutoJoinEnabled": false,
+      "AutoJoinEndedAt": null,
+      "OpenedByInitials": "",
+      "OpenedAt": null,
+      "ClosedByInitials": "",
+      "ClosedAt": null,
+      "CloseRemarks": "",
+      "MemberCount": 0,
+      "ClearedCount": 0,
+      "PieceCount": 0,
+      "CriteriaText": "",
+      "CanClose": false,
+      "CloseBlockedReason": ""
+    },
+    "activeTab": "members"
+  },
+  "params": {
+    "runNumber": ""
+  },
+  "propConfig": {
+    "custom.run": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.ControlledRun.getRunOrEmpty\", 0, if(isNull({view.custom.selectedRunId}), 0, {view.custom.selectedRunId}), {view.custom.refreshToken})"
+        }
+      }
+    },
+    "params.runNumber": {
+      "onChange": {
+        "enabled": true,
+        "script": "\t# A later navigation to another /shop-floor/controlled-runs/<RunNumber> while this\n\t# page is open (same view, new param). The first value is handled by onStartup.\n\tif previousValue is not None and currentValue is not None and currentValue.value != previousValue.value:\n\t\tself.rootContainer.openRunNumber(currentValue.value)"
+      },
+      "paramDirection": "input"
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "canvas",
+        "overflow": "hidden"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "TitleBar"
+        },
+        "position": {
+          "basis": "56px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "14px",
+            "padding": "0 22px",
+            "borderBottom": "1px solid var(--mpp-border-subtle)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Super-lots",
+              "style": {
+                "fontSize": "22px",
+                "fontWeight": "700"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SubTitle"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "Quality - controlled runs",
+              "style": {
+                "fontSize": "14px",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "RefreshButton"
+            },
+            "position": {
+              "basis": "110px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Refresh",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Main"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Left"
+            },
+            "position": {
+              "basis": "440px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "gap": "12px",
+                "padding": "16px",
+                "borderRight": "1px solid var(--mpp-border-subtle)",
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ScanRow"
+                },
+                "position": {
+                  "basis": "48px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "stretch",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "ScanInput"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.scanText",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "Scan a super-lot label, an LTT or a container label",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onKeyDown": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tif event.key == \"Enter\":\n\t\tv = self.view\n\t\tt = (v.custom.scanText or \"\").strip()\n\t\tif not t:\n\t\t\treturn\n\t\thit = BlueRidge.Quality.ControlledRun.findByScan(t)\n\t\tv.custom.scanText = \"\"\n\t\tif hit.get(\"runId\"):\n\t\t\tv.custom.filter = {\"statusCode\": \"All\", \"text\": \"\"}\n\t\t\tsystem.perspective.sendMessage(\"controlledRunSelect\", payload={\"runId\": hit.get(\"runId\")}, scope=\"page\")\n\t\telse:\n\t\t\tBlueRidge.Common.Notify.toast(\"Not found\", hit.get(\"message\") or \"Scan not recognised.\", \"warning\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ScanGo"
+                    },
+                    "position": {
+                      "basis": "90px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Find",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tv = self.view\n\tt = (v.custom.scanText or \"\").strip()\n\tif not t:\n\t\treturn\n\thit = BlueRidge.Quality.ControlledRun.findByScan(t)\n\tv.custom.scanText = \"\"\n\tif hit.get(\"runId\"):\n\t\tv.custom.filter = {\"statusCode\": \"All\", \"text\": \"\"}   # so a scanned closed super-lot is in the list it is selected in\n\t\tsystem.perspective.sendMessage(\"controlledRunSelect\", payload={\"runId\": hit.get(\"runId\")}, scope=\"page\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Not found\", hit.get(\"message\") or \"Scan not recognised.\", \"warning\")"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "FilterRow"
+                },
+                "position": {
+                  "basis": "48px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "style": {
+                    "gap": "6px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "SegOpen"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.filter.statusCode} = 'Open', 'pf-btn pf-btn-primary', 'pf-btn pf-btn-secondary')"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Open",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.filter = {\"statusCode\": \"Open\", \"text\": self.view.custom.filter.text}"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "SegClosed"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.filter.statusCode} = 'Closed', 'pf-btn pf-btn-primary', 'pf-btn pf-btn-secondary')"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Closed",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.filter = {\"statusCode\": \"Closed\", \"text\": self.view.custom.filter.text}"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "SegAll"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.filter.statusCode} = 'All', 'pf-btn pf-btn-primary', 'pf-btn pf-btn-secondary')"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "All",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.filter = {\"statusCode\": \"All\", \"text\": self.view.custom.filter.text}"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "NewButton"
+                },
+                "position": {
+                  "basis": "52px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "+ New super-lot",
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tsystem.perspective.openPopup(\"mpp-controlled-run-new\", \"BlueRidge/Components/Popups/ControlledRunNew\",\n\t\tparams={\"popupId\": \"mpp-controlled-run-new\",\n\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\tposition={\"width\": \"92%\", \"height\": \"92%\"},\n\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "RunRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Quality.ControlledRun.cardInstances\", 0, {view.custom.filter.statusCode}, {view.custom.filter.text}, if(isNull({view.custom.selectedRunId}), 0, {view.custom.selectedRunId}), {view.custom.refreshToken})"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
+                  "useDefaultViewHeight": true,
+                  "elementPosition": {
+                    "basis": "112px",
+                    "shrink": 0
+                  },
+                  "elementStyle": {
+                    "overflow": "hidden",
+                    "marginBottom": "8px"
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunCard",
+                  "style": {
+                    "overflowY": "auto"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ListFoot"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Open super-lots are listed oldest first.",
+                  "style": {
+                    "fontSize": "13px",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Detail"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.run.Id})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "gap": "12px",
+                "padding": "16px 22px",
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Head"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "flex-start",
+                  "style": {
+                    "gap": "12px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "Ident"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "gap": "4px",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "NumberRow"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "row",
+                          "alignItems": "center",
+                          "style": {
+                            "gap": "12px",
+                            "flexWrap": "wrap"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "RunNumber"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "path": "view.custom.run.RunNumber"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontFamily": "var(--mpp-font-mono)",
+                                "fontSize": "40px",
+                                "fontWeight": "700",
+                                "lineHeight": "1.05"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "StatusPill"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.style.classes": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.run.StatusCode} = 'Open', 'pf-pill pf-pill-warn', if({view.custom.run.StatusCode} = 'Closed', 'pf-pill pf-pill-good', 'pf-pill pf-pill-bad'))"
+                                  }
+                                }
+                              },
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "upper({view.custom.run.StatusCode})"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-pill"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "WindowPill"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "position.display": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "{view.custom.run.StatusCode} = 'Open' && ({view.custom.run.AutoJoinEnabled} || !isNull({view.custom.run.AutoJoinEndedAt}))"
+                                  }
+                                }
+                              },
+                              "props.style.classes": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.run.AutoJoinEnabled}, 'pf-pill pf-pill-warn', 'pf-pill')"
+                                  }
+                                }
+                              },
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.run.StatusCode} != 'Open', '', if({view.custom.run.AutoJoinEnabled}, 'ADDING NEW PRODUCTION', if(isNull({view.custom.run.AutoJoinEndedAt}), 'NO WINDOW', 'WINDOW ENDED')))"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-pill"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Reason"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.run.Reason"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "fontSize": "18px"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Criteria"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "{view.custom.run.CriteriaText} + if(len({view.custom.run.CriteriaText}) > 0, '  -  ', '') + 'Opened by ' + {view.custom.run.OpenedByInitials} + ', ' + dateFormat({view.custom.run.OpenedAt}, 'EEE MM/dd HH:mm')"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "fontSize": "14px",
+                            "color": "var(--mpp-text-tertiary)"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "KpiMembers"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-kpi"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiMembersValue"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "toStr({view.custom.run.MemberCount})"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-value"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiMembersLabel"
+                        },
+                        "props": {
+                          "text": "Members",
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "KpiCleared"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-kpi"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiClearedValue"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "toStr({view.custom.run.ClearedCount})"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-value"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiClearedLabel"
+                        },
+                        "props": {
+                          "text": "Cleared",
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "KpiPieces"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-kpi"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiPiecesValue"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "numberFormat({view.custom.run.PieceCount}, '#,##0')"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-value"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "KpiPiecesLabel"
+                        },
+                        "props": {
+                          "text": "Pieces",
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Actions"
+                },
+                "position": {
+                  "basis": "50px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "stretch",
+                  "style": {
+                    "gap": "10px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "AddButton"
+                    },
+                    "position": {
+                      "basis": "140px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.run.StatusCode} = 'Open'"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Add (scan)",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"add\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "RemoveButton"
+                    },
+                    "position": {
+                      "basis": "120px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.run.StatusCode} = 'Open' && !isNull({view.custom.selectedMemberId})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Remove",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"remove\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": self.view.custom.selectedMemberId, \"memberName\": self.view.custom.selectedMemberName})"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "PrintButton"
+                    },
+                    "position": {
+                      "basis": "160px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Print 4 labels",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tuid = BlueRidge.Common.Session.currentAppUserId(self.session)\n\ttid = self.session.custom.terminal.terminalLocationId\n\tres = BlueRidge.Quality.ControlledRun.printLabels(self.view.custom.selectedRunId, uid, tid)\n\tif res and res.get(\"NewId\") is None and not res.get(\"Status\"):\n\t\tBlueRidge.Common.Notify.toast(\"Not printed\", res.get(\"Message\") or \"\", \"warning\")   # refused before anything was sent\n\telse:\n\t\tBlueRidge.Common.Ui.notifyPrintResult(res, \"Super-lot labels\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ReportButton"
+                    },
+                    "position": {
+                      "basis": "140px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!isNull({view.custom.selectedRunId})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Print report",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\timport java.lang\n\ttry:\n\t\trunId = self.view.custom.selectedRunId\n\t\tif runId is None:\n\t\t\tBlueRidge.Common.Notify.toast(\"No super-lot\", \"Select a super-lot first.\", \"warning\")\n\t\t\treturn\n\t\tdata = BlueRidge.Reports.generatePdf(\"super_lot\", {\"ControlledRunId\": long(runId)})\n\t\tname = self.view.custom.run.RunNumber or str(runId)\n\t\tsystem.perspective.download(\"Super-lot \" + name + \".pdf\", data)\n\texcept (Exception, java.lang.Throwable) as e:\n\t\tBlueRidge.Common.Notify.toast(\"Report failed\", str(e), \"error\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "Spacer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "row"
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "CancelRunButton"
+                    },
+                    "position": {
+                      "basis": "170px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.run.StatusCode} = 'Open'"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Cancel super-lot",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"cancel\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "EndWindowButton"
+                    },
+                    "position": {
+                      "basis": "140px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.run.StatusCode} = 'Open' && {view.custom.run.AutoJoinEnabled}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "End window",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"endWindow\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "ResumeButton"
+                    },
+                    "position": {
+                      "basis": "160px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.run.StatusCode} = 'Open' && !{view.custom.run.AutoJoinEnabled} && !isNull({view.custom.run.AutoJoinEndedAt})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Resume window",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"resumeWindow\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "CloseRunButton",
+                      "tooltip": {
+                        "enabled": false,
+                        "text": ""
+                      }
+                    },
+                    "position": {
+                      "basis": "170px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.run.StatusCode} = 'Open'"
+                          }
+                        }
+                      },
+                      "props.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.run.CanClose}"
+                          }
+                        }
+                      },
+                      "meta.tooltip.enabled": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!{view.custom.run.CanClose}"
+                          }
+                        }
+                      },
+                      "meta.tooltip.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "coalesce({view.custom.run.CloseBlockedReason}, '')"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Close super-lot",
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tBlueRidge.Common.Session.requireElevation(self.session, \"ControlledRun\", \"Quality sign-in\",\n\t\t{\"action\": \"close\", \"runId\": self.view.custom.selectedRunId, \"runNumber\": self.view.custom.run.RunNumber,\n\t\t \"memberId\": None, \"memberName\": \"\"})"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "StatusNote"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len(if({view.custom.run.StatusCode} != 'Open', if(len({view.custom.run.CloseRemarks}) > 0, 'Remarks: ' + {view.custom.run.CloseRemarks}, ''), if({view.custom.run.AutoJoinEnabled}, 'Close is unavailable: the window is still open.', if({view.custom.run.ClearedCount} < {view.custom.run.MemberCount}, 'Close is unavailable: ' + toStr({view.custom.run.MemberCount} - {view.custom.run.ClearedCount}) + ' members are still CRT-tagged.', 'Every member is cleared. This super-lot can be closed.')))) > 0"
+                      }
+                    }
+                  },
+                  "props.style.classes": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.run.StatusCode} = 'Open' && !{view.custom.run.AutoJoinEnabled} && {view.custom.run.ClearedCount} = {view.custom.run.MemberCount}, 'pf-pill pf-pill-good', 'pf-pill pf-pill-warn')"
+                      }
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.run.StatusCode} != 'Open', if(len({view.custom.run.CloseRemarks}) > 0, 'Remarks: ' + {view.custom.run.CloseRemarks}, ''), if({view.custom.run.AutoJoinEnabled}, 'Close is unavailable: the window is still open.', if({view.custom.run.ClearedCount} < {view.custom.run.MemberCount}, 'Close is unavailable: ' + toStr({view.custom.run.MemberCount} - {view.custom.run.ClearedCount}) + ' members are still CRT-tagged.', 'Every member is cleared. This super-lot can be closed.')))"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-pill pf-pill-warn",
+                    "whiteSpace": "normal",
+                    "borderRadius": "10px",
+                    "padding": "8px 12px"
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Tabs"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "4px",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "TabMembers"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "pf-tab",
+                        "cursor": "pointer"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TabMembersText"
+                        },
+                        "props": {
+                          "text": "Members",
+                          "style": {
+                            "fontWeight": "600"
+                          }
+                        }
+                      }
+                    ],
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.activeTab} = 'members', 'pf-tab pf-tab-active', 'pf-tab')"
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.activeTab = \"members\""
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "TabResults"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "pf-tab",
+                        "cursor": "pointer"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TabResultsText"
+                        },
+                        "props": {
+                          "text": "Results",
+                          "style": {
+                            "fontWeight": "600"
+                          }
+                        }
+                      }
+                    ],
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.activeTab} = 'results', 'pf-tab pf-tab-active', 'pf-tab')"
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.activeTab = \"results\""
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "TabSignOff"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "pf-tab",
+                        "cursor": "pointer"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TabSignOffText"
+                        },
+                        "props": {
+                          "text": "Sign-off",
+                          "style": {
+                            "fontWeight": "600"
+                          }
+                        }
+                      }
+                    ],
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.activeTab} = 'signoff', 'pf-tab pf-tab-active', 'pf-tab')"
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.activeTab = \"signoff\""
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "TabHistory"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "pf-tab",
+                        "cursor": "pointer"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TabHistoryText"
+                        },
+                        "props": {
+                          "text": "History",
+                          "style": {
+                            "fontWeight": "600"
+                          }
+                        }
+                      }
+                    ],
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.activeTab} = 'history', 'pf-tab pf-tab-active', 'pf-tab')"
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.activeTab = \"history\""
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "MemberHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "crt-list-header",
+                    "gap": "12px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr0"
+                    },
+                    "position": {
+                      "basis": "84px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Kind"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr1"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "150px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Member"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr2"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Part"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr3"
+                    },
+                    "position": {
+                      "basis": "190px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Where it is now"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr4"
+                    },
+                    "position": {
+                      "basis": "60px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Pieces"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr5"
+                    },
+                    "position": {
+                      "basis": "92px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Tag"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr6"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "How it joined"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr7"
+                    },
+                    "position": {
+                      "basis": "84px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "Added"
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hdr8"
+                    },
+                    "position": {
+                      "basis": "40px",
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": ""
+                    }
+                  }
+                ],
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'members'"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "MemberRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Quality.ControlledRun.memberInstances\", 0, if(isNull({view.custom.selectedRunId}), 0, {view.custom.selectedRunId}), if(isNull({view.custom.selectedMemberId}), 0, {view.custom.selectedMemberId}), {view.custom.refreshToken})"
+                      }
+                    }
+                  },
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'members'"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
+                  "useDefaultViewHeight": true,
+                  "elementPosition": {
+                    "basis": "48px",
+                    "shrink": 0
+                  },
+                  "elementStyle": {
+                    "overflow": "hidden"
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunMemberRow",
+                  "style": {
+                    "overflowY": "auto"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "ResultsHost"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'results'"
+                      }
+                    }
+                  },
+                  "props.params.runId": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.selectedRunId"
+                      }
+                    }
+                  },
+                  "props.params.runOpen": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.run.StatusCode} = 'Open'"
+                      }
+                    }
+                  },
+                  "props.params.token": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.refreshToken"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunResults",
+                  "params": {
+                    "runId": null,
+                    "runOpen": false,
+                    "token": 0
+                  },
+                  "style": {
+                    "overflow": "hidden"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "SignOffHost"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'signoff'"
+                      }
+                    }
+                  },
+                  "props.params.runId": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.selectedRunId"
+                      }
+                    }
+                  },
+                  "props.params.runOpen": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.run.StatusCode} = 'Open'"
+                      }
+                    }
+                  },
+                  "props.params.token": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.refreshToken"
+                      }
+                    }
+                  },
+                  "props.params.runNumber": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.run.RunNumber"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunSignOff",
+                  "params": {
+                    "runId": null,
+                    "runOpen": false,
+                    "token": 0,
+                    "runNumber": ""
+                  },
+                  "style": {
+                    "overflow": "hidden"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "HistoryEmpty"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'history' && len({../HistoryRepeater.props.instances}) = 0"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "No history yet.",
+                  "style": {
+                    "fontSize": "14px",
+                    "color": "var(--mpp-text-tertiary)",
+                    "padding": "12px 0"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "HistoryRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Quality.ControlledRun.historyInstances\", 0, if(isNull({view.custom.selectedRunId}), 0, {view.custom.selectedRunId}), {view.custom.refreshToken})"
+                      }
+                    }
+                  },
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'history'"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "useDefaultViewWidth": false,
+                  "useDefaultViewHeight": true,
+                  "elementPosition": {
+                    "basis": "56px",
+                    "shrink": 0
+                  },
+                  "elementStyle": {
+                    "overflow": "hidden"
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ControlledRunHistoryRow",
+                  "instances": [],
+                  "style": {
+                    "overflowY": "auto"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "DetailFoot"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Tap a row to select it. The arrow opens LOT Detail. Members are released with a signature on the Sign-off tab.",
+                  "style": {
+                    "fontSize": "13px",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.activeTab} = 'members'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Hint"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "isNull({view.custom.run.Id})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "HintText"
+                },
+                "props": {
+                  "text": "Select a super-lot on the left, scan a label, or start a new one.",
+                  "style": {
+                    "classes": "pf-empty-state"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "openRunNumber",
+          "params": [
+            "runNumber"
+          ],
+          "script": "\t# Arrive on one super-lot by its number: /shop-floor/controlled-runs/<RunNumber>.\n\t# An empty or unknown number changes nothing: no selection, no error.\n\tfrom java.lang import Throwable\n\tt = BlueRidge.Common.Util.extractQualifiedValues(runNumber)\n\tif not t:\n\t\treturn\n\trow = None\n\ttry:\n\t\trow = BlueRidge.Quality.ControlledRun.getRunByNumber(t)\n\texcept (Exception, Throwable) as e:\n\t\tBlueRidge.Common.Util.log(\"super-lot open by number failed: %s\" % e, level=\"warn\")\n\tif not row or row.get(\"Id\") is None:\n\t\treturn\n\trid = row.get(\"Id\")\n\tv = self.view\n\t# A closed or cancelled super-lot is not in the Open list: show All so its card is there.\n\tif row.get(\"StatusCode\") != \"Open\":\n\t\tv.custom.filter = {\"statusCode\": \"All\", \"text\": v.custom.filter.text}\n\t# Same as the controlledRunSelect handler: select, then bring members up to date.\n\tv.custom.selectedRunId = rid\n\tv.custom.selectedMemberId = None\n\tv.custom.selectedMemberName = \"\"\n\ttry:\n\t\tBlueRidge.Quality.ControlledRun.sync(rid, BlueRidge.Common.Util.systemAppUserId())\n\texcept (Exception, Throwable) as e:\n\t\tBlueRidge.Common.Util.log(\"super-lot sync on open by number failed: %s\" % e, level=\"warn\")\n\tv.custom.refreshToken = (v.custom.refreshToken or 0) + 1"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "controlledRunSelect",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = payload or {}\n\trid = p.get(\"runId\")\n\tv = self.view\n\tv.custom.selectedRunId = rid\n\tv.custom.selectedMemberId = None\n\tv.custom.selectedMemberName = \"\"\n\t# Bring the member list up to date for the super-lot being opened. Never let it block selection.\n\tfrom java.lang import Throwable\n\ttry:\n\t\tif rid:\n\t\t\tBlueRidge.Quality.ControlledRun.sync(rid, BlueRidge.Common.Util.systemAppUserId())\n\texcept (Exception, Throwable) as e:\n\t\tBlueRidge.Common.Util.log(\"super-lot sync on select failed: %s\" % e, level=\"warn\")\n\tv.custom.refreshToken = (v.custom.refreshToken or 0) + 1"
+        },
+        {
+          "messageType": "controlledRunMemberSelect",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = payload or {}\n\tv = self.view\n\tif v.custom.selectedMemberId == p.get(\"memberId\"):\n\t\tv.custom.selectedMemberId = None\n\t\tv.custom.selectedMemberName = \"\"\n\telse:\n\t\tv.custom.selectedMemberId = p.get(\"memberId\")\n\t\tv.custom.selectedMemberName = p.get(\"name\") or \"\""
+        },
+        {
+          "messageType": "controlledRunChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tv = self.view\n\tv.custom.selectedMemberId = None\n\tv.custom.selectedMemberName = \"\"\n\tv.custom.refreshToken = (v.custom.refreshToken or 0) + 1"
+        },
+        {
+          "messageType": "controlledRunAction",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# Replayed by Common.Session.dispatchElevatedAction once a Quality sign-in window is\n\t# open (straight away when one already is). \"signin\" is a sign-in with nothing to\n\t# replay: the person repeats what they were doing.\n\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\ta = p.get(\"action\")\n\tif a in (\"add\", \"remove\", \"endWindow\", \"resumeWindow\", \"close\", \"cancel\", \"voidResult\"):\n\t\tsystem.perspective.openPopup(\"mpp-controlled-run-confirm\", \"BlueRidge/Components/Popups/ControlledRunConfirm\",\n\t\t\tparams={\"popupId\": \"mpp-controlled-run-confirm\", \"action\": a,\n\t\t\t\t\"runId\": p.get(\"runId\") or self.view.custom.selectedRunId,\n\t\t\t\t\"runNumber\": p.get(\"runNumber\") or self.view.custom.run.RunNumber,\n\t\t\t\t\"memberId\": p.get(\"memberId\"), \"memberName\": p.get(\"memberName\") or \"\",\n\t\t\t\t\"resultId\": p.get(\"resultId\"),\n\t\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\t\tposition={\"width\": \"640px\", \"height\": \"62%\"},\n\t\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)\n\telif a == \"repack\":\n\t\tsystem.perspective.openPopup(\"mpp-controlled-run-repack\", \"BlueRidge/Components/Popups/ControlledRunRepack\",\n\t\t\tparams={\"popupId\": \"mpp-controlled-run-repack\", \"containerId\": p.get(\"containerId\"),\n\t\t\t\t\"terminalLocationId\": self.session.custom.terminal.terminalLocationId},\n\t\t\tposition={\"width\": \"1180px\", \"height\": \"88%\"},\n\t\t\tmodal=True, showCloseIcon=True, overlayDismiss=False, viewportBound=True)\n\telif a == \"signin\":\n\t\tBlueRidge.Common.Notify.toast(\"Signed in\", \"Quality sign-in is open. Carry on.\", \"success\")"
+        }
+      ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tBlueRidge.Common.Session.setElevationProfile(self.session, \"Quality\")\n\tself.view.rootContainer.openRunNumber(self.view.params.runNumber)"
+          }
+        },
+        "onShutdown": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tBlueRidge.Common.Session.setElevationProfile(self.session, \"\")"
+          }
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 1000,
+      "width": 1920
+    }
+  }
+}
