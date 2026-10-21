@@ -362,10 +362,13 @@ def resetTerminal(session):
 PENDING_ACTION_TTL_MS = 120000
 
 
-def requireElevation(session, code, label, params=None):
+def requireElevation(session, code, label, params=None, note=None):
     """Style-2 gate for a param-carrying protected action. If already elevated, act
     immediately; otherwise stash the intent and open the ElevationModal (the
-    app-shell elevationResult handler replays the stash on success)."""
+    app-shell elevationResult handler replays the stash on success).
+    note: optional sentence the modal shows as a wrapped amber note under its
+    prompt (e.g. LOT Detail CRT release of a LOT in an open super-lot). The
+    replay path only re-dispatches code + params, so the note needs no stash."""
     if isElevated(session):
         dispatchElevatedAction(session, code, params)
     else:
@@ -373,7 +376,7 @@ def requireElevation(session, code, label, params=None):
             "code": code, "params": params, "expiresAt": nowMs() + PENDING_ACTION_TTL_MS}
         system.perspective.openPopup(
             "mpp-elevation-modal", "BlueRidge/Components/PlantFloor/ElevationModal",
-            params={"actionCode": code, "actionLabel": label,
+            params={"actionCode": code, "actionLabel": label, "actionNote": note or "",
                     "popupId": "mpp-elevation-modal", "replyMessage": "elevationResult"},
             modal=True, showCloseIcon=True, overlayDismiss=True)
 
