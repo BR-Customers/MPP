@@ -2,7 +2,7 @@
 -- Function:    Workorder.ufn_ScaleStationEligibleParts
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   The finished goods a By Weight scale station may run right now, and how
@@ -40,6 +40,7 @@
 --
 -- Change Log:
 --   2026-10-19 - 1.0 - Initial version.
+--   2026-10-21 - 1.1 - Line ancestors computed once and joined (was ~110 ms per call).
 -- =============================================
 CREATE OR ALTER FUNCTION Workorder.ufn_ScaleStationEligibleParts
 (
@@ -57,13 +58,20 @@ RETURN
           AND t.DeprecatedAt IS NULL
           AND t.ParentLocationId IS NOT NULL
     ),
+    -- The line and its ancestors, computed ONCE and joined. An IN (subquery)
+    -- correlated to the view made SQL Server re-run the recursive ancestor
+    -- function for every view row (~2,250 times, ~110 ms per call on Dev).
+    Anc AS (
+        SELECT ln.LineId, a.LocationId
+        FROM Line ln
+        CROSS APPLY Location.ufn_AncestorLocationIds(ln.LineId) a
+    ),
     Fg AS (
         SELECT DISTINCT i.Id AS ItemId, i.PartNumber, i.Description,
                cc.PartsPerTray, cc.TraysPerContainer, cc.TargetWeight, cc.ToleranceWeight,
-               ln.LineId
-        FROM Line ln
-        JOIN Parts.v_EffectiveItemLocation eil
-          ON eil.LocationId IN (SELECT a.LocationId FROM Location.ufn_AncestorLocationIds(ln.LineId) a)
+               anc.LineId
+        FROM Anc anc
+        JOIN Parts.v_EffectiveItemLocation eil ON eil.LocationId = anc.LocationId
         JOIN Parts.Item i      ON i.Id = eil.ItemId AND i.DeprecatedAt IS NULL
         JOIN Parts.ItemType it ON it.Id = i.ItemTypeId AND it.Code = N'FinishedGood'
         JOIN Parts.ContainerConfig cc
