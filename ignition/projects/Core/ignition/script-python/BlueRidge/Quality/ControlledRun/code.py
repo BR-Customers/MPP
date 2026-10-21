@@ -54,7 +54,15 @@
      memberOrigin(controlledRunId)   -> {str(memberId): {origin, canReturn}}
      Rework is no longer a result entry (a supervisor override move back into
      trim starts it, the Trim OUT ends it); the Return to vendor tile is shown
-     only where SQL says the member can be returned (CanReturnToVendor)."""
+     only where SQL says the member can be returned (CanReturnToVendor).
+
+   Piece 6 (visibility - reads only; every label and state comes from SQL):
+     listByLot(lotId) / listByLotInstances(lotId)   LOT Detail Super-lots tab
+     openForLotOrEmpty(lotId)                       -> {Id, RunNumber} (Id None = none)
+     markers(lotIdsCsv, containerIdsCsv)            -> genealogy marker rows
+     historyInstances(runId)                        super-lot History tab
+     openSummaryOrEmpty()                           dashboard tile
+     getRunByNumber(runNumber)                      -> dict | None"""
 
 _EMPTY_RUN = {
     "Id": None, "RunNumber": "", "StatusCode": "", "Reason": "",
@@ -1085,3 +1093,99 @@ def memberOrigin(controlledRunId, _refreshToken=None):
             "canReturn": bool(r.get("CanReturnToVendor")),
         }
     return out
+
+
+# ---------------------------------------------------------------------------
+# Piece 6 -- visibility reads (LOT Detail tab, genealogy markers, History tab,
+# dashboard tile). Thin wrappers: the procs return Eastern times, kind labels,
+# membership states and CanClose; this only formats times for repeaters.
+# ---------------------------------------------------------------------------
+
+_EMPTY_OPEN_FOR_LOT = {"Id": None, "RunNumber": ""}
+_EMPTY_OPEN_SUMMARY = {"OpenCount": 0, "OldestOpenedAt": None, "OldestAgeDays": None,
+                       "MembersStillTagged": 0}
+
+
+def listByLot(lotId, _refreshToken=None):
+    """Every super-lot membership a LOT has had, newest first (open and ended).
+       [] for a LOT that was never in a super-lot or an empty id."""
+    lotId = BlueRidge.Common.Util.toIntOrNone(_u(lotId))
+    if lotId is None:
+        return []
+    return BlueRidge.Common.Db.execList("quality/ControlledRun_ListByLot", {"lotId": lotId}) or []
+
+
+def listByLotInstances(lotId, _refreshToken=None):
+    """Repeater instances for LOT Detail's Super-lots tab: one {'row': {...}} per
+       membership, the ListByLot columns plus JoinedAtDisplay / LeftAtDisplay /
+       ReleasedAtDisplay ('MM/dd HH:mm', '' when none) pre-formatted here."""
+    out = []
+    for r in listByLot(lotId):
+        r = dict(r or {})
+        r["JoinedAtDisplay"] = _fmt(r.get("JoinedAt"), "MM/dd HH:mm")
+        r["LeftAtDisplay"] = _fmt(r.get("LeftAt"), "MM/dd HH:mm")
+        r["ReleasedAtDisplay"] = _fmt(r.get("ReleasedAt"), "MM/dd HH:mm")
+        out.append({"row": r})
+    return out
+
+
+def openForLotOrEmpty(lotId, _refreshToken=None):
+    """The open super-lot a LOT is in: {'Id', 'RunNumber'}. Always shaped:
+       {'Id': None, 'RunNumber': ''} when the LOT is in none."""
+    out = dict(_EMPTY_OPEN_FOR_LOT)
+    lotId = BlueRidge.Common.Util.toIntOrNone(_u(lotId))
+    if lotId is None:
+        return out
+    row = BlueRidge.Common.Db.execOne("quality/ControlledRun_GetOpenByMember",
+                                      {"lotId": lotId, "containerId": None})
+    if row:
+        out["Id"] = row.get("Id")
+        out["RunNumber"] = row.get("RunNumber") or ""
+    return out
+
+
+def markers(lotIdsCsv, containerIdsCsv, _refreshToken=None):
+    """Super-lot markers for genealogy nodes: ControlledRun_ListMarkers rows
+       (NodeKind, NodeId, RunNumber, ControlledRunId, MembershipState).
+       Ids arrive as comma-separated strings (a list argument to runScript
+       arrives as QualifiedValue[] and throws). [] when both are empty."""
+    lots = _u(lotIdsCsv) or ""
+    cons = _u(containerIdsCsv) or ""
+    if not (lots or cons):
+        return []
+    return BlueRidge.Common.Db.execList(
+        "quality/ControlledRun_ListMarkers",
+        {"lotIdsCsv": lots, "containerIdsCsv": cons}) or []
+
+
+def historyInstances(runId, _refreshToken=None):
+    """Repeater instances for the super-lot History tab, newest first:
+       {'row': {EventAt, Kind, Detail, ByInitials, EventAtDisplay}}.
+       EventAtDisplay is 'EEE MM/dd HH:mm' (the proc's times are Eastern)."""
+    runId = BlueRidge.Common.Util.toIntOrNone(_u(runId))
+    if runId is None:
+        return []
+    out = []
+    for r in (BlueRidge.Common.Db.execList("quality/ControlledRun_ListHistory", {"id": runId}) or []):
+        r = dict(r or {})
+        r["EventAtDisplay"] = _fmt(r.get("EventAt"), "EEE MM/dd HH:mm")
+        out.append({"row": r})
+    return out
+
+
+def openSummaryOrEmpty(_refreshToken=None):
+    """Dashboard tile: {OpenCount, OldestOpenedAt, OldestAgeDays, MembersStillTagged}.
+       Always shaped (zeros / None when nothing is open)."""
+    out = dict(_EMPTY_OPEN_SUMMARY)
+    row = BlueRidge.Common.Db.execOne("quality/ControlledRun_GetOpenSummary", None)
+    if row:
+        out.update(row)
+    return out
+
+
+def getRunByNumber(runNumber):
+    """One super-lot header by its number (ControlledRun_GetByNumber), or None."""
+    t = _u(runNumber)
+    if not t:
+        return None
+    return BlueRidge.Common.Db.execOne("quality/ControlledRun_GetByNumber", {"runNumber": t})
