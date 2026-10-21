@@ -1,8 +1,13 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRun_Release.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-13
--- Version:     1.0
+-- Modified:    2026-10-21
+-- Version:     1.1
+-- Change Log:  2026-10-21 - 1.1 - Piece 6: each released member gets 'Released . signed
+--                                 <initials>[ . Deviation <DV>[, <DV>]]' on its LOT(s)
+--                                 (ControlledRunLotReleased; container: each tray). The
+--                                 deviations named are the run's deviations raised while
+--                                 that member was in it (AddedAt .. EndedAt).
 -- Description: THE SIGNED BULK RELEASE. Releases the ticked members of an open
 --              super-lot in one action, under one signature, carrying the
 --              confirmation that the Controlled Run Tag was acted on and the
@@ -222,6 +227,37 @@ BEGIN
             @LogEntityTypeCode = N'ControlledRun', @EntityId = @Id,
             @LogEventTypeCode = N'ControlledRunReleased', @LogSeverityCode = N'Info',
             @Description = @Activity, @OldValue = NULL, @NewValue = @NewValue;
+
+        -- ---- 5. (v1.1) the release on each released member's own LOT timeline.
+        --      Members are grouped by their text (same deviations) so the helper is
+        --      called once per distinct text, not once per member. ----
+        DECLARE @RelText TABLE (MemberId BIGINT NOT NULL, Txt NVARCHAR(400) NOT NULL);
+        INSERT INTO @RelText (MemberId, Txt)
+        SELECT m.Id,
+               LEFT(N'Released ' + Audit.ufn_MidDot() + N' signed ' + ISNULL(@Signer, N'?')
+                    + ISNULL(N' ' + Audit.ufn_MidDot() + N' Deviation '
+                             + (SELECT STRING_AGG(d.DeviationNumber, N', ') WITHIN GROUP (ORDER BY d.DeviationNumber)
+                                FROM Quality.ControlledRunDeviation d
+                                WHERE d.ControlledRunId = @Id
+                                  AND d.RaisedAt >= m.AddedAt
+                                  AND d.RaisedAt <= COALESCE(m.EndedAt, SYSUTCDATETIME())), N''), 400)
+        FROM Quality.ControlledRunMember m
+        WHERE m.Id IN (SELECT MemberId FROM @T) AND m.ControlledRunId = @Id;
+
+        DECLARE @RelJson NVARCHAR(MAX), @RelTxt NVARCHAR(400);
+        DECLARE rel_cur CURSOR LOCAL FAST_FORWARD FOR
+            SELECT N'[' + STRING_AGG(CAST(MemberId AS NVARCHAR(MAX)), N',') + N']', Txt
+            FROM @RelText GROUP BY Txt ORDER BY Txt;
+        OPEN rel_cur;
+        FETCH NEXT FROM rel_cur INTO @RelJson, @RelTxt;
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+                @MemberIdsJson = @RelJson, @LogEventTypeCode = N'ControlledRunLotReleased',
+                @ActionText = @RelTxt, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
+            FETCH NEXT FROM rel_cur INTO @RelJson, @RelTxt;
+        END
+        CLOSE rel_cur; DEALLOCATE rel_cur;
 
         COMMIT TRANSACTION;
 

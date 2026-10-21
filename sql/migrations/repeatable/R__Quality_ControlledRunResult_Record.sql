@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRunResult_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-20
--- Version:     1.3
+-- Modified:    2026-10-21
+-- Version:     1.4
 -- Change Log:  2026-10-19 - 1.1 - 'Rework' is no longer a recordable outcome (piece 5): rework is the LOT's
 --              move back into trim, and an open rework blocks release. The Rework disposition
 --              code and ReworkQty column stay for history.
@@ -13,6 +13,10 @@
 --              2026-10-20 - 1.3 - Final review: the origin + status refusal for ReturnToSupplier
 --              on a LOT member reads Lots.ufn_LotReturnableToVendor (the one rule, same text as
 --              VendorReturn_Mark). Per entry, origin is reported before status.
+--              2026-10-21 - 1.4 - Piece 6: each entry writes 'Result recorded . <outcome> <qty>
+--              [(<defect>)]' onto its member's LOT(s) (ControlledRunLotResult; a container
+--              entry goes onto each tray, naming the container, so it never reads as each
+--              tray losing the quantity).
 -- Description: Records what the Controlled Run inspection found, as one or more
 --              ENTRIES against members of an OPEN super-lot. One call may carry
 --              many members (the screen sends one member's entries; "mark the
@@ -455,6 +459,28 @@ BEGIN
             @LogEntityTypeCode = N'ControlledRun', @EntityId = @ControlledRunId,
             @LogEventTypeCode = N'ControlledRunResultRecorded', @LogSeverityCode = N'Info',
             @Description = @Act, @OldValue = NULL, @NewValue = @NewVal;
+
+        -- ---- v1.4: each entry on its member's own LOT timeline (container: each tray,
+        --      the helper names the container). One call per entry: the text differs. ----
+        DECLARE @EntryMemberJson NVARCHAR(MAX), @EntryText NVARCHAR(400);
+        DECLARE entry_cur CURSOR LOCAL FAST_FORWARD FOR
+            SELECT N'[' + CAST(e.MemberId AS NVARCHAR(20)) + N']',
+                   LEFT(N'Result recorded ' + Audit.ufn_MidDot() + N' ' + dc.Name + N' ' + CAST(e.Quantity AS NVARCHAR(10))
+                        + CASE WHEN df.Id IS NOT NULL THEN N' (' + df.Description + N')' ELSE N'' END, 400)
+            FROM @E e
+            INNER JOIN Quality.DispositionCode dc ON dc.Id = e.DispositionCodeId
+            LEFT JOIN Quality.DefectCode df       ON df.Id = e.DefectCodeId
+            ORDER BY e.Seq;
+        OPEN entry_cur;
+        FETCH NEXT FROM entry_cur INTO @EntryMemberJson, @EntryText;
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+                @MemberIdsJson = @EntryMemberJson, @LogEventTypeCode = N'ControlledRunLotResult',
+                @ActionText = @EntryText, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
+            FETCH NEXT FROM entry_cur INTO @EntryMemberJson, @EntryText;
+        END
+        CLOSE entry_cur; DEALLOCATE entry_cur;
 
         COMMIT TRANSACTION;
 

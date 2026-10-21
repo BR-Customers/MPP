@@ -138,10 +138,12 @@ DECLARE @mj NVARCHAR(MAX) = N'[' + CAST(@MemA AS NVARCHAR(20)) + N']';
 EXEC Quality.ControlledRun_LogMemberLotEventsInternal @MemberIdsJson = @mj, @LogEventTypeCode = N'ControlledRunLotJoined',
      @ActionText = N'Joined', @AppUserId = @App;
 SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(CASE WHEN Description LIKE N'TEST-SLV-A %Super-lot CR%Joined' THEN N'ok' ELSE Description END))
-          FROM Lots.LotEventLog WHERE LotId = @A AND LogEventTypeId = (SELECT Id FROM Audit.LogEventType WHERE Code = N'ControlledRunLotJoined'));
+          FROM Lots.LotEventLog WHERE LotId = @A AND LogEventTypeId = (SELECT Id FROM Audit.LogEventType WHERE Code = N'ControlledRunLotJoined')
+            AND RIGHT(Description, 7) = N' Joined' /* the direct helper call, not Open's own 'Joined (Selected)' row (Task 3) */);
 EXEC test.Assert_IsEqual @TestName = N'[Helper] LOT member: one row, Description contains ''Super-lot CR''', @Expected = N'1|ok', @Actual = @n;
 SET @n = (SELECT JSON_VALUE(NewValue, '$.Lot.Code') + N'|' + JSON_VALUE(NewValue, '$.ControlledRun.Code') + N'|' + ISNULL(JSON_VALUE(NewValue, '$.Container.Id'), N'null')
-          FROM Lots.LotEventLog WHERE LotId = @A AND LogEventTypeId = (SELECT Id FROM Audit.LogEventType WHERE Code = N'ControlledRunLotJoined'));
+          FROM Lots.LotEventLog WHERE LotId = @A AND LogEventTypeId = (SELECT Id FROM Audit.LogEventType WHERE Code = N'ControlledRunLotJoined')
+            AND RIGHT(Description, 7) = N' Joined' /* the direct helper call, not Open's own 'Joined (Selected)' row (Task 3) */);
 EXEC test.Assert_IsEqual @TestName = N'[Helper] NewValue carries resolved-name Lot, ControlledRun and null Container',
     @Expected = N'TEST-SLV-A|CR000001|null', @Actual = @n;
 

@@ -1,9 +1,12 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRun_Cancel.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-12
--- Version:     1.2
+-- Modified:    2026-10-21
+-- Version:     1.3
 -- Change Log:  2026-10-13 - 1.2 - Refused once a release has been signed on the super-lot.
+--              2026-10-21 - 1.3 - Piece 6: every member whose membership THIS cancel ends
+--                                 gets 'Left (super-lot cancelled)' on its LOT(s)
+--                                 (ControlledRunLotLeft; container: each tray).
 -- Description: Cancels a super-lot that should not have been opened. A reason is
 --              required. Ends every open membership (reason RunCancelled) and switches
 --              the window off, so the mint resolver stops tagging the part at once.
@@ -141,8 +144,10 @@ BEGIN
         IF @@ROWCOUNT = 0
             RAISERROR(N'Super-lot was changed by someone else.', 16, 1);
 
+        DECLARE @Ended TABLE (Id BIGINT NOT NULL);
         UPDATE Quality.ControlledRunMember
         SET EndedAt = SYSUTCDATETIME(), EndedByUserId = @AppUserId, ControlledRunMemberEndReasonId = 3 /* RunCancelled */
+        OUTPUT inserted.Id INTO @Ended (Id)
         WHERE ControlledRunId = @Id AND EndedAt IS NULL;
 
         -- Deliberately NO write to Lots.Lot: cancelling the grouping is not a release.
@@ -165,6 +170,13 @@ BEGIN
             @Description        = @Activity,
             @OldValue           = N'{"Status":"Open"}',
             @NewValue           = @NewValue;
+
+        -- v1.3: 'Left (super-lot cancelled)' on the LOTs of the memberships just ended
+        DECLARE @LeftJson NVARCHAR(MAX) = (SELECT N'[' + STRING_AGG(CAST(Id AS NVARCHAR(MAX)), N',') + N']' FROM @Ended);
+        IF @LeftJson IS NOT NULL
+            EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+                @MemberIdsJson = @LeftJson, @LogEventTypeCode = N'ControlledRunLotLeft',
+                @ActionText = N'Left (super-lot cancelled)', @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
         DECLARE @Tail NVARCHAR(200) = CASE WHEN @StillTagged > 0
             THEN N' ' + CAST(@StillTagged AS NVARCHAR(10)) + N' members are still CRT-tagged and must be cleared individually.' ELSE N'' END;

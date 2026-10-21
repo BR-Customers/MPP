@@ -1,8 +1,12 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRun_Close.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-12
--- Version:     1.0
+-- Modified:    2026-10-21
+-- Version:     1.1
+-- Change Log:  2026-10-21 - 1.1 - Piece 6: every member whose membership THIS close ends
+--                                 gets 'Left (super-lot closed)' on its LOT(s)
+--                                 (ControlledRunLotLeft; container: each tray). Released
+--                                 or removed members have already left and get nothing.
 -- Description: Closes a super-lot: the statement that every member has been dealt with.
 --              In this piece of the feature, members are released ONE AT A TIME through
 --              the existing paths (Lots.Lot_ClearCrt on LOT Detail, Lots.Container_
@@ -140,8 +144,10 @@ BEGIN
         IF @@ROWCOUNT = 0
             RAISERROR(N'Super-lot was closed by someone else.', 16, 1);
 
+        DECLARE @Ended TABLE (Id BIGINT NOT NULL);
         UPDATE Quality.ControlledRunMember
         SET EndedAt = SYSUTCDATETIME(), EndedByUserId = @AppUserId, ControlledRunMemberEndReasonId = 2 /* RunClosed */
+        OUTPUT inserted.Id INTO @Ended (Id)
         WHERE ControlledRunId = @Id AND EndedAt IS NULL;
 
         DECLARE @ActivityRaw NVARCHAR(MAX) = @RunNumber + N' ' + Audit.ufn_MidDot() + N' Closed'
@@ -163,6 +169,13 @@ BEGIN
             @Description        = @Activity,
             @OldValue           = N'{"Status":"Open"}',
             @NewValue           = @NewValue;
+
+        -- v1.1: 'Left (super-lot closed)' on the LOTs of the memberships just ended
+        DECLARE @LeftJson NVARCHAR(MAX) = (SELECT N'[' + STRING_AGG(CAST(Id AS NVARCHAR(MAX)), N',') + N']' FROM @Ended);
+        IF @LeftJson IS NOT NULL
+            EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+                @MemberIdsJson = @LeftJson, @LogEventTypeCode = N'ControlledRunLotLeft',
+                @ActionText = N'Left (super-lot closed)', @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
         COMMIT TRANSACTION;
 

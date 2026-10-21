@@ -1,11 +1,15 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRun_ApplyMembersInternal.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-12
--- Version:     1.1
+-- Modified:    2026-10-21
+-- Version:     1.2
 -- Change Log:  2026-10-13 - 1.1 - Piece 2: the Closed tray LOTs of a container that
 --                                 joins ARE tagged, so a completed container is
 --                                 blocked at the dock. Stamps WasCompleteAtJoin.
+--              2026-10-21 - 1.2 - Piece 6: every member it inserts, tagged or not,
+--                                 gets a 'Joined (<join method>)' row on its LOT(s)
+--                                 (ControlledRunLotJoined, container members: each
+--                                 tray) via ControlledRun_LogMemberLotEventsInternal.
 -- Description: SILENT INTERNAL HELPER -- not called from Ignition. Adds every
 --              ELIGIBLE unit in @MembersJson to a super-lot, sets
 --              Lots.Lot.CrtActive where it is not already set (D5) and writes
@@ -74,8 +78,10 @@ BEGIN
          OR l.Id IN (SELECT t.FinishedGoodLotId FROM Lots.ContainerTray t
                      WHERE t.ContainerId IN (SELECT ContainerId FROM @M WHERE ContainerId IS NOT NULL)) );
 
+    DECLARE @NewMembers TABLE (Id BIGINT NOT NULL);
     INSERT INTO Quality.ControlledRunMember
         (ControlledRunId, LotId, ContainerId, ControlledRunJoinMethodId, CrtSetByRun, WasCompleteAtJoin, AddedByUserId)
+    OUTPUT inserted.Id INTO @NewMembers (Id)
     SELECT @ControlledRunId, m.LotId, m.ContainerId, @JoinMethodId,
            CONVERT(BIT, CASE
                WHEN m.LotId IS NOT NULL AND EXISTS (SELECT 1 FROM @Tagged g WHERE g.LotId = m.LotId) THEN 1
@@ -116,5 +122,14 @@ BEGIN
         FETCH NEXT FROM tagged_cur INTO @LotId, @LotName;
     END
     CLOSE tagged_cur; DEALLOCATE tagged_cur;
+
+    -- ---- v1.2: 'Joined (<method>)' on every LOT of every member inserted, tagged
+    --      or not (an already-tagged LOT otherwise leaves nothing on its timeline) ----
+    DECLARE @JoinedJson NVARCHAR(MAX) = (SELECT N'[' + STRING_AGG(CAST(Id AS NVARCHAR(MAX)), N',') + N']' FROM @NewMembers);
+    DECLARE @JoinedText NVARCHAR(400) = N'Joined (' + (SELECT Name FROM Quality.ControlledRunJoinMethod WHERE Id = @JoinMethodId) + N')';
+    IF @JoinedJson IS NOT NULL
+        EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+            @MemberIdsJson = @JoinedJson, @LogEventTypeCode = N'ControlledRunLotJoined',
+            @ActionText = @JoinedText, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 END;
 GO

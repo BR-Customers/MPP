@@ -1,8 +1,12 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRunDeviation_Raise.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-13
--- Version:     1.0
+-- Modified:    2026-10-21
+-- Version:     1.1
+-- Change Log:  2026-10-21 - 1.1 - Piece 6 (spec 6c): a deviation covers every member still in
+--                                 the super-lot when it is signed (EndedAt IS NULL); each gets
+--                                 'Deviation <DV> raised' on its LOT(s) (ControlledRunLotDeviation;
+--                                 container: each tray in it now).
 -- Description: Raises a SIGNED deviation on an open super-lot: a condition the
 --              inspection found and Quality judged not to affect part
 --              performance. This is what MPP call the nonconformance (the
@@ -164,6 +168,18 @@ BEGIN
             @LogEntityTypeCode = N'ControlledRun', @EntityId = @ControlledRunId,
             @LogEventTypeCode = N'ControlledRunDeviationRaised', @LogSeverityCode = N'Info',
             @Description = @Activity, @OldValue = NULL, @NewValue = @NewValue;
+
+        -- v1.1: 'Deviation <DV> raised' on the LOTs of every member still in the
+        -- super-lot at signing (spec 6c). Released / removed members get nothing.
+        DECLARE @CoveredJson NVARCHAR(MAX) = (
+            SELECT N'[' + STRING_AGG(CAST(m.Id AS NVARCHAR(MAX)), N',') + N']'
+            FROM Quality.ControlledRunMember m
+            WHERE m.ControlledRunId = @ControlledRunId AND m.EndedAt IS NULL);
+        DECLARE @CoveredText NVARCHAR(400) = N'Deviation ' + @DevNumber + N' raised';
+        IF @CoveredJson IS NOT NULL
+            EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+                @MemberIdsJson = @CoveredJson, @LogEventTypeCode = N'ControlledRunLotDeviation',
+                @ActionText = @CoveredText, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
         COMMIT TRANSACTION;
 

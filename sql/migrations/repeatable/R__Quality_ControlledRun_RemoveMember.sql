@@ -1,10 +1,13 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRun_RemoveMember.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-12
--- Version:     1.1
+-- Modified:    2026-10-21
+-- Version:     1.2
 -- Change Log:  2026-10-13 - 1.1 - The still-tagged message is right for a container
 --                                 (released from the Sign-off tab, not LOT Detail).
+--              2026-10-21 - 1.2 - Piece 6: writes 'Left (removed: <remarks>)' onto the
+--                                 member's LOT(s) (ControlledRunLotLeft; container:
+--                                 each tray) via ControlledRun_LogMemberLotEventsInternal.
 -- Description: Removes ONE member from an OPEN super-lot: a correction to the list. A
 --              reason is required.
 --
@@ -154,6 +157,13 @@ BEGIN
             @Description        = @Activity,
             @OldValue           = NULL,
             @NewValue           = @NewValue;
+
+        -- v1.2: the removal on the member's own LOT timeline (container: each tray)
+        DECLARE @LeftJson NVARCHAR(MAX) = N'[' + CAST(@MemberId AS NVARCHAR(20)) + N']';
+        DECLARE @LeftText NVARCHAR(400) = LEFT(N'Left (removed: ' + @Remarks + N')', 400);
+        EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+            @MemberIdsJson = @LeftJson, @LogEventTypeCode = N'ControlledRunLotLeft',
+            @ActionText = @LeftText, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
         DECLARE @Tail NVARCHAR(200) = CASE
             WHEN @StillTagged = 1 AND @IsContainer = 1

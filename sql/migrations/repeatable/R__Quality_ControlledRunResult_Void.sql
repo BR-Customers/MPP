@@ -1,11 +1,14 @@
 -- ============================================================
 -- Repeatable:  R__Quality_ControlledRunResult_Void.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-19
--- Version:     1.1
+-- Modified:    2026-10-21
+-- Version:     1.2
 -- Change Log:  2026-10-19 - 1.1 - Refuses an APPLIED return: a ReturnToSupplier entry that a
 --                                 Lots.VendorReturn (not cancelled) points at. Cancelling the
 --                                 return voids the entry in the same transaction (piece 5).
+--              2026-10-21 - 1.2 - Piece 6: writes 'Result voided . <outcome> <qty> (<remarks>)'
+--                                 onto the member's LOT(s) (ControlledRunLotResultVoided;
+--                                 container: each tray, naming the container).
 -- Description: Voids ONE inspection result entry: the correction for a wrong
 --              entry (spec D4). The row is never edited or deleted -- it is
 --              stamped VoidedAt / VoidedByUserId / VoidRemarks once, stops
@@ -121,6 +124,14 @@ BEGIN
             @LogEntityTypeCode = N'ControlledRun', @EntityId = @RunId,
             @LogEventTypeCode = N'ControlledRunResultVoided', @LogSeverityCode = N'Info',
             @Description = @Activity, @OldValue = NULL, @NewValue = @NewValue;
+
+        -- v1.2: the void on the member's own LOT timeline (container: each tray)
+        DECLARE @LotJson NVARCHAR(MAX) = N'[' + CAST(@MemberId AS NVARCHAR(20)) + N']';
+        DECLARE @LotText NVARCHAR(400) = LEFT(N'Result voided ' + Audit.ufn_MidDot() + N' ' + @DispName + N' '
+                                              + CAST(@Qty AS NVARCHAR(10)) + N' (' + @Remarks + N')', 400);
+        EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+            @MemberIdsJson = @LotJson, @LogEventTypeCode = N'ControlledRunLotResultVoided',
+            @ActionText = @LotText, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
         COMMIT TRANSACTION;
 
