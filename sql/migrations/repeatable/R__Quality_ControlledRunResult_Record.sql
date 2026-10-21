@@ -18,8 +18,9 @@
 --              entry goes onto each tray, naming the container, so it never reads as each
 --              tray losing the quantity).
 --              2026-10-21 - 1.5 - Piece 6 timing gap: the inlined vendor-return UPDATE re-checks the LOT's
---              status under UPDLOCK/HOLDLOCK (matches only while not Closed / Scrap / Open, as
---              VendorReturn_Mark v1.2); no row -> RAISERROR SUPERLOT_STATUS -> CATCH (expected,
+--              status under UPDLOCK/HOLDLOCK in BOTH the scrap UPDATE and the inlined vendor-return
+--              UPDATE (matches only while not Closed / Scrap / Open, as VendorReturn_Mark v1.2);
+--              no row -> RAISERROR SUPERLOT_STATUS -> CATCH (expected,
 --              not re-raised), everything rolled back.
 -- Description: Records what the Controlled Run inspection found, as one or more
 --              ENTRIES against members of an OPEN super-lot. One call may carry
@@ -262,10 +263,10 @@ BEGIN
               AND l.LotStatusId NOT IN (SELECT Id FROM Lots.LotStatusCode WHERE Code IN (N'Closed', N'Scrap', N'Open'));
 
             -- TOCTOU re-checks under the lock -> CATCH (only legal ROLLBACK site).
-            -- Status: the locked UPDATE matches only while the LOT is still returnable
-            -- (it was validated before the transaction; it may have closed since).
+            -- Status: the locked UPDATE matches only while the LOT is still scrappable
+            -- (mirror of RejectEvent_Record's guard; validated before the transaction).
             IF @@ROWCOUNT = 0
-                RAISERROR(N'SUPERLOT_STATUS: the LOT''s status changed while the return was being recorded.', 16, 1);
+                RAISERROR(N'SUPERLOT_STATUS: the LOT''s status changed while the scrap was being recorded.', 16, 1);
             -- Quantity: the totals above were read unlocked.
             IF @NewPieceCount < 0
                 RAISERROR(N'SUPERLOT_QTY: scrap is more than the LOT now holds.', 16, 1);
@@ -373,7 +374,13 @@ BEGIN
                 l.UpdatedAt          = SYSUTCDATETIME(),
                 l.UpdatedByUserId    = @AppUserId
             FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK)
-            WHERE l.Id = @LotId;
+            WHERE l.Id = @LotId
+              AND l.LotStatusId NOT IN (SELECT Id FROM Lots.LotStatusCode WHERE Code IN (N'Closed', N'Scrap', N'Open'));
+
+            -- TOCTOU re-checks under the lock -> CATCH (mirror of VendorReturn_Mark v1.2).
+            -- Status: matches only while the LOT is still returnable (validated before the txn).
+            IF @@ROWCOUNT = 0
+                RAISERROR(N'SUPERLOT_STATUS: the LOT''s status changed while the return was being recorded.', 16, 1);
 
             -- TOCTOU: the totals above were read unlocked. Re-check under the lock.
             IF @NewPieceCount < 0

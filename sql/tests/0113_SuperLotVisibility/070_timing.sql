@@ -99,6 +99,17 @@ EXEC test.Assert_IsEqual @TestName = N'[Timing] Release of ready members still s
 DELETE FROM @o;
 SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Quality.ControlledRunMember WHERE Id = @MemR1 AND EndedAt IS NOT NULL);
 EXEC test.Assert_IsEqual @TestName = N'[Timing] the released member is ended', @Expected = N'1', @Actual = @n;
+
+-- ---- structural: the status guard sits in the vendor-return block (not just the scrap block) ----
+DECLARE @Def NVARCHAR(MAX) = OBJECT_DEFINITION(OBJECT_ID(N'Quality.ControlledRunResult_Record'));
+DECLARE @RetPos INT = CHARINDEX(N'DECLARE return_cur', @Def);
+DECLARE @Tail NVARCHAR(MAX) = SUBSTRING(@Def, @RetPos, 4000);
+DECLARE @UpdPos INT = CHARINDEX(N'WITH (UPDLOCK, HOLDLOCK)', @Tail);
+SET @n = CASE WHEN @RetPos > 0 AND @UpdPos > 0
+               AND CHARINDEX(N'LotStatusId NOT IN', SUBSTRING(@Tail, @UpdPos, 400)) > 0
+               AND CHARINDEX(N'SUPERLOT_STATUS', SUBSTRING(@Tail, @UpdPos, 900)) > 0
+              THEN N'ok' ELSE N'missing' END;
+EXEC test.Assert_IsEqual @TestName = N'[Timing] Record re-checks status under the lock in the vendor-return UPDATE', @Expected = N'ok', @Actual = @n;
 GO
 
 -- ---- teardown (FK-safe) ----
