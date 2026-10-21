@@ -2,7 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRunResult_Record.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
--- Version:     1.4
+-- Version:     1.5
 -- Change Log:  2026-10-19 - 1.1 - 'Rework' is no longer a recordable outcome (piece 5): rework is the LOT's
 --              move back into trim, and an open rework blocks release. The Rework disposition
 --              code and ReworkQty column stay for history.
@@ -17,6 +17,10 @@
 --              [(<defect>)]' onto its member's LOT(s) (ControlledRunLotResult; a container
 --              entry goes onto each tray, naming the container, so it never reads as each
 --              tray losing the quantity).
+--              2026-10-21 - 1.5 - Piece 6 timing gap: the inlined vendor-return UPDATE re-checks the LOT's
+--              status under UPDLOCK/HOLDLOCK (matches only while not Closed / Scrap / Open, as
+--              VendorReturn_Mark v1.2); no row -> RAISERROR SUPERLOT_STATUS -> CATCH (expected,
+--              not re-raised), everything rolled back.
 -- Description: Records what the Controlled Run inspection found, as one or more
 --              ENTRIES against members of an OPEN super-lot. One call may carry
 --              many members (the screen sends one member's entries; "mark the
@@ -254,9 +258,15 @@ BEGIN
                 l.UpdatedAt          = SYSUTCDATETIME(),
                 l.UpdatedByUserId    = @AppUserId
             FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK)
-            WHERE l.Id = @LotId;
+            WHERE l.Id = @LotId
+              AND l.LotStatusId NOT IN (SELECT Id FROM Lots.LotStatusCode WHERE Code IN (N'Closed', N'Scrap', N'Open'));
 
-            -- TOCTOU: the totals above were read unlocked. Re-check under the lock.
+            -- TOCTOU re-checks under the lock -> CATCH (only legal ROLLBACK site).
+            -- Status: the locked UPDATE matches only while the LOT is still returnable
+            -- (it was validated before the transaction; it may have closed since).
+            IF @@ROWCOUNT = 0
+                RAISERROR(N'SUPERLOT_STATUS: the LOT''s status changed while the return was being recorded.', 16, 1);
+            -- Quantity: the totals above were read unlocked.
             IF @NewPieceCount < 0
                 RAISERROR(N'SUPERLOT_QTY: scrap is more than the LOT now holds.', 16, 1);
 
@@ -508,6 +518,11 @@ BEGIN
         DECLARE @Race BIT = CASE WHEN @ErrMsg LIKE N'SUPERLOT_QTY%' THEN 1 ELSE 0 END;
         IF @Race = 1
             SET @Message = N'A LOT changed while you were saving. Nothing was recorded - reload and try again.';
+        IF @ErrMsg LIKE N'SUPERLOT_STATUS%'
+        BEGIN
+            SET @Race = 1;
+            SET @Message = N'A LOT''s status changed while you were saving. Nothing was recorded - reload and try again.';
+        END
 
         BEGIN TRY
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)

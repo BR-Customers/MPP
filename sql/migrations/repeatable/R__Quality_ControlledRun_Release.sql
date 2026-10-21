@@ -2,8 +2,12 @@
 -- Repeatable:  R__Quality_ControlledRun_Release.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
--- Version:     1.1
--- Change Log:  2026-10-21 - 1.1 - Piece 6: each released member gets 'Released . signed
+-- Version:     1.2
+-- Change Log:  2026-10-21 - 1.2 - Piece 6 timing gap: inside the transaction, each ticked member's
+--                                 result row(s) are locked (UPDLOCK, HOLDLOCK) and ReleaseBlockReason is
+--                                 re-read from ufn_ControlledRunMemberResults; any now blocked ->
+--                                 RAISERROR SUPERLOT_RESULTS -> CATCH, everything undone.
+--              2026-10-21 - 1.1 - Piece 6: each released member gets 'Released . signed
 --                                 <initials>[ . Deviation <DV>[, <DV>]]' on its LOT(s)
 --                                 (ControlledRunLotReleased; container: each tray). The
 --                                 deviations named are the run's deviations raised while
@@ -148,6 +152,20 @@ BEGIN
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
 
+        -- ---- 0. (v1.2) re-check the members' results under the lock. The pre-transaction
+        --      check read them unlocked; a result voided / recorded since would otherwise
+        --      be released on stale ground. Lock the ticked members' result rows, then
+        --      re-read the ready state from the same function. ----
+        DECLARE @Locked INT;
+        SELECT @Locked = COUNT(*)
+        FROM Quality.ControlledRunResult rr WITH (UPDLOCK, HOLDLOCK)
+        WHERE rr.ControlledRunMemberId IN (SELECT MemberId FROM @T);
+
+        IF EXISTS (SELECT 1 FROM @T t
+                   INNER JOIN Quality.ufn_ControlledRunMemberResults(@Id) mr ON mr.MemberId = t.MemberId
+                   WHERE mr.ReleaseBlockReason IS NOT NULL)
+            RAISERROR(N'SUPERLOT_RESULTS: super-lot results changed while releasing.', 16, 1);
+
         -- ---- 1. clear the tag. MIRROR of Lots.Lot_ClearCrt (same three columns).
         --      OUTPUT says exactly which LOTs were touched -- never re-derive. ----
         DECLARE @Cleared TABLE (LotId BIGINT NOT NULL, LotName NVARCHAR(50) NOT NULL);
@@ -290,6 +308,11 @@ BEGIN
         DECLARE @Race BIT = CASE WHEN @ErrMsg LIKE N'SUPERLOT_RACE%' THEN 1 ELSE 0 END;
         IF @Race = 1
             SET @Message = N'Something changed while you were releasing. Nothing was released - reload and try again.';
+        IF @ErrMsg LIKE N'SUPERLOT_RESULTS%'
+        BEGIN
+            SET @Race = 1;
+            SET @Message = N'Super-lot results changed while releasing; refresh and try again.';
+        END
 
         BEGIN TRY
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
