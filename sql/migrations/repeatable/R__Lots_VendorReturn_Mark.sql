@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_VendorReturn_Mark.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.2
+-- Version:     1.3
 -- Description: Super-lot piece 5 (spec 5.1). Marks part of a purchased /
 --              received LOT for return to the vendor: the quantity leaves the
 --              LOT NOW (PieceCount and InventoryAvailable together) and a
@@ -47,6 +47,11 @@
 --                      UPDLOCK/HOLDLOCK (the locked UPDATE matches only the status read
 --                      before the transaction), routed to CATCH like the quantity re-check,
 --                      so a concurrent Good->Hold cannot be closed from the wrong status.
+--   2026-10-21 - 1.3 - Piece 6 final review: the applied ReturnToSupplier result for a
+--                      current member also writes the member LOT's 'Result recorded'
+--                      row (ControlledRunLotResult via ControlledRun_LogMemberLotEventsInternal),
+--                      as ControlledRunResult_Record v1.4 does, so Cancel's 'Result voided'
+--                      row has its pair.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.VendorReturn_Mark
     @LotId              BIGINT,
@@ -269,6 +274,18 @@ BEGIN
                 @Description        = @RunActivity,
                 @OldValue           = NULL,
                 @NewValue           = @RunNewValue;
+
+            -- v1.3: the entry on the member's own LOT timeline, the same
+            -- 'Result recorded . <outcome> <qty>' row ControlledRunResult_Record v1.4
+            -- writes (silent helper, inside this transaction).
+            DECLARE @ResultMemberJson NVARCHAR(MAX) = N'[' + CAST(@MemberId AS NVARCHAR(20)) + N']';
+            DECLARE @ResultText NVARCHAR(400) = (
+                SELECT LEFT(N'Result recorded ' + Audit.ufn_MidDot() + N' ' + dc.Name + N' '
+                            + CAST(@Quantity AS NVARCHAR(10)), 400)
+                FROM Quality.DispositionCode dc WHERE dc.Id = @ReturnDispId);
+            EXEC Quality.ControlledRun_LogMemberLotEventsInternal
+                @MemberIdsJson = @ResultMemberJson, @LogEventTypeCode = N'ControlledRunLotResult',
+                @ActionText = @ResultText, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
         END
 
         -- Close-at-zero: INLINED mirror of Lots.Lot_UpdateStatus Good->Closed

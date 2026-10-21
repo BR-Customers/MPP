@@ -13,6 +13,8 @@
 --              Lots.ContainerRework_Scrap (an applied scrap result) and
 --              Lots.ContainerRework_Void (ends the membership) -- and the one
 --              deviation-cover rule in ControlledRun_Release.
+--              Final review: Lots.VendorReturn_Mark on a current member writes
+--              the LOT's 'Result recorded' row (its Cancel the 'Result voided').
 --              LOTs named TEST-SLV-%.
 -- =============================================
 EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/030_lot_events.sql';
@@ -306,6 +308,24 @@ SET @exp = N'TEST-SLV-V1 ' + @Dot + N' Super-lot ' + @RunNumber + N' ' + @Dot + 
 SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(CASE WHEN Description = @exp THEN N'ok' ELSE Description END))
           FROM Lots.LotEventLog WHERE LotId = @V1 AND LogEventTypeId = @EvVoided);
 EXEC test.Assert_IsEqual @TestName = N'[Events] vendor return cancelled: the voided result is on the LOT', @Expected = N'1|ok', @Actual = @n;
+
+-- ---- VendorReturn_Mark from LOT Detail on a current member: 'Result recorded' on the LOT;
+--      its Cancel then writes 'Result voided' (final review) ----
+INSERT INTO @o EXEC Lots.VendorReturn_Mark @LotId = @V1, @Quantity = 4, @Remarks = N'wrong box', @AppUserId = @App;
+SET @n = (SELECT CAST(Status AS NVARCHAR(1)) FROM @o);
+EXEC test.Assert_IsEqual @TestName = N'[Events] fix fixture: vendor return marked from LOT Detail', @Expected = N'1', @Actual = @n;
+DECLARE @VR2 BIGINT = (SELECT NewId FROM @o);
+DELETE FROM @o;
+SET @exp = N'TEST-SLV-V1 ' + @Dot + N' Super-lot ' + @RunNumber + N' ' + @Dot + N' Result recorded ' + @Dot + N' Return to Supplier 4';
+SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(CASE WHEN Description = @exp THEN N'ok' ELSE Description END))
+          FROM Lots.LotEventLog WHERE LotId = @V1 AND LogEventTypeId = @EvResult AND Description LIKE N'%Return to Supplier 4');
+EXEC test.Assert_IsEqual @TestName = N'[Events] vendor return marked on a member LOT: one Result recorded row', @Expected = N'1|ok', @Actual = @n;
+INSERT INTO @s EXEC Lots.VendorReturn_Cancel @VendorReturnId = @VR2, @CancelRemarks = N'kept after all', @AppUserId = @App;
+DELETE FROM @s;
+SET @exp = N'TEST-SLV-V1 ' + @Dot + N' Super-lot ' + @RunNumber + N' ' + @Dot + N' Result voided ' + @Dot + N' Return to Supplier 4 (kept after all)';
+SET @n = (SELECT CONCAT(COUNT(*), N'|', MIN(CASE WHEN Description = @exp THEN N'ok' ELSE Description END))
+          FROM Lots.LotEventLog WHERE LotId = @V1 AND LogEventTypeId = @EvVoided AND Description LIKE N'%Return to Supplier 4 %');
+EXEC test.Assert_IsEqual @TestName = N'[Events] ...and its Cancel writes Result voided', @Expected = N'1|ok', @Actual = @n;
 
 -- ---- ContainerRework_Scrap writes an applied scrap result: on each tray ----
 INSERT INTO @o EXEC Lots.ContainerRework_Open @ContainerId = @KR, @AppUserId = @App;
