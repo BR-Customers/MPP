@@ -1,5 +1,7 @@
 {
-  "custom": {
+  "custom": {},
+  "params": {
+    "terminalLocationId": null,
     "rp": {
       "ItemId": null,
       "PartNumber": "",
@@ -21,24 +23,12 @@
       "OpenPartsClosed": 0
     }
   },
-  "params": {
-    "terminalLocationId": null,
-    "pressToken": 0
-  },
   "propConfig": {
     "params.terminalLocationId": {
       "paramDirection": "input"
     },
-    "params.pressToken": {
+    "params.rp": {
       "paramDirection": "input"
-    },
-    "custom.rp": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.getRunningPartOrEmpty\", 0, {view.params.terminalLocationId}, {view.params.pressToken})"
-        }
-      }
     }
   },
   "props": {
@@ -114,7 +104,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "if({view.custom.rp.PartNumber} = '', 'No part can run', {view.custom.rp.PartNumber})"
+                        "expression": "if({view.params.rp.PartNumber} = '', 'No part can run', {view.params.rp.PartNumber})"
                       }
                     }
                   }
@@ -135,7 +125,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "{view.custom.rp.Description}"
+                        "expression": "{view.params.rp.Description}"
                       }
                     }
                   }
@@ -158,7 +148,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.rp.Source} = 'Override', 'Override set by ' + {view.custom.rp.OverrideSetBy} + if(len({view.custom.rp.Message}) > 0, '. ' + {view.custom.rp.Message}, ''), if(len({view.custom.rp.Message}) > 0, {view.custom.rp.Message}, 'Default: closest to ready'))"
+                    "expression": "if({view.params.rp.Source} = 'Override', 'Override set by ' + {view.params.rp.OverrideSetBy} + if(len({view.params.rp.Message}) > 0, '. ' + {view.params.rp.Message}, ''), if(len({view.params.rp.Message}) > 0, {view.params.rp.Message}, 'Default: closest to ready'))"
                   }
                 }
               },
@@ -166,7 +156,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.rp.Source} = 'None', 'pf-kpi-sub pf-kpi-value-bad', 'pf-kpi-sub')"
+                    "expression": "if({view.params.rp.Source} = 'None', 'pf-kpi-sub pf-kpi-value-bad', 'pf-kpi-sub')"
                   }
                 }
               }
@@ -192,7 +182,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if(isNull({view.custom.rp.LowLimit}), '', toStr({view.custom.rp.PartsPerTray}) + ' per tray  |  ' + toStr({view.custom.rp.TraysPerContainer}) + ' trays per box  |  ' + toStr({view.custom.rp.LowLimit}) + ' - ' + toStr({view.custom.rp.HighLimit}) + ' lb')"
+                "expression": "if(isNull({view.params.rp.LowLimit}), '', toStr({view.params.rp.PartsPerTray}) + ' per tray  |  ' + toStr({view.params.rp.TraysPerContainer}) + ' trays per box  |  ' + toStr({view.params.rp.LowLimit}) + ' - ' + toStr({view.params.rp.HighLimit}) + ' lb')"
               }
             }
           }
@@ -219,7 +209,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "'Change part (' + toStr({view.custom.rp.EligibleCount}) + ' can run)'"
+                "expression": "'Change part (' + toStr({view.params.rp.EligibleCount}) + ' can run)'"
               }
             }
           },
@@ -227,7 +217,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "{view.custom.rp.EligibleCount} > 1"
+                "expression": "{view.params.rp.EligibleCount} > 1"
               }
             }
           }

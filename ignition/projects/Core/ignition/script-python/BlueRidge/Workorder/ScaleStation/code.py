@@ -202,10 +202,17 @@ def lastPressOrEmpty(terminalLocationId, _token=None):
 
 
 def trayCells(terminalLocationId, _token=None):
-    """One cell per tray of the running part's box: closed / next / todo."""
+    """trayCellsFor, reading the running part itself."""
     rp = getRunningPartOrEmpty(terminalLocationId)
-    total = int(rp.get("TraysPerContainer") or 0)
-    closed = int(rp.get("OpenTraysClosed") or 0) if rp.get("OpenContainerId") is not None else 0
+    return trayCellsFor(rp.get("TraysPerContainer"), rp.get("OpenTraysClosed"), rp.get("OpenContainerId"))
+
+
+def trayCellsFor(traysPerContainer, openTraysClosed, openContainerId):
+    """One cell per tray of the running part's box (closed / next / todo),
+       from values the caller already has -- no second query. Scalars only:
+       a dict passed through runScript arrives as Java wrappers."""
+    total = int(_u(traysPerContainer) or 0)
+    closed = int(_u(openTraysClosed) or 0) if _u(openContainerId) is not None else 0
     return [{"n": i, "state": "closed" if i <= closed else ("next" if i == closed + 1 else "todo")}
             for i in range(1, total + 1)]
 
@@ -261,3 +268,32 @@ def scaleStatusText(terminalLocationId, _token=None):
     if qv.value is None:
         return "Scale last message: never"
     return "Scale last message " + _fmtTime(qv.value)
+
+
+def _same(a, b):
+    """Ids compared as text: a page parameter is '106', a press carries 106."""
+    return a is not None and b is not None and ("%s" % a) == ("%s" % b)
+
+
+def shouldRefresh(messageType, payload, terminalLocationId, cellLocationId):
+    """Whether a page message should re-read this scale station. One refresh
+       per event, and only for this station:
+         scalePressRecorded / scaleRunningPartChanged -> this terminal only;
+         inventoryChanged from this terminal's own close -> no (the press
+           message already refreshed it);
+         inventoryChanged from another station at this line -> yes (stock,
+           so eligibility, changed);
+         inventoryChanged with no cell or terminal -> yes (a stock move made
+           on this very page; InventoryManager's message is page-local)."""
+    p = _u(payload) or {}
+    tid = p.get("terminalLocationId")
+    if messageType in ("scalePressRecorded", "scaleRunningPartChanged"):
+        return _same(tid, terminalLocationId)
+    if messageType == "inventoryChanged":
+        cell = p.get("cellLocationId")
+        if tid is None and cell is None:
+            return True
+        if _same(tid, terminalLocationId):
+            return False
+        return _same(cell, cellLocationId)
+    return False

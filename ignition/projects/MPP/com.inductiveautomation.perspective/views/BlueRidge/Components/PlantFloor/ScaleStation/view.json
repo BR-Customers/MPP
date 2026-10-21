@@ -1,7 +1,28 @@
 {
   "custom": {
     "pressToken": 0,
-    "tid": null
+    "tid": null,
+    "cellId": null,
+    "rp": {
+      "ItemId": null,
+      "PartNumber": "",
+      "Description": "",
+      "Source": "None",
+      "PartsPerTray": 0,
+      "TraysPerContainer": 0,
+      "TargetWeight": null,
+      "ToleranceWeight": null,
+      "LowLimit": null,
+      "HighLimit": null,
+      "EligibleCount": 0,
+      "Message": "",
+      "OverrideItemId": null,
+      "OverrideSetBy": "",
+      "OverrideSetAtEt": null,
+      "OpenContainerId": null,
+      "OpenTraysClosed": 0,
+      "OpenPartsClosed": 0
+    }
   },
   "params": {
     "terminalLocationId": null
@@ -15,6 +36,22 @@
         "type": "expr",
         "config": {
           "expression": "if(isNull({view.params.terminalLocationId}), {session.custom.terminal.terminalLocationId}, {view.params.terminalLocationId})"
+        }
+      }
+    },
+    "custom.cellId": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "{session.custom.cell.locationId}"
+        }
+      }
+    },
+    "custom.rp": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.getRunningPartOrEmpty\", 0, {view.custom.tid}, {view.custom.pressToken})"
         }
       }
     }
@@ -55,7 +92,26 @@
           "path": "BlueRidge/Components/PlantFloor/ScaleStationRunningPart",
           "params": {
             "terminalLocationId": null,
-            "pressToken": 0
+            "rp": {
+              "ItemId": null,
+              "PartNumber": "",
+              "Description": "",
+              "Source": "None",
+              "PartsPerTray": 0,
+              "TraysPerContainer": 0,
+              "TargetWeight": null,
+              "ToleranceWeight": null,
+              "LowLimit": null,
+              "HighLimit": null,
+              "EligibleCount": 0,
+              "Message": "",
+              "OverrideItemId": null,
+              "OverrideSetBy": "",
+              "OverrideSetAtEt": null,
+              "OpenContainerId": null,
+              "OpenTraysClosed": 0,
+              "OpenPartsClosed": 0
+            }
           },
           "useDefaultViewHeight": false,
           "useDefaultViewWidth": false
@@ -69,11 +125,11 @@
               }
             }
           },
-          "props.params.pressToken": {
+          "props.params.rp": {
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "{view.custom.pressToken}"
+                "expression": "{view.custom.rp}"
               }
             }
           }
@@ -104,7 +160,26 @@
               "path": "BlueRidge/Components/PlantFloor/ScaleStationOpenBox",
               "params": {
                 "terminalLocationId": null,
-                "pressToken": 0
+                "rp": {
+                  "ItemId": null,
+                  "PartNumber": "",
+                  "Description": "",
+                  "Source": "None",
+                  "PartsPerTray": 0,
+                  "TraysPerContainer": 0,
+                  "TargetWeight": null,
+                  "ToleranceWeight": null,
+                  "LowLimit": null,
+                  "HighLimit": null,
+                  "EligibleCount": 0,
+                  "Message": "",
+                  "OverrideItemId": null,
+                  "OverrideSetBy": "",
+                  "OverrideSetAtEt": null,
+                  "OpenContainerId": null,
+                  "OpenTraysClosed": 0,
+                  "OpenPartsClosed": 0
+                }
               },
               "useDefaultViewHeight": false,
               "useDefaultViewWidth": false
@@ -118,11 +193,11 @@
                   }
                 }
               },
-              "props.params.pressToken": {
+              "props.params.rp": {
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "{view.custom.pressToken}"
+                    "expression": "{view.custom.rp}"
                   }
                 }
               }
@@ -355,21 +430,21 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\ttid = (payload or {}).get(\"terminalLocationId\")\n\tif tid is None or str(tid) == str(self.view.custom.tid):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
+          "script": "\tif BlueRidge.Workorder.ScaleStation.shouldRefresh(\"scalePressRecorded\", payload, self.view.custom.tid, self.view.custom.cellId):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
         },
         {
           "messageType": "scaleRunningPartChanged",
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\ttid = (payload or {}).get(\"terminalLocationId\")\n\tif tid is None or str(tid) == str(self.view.custom.tid):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
+          "script": "\tif BlueRidge.Workorder.ScaleStation.shouldRefresh(\"scaleRunningPartChanged\", payload, self.view.custom.tid, self.view.custom.cellId):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
         },
         {
           "messageType": "inventoryChanged",
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\ttid = (payload or {}).get(\"terminalLocationId\")\n\tif tid is None or str(tid) == str(self.view.custom.tid):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
+          "script": "\tif BlueRidge.Workorder.ScaleStation.shouldRefresh(\"inventoryChanged\", payload, self.view.custom.tid, self.view.custom.cellId):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
         }
       ]
     }

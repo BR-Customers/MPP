@@ -498,6 +498,40 @@ class StationHelperTests(unittest.TestCase):
         s.applyPartChoice(object(), 106, None)
         self.assertEqual(closed, [])
 
+    # ---- refresh rule (one refresh per event, only for this station) ----
+
+    def test_refresh_on_own_press_and_part_change(self):
+        s = _loadStation()
+        self.assertTrue(s.shouldRefresh("scalePressRecorded", {"terminalLocationId": 106}, "106", 104))
+        self.assertTrue(s.shouldRefresh("scaleRunningPartChanged", {"terminalLocationId": 106}, 106, 104))
+
+    def test_no_refresh_for_another_terminals_press(self):
+        s = _loadStation()
+        self.assertFalse(s.shouldRefresh("scalePressRecorded", {"terminalLocationId": 107}, 106, 104))
+
+    def test_inventory_change_from_own_close_is_not_a_second_refresh(self):
+        s = _loadStation()
+        self.assertFalse(s.shouldRefresh("inventoryChanged", {"cellLocationId": 104, "terminalLocationId": 106}, 106, 104))
+
+    def test_inventory_change_at_this_line_by_another_station_refreshes(self):
+        s = _loadStation()
+        self.assertTrue(s.shouldRefresh("inventoryChanged", {"cellLocationId": 104, "terminalLocationId": 110}, 106, 104))
+
+    def test_inventory_change_at_another_line_does_not(self):
+        s = _loadStation()
+        self.assertFalse(s.shouldRefresh("inventoryChanged", {"cellLocationId": 999, "terminalLocationId": 110}, 106, 104))
+
+    def test_local_stock_move_on_this_page_refreshes(self):
+        # InventoryManager's own page-scoped message carries no cell or terminal.
+        s = _loadStation()
+        self.assertTrue(s.shouldRefresh("inventoryChanged", {}, 106, 104))
+        self.assertTrue(s.shouldRefresh("inventoryChanged", None, 106, 104))
+
+    def test_tray_cells_from_a_running_part_dict(self):
+        s = _loadStation()
+        self.assertEqual([c["state"] for c in s.trayCellsFor(3, 1, 5)], ["closed", "next", "todo"])
+        self.assertEqual([c["state"] for c in s.trayCellsFor(2, 0, None)], ["next", "todo"])
+
     def test_scale_status_text(self):
         s = _loadStation(devices=[{"DeviceTypeCode": "ScaleStationEPrint", "UdtInstancePath": "[MPP]PlcDevices/Scale"}])
         reads = []

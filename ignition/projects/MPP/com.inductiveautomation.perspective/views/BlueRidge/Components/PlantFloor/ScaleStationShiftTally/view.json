@@ -28,7 +28,7 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.getShiftTallyOrEmpty\", 0, {view.params.terminalLocationId}, {view.params.pressToken})"
+          "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.getShiftTallyOrEmpty\", 60000, {view.params.terminalLocationId}, {view.params.pressToken})"
         }
       }
     }

@@ -1,5 +1,7 @@
 {
-  "custom": {
+  "custom": {},
+  "params": {
+    "terminalLocationId": null,
     "rp": {
       "ItemId": null,
       "PartNumber": "",
@@ -21,24 +23,12 @@
       "OpenPartsClosed": 0
     }
   },
-  "params": {
-    "terminalLocationId": null,
-    "pressToken": 0
-  },
   "propConfig": {
     "params.terminalLocationId": {
       "paramDirection": "input"
     },
-    "params.pressToken": {
+    "params.rp": {
       "paramDirection": "input"
-    },
-    "custom.rp": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.getRunningPartOrEmpty\", 0, {view.params.terminalLocationId}, {view.params.pressToken})"
-        }
-      }
     }
   },
   "props": {
@@ -100,7 +90,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if(isNull({view.custom.rp.OpenContainerId}), 'No box open: the next good press opens one', 'Box #' + toStr({view.custom.rp.OpenContainerId}))"
+                    "expression": "if(isNull({view.params.rp.OpenContainerId}), 'No box open: the next good press opens one', 'Box #' + toStr({view.params.rp.OpenContainerId}))"
                   }
                 }
               }
@@ -124,7 +114,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.rp.TraysPerContainer} > 0, 'Label prints when tray ' + toStr({view.custom.rp.TraysPerContainer}) + ' closes', '')"
+                    "expression": "if({view.params.rp.TraysPerContainer} > 0, 'Label prints when tray ' + toStr({view.params.rp.TraysPerContainer}) + ' closes', '')"
                   }
                 }
               }
@@ -160,7 +150,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "toStr({view.custom.rp.OpenTraysClosed}) + ' of ' + toStr({view.custom.rp.TraysPerContainer}) + ' trays'"
+                    "expression": "toStr({view.params.rp.OpenTraysClosed}) + ' of ' + toStr({view.params.rp.TraysPerContainer}) + ' trays'"
                   }
                 }
               }
@@ -181,7 +171,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "toStr({view.custom.rp.OpenPartsClosed}) + ' of ' + toStr({view.custom.rp.TraysPerContainer} * {view.custom.rp.PartsPerTray}) + ' parts'"
+                    "expression": "toStr({view.params.rp.OpenPartsClosed}) + ' of ' + toStr({view.params.rp.TraysPerContainer} * {view.params.rp.PartsPerTray}) + ' parts'"
                   }
                 }
               }
@@ -205,7 +195,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "toStr(toInt(max(0, {view.custom.rp.TraysPerContainer} - {view.custom.rp.OpenTraysClosed}))) + ' trays to go'"
+                    "expression": "toStr(toInt(max(0, {view.params.rp.TraysPerContainer} - {view.params.rp.OpenTraysClosed}))) + ' trays to go'"
                   }
                 }
               }
@@ -240,7 +230,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.trayCells\", 0, {view.params.terminalLocationId}, {view.params.pressToken})"
+                "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.trayCellsFor\", 0, {view.params.rp.TraysPerContainer}, {view.params.rp.OpenTraysClosed}, {view.params.rp.OpenContainerId})"
               }
             }
           }
