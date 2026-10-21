@@ -65,10 +65,13 @@
       "ItemId": null,
       "ItemPartNumber": null,
       "MachineName": null,
+      "MovedInFromContainerName": null,
       "OperatorName": null,
       "ProducedAt": null,
       "ProducingLotId": null,
       "ProducingLotName": null,
+      "RemovedAt": null,
+      "RemovedReason": null,
       "SerialNumber": null
     }
   },
@@ -1197,6 +1200,44 @@
                   }
                 },
                 "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "SerialRemovalStatus"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len(coalesce({view.custom.serialDetail.RemovedReason}, \"\")) \u003e 0 || len(coalesce({view.custom.serialDetail.MovedInFromContainerName}, \"\")) \u003e 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(len(coalesce({view.custom.serialDetail.RemovedReason}, \"\")) \u003e 0, {view.custom.serialDetail.RemovedReason} + if(isNull({view.custom.serialDetail.RemovedAt}), \"\", \" on \" + dateFormat({view.custom.serialDetail.RemovedAt}, \"MM/dd/yy HH:mm\")), if(len(coalesce({view.custom.serialDetail.MovedInFromContainerName}, \"\")) \u003e 0, \"Moved in from container \" + {view.custom.serialDetail.MovedInFromContainerName}, \"\"))"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "var(--mpp-warning-bg, #4a3a12)",
+                    "borderRadius": "4px",
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "12px",
+                    "fontWeight": "600",
+                    "padding": "4px 10px"
+                  }
+                },
+                "type": "ia.display.label"
               }
             ],
             "meta": {
