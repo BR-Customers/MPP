@@ -2,8 +2,11 @@
 -- Repeatable:  R__Quality_ControlledRun_ReportOutcomes.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
--- Version:     1.0
+-- Version:     1.1
 -- Change Log:  2026-10-21 - 1.0 - Super-lot piece 6: the report's outcome and defect totals.
+--              2026-10-21 - 1.1 - Optional @Section ('Outcome' | 'Defect'); NULL = both, as
+--                                 before. Lets the report bind each table to a bare EXEC
+--                                 that keeps this proc's ORDER BY.
 -- Description: READ. The super-lot report's "results by outcome" and "scrap by defect
 --              code" blocks, one result set.
 --
@@ -20,13 +23,17 @@
 --              '<Code> - <Description>' ('No defect recorded' when the entry carries
 --              none), most pieces first.
 --
+--              @Section NULL (default) returns both sections; 'Outcome' or 'Defect'
+--              returns only that section, same order.
+--
 --              No status row, no OUTPUT params (FDS-11-011). Empty set = unknown run
 --              or no live results.
 --
 -- Result set:  Section, Label, Pieces
 -- ============================================================
 CREATE OR ALTER PROCEDURE Quality.ControlledRun_ReportOutcomes
-    @Id BIGINT
+    @Id      BIGINT,
+    @Section NVARCHAR(20) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -54,6 +61,7 @@ BEGIN
         WHERE m.ControlledRunId = @Id
         GROUP BY df.Code, df.Description
     ) u
+    WHERE @Section IS NULL OR u.Section = @Section
     ORDER BY u.SecOrd, u.Ord, u.Pieces DESC, u.Label;
 END;
 GO

@@ -109,7 +109,8 @@ VALUES (N'TEST-SLR-NEW', SYSUTCDATETIME(), @Con, @App);
 
 DECLARE @MR TABLE (MemberId BIGINT, Kind NVARCHAR(10), LotId BIGINT, ContainerId BIGINT, DisplayName NVARCHAR(60), PartNumber NVARCHAR(100),
     CurrentLocationName NVARCHAR(200), PieceCount INT, CrtActive BIT, AcceptedQty INT, ScrapQty INT, ReworkQty INT, ReturnQty INT, UseAsIsQty INT,
-    AppliedScrapQty INT, ResultQty INT, LeftOver INT, HasResult BIT, ReleaseBlockReason NVARCHAR(100), WasCompleteAtJoin BIT, RankLocationId BIGINT);
+    AppliedScrapQty INT, ResultQty INT, LeftOver INT, HasResult BIT, ReleaseBlockReason NVARCHAR(100), WasCompleteAtJoin BIT, RankLocationId BIGINT,
+    AppliedReturnQty INT);
 DECLARE @OC TABLE (Section NVARCHAR(20), Label NVARCHAR(200), Pieces INT);
 DECLARE @RM TABLE (MemberName NVARCHAR(60), PartNumber NVARCHAR(100), PieceCount INT, JoinedText NVARCHAR(100), LeftText NVARCHAR(100),
     AcceptedQty INT, ScrapQty INT, OtherText NVARCHAR(500));
@@ -161,6 +162,27 @@ INSERT INTO @RM EXEC Quality.ControlledRun_ReportMembers @Id = @Run;
 SET @n = (SELECT CONCAT(COUNT(*), N'|', MAX(CASE WHEN MemberName = N'TEST-SLR-B' THEN LeftText END)) FROM @RM);
 SET @e = CONCAT(N'5|Removed ', @Md);
 EXEC test.Assert_IsEqual @TestName = N'[Report] an ended member is still listed, with how and when it left', @Expected = @e, @Actual = @n;
+
+-- @Section filter (v1.1). Seq captures arrival order, so the proc's ORDER BY is asserted.
+DECLARE @OS TABLE (Seq INT IDENTITY(1,1) PRIMARY KEY, Section NVARCHAR(20), Label NVARCHAR(200), Pieces INT);
+DECLARE @SecO NVARCHAR(20) = N'Outcome';
+DECLARE @SecD NVARCHAR(20) = N'Defect';
+INSERT INTO @OS (Section, Label, Pieces) EXEC Quality.ControlledRun_ReportOutcomes @Id = @Run, @Section = @SecO;
+SET @n = (SELECT CONCAT(COUNT(*), N'|', SUM(CASE WHEN Section = N'Outcome' THEN 1 ELSE 0 END)) FROM @OS);
+EXEC test.Assert_IsEqual @TestName = N'[Report] @Section Outcome returns only outcome rows', @Expected = N'3|3', @Actual = @n;
+SET @n = (SELECT STRING_AGG(CONCAT(Label, N'=', Pieces), N'|') WITHIN GROUP (ORDER BY Seq) FROM @OS);
+EXEC test.Assert_IsEqual @TestName = N'[Report] @Section Outcome keeps the proc order (Accepted, Scrap, Use As-Is)', @Expected = N'Accepted=22|Scrap=7|Use As-Is=1', @Actual = @n;
+DELETE FROM @OS;
+INSERT INTO @OS (Section, Label, Pieces) EXEC Quality.ControlledRun_ReportOutcomes @Id = @Run, @Section = @SecD;
+SET @n = (SELECT CONCAT(COUNT(*), N'|', SUM(CASE WHEN Section = N'Defect' THEN 1 ELSE 0 END)) FROM @OS);
+EXEC test.Assert_IsEqual @TestName = N'[Report] @Section Defect returns only defect rows', @Expected = N'2|2', @Actual = @n;
+SET @n = (SELECT STRING_AGG(CONCAT(CASE WHEN Label = @Def1Label THEN N'def1' ELSE N'def2' END, N'=', Pieces), N'|') WITHIN GROUP (ORDER BY Seq) FROM @OS);
+EXEC test.Assert_IsEqual @TestName = N'[Report] @Section Defect is most pieces first', @Expected = N'def1=4|def2=3', @Actual = @n;
+DELETE FROM @OS;
+INSERT INTO @OS (Section, Label, Pieces) EXEC Quality.ControlledRun_ReportOutcomes @Id = @Run;
+SET @n = (SELECT STRING_AGG(CONCAT(Section, N':', CASE WHEN Label = @Def1Label THEN N'def1' WHEN Section = N'Defect' THEN N'def2' ELSE Label END, N'=', Pieces), N'|') WITHIN GROUP (ORDER BY Seq) FROM @OS);
+EXEC test.Assert_IsEqual @TestName = N'[Report] @Section NULL returns both sections, outcomes then defects, unchanged',
+    @Expected = N'Outcome:Accepted=22|Outcome:Scrap=7|Outcome:Use As-Is=1|Defect:def1=4|Defect:def2=3', @Actual = @n;
 
 DELETE FROM @RM; DELETE FROM @OC;
 INSERT INTO @RM EXEC Quality.ControlledRun_ReportMembers @Id = -1;

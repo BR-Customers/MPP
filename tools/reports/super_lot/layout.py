@@ -116,9 +116,9 @@ def page1():
               size=8.5, bold=True, color=ACCENT),
          text(50, 60, 510, 30, "Super-lot @Header.RunNumber@", size=24, bold=True, color=HEAD_TXT),
          text(51, 90, 300, 18, esc("Controlled Run report"), size=13, color=SUB_TXT),
-         # @Date@ is ReportMill's built-in "now" key -- see the gateway checklist.
+         # Print time from SQL, already Eastern (the footer says "All times Eastern").
          text(386, 47, 175, 12, esc("PRINTED"), size=8, bold=True, color=SUB_TXT, align="right"),
-         text(386, 60, 175, 14, "@Date@", size=10, color=SUB_TXT, align="right", fmt=DTM)]
+         text(386, 60, 175, 14, "@Printed.PrintedAt@", size=10, color=SUB_TXT, align="right", fmt=DTM)]
     L, R, W = 38, 316, 258
     y = 124
     p += [kv(L, y, W, "Status", "@Header.StatusCode@"),
