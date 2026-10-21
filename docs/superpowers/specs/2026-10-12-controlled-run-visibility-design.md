@@ -201,6 +201,20 @@ button binds to it instead of re-deriving the rule in an expression.
    the piece 5 build notes.
 9. **Timing gaps and display gaps (3.8): fix in this piece**, as small tasks.
 
+### 6b. Screen mocks (approved by Jacques as drawn, 2026-10-21)
+
+`notes/2026-10-21_super-lot-piece-6-screen-mocks.html`, seven screens. The four "Check"
+notes on them are settled as drawn:
+
+- History-tab kind labels for the new rows are specific: "Super-lot", "CRT",
+  "Vendor return", "Rework" (not one "Quality" label).
+- A scrapped serial stays in the container trace list, struck through and marked
+  "Scrapped <date> (<defect>)"; it is not hidden.
+- The super-lot report carries a one-row-per-member summary, not each member's full
+  event history.
+- The super-lot page gains an address that arrives on one super-lot:
+  `/shop-floor/controlled-runs/<RunNumber>` (alongside the existing bare address).
+
 ## Revision History
 
 | Date | Change |
@@ -209,3 +223,4 @@ button binds to it instead of re-deriving the rule in an expression.
 | 2026-10-20 | Revised against pieces 1-5 as built: section 2 refreshed from code; section 3 rewritten as what this piece adds (no "after piece N" / "(ready)"); piece 4 trace items and piece 5 carry-overs folded in; decisions restated. |
 | 2026-10-21 | Jacques answered decisions 1-9 (section 6); trim destination check dropped; "all history" scope open. |
 | 2026-10-21 | 3.2 settled: all super-lot events written per LOT; History tab unions the LOT audit log with a `LogEventType.RepeatsLotTimeline` exclude flag; cost note. |
+| 2026-10-21 | Screen mocks approved as drawn (6b). |
