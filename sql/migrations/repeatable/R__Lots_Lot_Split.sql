@@ -1,8 +1,10 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Split.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-20
--- Version:     1.1
+-- Modified:    2026-10-21
+-- Version:     1.2 (2026-10-21, super-lot piece 6) - CRT refusal names the open super-lot ('is marked CRT (super-lot <RN>)', via
+--              Quality.ufn_OpenControlledRunForLot); no open super-lot = the text is unchanged.
+--              1.1 (2026-08-20, part-scoped CRT)
 --
 -- CRT (2026-08-20, v1.1): a CRT parent LOT is REFUSED (guard 8b, via
 -- Lots.ufn_CrtBlocksAdvance) -- maximum containment on this exception path, per
@@ -308,7 +310,8 @@ BEGIN
         IF (SELECT Blocked FROM Lots.ufn_CrtBlocksAdvance(@ParentLotId)) = 1
         BEGIN
             SET @Message = N'LOT ' + @ParentName
-                         + N' is marked CRT and cannot be split until Quality clears it.';
+                         + N' is marked CRT' + ISNULL(N' (super-lot ' + (SELECT RunNumber FROM Quality.ufn_OpenControlledRunForLot(@ParentLotId)) + N')', N'')
+                         + N' and cannot be split until Quality clears it.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @ParentLotId, @LogEventTypeCode = N'LotSplit',

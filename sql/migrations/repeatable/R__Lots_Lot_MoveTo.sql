@@ -1,8 +1,10 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_MoveTo.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-20
--- Version:     1.1 (2026-08-20, part-scoped CRT) - D5 enforcement: a CRT LOT is
+-- Modified:    2026-10-21
+-- Version:     1.2 (2026-10-21, super-lot piece 6) - CRT refusal names the open super-lot ('is marked CRT (super-lot <RN>)', via
+--              Quality.ufn_OpenControlledRunForLot); no open super-lot = the text is unchanged.
+--              1.1 (2026-08-20, part-scoped CRT) - D5 enforcement: a CRT LOT is
 --              refused a PRODUCTION destination (Lots.ufn_CrtBlocksMoveTo), while
 --              inspection / inventory / support destinations still succeed so
 --              suspect material can be taken to quarantine. The guard sits AFTER
@@ -134,7 +136,8 @@ BEGIN
         IF (SELECT Blocked FROM Lots.ufn_CrtBlocksMoveTo(@LotId, @ToLocationId)) = 1
         BEGIN
             SET @Message = N'LOT ' + ISNULL(@LotName, N'?')
-                         + N' is marked CRT and cannot be moved to a production location until Quality clears it.';
+                         + N' is marked CRT' + ISNULL(N' (super-lot ' + (SELECT RunNumber FROM Quality.ufn_OpenControlledRunForLot(@LotId)) + N')', N'')
+                         + N' and cannot be moved to a production location until Quality clears it.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @LotId, @LogEventTypeCode = N'LotMoved',

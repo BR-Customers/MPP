@@ -1,8 +1,10 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningIn_RecordPick.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-15
--- Version:     3.0 (2026-09-15, route-driven claim) - the Trim-Storage location gate is
+-- Modified:    2026-10-21
+-- Version:     3.1 (2026-10-21, super-lot piece 6) - CRT refusal names the open super-lot ('is marked CRT (super-lot <RN>)', via
+--              Quality.ufn_OpenControlledRunForLot); no open super-lot = the text is unchanged.
+--              3.0 (2026-09-15, route-driven claim) - the Trim-Storage location gate is
 --              replaced by the LOT's next pending route step; steps 3 and 4 collapse into
 --              one Lots.ufn_NextPendingRouteStep lookup supplying both gate and template.
 --              1.1 (2026-08-20, part-scoped CRT) - D4 enforcement: a CRT LOT cannot
@@ -131,7 +133,8 @@ BEGIN
         IF (SELECT Blocked FROM Lots.ufn_CrtBlocksAdvance(@LotId)) = 1
         BEGIN
             SET @Message = N'LOT ' + ISNULL(@LotName, N'?')
-                         + N' is marked CRT and cannot be used until Quality clears it.';
+                         + N' is marked CRT' + ISNULL(N' (super-lot ' + (SELECT RunNumber FROM Quality.ufn_OpenControlledRunForLot(@LotId)) + N')', N'')
+                         + N' and cannot be used until Quality clears it.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',

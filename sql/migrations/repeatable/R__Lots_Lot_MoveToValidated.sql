@@ -1,8 +1,10 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_MoveToValidated.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-20
--- Version:     1.3 (2026-10-20, final review M-3) - one captured @Now is the LotMovement's
+-- Modified:    2026-10-21
+-- Version:     1.4 (2026-10-21, super-lot piece 6) - CRT refusal names the open super-lot ('is marked CRT (super-lot <RN>)', via
+--              Quality.ufn_OpenControlledRunForLot); no open super-lot = the text is unchanged.
+--              1.3 (2026-10-20, final review M-3) - one captured @Now is the LotMovement's
 --              MovedAt AND the LotRework's StartedAt (spec 4.3: StartedAt = the movement
 --              time), instead of the rework row taking its own clock read from its default.
 --              1.2 (2026-10-19, super-lot piece 5) - a backward move into TRIM IN with a
@@ -263,7 +265,8 @@ BEGIN
         IF (@IsRework = 0 AND (SELECT Blocked FROM Lots.ufn_CrtBlocksMoveTo(@LotId, @ToLocationId)) = 1)
         BEGIN
             SET @Message = N'LOT ' + ISNULL(@LotName, N'?')
-                         + N' is marked CRT and cannot be moved to a production location until Quality clears it.';
+                         + N' is marked CRT' + ISNULL(N' (super-lot ' + (SELECT RunNumber FROM Quality.ufn_OpenControlledRunForLot(@LotId)) + N')', N'')
+                         + N' and cannot be moved to a production location until Quality clears it.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @LotId, @LogEventTypeCode = N'LotMoved',
