@@ -152,6 +152,26 @@ DELETE FROM @GR; SET @e = CAST(@ConS1 AS NVARCHAR(20)); INSERT INTO @GR EXEC Lot
 SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(5)) + N'|' + CAST(SUM(CASE WHEN RemovedAt IS NOT NULL OR RemovedReason IS NOT NULL OR MovedInFromContainerName IS NOT NULL THEN 1 ELSE 0 END) AS NVARCHAR(5)) FROM @GR WHERE MatchType = N'Container');
 EXEC test.Assert_IsEqual @TestName = N'[Global trace] a container match lists its source LOTs as before; serial columns stay NULL on LOT rows', @Expected = N'1|0', @Actual = @n;
 
+-- ===== 2b. Container_ListSerials @IncludeRemoved =====
+DECLARE @LL TABLE (SerializedPartId BIGINT, SerialNumber NVARCHAR(50), TrayPosition INT, ProducingLotId BIGINT, ProducingLotName NVARCHAR(50),
+    RemovedAt DATETIME2(3), RemovedReason NVARCHAR(100), MovedInFromContainerName NVARCHAR(50));
+INSERT INTO @LL EXEC Lots.Container_ListSerials @ContainerId = @ConS1;
+SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(5)) FROM @LL);
+EXEC test.Assert_IsEqual @TestName = N'[List serials] default hides the scrapped and moved-out serials (unchanged)', @Expected = N'0', @Actual = @n;
+DELETE FROM @LL; INSERT INTO @LL EXEC Lots.Container_ListSerials @ContainerId = @ConS1, @IncludeRemoved = 1;
+SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(5)) + N'|' + MAX(CASE WHEN SerialNumber = N'TEST-SLT-SN1' THEN RemovedReason END) + N'|' + MAX(CASE WHEN SerialNumber = N'TEST-SLT-SN2' THEN RemovedReason END) FROM @LL);
+SET @e = N'2|Scrapped (' + @DefText + N')|Moved to container ' + CAST(@ConS2 AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[List serials] IncludeRemoved=1 shows the scrapped serial and the moved-out one, marked', @Expected = @e, @Actual = @n;
+SET @n = (SELECT CAST(SUM(CASE WHEN RemovedAt IS NOT NULL THEN 1 ELSE 0 END) AS NVARCHAR(5)) FROM @LL);
+EXEC test.Assert_IsEqual @TestName = N'[List serials] removed rows carry RemovedAt', @Expected = N'2', @Actual = @n;
+DELETE FROM @LL; INSERT INTO @LL EXEC Lots.Container_ListSerials @ContainerId = @ConS2, @IncludeRemoved = 1;
+SET @n = (SELECT SerialNumber + N'|' + ISNULL(MovedInFromContainerName, N'null') + N'|' + ISNULL(RemovedReason, N'null') FROM @LL WHERE SerialNumber = N'TEST-SLT-SN2');
+SET @e = N'TEST-SLT-SN2|' + CAST(@ConS1 AS NVARCHAR(20)) + N'|null';
+EXEC test.Assert_IsEqual @TestName = N'[List serials] the moved-in serial carries its source and is packed', @Expected = @e, @Actual = @n;
+DELETE FROM @LL; INSERT INTO @LL EXEC Lots.Container_ListSerials @ContainerId = @ConU, @IncludeRemoved = 1;
+SET @n = (SELECT CASE WHEN COUNT(*) = 1 AND MAX(CASE WHEN RemovedAt IS NULL AND RemovedReason IS NULL AND MovedInFromContainerName IS NULL THEN 1 ELSE 0 END) = 1 THEN N'allnull' ELSE N'set' END FROM @LL);
+EXEC test.Assert_IsEqual @TestName = N'[List serials] an untouched container returns NULL in every new column', @Expected = N'allnull', @Actual = @n;
+
 -- ===== 3. Container_GetTraceDetail =====
 DECLARE @CD TABLE (ContainerId BIGINT, ItemId BIGINT, ItemPartNumber NVARCHAR(100), ContainerStatusCode NVARCHAR(50), PieceCount INT, SerialCount INT,
     SourceLotCount INT, OpenedAt DATETIME2(3), CompletedAt DATETIME2(3), AimShipperId NVARCHAR(50), OpenHoldCount INT, TotalHoldCount INT,

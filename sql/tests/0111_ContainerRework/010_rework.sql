@@ -536,7 +536,7 @@ INSERT INTO @o EXEC Lots.ContainerRework_Scrap @ContainerTrayId = @TrayS1, @Defe
 SET @n = (SELECT CAST(o.Status AS NVARCHAR(1)) + N'|' + CASE WHEN cs.RemovedAt IS NOT NULL AND cs.RemovedRejectEventId = o.NewId THEN N'removed' ELSE N'still' END
                + N'|' + CAST(l.PieceCount AS NVARCHAR(5)) FROM @o o, Lots.ContainerSerial cs, Lots.Lot l WHERE cs.Id = @Cs1 AND l.Id = @LotS1);
 EXEC test.Assert_IsEqual @TestName = N'[Serialized] scrap one serial: marked removed against the reject, LOT down to 1', @Expected = N'1|removed|1', @Actual = @n;
-DECLARE @LS TABLE (SerializedPartId BIGINT, SerialNumber NVARCHAR(100), TrayPosition INT, ProducingLotId BIGINT, ProducingLotName NVARCHAR(50));
+DECLARE @LS TABLE (SerializedPartId BIGINT, SerialNumber NVARCHAR(100), TrayPosition INT, ProducingLotId BIGINT, ProducingLotName NVARCHAR(50), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(100), MovedInFromContainerName NVARCHAR(50));
 INSERT INTO @LS EXEC Lots.Container_ListSerials @ContainerId = @ConS1;
 SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(5)) + N'|' + MAX(SerialNumber) FROM @LS);
 EXEC test.Assert_IsEqual @TestName = N'[Serialized] the scrapped serial is gone from the container''s serial list', @Expected = N'1|TEST-RW-SN2', @Actual = @n;

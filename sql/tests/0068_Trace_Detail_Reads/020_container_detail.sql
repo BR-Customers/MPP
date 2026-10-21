@@ -31,7 +31,7 @@ CREATE TABLE #CD (
 IF OBJECT_ID(N'tempdb..#CS') IS NOT NULL DROP TABLE #CS;
 CREATE TABLE #CS (
     SerializedPartId BIGINT, SerialNumber NVARCHAR(50), TrayPosition INT,
-    ProducingLotId BIGINT, ProducingLotName NVARCHAR(50)
+    ProducingLotId BIGINT, ProducingLotName NVARCHAR(50), RemovedAt DATETIME2(3), RemovedReason NVARCHAR(100), MovedInFromContainerName NVARCHAR(50)
 );
 IF OBJECT_ID(N'tempdb..#CH') IS NOT NULL DROP TABLE #CH;
 CREATE TABLE #CH (
