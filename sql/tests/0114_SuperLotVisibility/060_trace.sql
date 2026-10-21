@@ -1,5 +1,5 @@
 -- =============================================
--- File:        0113_SuperLotVisibility/060_trace.sql
+-- File:        0114_SuperLotVisibility/060_trace.sql
 -- Author:      Blue Ridge Automation
 -- Description: Super-lot piece 6, Task 6 -- the five trace readers show a repacked
 --              container truthfully: Lots.SerializedPart_GetTraceDetail,
@@ -10,7 +10,7 @@
 --              ReworkOpenedAt, ReworkOpenedByInitials. Untouched = all NULL.
 --              Fixture rows: TEST-SLT-*.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/060_trace.sql';
+EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/060_trace.sql';
 GO
 DECLARE @TdCon TABLE (Id BIGINT PRIMARY KEY);
 INSERT INTO @TdCon (Id) SELECT DISTINCT t.ContainerId FROM Lots.ContainerTray t JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId WHERE l.LotName LIKE N'TEST-SLT-%';

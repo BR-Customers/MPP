@@ -1,5 +1,5 @@
 -- =============================================
--- File:        0113_SuperLotVisibility/030_lot_events.sql
+-- File:        0114_SuperLotVisibility/030_lot_events.sql
 -- Author:      Blue Ridge Automation
 -- Description: Super-lot piece 6, Task 3 -- every super-lot event lands on the
 --              LOT. Each of the eight writers (ApplyMembersInternal via Open /
@@ -15,7 +15,7 @@
 --              deviation-cover rule in ControlledRun_Release.
 --              LOTs named TEST-SLV-%.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/030_lot_events.sql';
+EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/030_lot_events.sql';
 GO
 -- ---- teardown (FK-safe) ----
 DECLARE @TdLot TABLE (Id BIGINT PRIMARY KEY);

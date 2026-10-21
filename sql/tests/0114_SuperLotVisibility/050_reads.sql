@@ -1,5 +1,5 @@
 -- =============================================
--- File:        0113_SuperLotVisibility/050_reads.sql
+-- File:        0114_SuperLotVisibility/050_reads.sql
 -- Author:      Blue Ridge Automation
 -- Description: Super-lot piece 6, Task 5 -- the reads behind LOT Detail,
 --              genealogy markers, the super-lot page History tab, the dashboard
@@ -13,7 +13,7 @@
 --              ListMemberResults.AppliedReturnQty.
 --              LOTs named TEST-SLV-%.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/050_reads.sql';
+EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/050_reads.sql';
 GO
 -- ---- teardown (FK-safe) ----
 DECLARE @TdLot TABLE (Id BIGINT PRIMARY KEY);

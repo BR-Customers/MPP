@@ -1,11 +1,11 @@
 -- =============================================
--- File:        0113_SuperLotVisibility/010_schema.sql
+-- File:        0114_SuperLotVisibility/010_schema.sql
 -- Author:      Blue Ridge Automation
 -- Description: Super-lot piece 6 -- Audit.LogEventType.RepeatsLotTimeline /
 --              LotTimelineKind, the six per-LOT super-lot event codes, and the
 --              inventory of Lot-entity codes that repeat a timeline stream.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/010_schema.sql';
+EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/010_schema.sql';
 GO
 
 DECLARE @n NVARCHAR(MAX);

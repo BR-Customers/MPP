@@ -1,5 +1,5 @@
 -- =============================================
--- File:        0113_SuperLotVisibility/080_refusals.sql
+-- File:        0114_SuperLotVisibility/080_refusals.sql
 -- Author:      Blue Ridge Automation
 -- Description: Super-lot piece 6, Task 8 -- the seven CRT refusals name the open
 --              super-lot: 'LOT x is marked CRT (super-lot CR000014) and cannot ...'.
@@ -15,7 +15,7 @@
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
-EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/080_refusals.sql';
+EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/080_refusals.sql';
 GO
 -- ---- clean slate: no super-lot rows left by an earlier file ----
 DELETE FROM Quality.ControlledRunResult;

@@ -36,7 +36,7 @@ SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LabelTemplate t JOIN L
 EXEC test.Assert_IsEqual @TestName = N'[Schema] label template is ASCII-only', @Expected = N'0', @Actual = @n;
 
 SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Audit.LogEventType WHERE Code LIKE N'ControlledRun%');
-EXEC test.Assert_IsEqual @TestName = N'[Schema] 17 audit event codes (7 from 0109 + 4 from 0110 + 6 per-LOT from 0113)', @Expected = N'17', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[Schema] 17 audit event codes (7 from 0109 + 4 from 0110 + 6 per-LOT from 0114)', @Expected = N'17', @Actual = @n;
 
 -- ===== 0110: results, release, deviation, signature =====
 SET @n = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM sys.tables t JOIN sys.schemas s ON s.schema_id = t.schema_id

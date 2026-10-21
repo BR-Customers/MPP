@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration:   0113_super_lot_visibility.sql
+-- Migration:   0114_super_lot_visibility.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-21
 -- Description: Super-lot piece 6 of 6 -- visibility.
@@ -50,8 +50,8 @@
 --
 --   Idempotent per statement; ASCII-only (sqlcmd codepage rule).
 -- ============================================================
-IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0113_super_lot_visibility')
-BEGIN PRINT 'Migration 0113 already applied -- skipping.'; RETURN; END
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0114_super_lot_visibility')
+BEGIN PRINT 'Migration 0114 already applied -- skipping.'; RETURN; END
 GO
 
 -- ---- 1. Columns ----
@@ -113,12 +113,12 @@ GO
 
 IF (SELECT COUNT(*) FROM Audit.LogEventType WHERE LotTimelineKind = N'Super-lot') <> 6
    OR (SELECT COUNT(*) FROM Audit.LogEventType WHERE RepeatsLotTimeline = 1) < 13
-    THROW 51000, 'Migration 0113: LogEventType flags / super-lot codes did not land.', 1;
+    THROW 51000, 'Migration 0114: LogEventType flags / super-lot codes did not land.', 1;
 GO
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0113_super_lot_visibility')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0114_super_lot_visibility')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0113_super_lot_visibility',
+    VALUES (N'0114_super_lot_visibility',
             N'Super-lot piece 6: Audit.LogEventType.RepeatsLotTimeline + LotTimelineKind, flags/labels, six ControlledRunLot* codes. Do NOT deploy alone.');
 GO
-PRINT 'Migration 0113 (super_lot_visibility) applied.';
+PRINT 'Migration 0114 (super_lot_visibility) applied.';
 GO

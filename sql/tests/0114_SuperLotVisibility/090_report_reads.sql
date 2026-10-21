@@ -1,5 +1,5 @@
 -- =============================================
--- File:        0113_SuperLotVisibility/090_report_reads.sql
+-- File:        0114_SuperLotVisibility/090_report_reads.sql
 -- Author:      Blue Ridge Automation
 -- Description: Super-lot piece 6, Task 9 -- the two report reads:
 --              Quality.ControlledRun_ReportMembers (one row per member, ended
@@ -7,7 +7,7 @@
 --              Quality.ControlledRun_ReportOutcomes (Outcome + Defect sections).
 --              LOTs named TEST-SLR-%.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/090_report_reads.sql';
+EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/090_report_reads.sql';
 GO
 -- ---- teardown (FK-safe) ----
 DECLARE @TdLot TABLE (Id BIGINT PRIMARY KEY);

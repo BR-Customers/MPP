@@ -1,5 +1,5 @@
 -- =============================================
--- File:        0113_SuperLotVisibility/070_timing.sql
+-- File:        0114_SuperLotVisibility/070_timing.sql
 -- Author:      Blue Ridge Automation
 -- Description: Super-lot piece 6, Task 7 -- timing gaps closed under the lock.
 --              ControlledRunResult_Record v1.5 re-checks the LOT status inside
@@ -8,7 +8,7 @@
 --              produced in one session, so these pin the ordinary paths.
 --              LOTs named TEST-SLT-%.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/070_timing.sql';
+EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/070_timing.sql';
 GO
 -- ---- teardown (FK-safe) ----
 DECLARE @TdLot TABLE (Id BIGINT PRIMARY KEY);

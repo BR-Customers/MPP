@@ -4,7 +4,7 @@
 
 **Goal:** Make everything pieces 1-5 record about a super-lot visible off the super-lot page: on the LOT's own history, on LOT Detail, in genealogy and trace, at the terminals, on the dashboard and in a per-super-lot report.
 
-**Architecture:** One migration (`0113`) adds two columns to `Audit.LogEventType` (an exclude flag and a timeline label) and six per-LOT event codes. A silent helper writes per-LOT rows from every super-lot writer; one inline function defines which super-lots a LOT belongs to (tray LOTs fold to their container, point in time). `Lot_GetAttributeHistory` gains the audit stream. New reads feed new and changed views; one Reporting Module report. No quality rule changes.
+**Architecture:** One migration (`0114`) adds two columns to `Audit.LogEventType` (an exclude flag and a timeline label) and six per-LOT event codes. A silent helper writes per-LOT rows from every super-lot writer; one inline function defines which super-lots a LOT belongs to (tray LOTs fold to their container, point in time). `Lot_GetAttributeHistory` gains the audit stream. New reads feed new and changed views; one Reporting Module report. No quality rule changes.
 
 **Tech Stack:** SQL Server 2022 (T-SQL procs, inline TVFs, repeatable migrations), the in-repo T-SQL test framework (`sql/tests/Run-Tests.ps1`), Ignition 8.3 Perspective (file-based views, Core named queries, Jython), Ignition Reporting Module (`data.bin` via the global `ignition-reporting` skill).
 
@@ -41,7 +41,7 @@
 
 | Path | Responsibility |
 |---|---|
-| `sql/migrations/versioned/0113_super_lot_visibility.sql` (create) | `LogEventType.RepeatsLotTimeline`, `.LotTimelineKind`; six event codes; flag + label seeding |
+| `sql/migrations/versioned/0114_super_lot_visibility.sql` (create) | `LogEventType.RepeatsLotTimeline`, `.LotTimelineKind`; six event codes; flag + label seeding |
 | `R__Quality_ufn_zz_ControlledRunMembershipsForLot.sql` (create) | Which memberships a LOT has, tray -> container point in time |
 | `R__Quality_ufn_OpenControlledRunForLot.sql` (create) | The open super-lot of a LOT (tray folded), for refusal text and the chip |
 | `R__Quality_ControlledRun_LogMemberLotEventsInternal.sql` (create) | Silent helper: one `Lot` audit row per LOT behind each member |
@@ -52,17 +52,17 @@
 | Reads (modify): `ControlledRun_Get`, `_GetOpenByMember`, `_ListMembers`, `_ListMemberResults`; trace `Container_GetTraceDetail`, `SerializedPart_GetTraceDetail`, `GlobalTrace_Resolve`, `Container_ListShipped`, `Quality.Hold_ListAssociatedContainers` | CanClose, fold reuse, WasCompleteAtJoin, AppliedReturnQty, scrapped serials + repack |
 | Refusals (modify): `Lot_MoveTo`, `Lot_MoveToValidated`, `Lot_Split`, `Lot_Merge`, `Assembly_ScanIn`, `MachiningIn_RecordPick`, `MachiningOut_Mint` | Run number in the CRT message |
 | Timing (modify): `ControlledRunResult_Record`, `ControlledRun_Release` | Re-check under the lock |
-| `sql/tests/0113_SuperLotVisibility/010..120_*.sql` (create) | Tests |
+| `sql/tests/0114_SuperLotVisibility/010..120_*.sql` (create) | Tests |
 | Core NQs `quality/ControlledRun_ListByLot`, `_ListMarkers`, `_ListHistory`, `_GetOpenSummary`; `BlueRidge.Quality.ControlledRun` (modify) | Ignition access |
 | Views (Tasks 11-14), report `Super-lot` (Task 15) | Screens and PDF |
 
 ---
 
-### Task 1: Migration 0113 — timeline flag, labels, per-LOT event codes
+### Task 1: Migration 0114 — timeline flag, labels, per-LOT event codes
 
 **Files:**
-- Create: `sql/migrations/versioned/0113_super_lot_visibility.sql`
-- Create: `sql/tests/0113_SuperLotVisibility/010_schema.sql`
+- Create: `sql/migrations/versioned/0114_super_lot_visibility.sql`
+- Create: `sql/tests/0114_SuperLotVisibility/010_schema.sql`
 - Modify: every `LogEventType` count pin the full suite trips (find with `Grep "LogEventType" sql/tests`)
 
 **Interfaces:**
@@ -70,10 +70,10 @@
 
 - [ ] **Step 1: Inventory.** List every `@LogEventTypeCode` written with `@LogEntityTypeCode = N'Lot'` across `sql/migrations/repeatable` (named and positional `EXEC Audit.Audit_LogOperation` calls; also `Audit_LogFailure` does not write `LotEventLog`, skip it). For each, decide `RepeatsLotTimeline` = 1 when `Lot_GetAttributeHistory` already draws the same fact from a record table (expected at least `LotCreated`, `LotMoved`, `LotStatusChanged`, `LotUpdated`, `DieCastPieceContributed`; die-cast open/release and label-print codes if their record table is a stream), and a `LotTimelineKind` label: `CRT` for `CrtActivated`/`CrtCleared`/`MissedCrtInspect`, `Vendor return` for `VendorReturn*`, `Rework` for `LotRework*` and container-rework codes written against a LOT, `Super-lot` for the six new codes, `Event` left NULL for the rest. Write the table into the migration header comment.
 - [ ] **Step 2: Write the failing test** `010_schema.sql`: both columns exist with the stated types/default; the six codes exist with `LotTimelineKind = N'Super-lot'`; every code in the Step 1 "repeats" list has the flag set; `CrtActivated` has kind `CRT` and flag 0.
-- [ ] **Step 3: Run** `-Filter 0113_SuperLotVisibility` → FAIL (columns missing).
+- [ ] **Step 3: Run** `-Filter 0114_SuperLotVisibility` → FAIL (columns missing).
 - [ ] **Step 4: Write the migration**, shaped like `0112_rework_and_vendor_return.sql` (idempotent guards, extended properties, the `@Base + ROW_NUMBER()` LogEventType insert, flag/label UPDATEs by `Code`, post-condition check, SchemaVersion row with "Do NOT deploy alone.").
 - [ ] **Step 5: Run the filter → PASS; full suite → only count pins fail; update them; re-run → 0 failures, count = 5,024 + new.**
-- [ ] **Step 6: Commit** — `feat(audit): super-lot piece 6 schema -- LotEventLog timeline flag and labels, per-LOT super-lot codes (migration 0113)`.
+- [ ] **Step 6: Commit** — `feat(audit): super-lot piece 6 schema -- LotEventLog timeline flag and labels, per-LOT super-lot codes (migration 0114)`.
 
 ---
 
@@ -82,7 +82,7 @@
 **Files:**
 - Create: `R__Quality_ufn_zz_ControlledRunMembershipsForLot.sql`, `R__Quality_ufn_OpenControlledRunForLot.sql`, `R__Quality_ControlledRun_LogMemberLotEventsInternal.sql`
 - Modify: `R__Quality_ControlledRun_GetOpenByMember.sql` (v1.1: LOT path reads `ufn_OpenControlledRunForLot`; output unchanged)
-- Create: `sql/tests/0113_SuperLotVisibility/020_fold_and_helper.sql`
+- Create: `sql/tests/0114_SuperLotVisibility/020_fold_and_helper.sql`
 
 **Interfaces:**
 - Produces:
@@ -107,7 +107,7 @@
 
 **Files:**
 - Modify (version bump + change-log line each): `R__Quality_ControlledRun_ApplyMembersInternal.sql`, `_RemoveMember.sql`, `_Close.sql`, `_Cancel.sql`, `_Release.sql`, `R__Quality_ControlledRunResult_Record.sql`, `_Void.sql`, `R__Quality_ControlledRunDeviation_Raise.sql`
-- Create: `sql/tests/0113_SuperLotVisibility/030_lot_events.sql`
+- Create: `sql/tests/0114_SuperLotVisibility/030_lot_events.sql`
 
 **Interfaces:**
 - Consumes: Task 2 helper; Task 1 codes.
@@ -128,7 +128,7 @@
 
 **Files:**
 - Modify: `R__Lots_Lot_GetAttributeHistory.sql` (v1.5; replace the "audit stream intentionally NOT unioned" paragraph with the 2026-10-21 reversal and why)
-- Create: `sql/tests/0113_SuperLotVisibility/040_history.sql`
+- Create: `sql/tests/0114_SuperLotVisibility/040_history.sql`
 
 **Interfaces:**
 - Produces: stream 11, `SortRank 11`, from `Lots.LotEventLog` joined to `Audit.LogEventType` `WHERE RepeatsLotTimeline = 0 AND l.LotId = @LotId AND l.LoggedAt >= <Lot.CreatedAt>` (read `CreatedAt` into a variable first); `EventKind = ISNULL(et.LotTimelineKind, N'Event')`; `Detail = CAST(l.Description AS NVARCHAR(500))`; `ByUserId`/`ByUserName` via **LEFT** join to `Location.AppUser` (UserId is nullable). Columns and ordering unchanged.
@@ -144,7 +144,7 @@
 **Files:**
 - Create: `R__Quality_ufn_ControlledRunCloseCheck.sql`, `R__Quality_ControlledRun_ListByLot.sql`, `_ListMarkers.sql`, `_ListHistory.sql`, `_GetOpenSummary.sql`
 - Modify: `R__Quality_ControlledRun_Get.sql` (+`CanClose BIT`, `CloseBlockedReason NVARCHAR(200)` last), `R__Quality_ControlledRun_Close.sql` (rules 3-5 read the check; its pre-check sync stays), `R__Quality_ControlledRun_ListMembers.sql` (+`WasCompleteAtJoin` last), `R__Quality_ControlledRun_ListMemberResults.sql` (+`AppliedReturnQty` last)
-- Create: `sql/tests/0113_SuperLotVisibility/050_reads.sql`; modify the column-list captures of `_Get`, `_ListMembers`, `_ListMemberResults` in `sql/tests/0109_ControlledRun/*` and `0112_ReworkReturn/*`
+- Create: `sql/tests/0114_SuperLotVisibility/050_reads.sql`; modify the column-list captures of `_Get`, `_ListMembers`, `_ListMemberResults` in `sql/tests/0109_ControlledRun/*` and `0112_ReworkReturn/*`
 
 **Interfaces:**
 - `Quality.ufn_ControlledRunCloseCheck(@Id)` → `(CanClose BIT, Reason NVARCHAR(200))`; reasons exactly Close's messages (`Super-lot <RN> is not open.`, `End the window before closing.`, `<n> of <m> members are still CRT-tagged.`), NULL when closable.
@@ -164,7 +164,7 @@
 
 **Files:**
 - Modify: `R__Lots_Container_GetTraceDetail.sql`, `R__Lots_SerializedPart_GetTraceDetail.sql`, `R__Lots_GlobalTrace_Resolve.sql`, `R__Lots_Container_ListShipped.sql`, `R__Quality_Hold_ListAssociatedContainers.sql`
-- Create: `sql/tests/0113_SuperLotVisibility/060_trace.sql`
+- Create: `sql/tests/0114_SuperLotVisibility/060_trace.sql`
 
 **Interfaces:**
 - Serial-bearing rows gain `RemovedAt` (ET, NULL when packed) and `RemovedReason NVARCHAR(100)` (`Scrapped (<Defect>)` from `RemovedRejectEventId`, or `Moved to container <Name>` from `ContainerSerialHistory`); rows are kept, not filtered. Serials moved **in** carry `MovedInFromContainerName`. `Container_GetTraceDetail` header row gains `ReplacedSerial` (the voided `AimShipperIdPool` serial from `ContainerRework.OriginalAimShipperId`), `ReplacedSerialVoidedAt` (ET), `ReworkOpenedAt` (ET), `ReworkOpenedByInitials`. New columns go last; existing column order unchanged.
@@ -179,7 +179,7 @@
 
 **Files:**
 - Modify: `R__Quality_ControlledRunResult_Record.sql` (inlined vendor-return mirror refuses, under the lock, a LOT whose status turned `Closed`/`Scrap`/`Open` since validation: `RAISERROR` into CATCH, as `VendorReturn_Mark` v1.2 does); `R__Quality_ControlledRun_Release.sql` (inside the transaction, re-read each member's ready state from `ufn_ControlledRunMemberResults` under `UPDLOCK, HOLDLOCK` on the member rows; any not ready → `RAISERROR` into CATCH, message `Super-lot results changed while releasing; refresh and try again.`)
-- Create: `sql/tests/0113_SuperLotVisibility/070_timing.sql`
+- Create: `sql/tests/0114_SuperLotVisibility/070_timing.sql`
 
 - [ ] **Step 1: Tests** — the race itself cannot be produced in one session, so pin the ordinary paths and leave the locked re-check to review: `[Timing] Record return on a Good received LOT still succeeds`; `[Timing] Release of ready members still succeeds`; `[Timing] Release with a not-ready member is still refused before the transaction`.
 - [ ] **Step 2-4:** implement; run filter + `0109` + `0112` → PASS.
@@ -191,7 +191,7 @@
 
 **Files:**
 - Modify: `R__Lots_Lot_MoveTo.sql`, `R__Lots_Lot_MoveToValidated.sql`, `R__Lots_Lot_Split.sql`, `R__Lots_Lot_Merge.sql`, `R__Workorder_Assembly_ScanIn.sql`, `R__Workorder_MachiningIn_RecordPick.sql`, `R__Workorder_MachiningOut_Mint.sql`
-- Create: `sql/tests/0113_SuperLotVisibility/080_refusals.sql`; update existing assertions that compare the exact text (Grep the message fragments in `sql/tests`)
+- Create: `sql/tests/0114_SuperLotVisibility/080_refusals.sql`; update existing assertions that compare the exact text (Grep the message fragments in `sql/tests`)
 
 **Interfaces:** each message inserts ` (super-lot <RN>)` right after `is marked CRT` (`... is marked CRT (super-lot CR000014) and cannot ...`) using `Quality.ufn_OpenControlledRunForLot`; `Lot_Merge` appends it per named LOT. No open super-lot → the text is byte-for-byte today's.
 
@@ -204,7 +204,7 @@
 ### Task 9: Report reads
 
 **Files:**
-- Create: `R__Quality_ControlledRun_ReportMembers.sql`, `R__Quality_ControlledRun_ReportOutcomes.sql`, `sql/tests/0113_SuperLotVisibility/090_report_reads.sql`
+- Create: `R__Quality_ControlledRun_ReportMembers.sql`, `R__Quality_ControlledRun_ReportOutcomes.sql`, `sql/tests/0114_SuperLotVisibility/090_report_reads.sql`
 
 **Interfaces:**
 - `ControlledRun_ReportMembers @Id` → one row per member (ended included), oldest first: `MemberName, PartNumber, PieceCount, JoinedText ('<method> <MM/dd>'), LeftText, AcceptedQty, ScrapQty, OtherText` (repack `old -> new` serial, `trim rework <MM/dd>`, `returned <qty>`).
@@ -291,5 +291,5 @@
 **Files:** `MPP_MES_DATA_MODEL.md` (new revision row; `LogEventType` columns; new codes; fix the stale "v2.2 working draft" header line), `MPP_MES_DATA_MODEL.docx` (regenerate: `pandoc MPP_MES_DATA_MODEL.md -o MPP_MES_DATA_MODEL.docx --reference-doc=reference.docx && node style_docx_tables.js MPP_MES_DATA_MODEL.docx`), `PROJECT_STATUS.md` (2026-10-2x piece 6 entry: what exists, tests, what was and was not walked), spec "Build notes" section, `notes/2026-10-12_crt-super-lot-and-nonconformance-overview.md` revision row (all six pieces built).
 
 - [ ] **Step 1:** full suite on `MPP_MES_CRTest` → 0 failures; record the count.
-- [ ] **Step 2:** apply `0113` + changed repeatables to `MPP_MES_Dev` (additive); walk every changed screen with the existing walkthrough fixture; list what needed a typed credential and was not walked.
+- [ ] **Step 2:** apply `0114` + changed repeatables to `MPP_MES_Dev` (additive); walk every changed screen with the existing walkthrough fixture; list what needed a typed credential and was not walked.
 - [ ] **Step 3:** docs as above; **Commit** — `docs: super-lot piece 6 -- data model, status, build notes`.

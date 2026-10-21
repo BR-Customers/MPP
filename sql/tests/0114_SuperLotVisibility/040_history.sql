@@ -1,5 +1,5 @@
 -- =============================================
--- File:        0113_SuperLotVisibility/040_history.sql
+-- File:        0114_SuperLotVisibility/040_history.sql
 -- Author:      Blue Ridge Automation
 -- Description: Super-lot piece 6, Task 4 -- Lots.Lot_GetAttributeHistory v1.5
 --              unions stream 11: the LOT's audit log (Lots.LotEventLog) for
@@ -7,7 +7,7 @@
 --              (Audit.LogEventType.RepeatsLotTimeline = 0). Kind comes from
 --              LotTimelineKind, 'Event' when unlabelled. LOTs named TEST-SLH-%.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/040_history.sql';
+EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/040_history.sql';
 GO
 -- ---- teardown (FK-safe) ----
 DECLARE @TdLot TABLE (Id BIGINT PRIMARY KEY);

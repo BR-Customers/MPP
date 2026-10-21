@@ -1,5 +1,5 @@
 -- =============================================
--- File:        0113_SuperLotVisibility/020_fold_and_helper.sql
+-- File:        0114_SuperLotVisibility/020_fold_and_helper.sql
 -- Author:      Blue Ridge Automation
 -- Description: Super-lot piece 6, Task 2 -- the membership fold
 --              (Quality.ufn_ControlledRunMembershipsForLot), the open-run
@@ -8,7 +8,7 @@
 --              ControlledRun_GetOpenByMember v1.1 (output unchanged).
 --              LOTs named TEST-SLV-%.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0113_SuperLotVisibility/020_fold_and_helper.sql';
+EXEC test.BeginTestFile @FileName = N'0114_SuperLotVisibility/020_fold_and_helper.sql';
 GO
 -- ---- teardown (FK-safe) ----
 DECLARE @TdLot TABLE (Id BIGINT PRIMARY KEY);
