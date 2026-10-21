@@ -60,14 +60,51 @@ existing ones, edits to existing screens, one report, and one dashboard tile.
   open super-lot the confirm step names it and says that clearing here clears only this
   LOT; the super-lot is released from its own page.
 
-### 3.2 The LOT's own history
+### 3.2 The LOT's own history: ALL of it (Jacques, 2026-10-21)
 
-The LOT's 20-year history should show super-lot membership without the run-level log.
-Add per-LOT rows (entity `Lot`, so they land in `Lots.LotEventLog`) for **joining** and
-**leaving** a super-lot, written by the member helper, one row per LOT (a container's
-tray LOTs each get one). This covers the LOT that was already tagged when it joined and
-the LOT that left by removal or close, which today leave nothing on the LOT. Existing
-`CrtActivated` / `CrtCleared` rows are unchanged.
+**Every super-lot event that touches a LOT is written onto that LOT** (entity `Lot`, so it
+lands in `Lots.LotEventLog`, the 20-year traceability class; `Audit.OperationLog` is the
+7-year class), at the moment it happens, one row per LOT (a container member's tray
+LOTs each get one):
+
+- joined (and how: selected / scanned in / auto-joined / sync), including a LOT that
+  was already CRT-tagged when it joined, which today leaves nothing on the LOT;
+- left: removed (with the reason), super-lot closed, super-lot cancelled;
+- each result recorded against it (accepted, scrap with defect and quantity, returned to
+  vendor) and each result voided;
+- a deviation raised that covers it;
+- the signed release, with the signer.
+
+The run-level rows in `Audit.OperationLog` stay as they are. Existing per-LOT rows
+(`CrtActivated`, `CrtCleared`, vendor return, trim rework, container rework) are
+unchanged.
+
+**The LOT Detail History tab shows the LOT's audit log too.** Today
+`Lots.Lot_GetAttributeHistory` builds the timeline from the record tables (attribute,
+status, movement, pause / resume, genealogy, label, production, reject, die-cast
+contribution) and deliberately leaves `Lots.LotEventLog` out ("the lifecycle timeline,
+not the audit trail"). That hides every event that exists only in the audit log: CRT on
+and off, vendor returns, trim rework, the missed-inspection flag, and everything above.
+Jacques, 2026-10-21: the History tab shows **all** history, so the audit stream is added
+to the timeline. This reverses the earlier choice on purpose.
+
+- **No duplicates, by an exclude flag on the event type.** Some audit event types repeat
+  a line the timeline already draws from a record table (LOT created, moved, status
+  changed, die-cast pieces added, and others found by inventory). New column
+  `Audit.LogEventType.RepeatsLotTimeline BIT NOT NULL DEFAULT 0`; the migration sets it
+  to 1 for those types; the history read skips flagged types. A new event type defaults
+  to 0 and so **shows by default** (exclude list, Jacques's choice over an include list).
+  The full inventory of event types written against a LOT, and which repeat a timeline
+  stream, is a plan task done from the code, not guessed.
+- **Test guards the flag:** every flagged type really has a timeline stream, and no
+  unflagged type written by a timeline-stream proc duplicates one.
+- **Cost:** read per LOT on demand (LOT Detail, Lot Detail report), never from a
+  dashboard or timer. `LotEventLog` is clustered on `(LotId, LoggedAt)`, so the read is a
+  seek costing that LOT's rows (Dev: avg 2, max 5), not the table size. The table is
+  partitioned monthly (240 partitions at full retention); the read adds
+  `LoggedAt >= Lot.CreatedAt` (nothing can be logged against a LOT before it exists, so
+  this loses nothing) to touch only the months the LOT has lived.
+- The same change reaches the Lot Detail report wherever it uses this read.
 
 ### 3.3 Genealogy and trace
 
@@ -147,8 +184,9 @@ button binds to it instead of re-deriving the rule in an expression.
 1. **LOT Detail (3.1): agreed.** Run number beside the CRT pill, opening the super-lot
    page on that super-lot; a Super-lots tab with every super-lot ever, its results,
    release signer and deviation.
-2. **LOT history (3.2): yes, and "history" means ALL of it.** Scope of the per-LOT rows
-   is being confirmed (see 6a).
+2. **LOT history (3.2): yes, and "history" means ALL of it.** Every super-lot event is
+   written onto the LOT, and the History tab shows the LOT's audit log too, with
+   duplicates excluded by a flag on the event type (exclude list).
 3. **Genealogy and trace markers (3.3): yes**, including the repack trace fixes.
 4. **Report (3.4): one report per super-lot, with all the details.** No list report.
 5. **Dashboard (3.5): agreed**, the single Open super-lots tile.
@@ -163,10 +201,6 @@ button binds to it instead of re-deriving the rule in an expression.
    the piece 5 build notes.
 9. **Timing gaps and display gaps (3.8): fix in this piece**, as small tasks.
 
-### 6a. Open
-
-- What "all history" covers on the LOT (see conversation 2026-10-21).
-
 ## Revision History
 
 | Date | Change |
@@ -174,3 +208,4 @@ button binds to it instead of re-deriving the rule in an expression.
 | 2026-10-12 | Initial draft, written as a handoff for another agent. Not approved. |
 | 2026-10-20 | Revised against pieces 1-5 as built: section 2 refreshed from code; section 3 rewritten as what this piece adds (no "after piece N" / "(ready)"); piece 4 trace items and piece 5 carry-overs folded in; decisions restated. |
 | 2026-10-21 | Jacques answered decisions 1-9 (section 6); trim destination check dropped; "all history" scope open. |
+| 2026-10-21 | 3.2 settled: all super-lot events written per LOT; History tab unions the LOT audit log with a `LogEventType.RepeatsLotTimeline` exclude flag; cost note. |
