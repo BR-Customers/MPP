@@ -504,7 +504,12 @@ WHERE re.Remarks = N'Die-cast final release scrap'
 # ---- Machining IN claimed by route, not by location -------------------------
 # No versioned migration in this body of work: both changes are CREATE OR ALTER
 # repeatables, so these gates key off the apply list, not $pendingIds.
-if (@($toApply | ForEach-Object { $_.File }) -contains "R__Workorder_MachiningIn_RecordPick.sql") {
+# They describe the move FROM the location-gated proc (pre-v3.0) TO the route-driven
+# one. A target already on the route-driven claim (its proc calls
+# ufn_NextPendingRouteStep -- prod since 2026-09-18) refuses those LOTs today, so a
+# later change to the proc strands nothing new; firing then would be a false BLOCK.
+$recordPickIsRouteDriven = S "SELECT CASE WHEN OBJECT_DEFINITION(OBJECT_ID(N'Workorder.MachiningIn_RecordPick')) LIKE N'%ufn_NextPendingRouteStep%' THEN 1 ELSE 0 END"
+if ((@($toApply | ForEach-Object { $_.File }) -contains "R__Workorder_MachiningIn_RecordPick.sql") -and ($recordPickIsRouteDriven -ne 1)) {
 
     # GATE 1 -- the dangerous one. The OLD proc checked only "is the LOT in trim
     # storage" plus "does this part's route mention MachiningIn anywhere". It did
