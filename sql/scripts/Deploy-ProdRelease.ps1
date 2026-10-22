@@ -685,7 +685,33 @@ if (& $has "0102_shippinglabel_print_error_condition") {
     Finding "INFO" "0102" "adds Lots.ShippingLabel.LastPrintErrorCondition (nullable, metadata-only). $banner label(s) are currently failed-and-unacknowledged; they keep a NULL condition and show the generic 'tell a supervisor' guidance until their next dispatch attempt."
 }
 
-if (@($Findings | Where-Object { $_.Gate -match '^00\d\d$' }).Count -eq 0 -and $pending.Count -gt 0) { Log "  No gates fired." "Green" }
+if (& $has "0111_container_rework") {
+    # 0111 inserts two container statuses with FIXED ids (6, 7) under IDENTITY_INSERT,
+    # guarded only by "Code ReworkProcessing absent". If the target already uses id 6 or 7
+    # for some other status, the insert fails inside the release transaction (rolled back,
+    # nothing lost) -- but say so here, before anyone opens a window for it.
+    $clash = S "SELECT COUNT(*) FROM Lots.ContainerStatusCode WHERE Id IN (6, 7) AND Code NOT IN (N'ReworkProcessing', N'ReworkFilling')"
+    if ($clash -gt 0) { Finding "BLOCK" "0111" "Lots.ContainerStatusCode already uses id 6 or 7 for another status; 0111 inserts ReworkProcessing / ReworkFilling with those fixed ids. Renumber 0111's statuses in the repo first." }
+}
+
+if (& $has "0113_interfacelog_context") {
+    # 0113 hard-codes LocationTypeDefinitionId = 7 as the Terminal definition when it adds the
+    # ScaleRunningItemId attribute. On a target where 7 is something else, the attribute
+    # lands on the wrong definition, silently and permanently -- that is a BLOCK.
+    $ltd7 = S "SELECT ISNULL((SELECT Code FROM Location.LocationTypeDefinition WHERE Id = 7), N'(missing)')"
+    if ($ltd7 -ne "Terminal") { Finding "BLOCK" "0113" "Location.LocationTypeDefinition id 7 is '$ltd7', not 'Terminal'. 0113 adds the ScaleRunningItemId attribute to definition 7; fix the migration to look the Terminal definition up by code first." }
+    # The filtered index scans Audit.InterfaceLog inside the release transaction (every
+    # existing row has LocationId NULL, so the index itself is empty). Say how big the scan is.
+    $ilog = S "SELECT COUNT_BIG(*) FROM Audit.InterfaceLog"
+    Finding "INFO" "0113" "adds 3 nullable FK columns to Audit.InterfaceLog (metadata-only) and a filtered index that scans its $ilog existing row(s) once inside the release transaction; the index starts empty."
+}
+
+if (& $has "0114_super_lot_visibility") {
+    $csh = S "SELECT COUNT_BIG(*) FROM Lots.ContainerSerialHistory"
+    Finding "INFO" "0114" "adds two Audit.LogEventType columns + six codes, and two indexes on Lots.ContainerSerialHistory ($csh existing row(s))."
+}
+
+if (@($Findings | Where-Object { $_.Gate -match '^0\d\d\d$' }).Count -eq 0 -and $pending.Count -gt 0) { Log "  No gates fired." "Green" }
 
 # ---------- [6] live activity + backups ----------
 Head "[6] Live activity"
