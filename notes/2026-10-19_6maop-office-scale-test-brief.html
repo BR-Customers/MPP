@@ -1,0 +1,279 @@
+<title>6MA Oil Pan Scale Test</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single bench-sheet column. Rig + ready-state up top, then setup, then numbered test cards you tick off at the scale. */
+:root{
+  --bg:#f3f5f6; --panel:#ffffff; --ink:#18232b; --muted:#5b6b76; --rule:#d5dde2;
+  --accent:#c77a00; --accent-soft:#fff3dd; --code-bg:#eef2f4;
+  --ok:#1f7a4d; --ok-soft:#e3f4ea; --warn:#9a6200; --warn-soft:#fff1d6; --bad:#b3261e; --bad-soft:#fde7e5;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12181c; --panel:#1a2227; --ink:#e4eaee; --muted:#93a3ad; --rule:#2c3840;
+  --accent:#f0a32a; --accent-soft:#3a2a10; --code-bg:#0f1417;
+  --ok:#5cc98f; --ok-soft:#173326; --warn:#f0b450; --warn-soft:#3a2c12; --bad:#f2827a; --bad-soft:#3d1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12181c; --panel:#1a2227; --ink:#e4eaee; --muted:#93a3ad; --rule:#2c3840;
+  --accent:#f0a32a; --accent-soft:#3a2a10; --code-bg:#0f1417;
+  --ok:#5cc98f; --ok-soft:#173326; --warn:#f0b450; --warn-soft:#3a2c12; --bad:#f2827a; --bad-soft:#3d1c1a; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:2rem;font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.3rem;font-weight:700;padding-bottom:6px;border-bottom:2px solid var(--ink)}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0;max-width:68ch}
+section{display:flex;flex-direction:column;gap:14px}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.lede{color:var(--muted);font-size:1.05rem}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+:not(pre)>code{background:var(--code-bg);padding:1px 5px;border-radius:3px}
+.path{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--f-mono);font-size:.78rem}
+.path span.n{background:var(--panel);border:1px solid var(--rule);padding:5px 8px;border-radius:4px}
+.path span.n.hot{border-color:var(--accent);background:var(--accent-soft)}
+.path span.a{color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--f-display);font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:700}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;font-family:var(--f-mono);white-space:nowrap}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:.72rem;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.note{border-left:4px solid var(--warn);background:var(--warn-soft);padding:12px 14px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+.note.bad{border-color:var(--bad);background:var(--bad-soft)}
+.note strong{font-family:var(--f-display)}
+ol.steps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:10px}
+ol.steps li{padding-left:4px}
+ol.steps li::marker{font-family:var(--f-mono);font-weight:600;color:var(--accent)}
+.code{position:relative;min-width:0}
+pre{margin:0;background:var(--code-bg);border:1px solid var(--rule);border-radius:6px;padding:12px 14px;overflow-x:auto;font-family:var(--f-mono);font-size:.8rem;line-height:1.5}
+.copy{position:absolute;top:6px;right:6px;font:600 .7rem var(--f-mono);background:var(--panel);color:var(--ink);border:1px solid var(--rule);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.card input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cards{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.card.done{opacity:.6}
+.card header{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.card header .id{font-family:var(--f-mono);font-weight:600;color:var(--accent)}
+.card header label{margin-left:auto;font-size:.85rem;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+.kv{display:grid;grid-template-columns:7.5em 1fr;gap:6px 12px;font-size:.95rem}
+.kv dt{font-family:var(--f-display);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-top:3px}
+.kv dd{margin:0;min-width:0}
+@media (max-width:520px){.kv{grid-template-columns:1fr}.kv dt{padding-top:0}h1{font-size:1.6rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:10px">
+  <div class="eyebrow">Dev bench test &middot; 2026-10-19 &middot; MPP_MES_Dev</div>
+  <h1>6MA Oil Pan Scale Test</h1>
+  <p class="lede">End-to-end checkweigh close on the office IND570, wired into the 6MA oil pan Assembly Out terminal. The scale runs Malaki's one-button cycle: the first press tares the container, the second prints. The print reaches the MES, which judges the net weight against the part's pack-out and, inside the window, closes a tray of 60, mints the finished-good LOT, consumes the BOM and completes the box.</p>
+  <div class="path" aria-label="Signal path">
+    <span class="n hot">IND570 10.20.11.150:1702</span><span class="a">&rarr;</span>
+    <span class="n">TCP device &ldquo;MPP Scale&rdquo;</span><span class="a">&rarr;</span>
+    <span class="n">[MPP]PlcDevices/MPP_Scale</span><span class="a">&rarr;</span>
+    <span class="n">tag-change ScaleEPrintMessage</span><span class="a">&rarr;</span>
+    <span class="n">ScaleEPrintWatcher</span><span class="a">&rarr;</span>
+    <span class="n">ContainerConfig_JudgeWeight</span><span class="a">&rarr;</span>
+    <span class="n hot">Assembly_CompleteTray @ MA2-6MAOP-AOUT</span>
+  </div>
+</header>
+
+<section>
+  <h2>What is already in place</h2>
+  <p>Done through the procs (validation and audit rows included) by <code>sql/scratch/2026-10-19_6maop_office_scale_test_setup.sql</code>. Re-running it is safe: it skips what exists and tops stock back up to 600.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Item</th><th>State</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>Terminal + printer</td><td>The office laptop <code>10.20.11.157</code> now resolves to <code>MA2-6MAOP-AOUT</code> (moved off <code>MA2-64AOP-AOUT</code>, which now has no IP). Printer <code>P - 018</code>: UsbBridge, <code>10.20.11.157:9100</code>, the same as P-034.</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>Device mapping</td><td><code>[MPP]PlcDevices/MPP_Scale</code> on terminal <code>MA2-6MAOP-AOUT</code> (106) as <b>Scale Station (EPrint)</b>. TerminalPlcDevice Id 24. The existing camera mapping <code>6C2_6MA_OilPan</code> (ByVision) sits beside it, untouched.</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>ByWeight pack-out</td><td>FG <code>1120A-69F -A000</code> (69F Oil Pan): 60 per tray, 1 tray per box, target <b>50.00 lb, tolerance 2.00 lb</b>, the same as the <code>50 lb part</code> record in the scale's own Target Table. MES Ok window: 48.0 to 52.0 lb, both ends inclusive. ContainerConfig Id 52. The ByVision row (Id 20) is unchanged.</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>BOM stock at the line</td><td>600 available of each of the 7 children of BOM 20 at <code>MA2-6MAOP</code>, Received origin, supplier lot <code>SCALE-TEST-20261019</code>, LOTs <code>MESL3000156</code> to <code>MESL3000162</code>. 600 is the casting's Max at this line, so this covers <b>10 good presses</b>.</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>Dry-run close</td><td>A ByWeight <code>Assembly_CompleteTray</code> for 60 at cell 104 succeeded inside a transaction and was rolled back: LOT minted, box full. Judge returns <code>Ok</code> at 48.0, <code>Under</code> at 47.9, <code>Over</code> at 52.1.</td><td><span class="pill ok">passed</span></td></tr>
+      <tr><td>Record parsing</td><td>The watcher's net-line pattern was run against the Template 3 layout read from Malaki's export: four lines, the third ending <code>lb N</code>, the fourth <code>UNDER: x OVER: x OK: x</code>. It picks the one net line and ignores the flags. This used a reconstruction from the template file, not bytes captured from the scale.</td><td><span class="pill ok">passed</span></td></tr>
+      <tr><td>Tag-change script</td><td><code>ScaleEPrintMessage</code> armed with <code>[MPP]PlcDevices/MPP_Scale/LastReceiveTime</code> and scanned. <b>Uncommitted working-tree change</b>: never commit it armed.</td><td><span class="pill warn">armed</span></td></tr>
+      <tr><td>UDT + tag instance</td><td>Not on the Dev gateway yet. The MPP provider has no <code>ScaleStationEPrint</code> type and no <code>MPP_Scale</code> instance. Setup step 2 and 3 below.</td><td><span class="pill bad">to do</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Before you press anything</h2>
+  <div class="note">
+    <strong>Two things judge the weight, and only one closes the tray.</strong>
+    <p>The scale prints its own <code>UNDER / OVER / OK</code> flags from its Target Table. The MES ignores those flags and judges the net weight itself against the pack-out above. Both are set to 50 &plusmn; 2 lb, so on every cycle compare the flags in the <code>Message</code> tag with the MES verdict in the scale log. A mismatch is a finding, most likely at the exact limits.</p>
+  </div>
+  <div class="note">
+    <strong>Keep the device Packet Based.</strong>
+    <p>Template 3 has no line break after its last line. The &ldquo;MPP Scale&rdquo; device is Packet Based, which hands over each record as it arrives. A Character Based device waiting for <code>\r</code> or <code>\n</code> would hold the last line until the next print. Setup step 5 confirms one print arrives as one value.</p>
+  </div>
+  <div class="note">
+    <strong>Don't run a second listener on port 1702.</strong>
+    <p>The gateway holds the scale's EPrint connection. Malaki's PowerShell reader opens a second client on the same port, which can take the prints away from Ignition. Disable the device in the gateway before you use it.</p>
+  </div>
+  <div class="note">
+    <strong>Every good cycle prints a shipping label.</strong>
+    <p>Each good cycle completes a box (1 tray per box), which claims an AIM shipper ID from the Dev pool (294 free; AIM posting is off) and prints a shipping label on <code>P - 018</code>. That printer goes through the USB bridge on the laptop at <code>10.20.11.157:9100</code>, set up the same way as P-034.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Setup</h2>
+  <ol class="steps">
+    <li><b>Scale front panel</b> (Malaki's setup, serial B913444851). Check:
+      <ul>
+        <li>Input <code>0.1.1</code> is assigned <b>Enter</b>.</li>
+        <li>ID1 is Automatic, Threshold 0.5, Reset 0.25, with the five steps TARE prompt, Tare - Auto, PRINT prompt, Print, Clear Tare.</li>
+        <li>The Connections row is EPrint, Demand Output, Trigger <b>Scale</b>, Template <b>3</b>. No other Demand Output row has Trigger Scale.</li>
+        <li>Secondary port is <code>1702</code>, DHCP is off, and the IP is <code>10.20.11.150</code>.</li>
+        <li>TaskExpert Start is empty and units are <code>lb</code>.</li>
+        <li>The active target is loaded: press <b>TARGET</b> and expect Active Values 50, +2, &minus;2. If they are blank, use softkey 6 (<b>Target Table</b>) and pick the <code>50 lb part</code> record.</li>
+      </ul></li>
+    <li><b>Import the UDT.</b> Designer, Tag Browser, <code>MPP</code> provider, UDT Definitions: Import <code>ignition/tags/udt/ScaleStationEPrint.json</code>.</li>
+    <li><b>Create the instance.</b> Under <code>[MPP]PlcDevices</code>, new UDT instance of <code>ScaleStationEPrint</code> named exactly <code>MPP_Scale</code>. Parameters: <code>Device</code> = <code>MPP Scale</code> (with the space), <code>BasePath</code> = <code>1702/</code>, <code>OpcServer</code> left at <code>Ignition OPC UA Server</code>. <code>Message</code> and <code>LastReceiveTime</code> should read Good.</li>
+    <li><b>Console check</b> (Designer Script Console):
+      <div class="code"><button class="copy" type="button">Copy</button><pre>print BlueRidge.Parts.ContainerConfig.judgeWeight(110, "ByWeight", 50.0)
+print BlueRidge.Workorder.ScaleEPrintWatcher.parse("      56.0 lb \r\n      49.8 lb T \r\n       6.2 lb N \r\nUNDER: 1 OVER: 0 OK: 0")</pre></div>
+      Expect <code>Verdict</code> = <code>Ok</code> with limits 48 and 52, then a dict with <code>'net': 6.2</code>. Do not call <code>handleMessage</code> from the console; it runs the real close.</li>
+    <li><b>Open the terminal.</b> On the office laptop, open a <b>new</b> Perspective session on the MPP project. Its IP now resolves to <code>MA2-6MAOP-AOUT</code> (Assembly Out, 6ma oil pan). A session opened earlier still holds the 64A Oil Pan terminal until it is reloaded. Refusal toasts only show in a session bound to terminal 106.</li>
+    <li><b>One light cycle.</b> Place an empty container (over 0.5 lb), press (tare), add about 5 lb, press (print). Watch <code>Message</code>: it should change once and hold all four lines in one value. This first cycle is judged for real: expect an <b>UNDER</b> toast, no close, and <code>UNDER: 1</code> in the flags. That proves the whole path without spending stock.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Tests</h2>
+  <p>Every test is one scale cycle: <b>place the container, press (tare), add weight, let it settle, press (print), remove everything</b>. Only the print press reaches the MES. After each cycle, run the scale log query below (each print leaves one row) and note the scale's flags from <code>Message</code>.</p>
+  <div class="cards" id="cards">
+
+    <article class="card" data-id="T1"><header><span class="id">T1</span><h3>Good tray closes</h3><label><input type="checkbox" id="chk-T1"> done</label></header>
+      <dl class="kv">
+        <dt>Cycle</dt><dd>Net about 50 lb.</dd>
+        <dt>Expect</dt><dd>Within a second or two of the print press: log row <code>ByWeight tray close</code> with <code>verdict=Ok</code>; a new FG LOT of 60; the box complete with an AIM shipper ID; each BOM child down by 60 (540 left); the Assembly Out screen refreshes; a shipping label prints on P-018.</dd>
+        <dt>Scale</dt><dd>Flags read <code>OK: 1</code>. Malaki has not yet seen OK print, so this result settles his open item.</dd>
+      </dl></article>
+
+    <article class="card" data-id="T2"><header><span class="id">T2</span><h3>Same weight twice</h3><label><input type="checkbox" id="chk-T2"> done</label></header>
+      <dl class="kv">
+        <dt>Cycle</dt><dd>Repeat T1 with the same weight.</dd>
+        <dt>Expect</dt><dd>A second close and a second box. Two identical records in a row is the case the receive-stamp trigger exists for. If nothing happens, the trigger is keyed on the message text, not the stamp.</dd>
+      </dl></article>
+
+    <article class="card" data-id="T3"><header><span class="id">T3</span><h3>Light tray refused</h3><label><input type="checkbox" id="chk-T3"> done</label></header>
+      <dl class="kv">
+        <dt>Cycle</dt><dd>Net about 40 lb.</dd>
+        <dt>Expect</dt><dd><span class="pill warn">UNDER weight</span> toast (a warning that clears on the next good tray), log row <code>Tray not closed</code> with <code>verdict=Under</code>. No LOT, stock unchanged. Scale flags <code>UNDER: 1</code>.</dd>
+      </dl></article>
+
+    <article class="card" data-id="T4"><header><span class="id">T4</span><h3>Heavy tray refused</h3><label><input type="checkbox" id="chk-T4"> done</label></header>
+      <dl class="kv">
+        <dt>Cycle</dt><dd>Net about 60 lb.</dd>
+        <dt>Expect</dt><dd><span class="pill warn">OVER weight</span> toast, <code>verdict=Over</code>, no close. Scale flags <code>OVER: 1</code>.</dd>
+      </dl></article>
+
+    <article class="card" data-id="T5"><header><span class="id">T5</span><h3>The limits</h3><label><input type="checkbox" id="chk-T5"> done</label></header>
+      <dl class="kv">
+        <dt>Cycle</dt><dd>Net exactly 48.0, then exactly 52.0, then 47.9 and 52.1 (the scale reads in 0.1 lb steps).</dd>
+        <dt>Expect</dt><dd>The MES closes at 48.0 and 52.0 and refuses 47.9 and 52.1. Write down what the scale's flags say at 48.0 and 52.0. If the scale calls them Under or Over, the two judges disagree at the limits.</dd>
+      </dl></article>
+
+    <article class="card" data-id="T6"><header><span class="id">T6</span><h3>Cycles that should not close</h3><label><input type="checkbox" id="chk-T6"> done</label></header>
+      <dl class="kv">
+        <dt>Do</dt><dd>Run these one at a time: tare only, then lift the container off; press while the platform is moving; press twice quickly at the print step; empty platform, press.</dd>
+        <dt>Expect</dt><dd>No close unless a full record was printed. A tare press sends nothing, so it leaves no log row. Note anything the scale does that the operator would not expect; Malaki listed these as untested.</dd>
+      </dl></article>
+
+    <article class="card" data-id="T7"><header><span class="id">T7</span><h3>Wrong units</h3><label><input type="checkbox" id="chk-T7"> done</label></header>
+      <dl class="kv">
+        <dt>Cycle</dt><dd>Optional. Switch the terminal to kg, run a cycle, switch back.</dd>
+        <dt>Expect</dt><dd><span class="pill bad">Scale is in the wrong units</span> error toast that stays on screen. No conversion, no close.</dd>
+      </dl></article>
+
+    <article class="card" data-id="T8"><header><span class="id">T8</span><h3>Disarm works</h3><label><input type="checkbox" id="chk-T8"> done</label></header>
+      <dl class="kv">
+        <dt>Do</dt><dd>Run the teardown below (or deprecate the mapping in Config Tool, PLC Devices). Run a good cycle.</dd>
+        <dt>Expect</dt><dd>Nothing: no log row, no close.</dd>
+      </dl></article>
+  </div>
+</section>
+
+<section>
+  <h2>Checking results</h2>
+  <h3>Scale log (one row per press)</h3>
+  <div class="code"><button class="copy" type="button">Copy</button><pre>SELECT TOP 10 Id,
+       CAST(LoggedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(0)) AS LoggedET,
+       Description, RequestPayload, ErrorDescription
+FROM Audit.InterfaceLog
+WHERE SystemName = N'PLC:MPP_Scale'
+ORDER BY Id DESC;</pre></div>
+  <h3>Trays, boxes and labels</h3>
+  <div class="code"><button class="copy" type="button">Copy</button><pre>SELECT TOP 10 c.Id AS ContainerId, cs.Code AS Status, t.ClosureMethod, t.PartsClosedCount,
+       fg.LotName AS FgLot,
+       CAST(t.ClosedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(0)) AS ClosedET,
+       sl.AimShipperId, sl.LastPrintError
+FROM Lots.ContainerTray t
+JOIN Lots.Container c ON c.Id = t.ContainerId
+JOIN Lots.ContainerStatusCode cs ON cs.Id = c.ContainerStatusCodeId
+LEFT JOIN Lots.Lot fg ON fg.Id = t.FinishedGoodLotId
+LEFT JOIN Lots.ShippingLabel sl ON sl.ContainerId = c.Id AND sl.IsVoid = 0
+WHERE c.ItemId = 110
+ORDER BY t.Id DESC;</pre></div>
+  <h3>BOM stock left at the line</h3>
+  <div class="code"><button class="copy" type="button">Copy</button><pre>SELECT i.PartNumber, i.Description, SUM(l.InventoryAvailable) AS Available
+FROM Lots.Lot l
+JOIN Parts.Item i ON i.Id = l.ItemId
+JOIN Lots.LotStatusCode s ON s.Id = l.LotStatusId
+WHERE l.CurrentLocationId = 104 AND s.Code = N'Good'
+  AND l.ItemId IN (13, 106, 107, 111, 112, 113, 114)
+GROUP BY i.PartNumber, i.Description
+ORDER BY i.PartNumber;</pre></div>
+  <p>Out of stock after 10 good presses? Re-run the setup script with <code>@Commit = 1</code> (from a copy; do not commit the file armed). It tops each child back up to 600.</p>
+</section>
+
+<section>
+  <h2>When a result is wrong</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>You see</th><th>It means</th></tr></thead>
+    <tbody>
+      <tr><td>Nothing, and no log row</td><td>The tag-change did not fire. Check <code>LastReceiveTime</code> moved, the instance is named <code>MPP_Scale</code>, and the gateway log for &ldquo;no TerminalPlcDevice mapping&rdquo;.</td></tr>
+      <tr><td>&ldquo;Scale weighment not read&rdquo;</td><td>The direct OPC read of <code>Message</code> failed. This is one of the two assumptions never yet seen working. Report it; the fix is in <code>_readMessage</code>.</td></tr>
+      <tr><td>Logged <code>net=</code> is the previous press's weight</td><td>Same area, worse outcome. Disarm straight away.</td></tr>
+      <tr><td>&ldquo;printout has no net weight line&rdquo; or &ldquo;2 net weight lines&rdquo;</td><td>The record was split across packets, or two records were merged. Check whether one print shows as one value in <code>Message</code>.</td></tr>
+      <tr><td>&ldquo;receive stamp ... old, not a live press&rdquo; in the gateway log</td><td>The gateway and scale clocks disagree by more than 30 s, or the stamp is stale after a reconnect. Press again; if it repeats, compare clocks.</td></tr>
+      <tr><td>Closes every cycle but always reads high</td><td>The tare press did not take (motion, or below zero), so the net includes the container.</td></tr>
+      <tr><td>Record arrives only at the next print</td><td>The device is waiting for a line break. Keep it Packet Based (see the note at the top).</td></tr>
+      <tr><td>&ldquo;No ByWeight pack-out&rdquo; or &ldquo;not eligible&rdquo;</td><td>The ByWeight row was deprecated or edited without PartsPerTray. Check Item Master, Container Config.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Teardown</h2>
+  <p>Disarm by restoring the tag-change resource to its committed state (empty path list) and rescanning:</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre>git checkout -- ignition/projects/MPP/ignition/tag-change/ScaleEPrintMessage/resource.json
+.\scan.ps1</pre></div>
+  <p>The mapping, ByWeight pack-out, stock and the UDT instance can stay on Dev for the next session. To take the scale off the terminal entirely, deprecate the <code>MPP_Scale</code> row in Config Tool, PLC Devices.</p>
+</section>
+
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(function(b){
+  b.addEventListener('click',function(){
+    var pre=b.parentElement.querySelector('pre'), t=pre.innerText;
+    var done=function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1400)};
+    try{navigator.clipboard.writeText(t).then(done,function(){sel(pre)})}catch(e){sel(pre)}
+  });
+});
+function sel(el){var r=document.createRange();r.selectNodeContents(el);var s=getSelection();s.removeAllRanges();s.addRange(r)}
+document.querySelectorAll('.card').forEach(function(c){
+  var cb=c.querySelector('input'), k='scaletest-'+c.dataset.id;
+  try{cb.checked=localStorage.getItem(k)==='1'}catch(e){}
+  c.classList.toggle('done',cb.checked);
+  cb.addEventListener('change',function(){c.classList.toggle('done',cb.checked);try{localStorage.setItem(k,cb.checked?'1':'0')}catch(e){}});
+});
+</script>

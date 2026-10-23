@@ -1,0 +1,1034 @@
+<title>MPP MES Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: guide rail (sections, steps, transport) on the left; a live MPP
+   terminal on the right, drawn with the product's own Core stylesheet tokens.
+   Single dark look on purpose -- the product itself is dark-only. */
+:root {
+  color-scheme: dark;
+  /* product tokens, copied from Core/stylesheet.css */
+  --mpp-neutral-10:#0B1220; --mpp-neutral-20:#111A2E; --mpp-neutral-30:#172238; --mpp-neutral-40:#1F2C44;
+  --mpp-neutral-50:#2C3A55; --mpp-neutral-60:#425270; --mpp-neutral-70:#697A98; --mpp-neutral-80:#9AA8BF;
+  --mpp-neutral-90:#C9D2E0; --mpp-neutral-100:#F0F3F8;
+  --mpp-accent-20:#093240; --mpp-accent-40:#126680; --mpp-accent-50:#1888A8; --mpp-accent-60:#22A8CC;
+  --mpp-accent-70:#4BC2E0; --mpp-accent-80:#7DD4EA; --mpp-accent-90:#B0E5F3;
+  --mpp-state-good-bg:#0F3A2A; --mpp-state-good-fg:#4ADE80; --mpp-state-good-border:#15532D;
+  --mpp-state-bad-bg:#3A1416; --mpp-state-bad-fg:#F87171; --mpp-state-bad-border:#5C1E22;
+  --mpp-vision-fg:#8B5CF6; --mpp-barcode-fg:#22D3EE; --mpp-both-fg:#F4B343;
+  --mpp-cat-purple-bg:#2A1D45; --mpp-cat-purple-fg:#C4A8FF; --mpp-cat-purple-border:#3F2D66;
+  --mpp-cat-orange-bg:#3A2410; --mpp-cat-orange-fg:#FFB57A; --mpp-cat-orange-border:#5C3818;
+  --mpp-cat-green-bg:#16331F; --mpp-cat-green-fg:#7FD99A; --mpp-cat-green-border:#225033;
+  --mpp-radius-sm:3px; --mpp-radius-md:5px; --mpp-radius-lg:8px; --mpp-radius-pill:999px;
+  --mpp-space-1:4px; --mpp-space-2:8px; --mpp-space-3:12px; --mpp-space-4:16px; --mpp-space-5:24px; --mpp-space-6:32px;
+  --mpp-font-sans:'Inter','Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mpp-font-mono:'JetBrains Mono','Roboto Mono','Consolas',monospace;
+  --mpp-fs-xs:14px; --mpp-fs-sm:15px; --mpp-fs-base:17px; --mpp-fs-md:19px; --mpp-fs-lg:22px; --mpp-fs-xl:27px;
+  --mpp-fw-regular:400; --mpp-fw-medium:500; --mpp-fw-semibold:600; --mpp-fw-bold:700;
+  --mpp-shadow-lg:0 8px 24px rgba(0,0,0,.5);
+  --mpp-transition-fast:120ms ease-out; --mpp-transition-normal:200ms ease-out;
+  --mpp-surface-canvas:var(--mpp-neutral-10); --mpp-surface-raised:var(--mpp-neutral-20);
+  --mpp-surface-card:var(--mpp-neutral-30); --mpp-surface-overlay:var(--mpp-neutral-40);
+  --mpp-surface-hover:var(--mpp-neutral-30); --mpp-surface-modal-scrim:rgba(0,0,0,.65);
+  --mpp-surface-row-hover-subtle:rgba(255,255,255,.04);
+  --mpp-border-subtle:var(--mpp-neutral-50); --mpp-border-default:var(--mpp-neutral-60); --mpp-border-strong:var(--mpp-neutral-70);
+  --mpp-text-primary:var(--mpp-neutral-100); --mpp-text-secondary:var(--mpp-neutral-90);
+  --mpp-text-tertiary:var(--mpp-neutral-70); --mpp-text-accent:var(--mpp-accent-70);
+  --mpp-interactive-primary:var(--mpp-accent-50); --mpp-interactive-primary-hover:var(--mpp-accent-60);
+  --mpp-focus-ring:0 0 0 3px rgba(34,168,204,.18);
+  --pf-header-h:68px; --pf-touch-min:34px; --pf-content-pad:16px;
+  --pf-status-warn-bg:rgba(244,179,67,.10); --pf-status-warn-fg:#F4B343;
+  --pf-status-bad-bg:rgba(220,80,80,.10); --pf-status-bad-fg:#DC5050;
+  --pf-status-good-bg:rgba(80,200,120,.10); --pf-status-good-fg:#50C878;
+  /* marketing shell tokens */
+  --rail-bg:#080E1A;
+  --rail-w:340px;
+}
+body {
+  background: var(--rail-bg);
+  color: var(--mpp-text-primary);
+  font-family: var(--mpp-font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--mpp-accent-70); outline-offset: 2px; }
+
+/* ------------------------------------------------------------ shell layout */
+.wt {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  min-height: 100vh;
+}
+.rail {
+  position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--rail-bg);
+  border-right: 1px solid var(--mpp-neutral-40);
+  min-width: 0;
+}
+.rail-brand {
+  padding: 22px 22px 16px;
+  border-bottom: 1px solid var(--mpp-neutral-40);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.rail-eyebrow {
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mpp-accent-70); font-weight: 600;
+}
+.rail-brand h1 { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
+.rail-brand p { margin: 0; color: var(--mpp-neutral-80); font-size: 13px; }
+
+.rail-list { flex: 1; overflow-y: auto; padding: 10px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
+.sec-btn {
+  display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center;
+  width: 100%; text-align: left; padding: 9px 12px;
+  background: transparent; border: 1px solid transparent; border-radius: var(--mpp-radius-md);
+  color: var(--mpp-neutral-80); font-size: 14px; font-weight: 500;
+}
+.sec-btn:hover { background: var(--mpp-surface-row-hover-subtle); color: var(--mpp-text-primary); }
+.sec-num {
+  font-family: var(--mpp-font-mono); font-size: 12px; color: var(--mpp-neutral-70);
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid var(--mpp-neutral-50);
+}
+.sec-count { font-family: var(--mpp-font-mono); font-size: 11px; color: var(--mpp-neutral-70); }
+.sec.done .sec-num { border-color: var(--mpp-accent-40); color: var(--mpp-accent-70); }
+.sec.active > .sec-btn { background: var(--mpp-neutral-20); border-color: var(--mpp-neutral-50); color: var(--mpp-text-primary); }
+.sec.active .sec-num { background: var(--mpp-accent-50); border-color: var(--mpp-accent-50); color: var(--mpp-neutral-100); }
+
+.steps { list-style: none; margin: 4px 0 10px 25px; padding: 0 0 0 16px; border-left: 1px solid var(--mpp-neutral-50); display: flex; flex-direction: column; gap: 2px; }
+.step-btn {
+  width: 100%; text-align: left; background: transparent; border: 0; border-radius: var(--mpp-radius-sm);
+  padding: 6px 8px; color: var(--mpp-neutral-70); font-size: 13px; position: relative;
+}
+.step-btn::before {
+  content: ""; position: absolute; left: -21px; top: 12px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--rail-bg); border: 1px solid var(--mpp-neutral-60);
+}
+.step-btn:hover { color: var(--mpp-text-secondary); }
+.step.done .step-btn::before { background: var(--mpp-accent-40); border-color: var(--mpp-accent-40); }
+.step.active .step-btn { color: var(--mpp-text-primary); font-weight: 600; background: var(--mpp-surface-row-hover-subtle); }
+.step.active .step-btn::before { background: var(--mpp-accent-70); border-color: var(--mpp-accent-70); box-shadow: 0 0 0 4px rgba(75,194,224,.18); }
+.step-detail { padding: 2px 8px 8px; display: flex; flex-direction: column; gap: 8px; }
+.who { display: grid; grid-template-columns: 62px 1fr; gap: 8px; font-size: 13px; line-height: 1.45; }
+.who b { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; padding-top: 2px; }
+.who.op b { color: var(--pf-status-warn-fg); }
+.who.sys b { color: var(--mpp-accent-70); }
+.who span { color: var(--mpp-text-secondary); }
+
+.transport {
+  border-top: 1px solid var(--mpp-neutral-40);
+  padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 10px;
+  background: var(--mpp-neutral-10);
+}
+.t-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.t-btn {
+  height: 40px; min-width: 40px; padding: 0 10px; border-radius: var(--mpp-radius-md);
+  border: 1px solid var(--mpp-border-default); background: transparent; color: var(--mpp-text-secondary);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 500;
+}
+.t-btn:hover { background: var(--mpp-surface-row-hover-subtle); color: var(--mpp-text-primary); }
+.t-btn svg { width: 18px; height: 18px; fill: currentColor; }
+.t-play { flex: 1; background: var(--mpp-interactive-primary); border-color: var(--mpp-interactive-primary); color: var(--mpp-neutral-100); font-weight: 600; }
+.t-play:hover { background: var(--mpp-interactive-primary-hover); }
+.t-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--mpp-neutral-70); font-variant-numeric: tabular-nums; }
+.t-bar { height: 3px; background: var(--mpp-neutral-40); border-radius: 2px; overflow: hidden; }
+.t-bar i { display: block; height: 100%; width: 0; background: var(--mpp-accent-70); }
+.t-keys { font-size: 11px; color: var(--mpp-neutral-60); }
+.t-keys kbd { font-family: var(--mpp-font-mono); border: 1px solid var(--mpp-neutral-50); border-radius: 3px; padding: 0 4px; color: var(--mpp-neutral-80); }
+
+/* --------------------------------------------------------------- stage */
+.stage {
+  min-width: 0;
+  padding-block: 28px 40px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px));
+  padding-right: max(28px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 20px;
+  background:
+    radial-gradient(900px 400px at 70% -10%, rgba(24,136,168,.10), transparent 70%),
+    var(--mpp-neutral-10);
+}
+.stage-head { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 20px; align-items: end; }
+.stage-head h2 { margin: 2px 0 6px; font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; text-wrap: balance; }
+.stage-head p { margin: 0; color: var(--mpp-neutral-80); max-width: 64ch; font-size: 15px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.chip { font-size: 12px; padding: 3px 10px; border-radius: var(--mpp-radius-pill); border: 1px solid var(--mpp-neutral-50); color: var(--mpp-neutral-90); background: var(--mpp-neutral-20); }
+.step-tag { font-family: var(--mpp-font-mono); font-size: 12px; color: var(--mpp-neutral-70); white-space: nowrap; }
+
+.device-wrap { position: relative; width: 100%; overflow: hidden; padding-bottom: 2px; }
+.device {
+  width: 1080px; transform-origin: 0 0;
+  border: 1px solid var(--mpp-neutral-50); border-radius: 10px; overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 6px rgba(255,255,255,.02);
+  background: var(--mpp-surface-canvas);
+}
+.device-chrome {
+  height: 34px; display: flex; align-items: center; gap: 10px; padding: 0 12px;
+  background: #060B15; border-bottom: 1px solid var(--mpp-neutral-40);
+}
+.dots { display: flex; gap: 6px; }
+.dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--mpp-neutral-50); }
+.url {
+  flex: 1; max-width: 520px; margin: 0 auto; height: 22px; border-radius: 4px; background: var(--mpp-neutral-20);
+  font-family: var(--mpp-font-mono); font-size: 12px; color: var(--mpp-neutral-80);
+  display: flex; align-items: center; padding: 0 10px; gap: 6px;
+}
+.url em { font-style: normal; color: var(--mpp-neutral-60); }
+.screen { position: relative; height: 640px; overflow: hidden; }
+.caption-bar {
+  display: grid; grid-template-columns: auto minmax(0,1fr); gap: 14px; align-items: start;
+  padding: 14px 16px; border: 1px solid var(--mpp-neutral-40); border-radius: var(--mpp-radius-lg);
+  background: var(--mpp-neutral-20);
+}
+.caption-num { font-family: var(--mpp-font-mono); font-size: 13px; color: var(--mpp-accent-70); padding-top: 1px; }
+.caption-bar strong { display: block; font-size: 16px; margin-bottom: 2px; }
+.caption-bar span { color: var(--mpp-neutral-80); font-size: 14px; }
+
+/* tap indicator */
+.tap {
+  position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+  border: 2px solid var(--mpp-accent-70); background: rgba(75,194,224,.18);
+  pointer-events: none; z-index: 3000; opacity: 0;
+  transition: left 450ms cubic-bezier(.4,0,.2,1), top 450ms cubic-bezier(.4,0,.2,1), opacity 200ms;
+}
+.tap.on { opacity: 1; animation: tap 1.6s ease-out infinite; }
+@keyframes tap { 0% { box-shadow: 0 0 0 0 rgba(75,194,224,.45); } 70% { box-shadow: 0 0 0 18px rgba(75,194,224,0); } 100% { box-shadow: 0 0 0 0 rgba(75,194,224,0); } }
+.demo-target { outline: 2px solid var(--mpp-accent-70) !important; outline-offset: 3px; border-radius: var(--mpp-radius-md); }
+.flash { animation: flash 900ms ease-out; }
+@keyframes flash { from { background-color: rgba(75,194,224,.28); } }
+
+/* ===================================================== MPP product UI */
+.psc-pf-app { display: grid; grid-template-rows: var(--pf-header-h) auto 1fr; height: 100%; background: var(--mpp-surface-canvas); font-size: var(--mpp-fs-base); color: var(--mpp-text-primary); }
+.psc-pf-header { height: var(--pf-header-h); background: var(--mpp-surface-raised); border-bottom: 1px solid var(--mpp-border-subtle); display: flex; align-items: center; padding: 0 var(--pf-content-pad); gap: var(--mpp-space-3); }
+.psc-pf-app[data-mode="elevated"] .psc-pf-header { box-shadow: inset 0 -3px 0 var(--mpp-accent-60); }
+.psc-pf-header-left { display: flex; align-items: center; gap: var(--mpp-space-2); min-width: 0; }
+.psc-pf-header-center { flex: 1; display: flex; justify-content: center; }
+.psc-pf-header-right { display: flex; align-items: center; gap: var(--mpp-space-3); }
+.psc-pf-app-title { font-size: var(--mpp-fs-lg); font-weight: 600; letter-spacing: .02em; white-space: nowrap; }
+.burger { width: 40px; height: 40px; border-radius: var(--mpp-radius-md); border: 1px solid transparent; background: transparent; color: var(--mpp-text-secondary); font-size: 24px; }
+.psc-pf-btn { min-height: var(--pf-touch-min); display: inline-flex; align-items: center; justify-content: center; gap: var(--mpp-space-2); padding: 0 var(--mpp-space-4); border-radius: var(--mpp-radius-md); border: 1px solid var(--mpp-border-default); background: var(--mpp-surface-card); color: var(--mpp-text-primary); font-size: var(--mpp-fs-base); font-weight: 500; white-space: nowrap; transition: background var(--mpp-transition-fast); }
+.psc-pf-btn-large { min-height: 56px; font-size: var(--mpp-fs-md); padding: 0 var(--mpp-space-5); }
+.psc-pf-btn-sm { min-height: 30px; font-size: var(--mpp-fs-xs); padding: 0 12px; }
+.psc-pf-btn-secondary { background: transparent; border-color: var(--mpp-border-default); color: var(--mpp-text-secondary); }
+.psc-pf-btn-primary { background: var(--mpp-interactive-primary); border-color: var(--mpp-interactive-primary); color: var(--mpp-text-primary); }
+.psc-pf-btn-danger { background: var(--pf-status-bad-fg); border-color: var(--pf-status-bad-fg); color: var(--mpp-neutral-100); }
+.psc-pf-btn[disabled] { background: var(--mpp-neutral-30); border-color: var(--mpp-neutral-50); color: var(--mpp-neutral-60); cursor: not-allowed; }
+.psc-pf-btn-elevated { background: var(--mpp-neutral-30); color: var(--mpp-neutral-70); border-color: var(--mpp-neutral-50); }
+.psc-pf-app[data-mode="elevated"] .psc-pf-btn-elevated { background: var(--mpp-accent-60); border-color: var(--mpp-accent-60); color: var(--mpp-neutral-100); }
+.psc-pf-pill { display: inline-flex; align-items: center; padding: 2px var(--mpp-space-2); border-radius: var(--mpp-radius-pill); font-size: var(--mpp-fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.psc-pf-pill-good { background: var(--pf-status-good-bg); color: var(--pf-status-good-fg); }
+.psc-pf-pill-warn, .psc-pf-pill-hold { background: var(--pf-status-warn-bg); color: var(--pf-status-warn-fg); }
+.psc-pf-pill-bad { background: var(--pf-status-bad-bg); color: var(--pf-status-bad-fg); }
+.psc-pf-pill-info { background: var(--mpp-accent-20); color: var(--mpp-accent-80); }
+.psc-pf-pill-mute { background: var(--mpp-neutral-30); color: var(--mpp-neutral-80); }
+
+.psc-pf-terminal-cell-context { display: flex; align-items: center; gap: var(--mpp-space-3); padding: 6px var(--mpp-space-4); background: var(--mpp-surface-canvas); border: 1px solid var(--mpp-border-subtle); border-radius: var(--mpp-radius-md); }
+.psc-pf-cell-context-label { font-size: var(--mpp-fs-xs); color: var(--mpp-text-tertiary); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+.psc-pf-cell-context-value { font-size: var(--mpp-fs-md); font-weight: 600; color: var(--mpp-accent-60); letter-spacing: .02em; white-space: nowrap; }
+
+.opbar { display: flex; align-items: center; gap: var(--mpp-space-3); padding: 8px var(--pf-content-pad); background: var(--mpp-surface-canvas); border-bottom: 1px solid var(--mpp-border-subtle); }
+.op-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; background: var(--mpp-accent-20); color: var(--mpp-accent-80); border: 1px solid var(--mpp-accent-40); letter-spacing: .04em; }
+.op-avatar.empty { background: var(--mpp-neutral-30); color: var(--mpp-neutral-70); border-color: var(--mpp-neutral-50); }
+.op-avatar.sup { background: var(--mpp-cat-purple-bg); color: var(--mpp-cat-purple-fg); border-color: var(--mpp-cat-purple-border); }
+.psc-pf-kpi-label { font-size: var(--mpp-fs-xs); color: var(--mpp-text-tertiary); text-transform: uppercase; letter-spacing: .06em; font-weight: 500; }
+.psc-pf-kpi-sub { font-size: var(--mpp-fs-xs); color: var(--mpp-text-secondary); letter-spacing: .02em; }
+.psc-pf-kpi-value { font-size: 24px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.psc-pf-kpi-value-good { color: var(--pf-status-good-fg); } .psc-pf-kpi-value-warn { color: var(--pf-status-warn-fg); } .psc-pf-kpi-value-bad { color: var(--pf-status-bad-fg); }
+.mono { font-family: var(--mpp-font-mono); letter-spacing: .03em; }
+.grow { flex: 1; min-width: 0; }
+
+.psc-pf-terminal-body { overflow: hidden; display: flex; flex-direction: column; padding: var(--pf-content-pad); gap: var(--mpp-space-3); min-height: 0; }
+.psc-pf-terminal-header-row { display: flex; align-items: center; gap: var(--mpp-space-3); }
+.psc-pf-terminal-title { font-size: var(--mpp-fs-md); font-weight: 600; }
+.psc-pf-terminal-subtitle { font-size: var(--mpp-fs-sm); color: var(--mpp-text-tertiary); }
+.help { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--mpp-border-subtle); background: transparent; color: var(--mpp-text-tertiary); font-size: 15px; font-weight: 700; }
+.psc-pf-panel { background: var(--mpp-surface-raised); border: 1px solid var(--mpp-border-subtle); border-radius: var(--mpp-radius-md); padding: 14px var(--mpp-space-4); display: flex; flex-direction: column; gap: var(--mpp-space-3); min-width: 0; }
+.psc-pf-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.panel-title { font-size: var(--mpp-fs-base); font-weight: 600; }
+.psc-pf-field { display: flex; flex-direction: column; gap: 6px; }
+.psc-pf-field-label { font-size: var(--mpp-fs-sm); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--mpp-text-secondary); }
+.psc-pf-field-input { min-height: 40px; padding: 0 14px; border: 1px solid var(--mpp-border-default); border-radius: var(--mpp-radius-md); background: var(--mpp-surface-canvas); color: var(--mpp-text-primary); font-size: 16px; display: flex; align-items: center; gap: 8px; }
+.psc-pf-field-input.mono { font-family: var(--mpp-font-mono); letter-spacing: .05em; }
+.psc-pf-field-input.focus { border-color: var(--mpp-accent-60); box-shadow: var(--mpp-focus-ring); }
+.psc-pf-field-input .ph { color: var(--mpp-neutral-60); }
+.psc-pf-field-input .caret { display: inline-block; width: 2px; height: 20px; background: var(--mpp-accent-70); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.select-arrow { margin-left: auto; color: var(--mpp-text-tertiary); font-size: 12px; }
+
+.tab-strip { display: flex; border-bottom: 1px solid var(--mpp-border-subtle); gap: 4px; }
+.tab-item { padding: 10px var(--mpp-space-4); font-size: var(--mpp-fs-sm); font-weight: 500; color: var(--mpp-text-tertiary); border-bottom: 3px solid transparent; }
+.tab-item-active { color: var(--mpp-accent-70); border-bottom-color: var(--mpp-accent-70); font-weight: 600; }
+
+.psc-pf-queue { display: flex; flex-direction: column; gap: var(--mpp-space-2); }
+.psc-pf-queue-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: var(--mpp-space-4); align-items: center; padding: 10px var(--mpp-space-4); background: var(--mpp-surface-raised); border: 1px solid var(--mpp-border-subtle); border-radius: var(--mpp-radius-md); min-height: var(--pf-touch-min); }
+.psc-pf-queue-row-selected { background: var(--mpp-accent-20); border-color: var(--mpp-accent-60); }
+.psc-pf-queue-name { font-family: var(--mpp-font-mono); font-size: var(--mpp-fs-base); color: var(--mpp-accent-60); letter-spacing: .04em; }
+.psc-pf-queue-detail { font-size: var(--mpp-fs-sm); color: var(--mpp-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.psc-pf-queue-position { font-size: var(--mpp-fs-xs); color: var(--mpp-text-tertiary); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+.psc-pf-inventory-row { display: flex; align-items: center; gap: var(--mpp-space-3); padding: var(--mpp-space-2) var(--mpp-space-3); background: var(--mpp-surface-raised); border: 1px solid var(--mpp-border-subtle); border-radius: var(--mpp-radius-md); min-height: 46px; }
+.list-head { display: flex; gap: var(--mpp-space-3); padding: 0 var(--mpp-space-3); font-size: var(--mpp-fs-xs); font-weight: 600; color: var(--mpp-text-tertiary); text-transform: uppercase; letter-spacing: .05em; }
+.cav { width: 30px; height: 30px; border-radius: var(--mpp-radius-sm); display: grid; place-items: center; font-family: var(--mpp-font-mono); font-weight: 600; background: var(--mpp-neutral-30); border: 1px solid var(--mpp-neutral-50); color: var(--mpp-text-primary); }
+.part-tag { font-family: var(--mpp-font-mono); font-size: 13px; padding: 2px 8px; border-radius: var(--mpp-radius-sm); border: 1px solid; }
+.part-a { background: var(--mpp-cat-purple-bg); color: var(--mpp-cat-purple-fg); border-color: var(--mpp-cat-purple-border); }
+.part-b { background: var(--mpp-cat-orange-bg); color: var(--mpp-cat-orange-fg); border-color: var(--mpp-cat-orange-border); }
+.part-c { background: var(--mpp-cat-green-bg); color: var(--mpp-cat-green-fg); border-color: var(--mpp-cat-green-border); }
+.psc-pf-paused-indicator { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--pf-status-warn-bg); border: 1px solid var(--pf-status-warn-fg); border-radius: var(--mpp-radius-md); color: var(--pf-status-warn-fg); font-size: 13px; font-weight: 500; }
+.psc-pf-confirm-method { font-size: var(--mpp-fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border: 1px solid currentColor; border-radius: var(--mpp-radius-pill); }
+.psc-pf-confirm-method[data-method="Vision"] { color: var(--mpp-vision-fg); }
+.psc-pf-banner { min-height: 58px; background: var(--mpp-surface-raised); border: 1px solid var(--mpp-border-subtle); border-radius: var(--mpp-radius-md); display: flex; align-items: center; padding: 0 var(--mpp-space-4); gap: var(--mpp-space-3); }
+.psc-pf-banner.bad { border-color: var(--mpp-state-bad-border); background: var(--mpp-state-bad-bg); }
+.psc-pf-banner-title { font-weight: 600; color: var(--pf-status-bad-fg); }
+.psc-pf-banner-detail { color: var(--mpp-text-secondary); font-size: var(--mpp-fs-sm); }
+.empty-hint { font-size: var(--mpp-fs-xs); color: var(--mpp-text-secondary); }
+.row { display: flex; gap: var(--mpp-space-3); align-items: center; }
+.cols { display: grid; gap: var(--mpp-space-3); min-height: 0; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--mpp-space-3); }
+.kpi { background: var(--mpp-surface-raised); border: 1px solid var(--mpp-border-subtle); border-radius: var(--mpp-radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.dock { background: var(--mpp-surface-raised); border-left: 1px solid var(--mpp-border-subtle); padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+
+/* modal + numpad */
+.modal-scrim { position: absolute; inset: 0; background: var(--mpp-surface-modal-scrim); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal { width: 420px; background: var(--mpp-surface-raised); border: 1px solid var(--mpp-border-default); border-radius: var(--mpp-radius-lg); box-shadow: var(--mpp-shadow-lg); display: flex; flex-direction: column; }
+.modal-head { padding: 16px 18px; border-bottom: 1px solid var(--mpp-border-subtle); display: flex; flex-direction: column; gap: 2px; }
+.modal-head b { font-size: var(--mpp-fs-md); }
+.modal-head span { font-size: var(--mpp-fs-xs); color: var(--mpp-text-tertiary); }
+.modal-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.modal-foot { padding: 12px 18px; border-top: 1px solid var(--mpp-border-subtle); display: flex; justify-content: flex-end; gap: 10px; }
+.pin-display { display: flex; justify-content: center; gap: 10px; }
+.pin-display i { width: 46px; height: 54px; border-radius: var(--mpp-radius-md); border: 1px solid var(--mpp-border-default); background: var(--mpp-surface-canvas); display: grid; place-items: center; font-family: var(--mpp-font-mono); font-style: normal; font-size: 26px; font-weight: 600; }
+.pin-display i.filled { border-color: var(--mpp-accent-60); color: var(--mpp-accent-80); }
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.numpad span { height: 52px; border-radius: var(--mpp-radius-md); border: 1px solid var(--mpp-border-default); background: var(--mpp-surface-card); display: grid; place-items: center; font-size: 22px; font-weight: 600; }
+.numpad span.k-alt { font-size: 15px; color: var(--mpp-text-tertiary); background: transparent; }
+
+/* toast */
+.toasts { position: absolute; top: 80px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 2000; width: 340px; }
+.toast { background: var(--mpp-surface-overlay); border: 1px solid var(--mpp-border-default); border-radius: var(--mpp-radius-md); box-shadow: var(--mpp-shadow-lg); padding: 10px 14px; display: grid; grid-template-columns: 22px 1fr; gap: 10px; animation: toastIn 260ms ease-out; }
+.toast .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+.toast.good .ic { background: var(--mpp-state-good-bg); color: var(--mpp-state-good-fg); }
+.toast.bad .ic { background: var(--mpp-state-bad-bg); color: var(--mpp-state-bad-fg); }
+.toast.info .ic { background: var(--mpp-accent-20); color: var(--mpp-accent-70); }
+.toast b { display: block; font-size: 15px; }
+.toast span { font-size: 13px; color: var(--mpp-text-secondary); }
+@keyframes toastIn { from { transform: translateX(20px); opacity: 0; } }
+
+/* genealogy tree */
+.tree { display: flex; flex-direction: column; gap: 6px; }
+.node { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--mpp-border-subtle); border-radius: var(--mpp-radius-md); background: var(--mpp-surface-raised); }
+.node .rel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--mpp-text-tertiary); }
+.timeline { display: flex; flex-direction: column; }
+.tl { display: grid; grid-template-columns: 150px 14px 1fr; gap: 12px; padding: 8px 0; font-size: 14px; }
+.tl time { font-family: var(--mpp-font-mono); font-size: 13px; color: var(--mpp-text-tertiary); }
+.tl .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mpp-accent-60); margin-top: 6px; box-shadow: 0 0 0 3px var(--mpp-accent-20); }
+
+/* config tool (desktop density) */
+.cfg { display: grid; grid-template-columns: 200px 1fr; height: 100%; font-size: 14px; }
+.cfg-nav { background: var(--mpp-surface-raised); border-right: 1px solid var(--mpp-border-subtle); padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+.cfg-nav .grp { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--mpp-text-tertiary); padding: 10px 10px 4px; }
+.cfg-nav a { padding: 7px 10px; border-radius: var(--mpp-radius-sm); color: var(--mpp-text-secondary); font-size: 14px; }
+.cfg-nav a.on { background: var(--mpp-accent-20); color: var(--mpp-accent-80); font-weight: 600; }
+.cfg-main { display: grid; grid-template-rows: 48px 1fr; min-width: 0; }
+.cfg-title { display: flex; align-items: center; padding: 0 18px; border-bottom: 1px solid var(--mpp-border-subtle); background: var(--mpp-surface-raised); gap: 10px; }
+.cfg-title b { font-size: 17px; }
+.cfg-body { display: grid; grid-template-columns: 280px 1fr; min-height: 0; }
+.cfg-list { border-right: 1px solid var(--mpp-border-subtle); padding: 12px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.cfg-item { padding: 8px 10px; border-radius: var(--mpp-radius-md); border: 1px solid transparent; display: flex; flex-direction: column; gap: 1px; }
+.cfg-item.on { background: var(--mpp-accent-20); border-color: var(--mpp-accent-60); }
+.cfg-item b { font-family: var(--mpp-font-mono); font-size: 13px; color: var(--mpp-accent-70); font-weight: 500; }
+.cfg-item span { font-size: 12px; color: var(--mpp-text-tertiary); }
+.cfg-detail { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cfg .psc-pf-btn { min-height: 30px; font-size: 13px; padding: 0 12px; }
+.route-step { display: grid; grid-template-columns: 34px 1fr 150px 60px; gap: 10px; align-items: center; padding: 7px 10px; background: var(--mpp-surface-raised); border: 1px solid var(--mpp-border-subtle); border-radius: var(--mpp-radius-md); }
+.arrows { display: flex; gap: 4px; }
+.arrows span { width: 24px; height: 24px; border: 1px solid var(--mpp-border-default); border-radius: var(--mpp-radius-sm); display: grid; place-items: center; font-size: 10px; color: var(--mpp-text-tertiary); }
+.role { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: var(--mpp-radius-pill); justify-self: start; }
+.role-origin { background: var(--mpp-cat-orange-bg); color: var(--mpp-cat-orange-fg); }
+.role-adv { background: var(--mpp-neutral-30); color: var(--mpp-neutral-90); }
+.role-mint { background: var(--mpp-cat-purple-bg); color: var(--mpp-cat-purple-fg); }
+.audit-row { display: grid; grid-template-columns: 150px 70px 1fr; gap: 10px; font-size: 13px; padding: 7px 10px; border-bottom: 1px solid var(--mpp-border-subtle); }
+
+/* ------------------------------------------------------------ responsive */
+@media (max-width: 1000px) {
+  .wt { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--mpp-neutral-40); }
+  .rail-brand, .transport { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .rail-list { max-height: 300px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+  .transport { position: sticky; bottom: 0; z-index: 20; padding-bottom: max(14px, env(safe-area-inset-bottom, 0px)); }
+  .stage { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 28px; }
+  .stage-head { grid-template-columns: 1fr; }
+  .stage-head h2 { font-size: 24px; }
+  .wt { display: flex; flex-direction: column; }
+  .stage { order: 1; } .rail { order: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tap.on, .flash, .toast, .caret { animation: none !important; }
+  .tap { transition: none; }
+}
+</style>
+
+<div class="wt">
+  <aside class="rail" aria-label="Walkthrough guide">
+    <div class="rail-brand">
+      <span class="rail-eyebrow">Blue Ridge Automation · MPP MES</span>
+      <h1>A LOT's life on the plant floor</h1>
+      <p>Follow one casting from the die-cast press to a Honda shipment, one operator action at a time.</p>
+    </div>
+    <nav class="rail-list" id="railList"></nav>
+    <div class="transport">
+      <div class="t-meta"><span id="tSection">Section 1 of 9</span><span id="tOverall">Step 1 / 1</span></div>
+      <div class="t-bar"><i id="tBar"></i></div>
+      <div class="t-row">
+        <button class="t-btn" id="bPrevSec" title="Previous section" aria-label="Previous section"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9.5 12l8.5 6V6z"/></svg></button>
+        <button class="t-btn" id="bPrev" title="Step back" aria-label="Step back"><svg viewBox="0 0 24 24"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg></button>
+        <button class="t-btn t-play" id="bPlay" aria-label="Play"><svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg><span id="playLabel">Play</span></button>
+        <button class="t-btn" id="bNext" title="Step forward" aria-label="Step forward"><svg viewBox="0 0 24 24"><path d="M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z"/></svg></button>
+        <button class="t-btn" id="bNextSec" title="Next section" aria-label="Next section"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6zM16 6h2v12h-2z"/></svg></button>
+      </div>
+      <div class="t-keys"><kbd>←</kbd> <kbd>→</kbd> step · <kbd>Space</kbd> play / pause</div>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <header class="stage-head">
+      <div>
+        <span class="rail-eyebrow" id="sEyebrow">01 · Shop floor</span>
+        <h2 id="sTitle"></h2>
+        <p id="sPitch"></p>
+        <div class="chips" id="sChips"></div>
+      </div>
+      <span class="step-tag" id="sRoute"></span>
+    </header>
+
+    <div class="caption-bar" aria-live="polite">
+      <span class="caption-num" id="cNum">1.1</span>
+      <div><strong id="cTitle"></strong><span id="cText"></span></div>
+    </div>
+
+    <div class="device-wrap" id="deviceWrap">
+      <div class="device" id="device">
+        <div class="device-chrome">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <div class="url"><em>mpp-gw01:8088/data/perspective/client/MPP</em><span id="urlPath">/</span></div>
+        </div>
+        <div class="screen" id="screen"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+/* ----------------------------------------------------------------- helpers */
+const OP = { ini: 'MK', name: 'M. Keller', pin: '04218' };
+const SUP = { ini: 'DR', name: 'D. Rivera' };
+
+function header(o) {
+  const ctx = o.cell ? `
+    <div class="psc-pf-terminal-cell-context" id="cellCtx">
+      <span class="psc-pf-cell-context-label">${o.ctxLabel || 'Active Cell'}</span>
+      <span class="psc-pf-cell-context-value">${o.cell}</span>
+    </div>` : '';
+  const right = o.elevated
+    ? `<span class="psc-pf-pill psc-pf-pill-info" id="elevBadge">Elevated · ${SUP.name} · 4:52</span>`
+    : `<button class="psc-pf-btn psc-pf-btn-secondary" id="btnSup">Supervisor Access</button>`;
+  return `
+  <div class="psc-pf-header">
+    <div class="psc-pf-header-left"><button class="burger" aria-hidden="true">≡</button><span class="psc-pf-app-title">${o.title}</span></div>
+    <div class="psc-pf-header-center">${ctx}</div>
+    <div class="psc-pf-header-right">
+      <button class="psc-pf-btn psc-pf-btn-secondary">Downtime</button>
+      ${right}
+    </div>
+  </div>`;
+}
+
+function opbar(o) {
+  const who = o.elevated ? SUP : (o.signedIn === false ? null : OP);
+  const shift = `<span class="psc-pf-kpi-sub">2nd Shift · Wed 22 Oct · 15:42 ET</span>`;
+  if (!who) {
+    return `<div class="opbar"><span class="op-avatar empty">--</span>
+      <div class="grow"><div class="psc-pf-kpi-label">Operator</div><div class="psc-pf-kpi-sub">No operator signed in</div></div>
+      ${shift}<button class="psc-pf-btn psc-pf-btn-primary" id="btnSignIn">Sign In</button></div>`;
+  }
+  return `<div class="opbar" id="opbar"><span class="op-avatar${o.elevated ? ' sup' : ''}">${who.ini}</span>
+    <div class="grow"><div class="psc-pf-kpi-label">${o.elevated ? 'Supervisor (elevated)' : 'Operator'}</div><div style="font-weight:600">${who.ini} · ${who.name}</div></div>
+    ${shift}<button class="psc-pf-btn psc-pf-btn-secondary">Change Operator</button></div>`;
+}
+
+function app(o, body, overlay) {
+  return `<div class="psc-pf-app" data-mode="${o.elevated ? 'elevated' : 'operator'}">
+    ${header(o)}${opbar(o)}
+    <div class="psc-pf-terminal-body">${body}</div>
+  </div>${overlay || ''}`;
+}
+
+function titleRow(title, sub, extra) {
+  return `<div class="psc-pf-terminal-header-row">
+    <div class="grow"><div class="psc-pf-terminal-title">${title}</div><div class="psc-pf-terminal-subtitle">${sub}</div></div>
+    ${extra || ''}<button class="help" aria-hidden="true">?</button></div>`;
+}
+
+function field(label, value, o) {
+  o = o || {};
+  const inner = value
+    ? (o.type ? `<span data-type="${value}"></span>${o.focus ? '<span class="caret"></span>' : ''}` : `<span>${value}</span>`)
+    : `<span class="ph">${o.ph || ''}</span>${o.focus ? '<span class="caret"></span>' : ''}`;
+  return `<div class="psc-pf-field"${o.style ? ` style="${o.style}"` : ''}>
+    <span class="psc-pf-field-label">${label}</span>
+    <div class="psc-pf-field-input${o.mono ? ' mono' : ''}${o.focus ? ' focus' : ''}" ${o.id ? `id="${o.id}"` : ''}>${inner}${o.select ? '<span class="select-arrow">▼</span>' : ''}</div></div>`;
+}
+
+function toast(kind, title, text) {
+  const ic = kind === 'good' ? '✓' : kind === 'bad' ? '!' : 'i';
+  return `<div class="toasts"><div class="toast ${kind}"><span class="ic">${ic}</span><div><b>${title}</b><span>${text}</span></div></div></div>`;
+}
+
+function kpi(label, value, sub, cls, id) {
+  return `<div class="kpi"${id ? ` id="${id}"` : ''}><span class="psc-pf-kpi-label">${label}</span><span class="psc-pf-kpi-value ${cls || ''}">${value}</span>${sub ? `<span class="psc-pf-kpi-sub">${sub}</span>` : ''}</div>`;
+}
+
+/* ================================================================ sections */
+const SECTIONS = [
+
+/* 1 ------------------------------------------------------------- sign-in */
+{
+  id: 'signin', title: 'Sign in with a five-digit PIN',
+  pitch: 'Terminals know where they are. Operators walk up, key their PIN and are working in seconds. No AD account, no line to pick, no shared login.',
+  chips: ['Location from terminal IP', 'PIN presence, not a password', 'Every action attributed'],
+  route: '/shop-floor/die-cast',
+  render(s) {
+    const o = { title: 'Die Cast', cell: 'Press 07 · DM0124', signedIn: !!s.signed };
+    const body = `${titleRow('Die Cast Entry', 'Press 07 · Die DM0124 · 4 cavities across 2 parts')}
+      <div class="psc-pf-panel" style="flex:1;align-items:center;justify-content:center;text-align:center;gap:10px">
+        ${s.signed
+          ? `<span class="psc-pf-pill psc-pf-pill-good">Signed in</span><div class="psc-pf-terminal-title">Welcome, ${OP.name}</div><div class="empty-hint">Press 07 is ready. Baskets, counters and scrap are open to you.</div>`
+          : `<div class="psc-pf-terminal-title" style="color:var(--mpp-text-secondary)">Sign in to start recording</div><div class="empty-hint">Production entry unlocks once an operator is present at this terminal.</div>`}
+      </div>`;
+    let overlay = '';
+    if (s.pad) {
+      const digits = (s.pin || '').split('');
+      const cells = [0,1,2,3,4].map(i => `<i class="${digits[i] ? 'filled' : ''}">${digits[i] || ''}</i>`).join('');
+      overlay = `<div class="modal-scrim"><div class="modal" id="pinModal">
+        <div class="modal-head"><b>Operator Sign-In</b><span>Enter your 5-digit PIN</span></div>
+        <div class="modal-body"><div class="pin-display">${cells}</div>
+          <div class="numpad" id="numpad">${['1','2','3','4','5','6','7','8','9'].map(k => `<span>${k}</span>`).join('')}<span class="k-alt">Clear</span><span>0</span><span class="k-alt">⌫</span></div></div>
+        <div class="modal-foot"><button class="psc-pf-btn psc-pf-btn-secondary">Cancel</button><button class="psc-pf-btn psc-pf-btn-primary" id="btnPinOk" ${digits.length < 5 ? 'disabled' : ''}>Sign In</button></div>
+      </div></div>`;
+    }
+    return app(o, body, overlay + (s.toast ? toast('good', 'Signed in as MK', 'Press 07 · 2nd Shift') : ''));
+  },
+  steps: [
+    { title: 'The terminal already knows its cell', op: 'Walks up to the Press 07 terminal.', sys: 'Resolves the terminal from its IP address and opens Die Cast for Press 07, die DM0124. Nobody picks a line.', s: {}, target: '#cellCtx' },
+    { title: 'Tap Sign In', op: 'Taps Sign In on the operator bar.', sys: 'Opens the numeric keypad. Production buttons stay locked until someone is present.', s: {}, target: '#btnSignIn' },
+    { title: 'Key the PIN', op: 'Keys 0-4-2-1-8 on the keypad.', sys: 'Treats the PIN as text, so the leading zero survives. 04218 is a full-time employee; 40218 would be a temp.', s: { pad: true, pin: '04218' }, target: '#numpad' },
+    { title: 'Confirm', op: 'Taps Sign In.', sys: 'Looks up the active user for that PIN. An unknown PIN offers Re-type first, so a slipped digit never becomes a second person.', s: { pad: true, pin: '04218' }, target: '#btnPinOk' },
+    { title: 'Working, and on the record', op: 'Sees their initials on the operator bar.', sys: 'Every basket, scrap entry and count from here carries MK. Supervisors cover breaks with their own PIN, not a shared login.', s: { signed: true, toast: true }, target: '#opbar' }
+  ]
+},
+
+/* 2 ------------------------------------------------------------- die cast */
+{
+  id: 'diecast', title: 'Die cast: every cavity, every basket',
+  pitch: 'The die-cast screen tracks the press counter, each cavity\'s basket and the scrap that never made it into one, then reconciles the shift so every shot is accounted for.',
+  chips: ['Cavity-level LOTs', 'Counter-credited baskets', 'Additive scrap', 'Shift reconciliation'],
+  route: '/shop-floor/die-cast',
+  render(s) {
+    const o = { title: 'Die Cast', cell: 'Press 07 · DM0124' };
+    const tabs = ['Baskets', 'Scrap', 'Reconcile'].map(t => `<span class="tab-item ${s.tab === t ? 'tab-item-active' : ''}" id="tab${t}">${t}</span>`).join('');
+    const cavs = [
+      { p: '12231-59B-0000', pc: 'part-a', c: 'a', lot: 'MESL0004809', n: s.counter ? 212 : 188 },
+      { p: '12231-59B-0000', pc: 'part-a', c: 'b', lot: s.openB ? 'MESL0004812' : null, n: s.counter ? 24 : 0 },
+      { p: '12232-59B-0000', pc: 'part-b', c: 'a', lot: 'MESL0004810', n: s.counter ? 209 : 185 },
+      { p: '12232-59B-0000', pc: 'part-b', c: 'b', lot: 'MESL0004811', n: s.counter ? 211 : 187 }
+    ];
+    let content = '';
+    if (s.tab === 'Baskets') {
+      content = `<div class="row">
+          ${field('Shot counter reading', s.counter ? '18442' : '', { mono: true, type: !!s.counter, focus: s.typing, id: 'fCounter', ph: 'Last: 18,418 at 14:51 ET', style: 'flex:1' })}
+          <div class="kpi" style="min-width:200px" id="kpiShots"><span class="psc-pf-kpi-label">Shots since last reading</span><span class="psc-pf-kpi-value">${s.counter ? '24' : '--'}</span><span class="psc-pf-kpi-sub">credited to open baskets</span></div>
+        </div>
+        <div class="list-head"><span style="width:30px">Cav</span><span style="width:150px">Part</span><span class="grow">Basket LOT</span><span style="width:90px">Pieces</span><span style="width:140px"></span></div>
+        <div class="psc-pf-queue" id="cavList">${cavs.map((c, i) => `
+          <div class="psc-pf-inventory-row${s.flashRow && i === 1 ? ' flash' : ''}" id="cav${i}">
+            <span class="cav">${c.c}</span>
+            <span style="width:150px"><span class="part-tag ${c.pc}">${c.p}</span></span>
+            <span class="grow">${c.lot ? `<span class="psc-pf-queue-name">${c.lot}</span>` : `<span class="psc-pf-pill psc-pf-pill-warn">No basket</span>`}</span>
+            <span style="width:90px;font-variant-numeric:tabular-nums;font-weight:600">${c.lot ? c.n : '--'}</span>
+            <span style="width:140px;display:flex;justify-content:flex-end">${c.lot
+              ? `<button class="psc-pf-btn psc-pf-btn-secondary psc-pf-btn-sm">Release</button>`
+              : `<button class="psc-pf-btn psc-pf-btn-primary psc-pf-btn-sm" id="btnOpenB">Open Basket</button>`}</span>
+          </div>`).join('')}</div>`;
+    } else if (s.tab === 'Scrap') {
+      content = `<div class="cols" style="grid-template-columns:1fr 1fr">
+        <div class="psc-pf-panel"><div class="panel-title">Record cavity scrap</div>
+          <div class="cols" style="grid-template-columns:1fr 1fr">${field('Cavity', '12231-59B · a', { select: true })}${field('Defect code', 'Cold shut', { select: true })}</div>
+          <div class="cols" style="grid-template-columns:1fr 1fr">${field('Quantity', '3', { mono: true, id: 'fScrapQty' })}${field('Tool', 'DM0124', {})}</div>
+          <button class="psc-pf-btn psc-pf-btn-primary psc-pf-btn-large" id="btnScrap">Record Scrap</button>
+        </div>
+        <div class="psc-pf-panel"><div class="panel-title">This shift</div>
+          ${s.scrapped ? `<div class="psc-pf-inventory-row flash" id="scrapRow"><span class="cav">a</span><span class="grow">Cold shut</span><b>3</b><span class="psc-pf-pill psc-pf-pill-mute">Additive</span></div>` : ''}
+          <div class="psc-pf-inventory-row"><span class="cav">b</span><span class="grow">Porosity</span><b>1</b><span class="psc-pf-pill psc-pf-pill-mute">Additive</span></div>
+          <div class="empty-hint">Die-cast scrap never entered a basket, so it is recorded beside the basket count rather than taken out of it.</div>
+        </div></div>`;
+    } else {
+      const rows = [
+        ['12231-59B · a', 212, 209, 3, 0], ['12231-59B · b', 25, 24, 1, 0], ['12232-59B · a', 209, 209, 0, 0], ['12232-59B · b', 211, 211, 0, 0]
+      ];
+      content = `<div class="kpis">${kpi('Net shots', '212', 'reading − watermark − die-wide')}${kpi('Good', '653', 'in baskets')}${kpi('Scrap', '4', 'cavity-attributed')}${kpi('Variance', '0', 'every cavity balanced', 'psc-pf-kpi-value-good', 'kpiVar')}</div>
+        <div class="psc-pf-panel" id="reconTable"><div class="list-head"><span class="grow">Part · cavity</span><span style="width:110px">Net shots</span><span style="width:80px">Good</span><span style="width:80px">Scrap</span><span style="width:110px">Unaccounted</span></div>
+        ${rows.map(r => `<div class="psc-pf-inventory-row" style="font-variant-numeric:tabular-nums"><span class="grow mono">${r[0]}</span><span style="width:110px">${r[1]}</span><span style="width:80px">${r[2]}</span><span style="width:80px">${r[3]}</span><span style="width:110px"><span class="psc-pf-pill psc-pf-pill-good">${r[4]}</span></span></div>`).join('')}
+        </div>
+        <div class="row" style="justify-content:flex-end"><span class="empty-hint grow">Net shots = good + scrap + unaccounted, per cavity. Any variance needs a reason before submit.</span><button class="psc-pf-btn psc-pf-btn-primary psc-pf-btn-large" id="btnRecon">Submit Reconciliation</button></div>`;
+    }
+    const body = `${titleRow('Die Cast Entry', 'Press 07 · Die DM0124 · 2nd Shift', `<span class="psc-pf-paused-indicator">Paused <b>0</b></span>`)}
+      <div class="tab-strip">${tabs}</div>${content}`;
+    const t = s.toast === 'ltt' ? toast('good', 'Basket opened', 'MESL0004812 · cavity b') : s.toast === 'scrap' ? toast('good', 'Scrap recorded', '3 × Cold shut · cavity a') : s.toast === 'recon' ? toast('good', 'Shift reconciled', 'Press 07 · 2nd Shift · variance 0') : '';
+    return app(o, body, t);
+  },
+  steps: [
+    { title: 'One row per cavity', op: 'Reads the cavity list for die DM0124.', sys: 'Groups cavities by part, then letter. One family die can cast several part numbers, so the letter alone is not enough.', s: { tab: 'Baskets' }, target: '#cavList' },
+    { title: 'Open a basket', op: 'Taps Open Basket on cavity b, which has no basket.', sys: 'Creates a new LOT for that part and cavity.', s: { tab: 'Baskets' }, target: '#btnOpenB' },
+    { title: 'The basket is a LOT', op: 'Starts filling the new basket.', sys: 'The basket is now a traceable LOT, MESL0004812, tied to its part, die and cavity.', s: { tab: 'Baskets', openB: true, flashRow: true, toast: 'ltt' }, target: '#cav1' },
+    { title: 'Key the shot counter', op: 'Types the press counter: 18442.', sys: 'Works out 24 shots since the last reading and credits them to every open basket.', s: { tab: 'Baskets', openB: true, counter: true, typing: true }, target: '#fCounter' },
+    { title: 'Record scrap by cavity', op: 'Records 3 cold-shut castings from cavity a.', sys: 'Stamps part, die and cavity on the scrap record. The basket count is not reduced, because those castings were never in it.', s: { tab: 'Scrap', scrapped: true, toast: 'scrap' }, target: '#btnScrap' },
+    { title: 'Reconcile the shift', op: 'Opens Reconcile and submits.', sys: 'Checks net shots = good + scrap + unaccounted for each cavity. Zero variance here; any gap would need a reason.', s: { tab: 'Reconcile', toast: 'recon' }, target: '#kpiVar' }
+  ]
+},
+
+/* 3 -------------------------------------------------------- machining in */
+{
+  id: 'machining-in', title: 'Machining IN: first in, first out',
+  pitch: 'Each line shows the castings waiting for it, oldest first, worked out from the part\'s route. The operator scans the ticket and machining starts.',
+  chips: ['Route-driven queue', 'Scan the LTT', 'FIFO enforced', 'Holds block automatically'],
+  route: '/shop-floor/machining-in',
+  render(s) {
+    const o = { title: 'Machining IN', cell: '6MA Machining Line', ctxLabel: 'Line' };
+    const q = [
+      { lot: 'MESL0004790', p: '12231-59B-0000', n: 212, age: '3h 12m' },
+      { lot: 'MESL0004797', p: '12231-59B-0000', n: 208, age: '2h 40m' },
+      { lot: 'MESL0004801', p: '12232-59B-0000', n: 205, age: '1h 55m', hold: true },
+      { lot: 'MESL0004809', p: '12231-59B-0000', n: 212, age: '0h 22m' }
+    ];
+    const queue = q.map((r, i) => {
+      const sel = s.picked && i === 0;
+      if (s.started && i === 0) return '';
+      return `<div class="psc-pf-queue-row${sel ? ' psc-pf-queue-row-selected' : ''}" id="q${i}">
+        <div style="min-width:0"><div class="psc-pf-queue-name">${r.lot}</div><div class="psc-pf-queue-detail">${r.p} · Trim OUT complete</div></div>
+        <span class="psc-pf-queue-position">${i === 0 ? 'Next up' : '#' + (i + 1)}</span>
+        <span style="font-variant-numeric:tabular-nums;font-weight:600">${r.n} pcs</span>
+        ${r.hold ? '<span class="psc-pf-pill psc-pf-pill-hold">On Hold</span>' : `<span class="psc-pf-queue-position">${r.age}</span>`}
+      </div>`;
+    }).join('');
+    const active = s.started
+      ? `<div class="psc-pf-inventory-row flash" id="activeLot"><span class="psc-pf-queue-name">MESL0004790</span><span class="grow psc-pf-queue-detail">12231-59B-0000 · 212 pcs · started 15:44 ET by MK</span><span class="psc-pf-pill psc-pf-pill-good">Machining</span></div>`
+      : `<div class="empty-hint" id="activeLot">No LOT picked yet. Scan an LTT above to start machining at this line.</div>`;
+    const body = `${titleRow('Machining IN', 'Scan the LTT to start machining at this line.', `<button class="psc-pf-btn psc-pf-btn-secondary">Inventory</button><button class="psc-pf-btn psc-pf-btn-secondary">Scrap</button>`)}
+      <div class="cols" style="grid-template-columns:1.2fr 1fr;flex:1">
+        <div class="psc-pf-panel" style="min-height:0"><div class="psc-pf-panel-header"><span class="panel-title">Waiting at this line</span><span class="psc-pf-kpi-sub">oldest first</span></div>
+          <div class="psc-pf-queue" id="queue">${queue}</div></div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="psc-pf-panel">${field('Scan LTT', s.scan ? 'MESL0004790' : '', { mono: true, type: !!s.scan, focus: !s.started, id: 'fScan', ph: 'Scan or type a LOT name' })}
+            ${s.picked && !s.started ? `<div class="row"><span class="psc-pf-pill psc-pf-pill-good">Matches next up</span><span class="empty-hint">212 pcs · 12231-59B-0000</span></div>` : ''}
+            <button class="psc-pf-btn psc-pf-btn-primary psc-pf-btn-large" id="btnStart" ${s.picked && !s.started ? '' : 'disabled'}>Start Machining</button></div>
+          <div class="psc-pf-panel"><span class="panel-title">Active machined LOT (after pick)</span>${active}</div>
+        </div>
+      </div>`;
+    return app(o, body, s.started ? toast('good', 'Machining started', 'MESL0004790 · 6MA Machining Line') : '');
+  },
+  steps: [
+    { title: 'The queue builds itself', op: 'Looks at what is waiting for the 6MA line.', sys: 'Lists open LOTs whose next route step is Machining IN, oldest first. A LOT on hold stays visible but cannot be picked.', s: {}, target: '#queue' },
+    { title: 'Scan the ticket', op: 'Scans the LTT on the oldest basket.', sys: 'Resolves MESL0004790 and confirms it is the LOT this line is waiting for.', s: { scan: true, picked: true }, target: '#fScan' },
+    { title: 'Start machining', op: 'Taps Start Machining.', sys: 'Records the Machining IN step against the operation template for that route step, signed by MK.', s: { scan: true, picked: true }, target: '#btnStart' },
+    { title: 'Now in progress', op: 'Moves on to the next basket.', sys: 'The LOT leaves the queue and shows as the active machined LOT.', s: { scan: true, picked: true, started: true }, target: '#activeLot' }
+  ]
+},
+
+/* 4 ------------------------------------------------------- machining out */
+{
+  id: 'machining-out', title: 'Machining OUT: a new part is born',
+  pitch: 'Machined castings become a sub-assembly with a new LOT and ticket. The genealogy link back to the casting is written in the same transaction.',
+  chips: ['Consume-and-mint', 'BOM-derived part', 'Genealogy recorded', 'Scrap by defect'],
+  route: '/shop-floor/machining-out',
+  render(s) {
+    const o = { title: 'Machining OUT', cell: '6MA Machining Line', ctxLabel: 'Line' };
+    const body = `${titleRow('Machining OUT', 'Machine castings into a sub-assembly LOT.', `<button class="psc-pf-btn psc-pf-btn-secondary">Inventory</button>`)}
+      <div class="cols" style="grid-template-columns:1fr 1.1fr;flex:1">
+        <div class="psc-pf-panel"><div class="psc-pf-panel-header"><span class="panel-title">Castings to machine</span><span class="psc-pf-kpi-sub">FIFO</span></div>
+          <div class="psc-pf-queue" id="outQueue">
+            <div class="psc-pf-queue-row${s.sel ? ' psc-pf-queue-row-selected' : ''}" id="oq0" style="grid-template-columns:1fr auto"><div><div class="psc-pf-queue-name">MESL0004790</div><div class="psc-pf-queue-detail">12231-59B-0000 · casting</div></div><b>${s.done ? '0' : '212'} pcs</b></div>
+            <div class="psc-pf-queue-row" style="grid-template-columns:1fr auto"><div><div class="psc-pf-queue-name">MESL0004797</div><div class="psc-pf-queue-detail">12231-59B-0000 · casting</div></div><b>208 pcs</b></div>
+          </div></div>
+        <div class="psc-pf-panel">
+          <div class="row"><div class="grow"><div class="psc-pf-kpi-label">Produces</div><div style="font-weight:600"><span class="part-tag part-c">12270-6NA-M</span> &nbsp;Sub-assembly</div></div><span class="psc-pf-kpi-sub">from BOM · line-eligible</span></div>
+          <div class="cols" style="grid-template-columns:1fr 1fr">${field('Good pieces', s.qty ? '210' : '', { mono: true, type: !!s.qty, focus: !!s.qty && !s.done, id: 'fQty', ph: '0' })}${field('Source LOT', s.sel ? 'MESL0004790' : '', { mono: true, ph: 'Select from queue' })}</div>
+          <div class="psc-pf-field-label">Scrap / defects (optional)</div>
+          ${s.qty ? `<div class="psc-pf-inventory-row" id="scrapLine"><span class="grow">Porosity</span><b>2</b></div>` : `<div class="empty-hint">+ Add scrap line</div>`}
+          <button class="psc-pf-btn psc-pf-btn-primary psc-pf-btn-large" id="btnMint" ${s.qty && !s.done ? '' : 'disabled'}>Complete · Mint Sub-LOT</button>
+          ${s.done ? `<div class="psc-pf-panel flash" id="minted" style="background:var(--mpp-surface-canvas)"><div class="row"><span class="psc-pf-pill psc-pf-pill-good">Minted</span><span class="psc-pf-queue-name">MESL0004833</span><span class="grow"></span><span class="mono" style="font-size:13px;color:var(--mpp-text-tertiary)">210 pcs</span></div>
+            <div class="empty-hint">Consumed MESL0004790 (12231-59B-0000) → produced MESL0004833 (12270-6NA-M).</div></div>` : ''}
+        </div>
+      </div>`;
+    return app(o, body, s.done ? toast('good', 'Sub-assembly LOT created', 'MESL0004833 · 210 pcs') : '');
+  },
+  steps: [
+    { title: 'Pick the casting LOT', op: 'Selects the oldest machined basket.', sys: 'Works out what it becomes from the BOM: casting 12231-59B-0000 makes sub-assembly 12270-6NA-M on this line.', s: { sel: true }, target: '#oq0' },
+    { title: 'Count good and scrap', op: 'Enters 210 good and logs 2 for porosity.', sys: 'Accepts the operator\'s real count; machining yield is not assumed to be 1:1.', s: { sel: true, qty: true }, target: '#fQty' },
+    { title: 'Complete', op: 'Taps Complete.', sys: 'In one transaction: closes the casting LOT, creates the sub-assembly LOT and writes the consumption link.', s: { sel: true, qty: true }, target: '#btnMint' },
+    { title: 'New LOT, same history', op: 'Moves the rack on toward Assembly.', sys: 'MESL0004833 now carries its full ancestry: die DM0124, cavity, press shift and machining operator.', s: { sel: true, qty: true, done: true }, target: '#minted' }
+  ]
+},
+
+/* 5 ------------------------------------------------------------ assembly */
+{
+  id: 'assembly', title: 'Assembly: trays, cameras and containers',
+  pitch: 'Assembly fills trays under camera validation, completes containers against Honda pack quantities and prints the shipping label the moment the last tray closes.',
+  chips: ['Vision tray validation', 'FIFO consumption', 'Container gate', 'Shipping label'],
+  route: '/shop-floor/assembly-nonserialized',
+  render(s) {
+    const o = { title: 'Assembly', cell: '6MA Assembly · NS Line', ctxLabel: 'Line' };
+    const trays = s.trays || 0;
+    const body = `${titleRow('Assembly · Non-Serialized Line', 'How to fill trays and complete the container', `<span class="psc-pf-confirm-method" data-method="Vision">Vision</span>`)}
+      <div class="cols" style="grid-template-columns:1fr 290px;flex:1;min-height:0">
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+          <div class="kpis">
+            ${kpi('Now producing', '<span class="mono" style="font-size:16px;white-space:nowrap">12270-6NA-0001</span>', 'Finished good', '', 'kpiFg')}
+            ${kpi('Parts in tray', s.full ? '24 / 24' : '17 / 24', 'NS Line Camera', s.full ? 'psc-pf-kpi-value-good' : '', 'kpiTray')}
+            ${kpi('Trays in container', `${trays} / 4`, 'CNT-24-0611', trays === 4 ? 'psc-pf-kpi-value-good' : '', 'kpiCont')}
+            ${kpi('Shift output', s.done ? '1,248' : '1,152', 'pieces', '')}
+          </div>
+          <div class="psc-pf-panel" id="crt"><div class="psc-pf-panel-header"><span class="panel-title">CRT Validation · NS Line Camera · Live</span><span class="psc-pf-pill ${s.full ? 'psc-pf-pill-good' : 'psc-pf-pill-info'}">${s.full ? 'Tray verified' : 'Filling'}</span></div>
+            <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:6px">${Array.from({ length: 24 }, (_, i) => `<span style="height:30px;border-radius:4px;border:1px solid ${i < (s.full ? 24 : 17) ? 'var(--mpp-state-good-border)' : 'var(--mpp-border-subtle)'};background:${i < (s.full ? 24 : 17) ? 'var(--mpp-state-good-bg)' : 'var(--mpp-surface-canvas)'}"></span>`).join('')}</div>
+            <div class="empty-hint">Camera confirms the part ID in every slot before the tray can complete.</div>
+          </div>
+          <div class="row"><button class="psc-pf-btn psc-pf-btn-primary psc-pf-btn-large grow" id="btnTray" ${s.full && trays < 4 ? '' : 'disabled'}>Complete Tray</button>
+            <button class="psc-pf-btn psc-pf-btn-secondary psc-pf-btn-large" id="btnCont" ${trays === 4 && !s.done ? '' : 'disabled'} ${trays === 4 && !s.done ? 'style="background:var(--mpp-interactive-primary);border-color:var(--mpp-interactive-primary);color:var(--mpp-text-primary)"' : ''}>Complete Container</button></div>
+        </div>
+        <div class="dock" style="border:1px solid var(--mpp-border-subtle);border-radius:var(--mpp-radius-md)" id="lineInv">
+          <span class="panel-title">Line inventory</span>
+          <div class="psc-pf-inventory-row"><div class="grow"><div class="psc-pf-queue-name" style="font-size:15px">MESL0004833</div><div class="psc-pf-queue-detail">12270-6NA-M · ${s.trays >= 3 ? 138 : 210} pcs</div></div><span class="psc-pf-pill psc-pf-pill-info">Next</span></div>
+          <div class="psc-pf-inventory-row"><div class="grow"><div class="psc-pf-queue-name" style="font-size:15px">MESL0004838</div><div class="psc-pf-queue-detail">12270-6NA-M · 206 pcs</div></div></div>
+          <div class="psc-pf-inventory-row"><div class="grow"><div class="psc-pf-queue-name" style="font-size:15px">MESL0004779</div><div class="psc-pf-queue-detail">90701-5R0-3000 · bolts</div></div></div>
+          <span class="empty-hint">Trays consume the oldest LOT first.</span>
+        </div>
+      </div>`;
+    const t = s.toast === 'tray' ? toast('good', 'Tray complete', 'Tray LOT MESL0004851 · 24 pcs') : s.toast === 'label' ? toast('good', 'Shipping label printed', 'CNT-24-0611 · AIM 13218047 · Zebra AS-6MA') : '';
+    return app(o, body, t);
+  },
+  steps: [
+    { title: 'The line knows what it is making', op: 'Confirms 12270-6NA-0001 is running.', sys: 'Offers only the finished goods this line can build from the stock on hand, ranked by how much it can complete.', s: { trays: 3 }, target: '#kpiFg' },
+    { title: 'Camera watches the tray', op: 'Loads parts into the tray.', sys: 'The vision system checks each slot\'s part ID live. The tray cannot complete with a wrong or missing part.', s: { trays: 3 }, target: '#crt' },
+    { title: 'Complete the tray', op: 'Taps Complete Tray at 24 / 24.', sys: 'Creates a tray LOT and consumes sub-assemblies first in, first out from line inventory, with genealogy for each.', s: { trays: 3, full: true }, target: '#btnTray' },
+    { title: 'Fourth tray fills the container', op: 'Sees the container reach 4 / 4.', sys: 'The completion gate opens only when the container holds the tray count set in the part\'s container configuration.', s: { trays: 4, full: true, toast: 'tray' }, target: '#kpiCont' },
+    { title: 'Label prints itself', op: 'Taps Complete Container and applies the label.', sys: 'Prints the container shipping label with an AIM shipper ID claimed from the pool. A printer fault raises a banner with a reprint.', s: { trays: 4, full: true, done: true, toast: 'label' }, target: '#btnCont' }
+  ]
+},
+
+/* 6 ----------------------------------------------------------------- hold */
+{
+  id: 'hold', title: 'Quality holds, behind a supervisor login',
+  pitch: 'Protected actions stay visible to operators but need a supervisor\'s Active Directory sign-in. A hold stops a LOT everywhere at once.',
+  chips: ['AD elevation per action', 'Defect-coded holds', 'Blocks every terminal', 'Full audit trail'],
+  route: '/shop-floor/hold-management',
+  render(s) {
+    const o = { title: 'Hold Management', cell: 'Quality · Plant-wide', ctxLabel: 'Scope', elevated: s.elev };
+    const held = s.placed;
+    const body = `${titleRow('Hold Management', 'Place and release holds on LOTs / Containers - AD-elevated action')}
+      <div class="cols" style="grid-template-columns:1fr 1fr;flex:1">
+        <div class="psc-pf-panel"><span class="panel-title">New hold</span>
+          ${field('LOT name', s.elev ? 'MESL0004833' : '', { mono: true, type: !!s.elev && !held, id: 'fHoldLot', ph: 'Scan or type' })}
+          <div class="cols" style="grid-template-columns:1fr 1fr">${field('Hold type', s.elev ? 'Quality' : '', { select: true, ph: 'Select' })}${field('Defect code', s.elev ? 'Porosity' : '', { select: true, ph: 'Select' })}</div>
+          ${field('Remarks', s.elev ? 'Leak test fail on 3 of 20 sampled' : '', { ph: 'Optional' })}
+          <button class="psc-pf-btn psc-pf-btn-large psc-pf-btn-elevated" id="btnPlace" ${held ? 'disabled' : ''}>Place Hold</button>
+        </div>
+        <div class="psc-pf-panel" id="openHolds"><div class="psc-pf-panel-header"><span class="panel-title">Open Holds</span><span class="psc-pf-kpi-sub">${held ? 2 : 1} open</span></div>
+          ${held ? `<div class="psc-pf-inventory-row flash"><div class="grow"><div class="psc-pf-queue-name" style="font-size:15px">MESL0004833</div><div class="psc-pf-queue-detail">12270-6NA-M · Quality · Porosity · DR 15:58 ET</div></div><span class="psc-pf-pill psc-pf-pill-hold">On Hold</span></div>` : ''}
+          <div class="psc-pf-inventory-row"><div class="grow"><div class="psc-pf-queue-name" style="font-size:15px">MESL0004801</div><div class="psc-pf-queue-detail">12232-59B-0000 · Customer · Honda notice · 13:20 ET</div></div><span class="psc-pf-pill psc-pf-pill-hold">On Hold</span></div>
+          ${held ? `<div class="psc-pf-banner bad" id="blocked"><div class="grow"><div class="psc-pf-banner-title">Blocked downstream</div><div class="psc-pf-banner-detail">Assembly, shipping and moves now refuse MESL0004833 until released.</div></div></div>` : ''}
+        </div>
+      </div>`;
+    let overlay = '';
+    if (s.modal) {
+      overlay = `<div class="modal-scrim"><div class="modal" id="elevModal">
+        <div class="modal-head"><b>Supervisor Access</b><span>Place Hold requires an elevated sign-in</span></div>
+        <div class="modal-body">${field('AD username', 'drivera', { mono: true, type: true })}${field('Password', '••••••••••', {})}
+          <div class="empty-hint">Elevation times out on its own. Everything done while elevated is attributed to the supervisor.</div></div>
+        <div class="modal-foot"><button class="psc-pf-btn psc-pf-btn-secondary">Cancel</button><button class="psc-pf-btn psc-pf-btn-primary" id="btnElev">Elevate</button></div>
+      </div></div>`;
+    }
+    return app(o, body, overlay + (held ? toast('good', 'Hold placed', 'MESL0004833 · Quality · Porosity') : ''));
+  },
+  steps: [
+    { title: 'Visible, but gated', op: 'Sees Place Hold in its muted "needs a supervisor" style.', sys: 'Protected actions are never hidden from operators. They show greyed, and tapping one asks for a supervisor.', s: {}, target: '#btnPlace' },
+    { title: 'Supervisor signs in', op: 'D. Rivera enters their AD credentials.', sys: 'Authenticates against Active Directory for this one action. No shop-floor role tables to maintain.', s: { modal: true }, target: '#elevModal' },
+    { title: 'Elevated session', op: 'Fills in the LOT, hold type, defect and remarks.', sys: 'The header shows who is elevated and the time left. The button turns primary.', s: { elev: true }, target: '#elevBadge' },
+    { title: 'Place the hold', op: 'Taps Place Hold.', sys: 'Holds the LOT, writes the audit row under DR and blocks it on every terminal right away.', s: { elev: true, placed: true }, target: '#blocked' }
+  ]
+},
+
+/* 7 ------------------------------------------------------------- shipping */
+{
+  id: 'shipping', title: 'Shipping: scan it onto the truck',
+  pitch: 'Loaders scan container labels as they load. A container holding anything on hold is refused at the dock door.',
+  chips: ['Manifest progress', 'Hold-aware shipping', 'AIM shipper IDs', 'Per-container record'],
+  route: '/shop-floor/shipping',
+  render(s) {
+    const o = { title: 'Shipping Dock', cell: 'Dock 2', ctxLabel: 'Dock' };
+    const loaded = s.ok ? 11 : 10;
+    const scans = [];
+    if (s.ok) scans.push(`<div class="psc-pf-inventory-row flash" id="scanOk"><span class="psc-pf-pill psc-pf-pill-good">Loaded</span><span class="grow mono">CNT-24-0611 · AIM 13218047</span><span class="psc-pf-queue-position">16:05</span></div>`);
+    if (s.bad) scans.unshift(`<div class="psc-pf-inventory-row flash" id="scanBad"><span class="psc-pf-pill psc-pf-pill-bad">Rejected</span><span class="grow mono">CNT-24-0598 · LOT on hold</span><span class="psc-pf-queue-position">16:06</span></div>`);
+    const body = `${titleRow('Shipping Dock', 'Active Manifest · HMA-ELN 1022-B · trailer 4471')}
+      <div class="kpis">${kpi('Ready', '4', 'containers')}${kpi('Loaded', String(loaded), 'of 14', '', 'kpiLoaded')}${kpi('Remaining', String(14 - loaded), 'containers', '')}${kpi('Rejected Scans', s.bad ? '1' : '0', 'this manifest', s.bad ? 'psc-pf-kpi-value-bad' : '')}</div>
+      <div class="cols" style="grid-template-columns:1fr 1fr;flex:1">
+        <div class="psc-pf-panel">${field('Scan Container Shipping Label', s.bad ? 'CNT-24-0598' : s.ok ? 'CNT-24-0611' : '', { mono: true, type: !!(s.ok || s.bad), focus: true, id: 'fShip', ph: 'Scan label' })}
+          ${s.bad ? `<div class="psc-pf-banner bad"><div class="grow"><div class="psc-pf-banner-title">Container refused</div><div class="psc-pf-banner-detail">Contains MESL0004833, on Quality hold since 15:58 ET.</div></div></div>` : ''}
+          <button class="psc-pf-btn psc-pf-btn-primary psc-pf-btn-large" id="btnShip" ${s.ship ? '' : 'disabled'}>Ship Container</button>
+          ${s.shipped ? `<div class="psc-pf-inventory-row flash" id="aim"><span class="psc-pf-pill psc-pf-pill-good">Shipped</span><span class="grow psc-pf-queue-detail">CNT-24-0611 · AIM 13218047 · shipped by MK 16:05 ET</span></div>` : ''}
+        </div>
+        <div class="psc-pf-panel" id="recent"><span class="panel-title">Recent Scans</span>${scans.join('')}
+          <div class="psc-pf-inventory-row"><span class="psc-pf-pill psc-pf-pill-good">Loaded</span><span class="grow mono">CNT-24-0607 · AIM 13218043</span><span class="psc-pf-queue-position">15:51</span></div>
+          <div class="psc-pf-inventory-row"><span class="psc-pf-pill psc-pf-pill-good">Loaded</span><span class="grow mono">CNT-24-0604 · AIM 13218040</span><span class="psc-pf-queue-position">15:47</span></div>
+        </div>
+      </div>`;
+    const t = s.bad ? toast('bad', 'Scan rejected', 'CNT-24-0598 is on hold') : s.shipped ? toast('good', 'Container shipped', 'CNT-24-0611 · manifest 11 / 14') : '';
+    return app(o, body, t);
+  },
+  steps: [
+    { title: 'Work the manifest', op: 'Checks what is left to load on trailer 4471.', sys: 'Shows ready, loaded and remaining containers for the active manifest.', s: {}, target: '#kpiLoaded' },
+    { title: 'Scan a label', op: 'Scans the container label from Assembly.', sys: 'Resolves the label to its container and checks the container is complete, not void and not on hold.', s: { ok: true, ship: true }, target: '#fShip' },
+    { title: 'Ship it', op: 'Taps Ship Container.', sys: 'Marks the container shipped under MK, against the AIM shipper ID it was labelled with.', s: { ok: true, shipped: true }, target: '#aim' },
+    { title: 'A held container is refused', op: 'Scans a container that holds the LOT placed on hold earlier.', sys: 'Refuses to ship it and says why. Suspect parts do not reach the truck.', s: { ok: true, shipped: true, bad: true }, target: '#scanBad' }
+  ]
+},
+
+/* 8 ------------------------------------------------------------ genealogy */
+{
+  id: 'trace', title: 'Genealogy: from container back to cavity',
+  pitch: 'When Honda asks about a part, one lookup walks from the shipped container back to the press, die, cavity and shift that cast it, and forward to everything else at risk.',
+  chips: ['Ancestors and descendants', 'Cavity-level answers', 'Times shown in ET', 'Honda audit ready'],
+  route: '/shop-floor/genealogy',
+  render(s) {
+    const o = { title: 'Genealogy Lookup', cell: 'Quality Lab', ctxLabel: 'Terminal' };
+    const nodes = [
+      { d: 0, rel: 'Root', name: 'CNT-24-0611', det: 'Container · 12270-6NA-0001 · 96 pcs · shipped 16:05 ET', pill: '<span class="psc-pf-pill psc-pf-pill-info">Shipped</span>' },
+      { d: 1, rel: 'Tray', name: 'MESL0004851', det: 'Tray LOT · 24 pcs · Assembly NS · MK' },
+      { d: 2, rel: 'Consumed', name: 'MESL0004833', det: 'Sub-assembly 12270-6NA-M · Machining OUT 6MA', pill: '<span class="psc-pf-pill psc-pf-pill-hold">On Hold</span>', id: 'nSub' },
+      { d: 3, rel: 'Consumed', name: 'MESL0004790', det: 'Casting 12231-59B-0000 · Press 07 · DM0124 cavity a · 2nd Shift', id: 'nCast' },
+      { d: 2, rel: 'Consumed', name: 'MESL0004779', det: 'Purchased 90701-5R0-3000 · received 20 Oct' }
+    ];
+    const shown = s.walked ? nodes : [];
+    const tree = shown.length ? shown.map((n, i) => `<div class="node${s.sel === n.id ? ' psc-pf-queue-row-selected' : ''}" ${n.id ? `id="${n.id}"` : ''} style="margin-left:${n.d * 34}px"><span class="rel" style="width:70px">${n.rel}</span><span class="psc-pf-queue-name" style="font-size:15px">${n.name}</span><span class="grow psc-pf-queue-detail">${n.det}</span>${n.pill || ''}</div>`).join('')
+      : `<div class="empty-hint">No genealogy tree loaded</div>`;
+    const detail = s.sel ? `<div class="psc-pf-panel" id="history" style="width:360px"><span class="panel-title">MESL0004790 · history</span>
+        <div class="timeline">
+          <div class="tl"><time>22 Oct 12:31 ET</time><span class="dot"></span><span>Basket opened · Press 07 · cavity a · MK</span></div>
+          <div class="tl"><time>22 Oct 13:58 ET</time><span class="dot"></span><span>Trim IN → Trim OUT · 212 pcs</span></div>
+          <div class="tl"><time>22 Oct 15:44 ET</time><span class="dot"></span><span>Machining IN · 6MA · MK</span></div>
+          <div class="tl"><time>22 Oct 15:52 ET</time><span class="dot"></span><span>Consumed into MESL0004833 · 2 scrap</span></div>
+        </div></div>` : '';
+    const body = `${titleRow('Genealogy Lookup', 'How to trace a LOT\'s genealogy')}
+      <div class="psc-pf-panel"><div class="row" style="align-items:flex-end">
+        ${field('LotName', 'CNT-24-0611', { mono: true, type: !s.walked, id: 'fRoot', style: 'flex:1' })}
+        <div class="psc-pf-field"><span class="psc-pf-field-label">Direction</span><div class="row" style="gap:6px"><span class="psc-pf-btn psc-pf-btn-sm" style="background:var(--mpp-accent-20);border-color:var(--mpp-accent-60);color:var(--mpp-accent-90)">Ancestors</span><span class="psc-pf-btn psc-pf-btn-sm psc-pf-btn-secondary">Descendants</span></div></div>
+        <button class="psc-pf-btn psc-pf-btn-primary" style="min-height:40px" id="btnWalk">Walk Tree</button>
+      </div></div>
+      <div class="row" style="align-items:flex-start;flex:1;min-height:0"><div class="tree grow" id="tree">${tree}</div>${detail}</div>`;
+    return app(o, body, '');
+  },
+  steps: [
+    { title: 'Start from what Honda has', op: 'Scans the container label from the customer\'s report.', sys: 'Accepts any LOT, tray or container as the starting point.', s: {}, target: '#fRoot' },
+    { title: 'Walk the tree', op: 'Taps Walk Tree with Ancestors selected.', sys: 'Follows the stored genealogy links back through tray, sub-assembly and casting, plus every purchased component.', s: { walked: true }, target: '#tree' },
+    { title: 'Spot the hold', op: 'Notices the sub-assembly on hold.', sys: 'Shows the current status on every node, so a suspect ancestor stands out at a glance.', s: { walked: true }, target: '#nSub' },
+    { title: 'Down to the cavity', op: 'Taps the casting LOT.', sys: 'Opens its history: press, die, cavity, shift, operators and timestamps, all shown in Eastern time.', s: { walked: true, sel: 'nCast' }, target: '#history' }
+  ]
+},
+
+/* 9 ------------------------------------------------------- config tool */
+{
+  id: 'config', title: 'Configuration Tool: engineering owns the rules',
+  pitch: 'Engineers change parts, routes, BOMs and dies in a desktop tool with Draft, Published and Deprecated versions. The plant floor picks up the new route on the next LOT, and every change is audited.',
+  chips: ['Versioned routes and BOMs', 'Publish-time validation', 'Readable audit log', 'No code changes'],
+  route: '/items',
+  render(s) {
+    const steps = [
+      ['DieCast', 'Die Cast', 'role-origin', 'Origin mint'], ['TrimIn', 'Trim IN', 'role-adv', 'Advance'], ['TrimOut', 'Trim OUT', 'role-adv', 'Advance'],
+      ['MachiningIn', 'Machining IN', 'role-adv', 'Advance'], ['MachiningOut', 'Machining OUT', 'role-mint', 'Consume mint']
+    ];
+    const ver = s.published ? 'v3 · Published' : 'v3 · Draft';
+    const tabs = ['Identity', 'Routes', 'BOMs', 'Container', 'Eligibility', 'Quality Specs'].map(t => `<span class="tab-item ${t === 'Routes' ? 'tab-item-active' : ''}">${t}</span>`).join('');
+    const detail = s.audit
+      ? `<div class="psc-pf-panel" id="auditPanel" style="padding:0;gap:0"><div style="padding:10px 12px" class="panel-title">Audit Log · latest</div>
+          <div class="audit-row" style="color:var(--mpp-text-tertiary);font-size:11px;text-transform:uppercase;letter-spacing:.06em"><span>When (ET)</span><span>User</span><span>Description</span></div>
+          <div class="audit-row flash"><span class="mono">22 Oct 16:12:04</span><span>JS</span><span>12231-59B-0000 · Route · Published v3 (v2 deprecated)</span></div>
+          <div class="audit-row"><span class="mono">22 Oct 16:09:41</span><span>JS</span><span>12231-59B-0000 · Route v3 · ~ Trim OUT moved after Trim IN</span></div>
+          <div class="audit-row"><span class="mono">22 Oct 15:20:17</span><span>AB</span><span>DM0124 · Cavity · + d (12232-59B-0000)</span></div></div>`
+      : `<div class="psc-pf-panel" id="routePanel"><div class="psc-pf-panel-header"><span class="panel-title">Route · ${ver}</span><span class="psc-pf-pill ${s.published ? 'psc-pf-pill-good' : 'psc-pf-pill-warn'}">${s.published ? 'Published' : 'Draft'}</span></div>
+          ${steps.map((r, i) => `<div class="route-step${s.moved && i === 2 ? ' flash' : ''}"${i === 2 ? ' id="stepTrimOut"' : ''}><span class="mono" style="color:var(--mpp-text-tertiary)">${(i + 1) * 10}</span><span>${r[1]}</span><span class="role ${r[2]}">${r[3]}</span><span class="arrows"><span>▲</span><span>▼</span></span></div>`).join('')}
+          ${s.check ? `<div class="psc-pf-inventory-row flash" id="valid"><span class="psc-pf-pill psc-pf-pill-good">Valid</span><span class="grow" style="font-size:13px">Starts at an origin mint, ends at one consume mint.</span></div>` : ''}
+          <div class="row" style="justify-content:flex-end"><button class="psc-pf-btn psc-pf-btn-secondary">Discard</button><button class="psc-pf-btn psc-pf-btn-secondary">Save Draft</button><button class="psc-pf-btn psc-pf-btn-primary" id="btnPublish" ${s.published ? 'disabled' : ''}>Publish</button></div></div>`;
+    return `<div class="cfg">
+      <nav class="cfg-nav"><span class="psc-pf-app-title" style="font-size:16px;padding:4px 10px 8px">MPP Config</span>
+        <span class="grp">Plant</span><a>Plant Hierarchy</a><a>Shifts</a><a>PLC Devices</a>
+        <span class="grp">Parts</span><a class="on">Item Master</a><a>Operation Templates</a><a>Dies &amp; Tools</a><a>Quality Specs</a>
+        <span class="grp">Codes</span><a>Defect Codes</a><a>Downtime Codes</a>
+        <span class="grp">System</span><a>Users</a><a${s.audit ? ' class="on"' : ''}>Audit Log</a></nav>
+      <div class="cfg-main">
+        <div class="cfg-title"><b>${s.audit ? 'Audit Log' : 'Item Master'}</b><span class="grow"></span><span class="psc-pf-kpi-sub">J. Sato (AD)</span></div>
+        <div class="cfg-body">
+          <div class="cfg-list">
+            <div class="psc-pf-field-input" style="min-height:32px;font-size:13px"><span class="ph">Search items</span></div>
+            <div class="cfg-item on"><b>12231-59B-0000</b><span>Casting · Oil pan RH</span></div>
+            <div class="cfg-item"><b>12232-59B-0000</b><span>Casting · Oil pan LH</span></div>
+            <div class="cfg-item"><b>12270-6NA-M</b><span>Sub-assembly · Cam holder</span></div>
+            <div class="cfg-item"><b>12270-6NA-0001</b><span>Finished good · Cam holder</span></div>
+            <div class="cfg-item"><b>90701-5R0-3000</b><span>Purchased · Bolt</span></div>
+          </div>
+          <div class="cfg-detail"><div class="tab-strip">${tabs}</div>${detail}</div>
+        </div>
+      </div></div>`;
+  },
+  steps: [
+    { title: 'Edit a draft route', op: 'An engineer opens the casting\'s Routes tab on a new draft version.', sys: 'Edits stay in the Draft. The plant floor keeps running the published v2.', s: {}, target: '#routePanel' },
+    { title: 'Reorder with arrows', op: 'Moves Trim OUT into place with the up and down arrows.', sys: 'Every step carries its role: origin mint, advance or consume mint. No drag-and-drop, so nothing moves by accident.', s: { moved: true }, target: '#stepTrimOut' },
+    { title: 'Publish', op: 'Taps Publish.', sys: 'Checks the route\'s structure before it goes live, then publishes v3 and deprecates v2. New LOTs follow v3 at once.', s: { moved: true, check: true, published: true }, target: '#valid' },
+    { title: 'Every change, in plain words', op: 'Opens the Audit Log.', sys: 'Each change reads as subject, category and action, with before and after values, shown in Eastern time.', s: { audit: true }, target: '#auditPanel' }
+  ]
+}
+];
+
+/* ================================================================== engine */
+const FLAT = [];
+SECTIONS.forEach((sec, si) => sec.steps.forEach((st, ti) => FLAT.push({ si, ti })));
+let cur = 0, playing = false, timer = null, typers = [];
+const STEP_MS = 5200;
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const $ = id => document.getElementById(id);
+const screen = $('screen'), device = $('device'), wrap = $('deviceWrap');
+const tapEl = document.createElement('div'); tapEl.className = 'tap';
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function buildRail() {
+  const { si, ti } = FLAT[cur];
+  $('railList').innerHTML = SECTIONS.map((sec, i) => {
+    const active = i === si;
+    const steps = active ? `<ol class="steps">${sec.steps.map((st, j) => `
+      <li class="step${j === ti ? ' active' : ''}${j < ti ? ' done' : ''}">
+        <button class="step-btn" data-sec="${i}" data-step="${j}">${st.title}</button>
+        ${j === ti ? `<div class="step-detail"><div class="who op"><b>Operator</b><span>${st.op}</span></div><div class="who sys"><b>MES</b><span>${st.sys}</span></div></div>` : ''}
+      </li>`).join('')}</ol>` : '';
+    return `<div class="sec${active ? ' active' : ''}${i < si ? ' done' : ''}">
+      <button class="sec-btn" data-sec="${i}" data-step="0"><span class="sec-num">${pad2(i + 1)}</span><span>${sec.title.split(':')[0]}</span><span class="sec-count">${sec.steps.length}</span></button>${steps}</div>`;
+  }).join('');
+  const act = $('railList').querySelector('.sec.active');
+  const list = $('railList');
+  const top = act ? act.offsetTop - list.offsetTop : 0;
+  if (act && (top < list.scrollTop || top + act.offsetHeight > list.scrollTop + list.clientHeight)) {
+    list.scrollTop = top - 8;
+  }
+}
+
+function typeAll() {
+  typers.forEach(clearInterval); typers = [];
+  screen.querySelectorAll('[data-type]').forEach(el => {
+    const text = el.getAttribute('data-type');
+    if (reduced) { el.textContent = text; return; }
+    let i = 0; el.textContent = '';
+    const t = setInterval(() => { i++; el.textContent = text.slice(0, i); if (i >= text.length) clearInterval(t); }, 70);
+    typers.push(t);
+  });
+}
+
+function placeTap(sel) {
+  screen.querySelectorAll('.demo-target').forEach(e => e.classList.remove('demo-target'));
+  const el = sel && screen.querySelector(sel);
+  if (!el) { tapEl.classList.remove('on'); return; }
+  el.classList.add('demo-target');
+  const scale = device.getBoundingClientRect().width / device.offsetWidth || 1;
+  const r = el.getBoundingClientRect(), sr = screen.getBoundingClientRect();
+  tapEl.style.left = ((r.left - sr.left) / scale + Math.min(r.width / scale / 2, 160)) + 'px';
+  tapEl.style.top = ((r.top - sr.top) / scale + Math.min(r.height / scale / 2, 40)) + 'px';
+  tapEl.classList.add('on');
+}
+
+function fit() {
+  const s = Math.min(1, wrap.clientWidth / device.offsetWidth);
+  device.style.transform = `scale(${s})`;
+  wrap.style.height = (device.offsetHeight * s) + 'px';
+}
+
+function render() {
+  const { si, ti } = FLAT[cur];
+  const sec = SECTIONS[si], st = sec.steps[ti];
+  $('sEyebrow').textContent = `${pad2(si + 1)} · ${si === SECTIONS.length - 1 ? 'Configuration Tool' : 'Plant floor'}`;
+  $('sTitle').textContent = sec.title;
+  $('sPitch').textContent = sec.pitch;
+  $('sChips').innerHTML = sec.chips.map(c => `<span class="chip">${c}</span>`).join('');
+  $('sRoute').textContent = `Step ${ti + 1} of ${sec.steps.length}`;
+  $('urlPath').textContent = sec.route;
+  $('cNum').textContent = `${si + 1}.${ti + 1}`;
+  $('cTitle').textContent = st.title;
+  $('cText').textContent = `${st.op} ${st.sys}`;
+  $('tSection').textContent = `Section ${si + 1} of ${SECTIONS.length}`;
+  $('tOverall').textContent = `Step ${cur + 1} / ${FLAT.length}`;
+  screen.innerHTML = sec.render(st.s);
+  screen.appendChild(tapEl);
+  typeAll();
+  buildRail();
+  requestAnimationFrame(() => placeTap(st.target));
+  try { history.replaceState(null, '', '#' + sec.id); } catch (e) {}
+  restartBar();
+}
+
+function restartBar() {
+  const bar = $('tBar');
+  bar.style.transition = 'none'; bar.style.width = '0';
+  if (playing && !reduced) { void bar.offsetWidth; bar.style.transition = `width ${STEP_MS}ms linear`; bar.style.width = '100%'; }
+  else bar.style.width = ((cur + 1) / FLAT.length * 100) + '%';
+}
+
+function go(i) { cur = Math.max(0, Math.min(FLAT.length - 1, i)); render(); schedule(); }
+function goSec(si, ti) { const i = FLAT.findIndex(f => f.si === si && f.ti === (ti || 0)); if (i >= 0) go(i); }
+function schedule() {
+  clearTimeout(timer);
+  if (!playing) return;
+  timer = setTimeout(() => { if (cur >= FLAT.length - 1) { setPlaying(false); return; } go(cur + 1); }, STEP_MS);
+}
+function setPlaying(p) {
+  playing = p;
+  $('playLabel').textContent = p ? 'Pause' : 'Play';
+  $('bPlay').setAttribute('aria-label', p ? 'Pause' : 'Play');
+  $('playIcon').innerHTML = p ? '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+  if (p && cur >= FLAT.length - 1) cur = -1, go(0); else { restartBar(); schedule(); }
+}
+
+$('bPrev').onclick = () => go(cur - 1);
+$('bNext').onclick = () => go(cur + 1);
+$('bPrevSec').onclick = () => { const { si, ti } = FLAT[cur]; goSec(ti > 0 ? si : Math.max(0, si - 1), 0); };
+$('bNextSec').onclick = () => { const { si } = FLAT[cur]; if (si < SECTIONS.length - 1) goSec(si + 1, 0); else go(FLAT.length - 1); };
+$('bPlay').onclick = () => setPlaying(!playing);
+$('railList').addEventListener('click', e => {
+  const b = e.target.closest('[data-sec]'); if (!b) return;
+  goSec(+b.dataset.sec, +b.dataset.step);
+});
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input,textarea')) return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1); }
+  else if (e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); setPlaying(!playing); }
+});
+window.addEventListener('resize', () => { fit(); placeTap(SECTIONS[FLAT[cur].si].steps[FLAT[cur].ti].target); });
+
+const start = SECTIONS.findIndex(s => s.id === (location.hash || '').slice(1));
+fit();
+if (start > 0) goSec(start, 0); else render();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fit(); placeTap(SECTIONS[FLAT[cur].si].steps[FLAT[cur].ti].target); });
+})();
+</script>
