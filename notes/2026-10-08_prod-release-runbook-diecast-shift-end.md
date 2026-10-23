@@ -1,6 +1,8 @@
-# Prod release runbook -- die cast shift end: baskets released by count, and the reading always recorded
+# Prod release runbook -- die cast shift end: baskets released by count, and the reading always recorded; plus the Terminal Onboarding guide page
 
-**Release commit:** `fe4cf41e` on `jacques/working` -- the commit the archives were built and verified from.
+**Release commit:** `846f636d` on `jacques/working` -- the commit the archives were built and verified from.
+(`fe4cf41e` is the die cast work; `846f636d` adds the Terminal Onboarding guide page on top of it -- Ignition
+only, no SQL. The archives were rebuilt at 08:52 to carry both; the 08:44 / 08:45 archives are superseded.)
 **Previous release:** `0647dc97` (executed 2026-10-07 08:39 ET from `3a39e5f5`). Prod is at SQL **`0108`**,
 107 migrations. The one-function release of 2026-10-07 16:32 (`81b0fa21`) was **rolled back** on 2026-10-08
 and reverted in git (`caa6b458`), so prod's die cast SQL is identical to `0647dc97` again
@@ -21,7 +23,7 @@ passed on two immediate re-runs (99/99) and does not touch this code. Die cast +
 > **Two separate tests. Do not collapse them.** A docs-only commit invalidates the **fingerprint** but leaves
 > the **archives** valid:
 > ```powershell
-> git diff --stat fe4cf41e..HEAD -- ignition/ sql/migrations/
+> git diff --stat 846f636d..HEAD -- ignition/ sql/migrations/
 > ```
 > Expect **no output**. Anything listed means the archives are stale -- rebuild, then re-preview.
 
@@ -41,6 +43,13 @@ passed on two immediate re-runs (99/99) and does not touch this code. Die cast +
 >    already uses (switches to Lot Management with a "Scan the LTT" toast).
 > 5. **A blast-radius audit of every proc that reads die cast credit rows was done by reading code**, not by
 >    running it. Its findings are in section 3.
+> 6. **The Terminal Onboarding page was seen on Dev at phone width**: the button on the Terminal Selector
+>    opens it, the text renders, nothing scrolls sideways. Only the top of the guide was looked at on screen;
+>    the command blocks and callouts further down were checked through the page's DOM, not by eye.
+> 7. **The rebuilt archives have not been imported anywhere.** Dev runs these resources from the working
+>    tree. The archive contents were checked against `CONTENTS.txt` and the commit range only.
+> 8. **Prod's `page-config` and Core `stylesheet` were not compared with the repo.** Both ship whole (see
+>    section 3, test 5).
 
 ---
 
@@ -73,6 +82,14 @@ After this release:
 it open; the shift-end entry credits what is left to it. Opening and closing a short basket at shift change
 is the mistake being coached out.
 
+### Also in this release -- Terminal Onboarding guide (Ignition only)
+
+A one-page guide for bringing a terminal PC into the MES: the Config Tool Terminal and Printer settings, the
+MesZebraBridge install, and Test printer. It is a new page in the MPP project,
+`/shop-floor/terminal-onboarding`, opened from a **Terminal Onboarding Guide** button beside **Inventory
+Cutover Scan** on the Terminal Selector. It reads no data and calls no proc. The text is a copy of
+`docs/terminal-onboarding.md`; the styling is a new `.psc-pf-doc` block at the end of the Core stylesheet.
+
 ### SQL
 
 | Object | | What changes |
@@ -86,15 +103,19 @@ is the mistake being coached out.
 
 | Archive | Resources |
 |---|---|
-| `Core_diecast-shift-end_2026-10-08_0844.zip` | MOD `ignition/script-python/BlueRidge/Workorder/DieCast` |
-| `MPP_diecast-shift-end_2026-10-08_0844.zip` | MOD `.../Components/PlantFloor/DieCastEntry/CavityLotRow`, MOD `.../Views/ShopFloor/DieCastBody` |
+| `Core_diecast-shift-end-onboarding_2026-10-08_0852.zip` | MOD `ignition/script-python/BlueRidge/Workorder/DieCast`, MOD `com.inductiveautomation.perspective/stylesheet` |
+| `MPP_diecast-shift-end-onboarding_2026-10-08_0852.zip` | MOD `.../Components/PlantFloor/DieCastEntry/CavityLotRow`, MOD `.../Views/ShopFloor/DieCastBody`, NEW `.../Views/ShopFloor/TerminalOnboarding`, MOD `.../Views/ShopFloor/TerminalSelector`, MOD `com.inductiveautomation.perspective/page-config` |
 
 `MPP_Config` has no changed resources and is not part of this release. Nothing was deleted.
+
+**Do not import the `diecast-shift-end_2026-10-08_0844` / `-ROLLBACK_2026-10-08_0845` archives.** They were
+built at `fe4cf41e` and do not carry the onboarding page.
 
 ### In the range but shipping nothing
 
 `sql/tests/` (new suite `0022/120`, four updated assertions in `0045/030`), `sql/scratch/2026-10-0[78]_*`,
-`notes/`, the reconciliation spec, and the `81b0fa21` / `caa6b458` pair, which cancel out.
+`notes/`, the reconciliation spec, the `81b0fa21` / `caa6b458` pair, which cancel out,
+`docs/terminal-onboarding.md` and `tools/build_terminal_onboarding_view.py`.
 
 ---
 
@@ -141,6 +162,14 @@ new procs and the old screens, an open basket on a cavity that released by count
 figure while the old screen still measures variance the old way, so it shows a variance equal to the
 released pieces. **Do the two imports straight after the Execute, and do not run this across a shift
 change.** (The new screens tolerate the old procs, which matters only for rollback.)
+
+**Test 5 -- the onboarding page: two resources ship whole.** The page itself is new and nothing depends on
+it. But `page-config` (every MPP route) and the Core `stylesheet` are each one resource, so the import
+replaces the whole file, not the 4 and 77 lines this release added. In git both differ from the previous
+release only by those additions (one commit on each in `0647dc97..846f636d`). **Not checked: that prod's
+copies match the previous release.** If someone added a route or a style on the prod Gateway by hand, this
+import removes it. The Designer's import dialog shows both as overwrites; if either is a surprise, stop and
+export prod's copy first. The Terminal Selector is likewise replaced whole (one commit in range).
 
 **What the audit found for shift reconciliation (the team-lead form).** No piece figure changes anywhere --
 every reader sums pieces and a zero adds nothing. What the team lead will notice:
@@ -204,7 +233,8 @@ Verdict
 - *A gate fires, or a WARN in `[6]`* -- stop and read it.
 
 Copy the fingerprint; do not retype it. The local sim printed `18c62286990d` at `fe4cf41e`; yours will differ
-because the commit of this note moved `HEAD`.
+because `846f636d` and the commits of this note moved `HEAD`. The onboarding commit adds no SQL, so `[3]`,
+`[4]` and `[8]` read exactly as above.
 
 ### Step 2 -- Rehearse
 
@@ -279,12 +309,18 @@ Section 5. Core, then MPP.
 **SQL first (done in Step 4). Core first.** Designer -> File -> Import, one zip at a time, accepting overwrite
 for the listed resources. Do **not** use the Gateway web page's project import.
 
-1. `Core_diecast-shift-end_2026-10-08_0844.zip` -- 1 resource:
+1. `Core_diecast-shift-end-onboarding_2026-10-08_0852.zip` -- 2 resources:
    `MOD ignition/script-python/BlueRidge/Workorder/DieCast`
-2. `MPP_diecast-shift-end_2026-10-08_0844.zip` -- 2 resources:
+   `MOD com.inductiveautomation.perspective/stylesheet`
+2. `MPP_diecast-shift-end-onboarding_2026-10-08_0852.zip` -- 5 resources:
    `MOD .../Components/PlantFloor/DieCastEntry/CavityLotRow`
    `MOD .../Views/ShopFloor/DieCastBody`
+   `NEW .../Views/ShopFloor/TerminalOnboarding`
+   `MOD .../Views/ShopFloor/TerminalSelector`
+   `MOD com.inductiveautomation.perspective/page-config`
 3. **F5 every die cast terminal.** A session left open across the update keeps the old rows.
+
+The checklist with commits is `diecast-shift-end-onboarding_2026-10-08_0852_CONTENTS.txt`.
 
 `MPP_Config`: nothing.
 
@@ -354,6 +390,19 @@ is what was typed, and it moves to the Warehouse exactly as before.
 Open the reconcile landing list for that press. The shift from 6.3 shows the reading under SHIFT-END READING
 and an "Entry recorded" status; opening it lists the same LOTs with the same Recorded figures as before.
 
+### 6.7 The Terminal Onboarding page
+
+On any workstation or phone, open the Terminal Selector (`/shop-floor/terminal-selector`).
+
+- **Inventory Cutover Scan** is still there and still opens the cutover scan.
+- Beside it (below it on a phone) is **Terminal Onboarding Guide**. Tap it: the page opens with a Back button
+  and the title "Terminal Onboarding", headings in light blue, commands in boxed monospace.
+- **Back** returns to the Terminal Selector.
+- *"View Not Found"* -- the MPP zip was not imported, or `page-config` was declined in the import dialog.
+- *The text is there but unstyled (no boxes round the commands)* -- the Core zip's `stylesheet` was not
+  imported. F5 after importing it.
+- Open one other shop-floor screen and confirm it looks as it did: the stylesheet is shared by all of them.
+
 ---
 
 ## 7. Rollback
@@ -362,9 +411,16 @@ and an "Entry recorded" status; opening it lists the same LOTs with the same Rec
 
 **Ignition** -- import the previous versions (built and verified, never imported in anger):
 
-1. `Core_diecast-shift-end-ROLLBACK_2026-10-08_0845.zip`
-2. `MPP_diecast-shift-end-ROLLBACK_2026-10-08_0845.zip`
-3. F5 the die cast terminals.
+1. `Core_diecast-shift-end-onboarding-ROLLBACK_2026-10-08_0852.zip` (DieCast script, stylesheet)
+2. `MPP_diecast-shift-end-onboarding-ROLLBACK_2026-10-08_0852.zip` (CavityLotRow, DieCastBody,
+   TerminalSelector, page-config)
+3. **By hand, in the Designer:** delete the view `BlueRidge/Views/ShopFloor/TerminalOnboarding` in the MPP
+   project. An import cannot remove a resource. Left in place it is unreachable and harmless.
+4. F5 the die cast terminals.
+
+These archives revert the die cast work and the onboarding page together. To roll back the die cast work
+and keep the page, import only `DieCast`, `CavityLotRow` and `DieCastBody` from them (untick `stylesheet`,
+`TerminalSelector` and `page-config` in the import dialog) and skip step 3.
 
 **SQL** -- re-create the three procs as the previous release had them. Run against `MPP_MES_ProdSimWM2` and
 verified. In SSMS: open `sql\scratch\2026-10-08_ROLLBACK_diecast_shift_end.sql`, database `MPP_MES_Prod`,
@@ -427,4 +483,5 @@ _(still to fill in)_
 | 6.4 open basket | |
 | 6.5 release by count unchanged | |
 | 6.6 reconciliation form | |
+| 6.7 onboarding page opens / another screen unchanged | |
 | Anything that went sideways | |

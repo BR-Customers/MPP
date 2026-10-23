@@ -13,7 +13,9 @@
       "TimestampChange"
     ],
     "lastModificationSignature": "",
-    "paths": [],
+    "paths": [
+      "[MPP]PlcDevices/6C2_6MA_OilPan/LastReceiveTime"
+    ],
     "lastModification": {
       "actor": "claude",
       "timestamp": "2026-10-06T00:00:00Z"
