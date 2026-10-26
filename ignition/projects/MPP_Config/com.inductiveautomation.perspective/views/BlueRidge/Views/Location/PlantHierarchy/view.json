@@ -71,9 +71,15 @@
     "custom.dirty": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected})"
+          "path": "view.custom.state"
         },
-        "type": "expr"
+        "transforms": [
+          {
+            "code": "\t# ONE property binding on the whole state, compared in a transform -- the\n\t# same comparison the isDraftDirty gate makes. The old expression passed\n\t# editDraft / selected through runScript ARGS, where containers arrive as\n\t# Perspective ImmutableMaps that extractQualifiedValues cannot unwrap; on a\n\t# location with enough attributes (a Terminal) jsonEncode failed and the\n\t# str() fallback differed between the two halves, so the indicator read\n\t# \u0027Unsaved changes\u0027 with nothing edited. Here value is a JavaMap, which\n\t# extractQualifiedValues does unwrap.\n\tstate \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\ttoJson \u003d BlueRidge.Common.Util.convertWrapperObjectToJson\n\treturn toJson(state.get(\"editDraft\")) !\u003d toJson(state.get(\"selected\"))",
+            "type": "script"
+          }
+        ],
+        "type": "property"
       }
     },
     "custom.searchFilter": {
@@ -1779,6 +1785,11 @@
           "script": "\t# Re-assert view.custom.state as a WHOLE-OBJECT write after a meta field's\n\t# own bidirectional binding has already landed its value at\n\t# editDraft.meta.<field> (two levels below the property this method touches).\n\t# The JSON-compare dirty binding watches view.custom.state.editDraft as a\n\t# unit; mirrors the attribute-row fix (updateAttributeValue below) applied\n\t# to the meta fields, which were missed when that fix went in.\n\tstate = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\tself.view.custom.state = {\n\t\t\"selected\":  state.get(\"selected\") or {},\n\t\t\"editDraft\": state.get(\"editDraft\") or {},\n\t}"
         },
         {
+          "name": "isDraftDirty",
+          "params": [],
+          "script": "\t# The three abandonment gates ask THIS, never view.custom.dirty. That\n\t# binding watches state.editDraft and state.selected as two separate\n\t# references and evaluates asynchronously, so even one atomic state write\n\t# can leave it reading true for a moment on a clean load. A tree click\n\t# landing in that window (quick navigation) opened a phantom \"unsaved\n\t# changes\" prompt. Same comparison as the binding, read at call time.\n\tstate \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\ttoJson \u003d BlueRidge.Common.Util.convertWrapperObjectToJson\n\tdraftJson \u003d toJson(state.get(\"editDraft\"))\n\tbaseJson \u003d toJson(state.get(\"selected\"))\n\tdirty \u003d draftJson !\u003d baseJson\n\tif dirty:\n\t\t# Evidence if a prompt still appears with nothing edited: the diff.\n\t\tsystem.util.getLogger(\"MPP.PlantHierarchy\").info(\n\t\t\t\"Unsaved-changes gate fired. draft\u003d%s baseline\u003d%s\" % (draftJson[:1500], baseJson[:1500]))\n\treturn dirty"
+        },
+        {
           "name": "handleSave",
           "params": [],
           "script": "\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\tresult \u003d BlueRidge.Location.Location.handleSaveAll(draft, draft.get(\"attributes\") or [], userId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tif not result:\n\t\treturn False\n\tself.view.custom.tree \u003d result[\"tree\"]\n\tself.view.custom.guardIgnoreId \u003d (result[\"selected\"] or {}).get(\"id\")\n\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\tself.view.custom.selected \u003d result[\"selected\"]\n\tsavedMeta \u003d result[\"editDraft\"] or {}\n\t# ATOMIC: one write reseeds baseline + draft together.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  dict(savedMeta),\n\t\t\"editDraft\": dict(savedMeta),\n\t}\n\tself.view.custom.mode \u003d result[\"mode\"]\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.oldSelectedPath \u003d result[\"selectedPath\"]\n\treturn True"
@@ -1789,12 +1800,12 @@
             "currId",
             "prevSelected"
           ],
-          "script": "\t# Abandonment path 1/3 -- selecting a different node in the tree.\n\t# The tree has ALREADY written custom.selected / custom.selectedPath by\n\t# the time this runs, so a cancel has to put both back (cancelPendingNav).\n\tif not self.view.custom.dirty:\n\t\tself.handleLocationChange(currId)\n\t\treturn\n\tself.view.custom.pendingNav \u003d {\n\t\t\"kind\":         \"select\",\n\t\t\"toId\":         currId,\n\t\t\"fromMode\":     self.view.custom.mode,\n\t\t\"fromSelected\": prevSelected,\n\t\t\"fromPath\":     self.view.custom.oldSelectedPath,\n\t}\n\tself.openUnsavedPrompt(\"You have unsaved changes to this Location. Save before switching?\")"
+          "script": "\t# Abandonment path 1/3 -- selecting a different node in the tree.\n\t# The tree has ALREADY written custom.selected / custom.selectedPath by\n\t# the time this runs, so a cancel has to put both back (cancelPendingNav).\n\tif not self.isDraftDirty():\n\t\tself.handleLocationChange(currId)\n\t\treturn\n\tself.view.custom.pendingNav \u003d {\n\t\t\"kind\":         \"select\",\n\t\t\"toId\":         currId,\n\t\t\"fromMode\":     self.view.custom.mode,\n\t\t\"fromSelected\": prevSelected,\n\t\t\"fromPath\":     self.view.custom.oldSelectedPath,\n\t}\n\tself.openUnsavedPrompt(\"You have unsaved changes to this Location. Save before switching?\")"
         },
         {
           "name": "requestCreate",
           "params": [],
-          "script": "\t# Abandonment path 2/3 -- +Add Location swaps the draft for a blank one.\n\tsel \u003d self.view.custom.selected\n\tif not sel or sel.get(\"id\") is None:\n\t\tBlueRidge.Common.Notify.toast(\"Pick a parent\", \"Select a Location in the tree first.\", \"warning\")\n\t\treturn\n\tparentId \u003d sel.get(\"id\")\n\tparentLevel \u003d sel.get(\"hierarchyLevel\")\n\tif not self.view.custom.dirty:\n\t\tself.beginCreate(parentId, parentLevel)\n\t\treturn\n\tself.view.custom.pendingNav \u003d {\"kind\": \"create\", \"parentId\": parentId, \"parentLevel\": parentLevel}\n\tself.openUnsavedPrompt(\"You have unsaved changes to this Location. Save before adding a new one?\")"
+          "script": "\t# Abandonment path 2/3 -- +Add Location swaps the draft for a blank one.\n\tsel \u003d self.view.custom.selected\n\tif not sel or sel.get(\"id\") is None:\n\t\tBlueRidge.Common.Notify.toast(\"Pick a parent\", \"Select a Location in the tree first.\", \"warning\")\n\t\treturn\n\tparentId \u003d sel.get(\"id\")\n\tparentLevel \u003d sel.get(\"hierarchyLevel\")\n\tif not self.isDraftDirty():\n\t\tself.beginCreate(parentId, parentLevel)\n\t\treturn\n\tself.view.custom.pendingNav \u003d {\"kind\": \"create\", \"parentId\": parentId, \"parentLevel\": parentLevel}\n\tself.openUnsavedPrompt(\"You have unsaved changes to this Location. Save before adding a new one?\")"
         },
         {
           "name": "beginCreate",
@@ -1809,7 +1820,7 @@
           "params": [
             "direction"
           ],
-          "script": "\t# Abandonment path 3/3 -- the sort-order arrows commit straight to the DB,\n\t# so an open draft would go stale and overwrite the new order on Save.\n\tif self.view.custom.mode !\u003d \"update\":\n\t\treturn\n\tif not self.view.custom.dirty:\n\t\tself.applyMove(direction)\n\t\treturn\n\tself.view.custom.pendingNav \u003d {\"kind\": \"move\", \"direction\": direction}\n\tself.openUnsavedPrompt(\"You have unsaved changes to this Location. Save before reordering?\")"
+          "script": "\t# Abandonment path 3/3 -- the sort-order arrows commit straight to the DB,\n\t# so an open draft would go stale and overwrite the new order on Save.\n\tif self.view.custom.mode !\u003d \"update\":\n\t\treturn\n\tif not self.isDraftDirty():\n\t\tself.applyMove(direction)\n\t\treturn\n\tself.view.custom.pendingNav \u003d {\"kind\": \"move\", \"direction\": direction}\n\tself.openUnsavedPrompt(\"You have unsaved changes to this Location. Save before reordering?\")"
         },
         {
           "name": "applyMove",
