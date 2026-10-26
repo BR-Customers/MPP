@@ -1,0 +1,89 @@
+"""Tests for sanitize.py. Run: python -I test_sanitize.py"""
+import json, os, subprocess, sys, tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SAN = os.path.join(HERE, "sanitize.py")
+
+PAGE = ('<html><head></head><body class="psc-root">'
+        '<div data-component="ia.display.label" class="psc-mpp-header">MPP MES</div>'
+        '<input placeholder="Scan the LTT" value="LTT 810220005">'
+        '<span title="Honda audit query surface">Audit</span>'
+        '<div style="display:none">Madison Facility</div>'
+        '<p>Tom &amp; Jerry</p>'
+        '</body></html>')
+CSS = '.psc-x::after{content:"MPP MES"} @font-face{font-family:X;src:url(data:font/woff2;base64,AAAA)}'
+
+
+def run(raw, extra=()):
+    shots, caps = os.path.join(raw, "_shots"), os.path.join(raw, "_caps")
+    p = subprocess.run([sys.executable, "-I", SAN, "--raw", raw, "--out-screens", shots, "--out-captures", caps, "--no-render", *extra],
+                       capture_output=True, text=True)
+    return p, caps
+
+
+def fixture(d, page=PAGE, css=CSS):
+    raw = os.path.join(d, "raw")
+    os.makedirs(raw)
+    json.dump({"w": 1904, "h": 882, "route": "/x", "html": page}, open(os.path.join(raw, "s1.json"), "w", encoding="utf-8"))
+    open(os.path.join(raw, "bundle.css"), "w", encoding="utf-8").write(css)
+    return raw
+
+
+def test_replaces_text_attributes_hidden_and_css():
+    with tempfile.TemporaryDirectory() as d:
+        p, caps = run(fixture(d))
+        assert p.returncode == 0, p.stdout + p.stderr
+        html = json.load(open(os.path.join(caps, "s1.json"), encoding="utf-8"))["html"]
+        css = open(os.path.join(caps, "bundle.css"), encoding="utf-8").read()
+        assert "MES Track &amp; Trace" in html, html            # text node, HTML-escaped
+        assert 'placeholder="Scan the LOT ticket"' in html, html
+        assert 'value="LOT ticket 810220005"' in html, html
+        assert 'title="customer audit query surface"' in html, html
+        assert "Sample Components Plant" in html, html           # inside a hidden element
+        assert "Tom &amp; Jerry" in html, html                   # existing entities untouched
+        assert 'content:"MES Track & Trace"' in css, css
+
+
+def test_renames_project_token_in_classes_and_css_consistently():
+    with tempfile.TemporaryDirectory() as d:
+        css = CSS + ' .psc-mpp-header{color:red} .psc-MPP\\/Card{margin:0}'
+        page = PAGE.replace('<p>', '<div class="psc-MPP/Card x">c</div><p>')
+        p, caps = run(fixture(d, page=page, css=css))
+        assert p.returncode == 0, p.stdout + p.stderr
+        html = json.load(open(os.path.join(caps, "s1.json"), encoding="utf-8"))["html"]
+        out_css = open(os.path.join(caps, "bundle.css"), encoding="utf-8").read()
+        assert 'class="psc-app-header"' in html, html
+        assert 'class="psc-APP/Card x"' in html, html
+        assert ".psc-app-header{color:red}" in out_css, out_css
+        assert ".psc-APP\\/Card{margin:0}" in out_css, out_css
+        assert 'data-component="ia.display.label"' in html, html
+
+
+def test_fails_on_gateway_reference():
+    with tempfile.TemporaryDirectory() as d:
+        page = PAGE.replace("<p>", '<img src="http://localhost:8088/system/images/x.png"><p>')
+        p, _ = run(fixture(d, page=page))
+        assert p.returncode != 0, p.stdout
+        assert "localhost" in p.stdout + p.stderr
+
+
+def test_fails_on_leftover_customer_term():
+    with tempfile.TemporaryDirectory() as d:
+        page = PAGE.replace("<p>", "<p>Ships from Madison IN</p><p>")
+        p, _ = run(fixture(d, page=page))
+        assert p.returncode != 0, p.stdout
+        assert "madison" in (p.stdout + p.stderr).lower()
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
+    failed = 0
+    for t in tests:
+        try:
+            t()
+            print("PASS", t.__name__)
+        except AssertionError as e:
+            failed += 1
+            print("FAIL", t.__name__, "-", str(e)[:300])
+    print(f"{len(tests) - failed} passed, {failed} failed")
+    sys.exit(1 if failed else 0)

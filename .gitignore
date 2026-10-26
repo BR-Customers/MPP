@@ -119,3 +119,7 @@ dist/
 
 # Local-only working files (extracted event-handler bodies, agent scratch)
 /scratch_script_*.py
+
+# sales-kit capture: raw captures carry app labels before substitution; node deps
+tools/sales-kit/captures/
+tools/sales-kit/capture/node_modules/

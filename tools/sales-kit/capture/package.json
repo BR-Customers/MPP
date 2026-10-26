@@ -1,0 +1,8 @@
+{
+  "name": "sales-kit-capture",
+  "private": true,
+  "description": "Drives the real MPP Perspective app through the sales-kit capture steps (puppeteer-core + installed Chrome).",
+  "dependencies": {
+    "puppeteer-core": "23.11.1"
+  }
+}
