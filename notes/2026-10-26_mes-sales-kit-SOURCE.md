@@ -46,4 +46,20 @@ manufacturer" once, for the system as a whole.
 
 ## Build record
 
-(filled in at hand-over)
+Built 2026-10-26 in the kit's own git repo (`Dev\Marketing\MES Track & Trace`, no remote).
+
+- Demo: `MES Track & Trace - Interactive Demo.html`, ~190 KB, one file. Domain model + simulation
+  unit-tested in Node (`demo-build/test`, 30 tests). Verified in the browser at 1600x900, 1024x768
+  and 700x900, inside an iframe, and from `file://`; all four tours at 10x with a reset mid-tour;
+  no console errors; no network requests beyond the page.
+- Deck: `MES Track & Trace - Overview.pptx`, 27 slides (core 6, three modules of 5, close 6).
+  `check_deck.py` 10/10, pptx `validate.py` passes, PowerPoint COM confirms the menu tiles jump to
+  slides 7 / 12 / 17 and every module slide links back to slide 6.
+- `check_terms.py` against the whole kit folder (deck XML included): 0 hits.
+
+Machine notes: headless Edge writes no screenshot on this machine (exit 0, no file), so captures
+use headless Chrome (`tools/capture_scenes.py`). `capture_scenes.ps1` / `render_pptx.ps1` were run
+as inline commands rather than with a relaxed execution policy.
+
+Open: the booking link for "Schedule a live demo with one of our engineers" is a placeholder in
+`demo-build/src/config.js` (`cta`) - set it there and rebuild.
