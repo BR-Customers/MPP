@@ -1,0 +1,52 @@
+# Terms that must never appear in the shareable MES Track & Trace kit.
+# One case-insensitive regex per line. Kept in the MPP repo on purpose: this list names the customer.
+\bMPP\b
+madison
+precision products
+indiana
+honda
+\bAIM\b
+flexware
+manufacturing director
+sparkmes
+excsrv
+\b5G0\b
+\b6MA\b
+12270
+\b5J6\b
+\b5K8\b
+\b64A\b
+\b6C2\b
+\bDM\d{4}\b
+\bLTT\b
+T-Out-A
+M-Out-A
+M-In-A
+allen.?bradley
+rockwell
+logix
+siemens
+omron
+mitsubishi
+cognex
+zebra
+omniserver
+topserver
+baxter
+\$\s?\d
+\bcontinuous\b
+# Real part-number shape, model codes, line names, press/machine codes, IPs (from the plant seed)
+\b\d{5}-[A-Z0-9]{3}\b
+\b(6MD|6A0|66V|64S|66B|5PA|RPY|6NA|6VJ|P8A|RJ2|59b|6F9|6FB)\b
+\bDC\d(-[MT]\d+)?\b
+die cast [1-4]\b
+cam holder
+thermo case
+thermal case
+oil pan
+fuel pump
+water passage
+manifold plate
+oil jet
+cam thrust
+172\.17\.

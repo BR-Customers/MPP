@@ -1,7 +1,7 @@
 # MES sales kit (menu-driven deck + interactive demo) -- design
 
 **Date:** 2026-10-22
-**Status:** Draft for Jacques's review
+**Status:** Ready for Jacques's approval (open items settled 2026-10-26)
 **Built with:** the `ignition-sales-kit` skill (Aaron's, from the RFID Track & Trace kit), unpacked
 at `<scratchpad>/rfid_kit/RFID Track & Trace - Marketing Kit/skill/ignition-sales-kit/`.
 Its `SKILL.md`, `references/deck-outline.md`, `references/demo-architecture.md` and
@@ -53,12 +53,12 @@ means chemicals / food / paper. Say **lot-based** and **line-flow**; both are di
 
 | File | What |
 |---|---|
-| `<Product> - Overview.pptx` | Menu-driven presenter deck (section 4.1) |
-| `<Product> - Interactive Demo.html` | Single self-contained file, works from `file://`, a web server and an iframe (section 4.2) |
+| `MES Track & Trace - Overview.pptx` | Menu-driven presenter deck (section 4.1) |
+| `MES Track & Trace - Interactive Demo.html` | Single self-contained file, works from `file://`, a web server and an iframe (section 4.2) |
 | `README.md` | What each file is, how to present, the starting point picker, the rules for sales |
 | `deck-build/`, `demo-build/` | Generators and sources so the kit can be rebuilt and extended |
 
-`<Product>` is a placeholder until Jacques names it (section 9).
+Shareable kit folder and naming: section 9.
 
 ## 4. Structure
 
@@ -189,7 +189,7 @@ The real -> fictional key, if any is written, stays internal (section 7).
 
 ## 7. Where things live
 
-- **Shareable kit:** a folder outside this repo (section 9 -- location to be confirmed).
+- **Shareable kit:** `C:\Users\JacquesPotgieter\Documents\Dev\Marketing\MES Track & Trace\` (section 9).
 - **Internal:** `notes/2026-10-22_mes-sales-kit-SOURCE.md` in this repo -- which project it came
   from, the do-not-say term list used for the final grep, the maturity snapshot.
 - **This design:** this file.
@@ -204,12 +204,19 @@ The real -> fictional key, if any is written, stays internal (section 7).
 - Final grep of the shareable folder (unzipped deck XML included) for every term in section 6,
   every PLC brand, and dates.
 
-## 9. Open -- for Jacques
+## 9. Settled with Jacques (2026-10-26)
 
-1. Product name for the kit (file names, title slide, demo header).
-2. Where the shareable kit lives.
-3. The "Schedule a live demo" link or contact (placeholder until supplied).
-4. Logo file for the deck and demo header.
+1. **Product name:** `MES Track & Trace` *(builder's call -- Jacques's own phrase for the
+   capability; distinct from Aaron's `RFID Track & Trace`)*. Files:
+   `MES Track & Trace - Overview.pptx`, `MES Track & Trace - Interactive Demo.html`.
+2. **Shareable kit lives at** `C:\Users\JacquesPotgieter\Documents\Dev\Marketing\MES Track & Trace\`
+   (outside this repo), laid out as SKILL.md phase 6 describes.
+3. **"Schedule a live demo with one of our engineers" stays as worded.** The live demo is an
+   engineer walking the prospect through a running Ignition Perspective demo application that
+   models this track & trace functionality. The link/contact is a clearly marked placeholder in
+   the demo CONFIG block and the deck generator until supplied.
+4. **Logo:** the Blue Ridge logo PNG already inlined in the RFID Track & Trace demo (extracted;
+   copied to `demo-build/assets/` and `deck-build/`).
 
 ## 10. Left to the builder
 
