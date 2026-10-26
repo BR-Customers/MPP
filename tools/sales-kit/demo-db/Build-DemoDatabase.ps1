@@ -5,7 +5,8 @@
 #
 # Steps: Reset-DevDatabase.ps1 (migrations + repeatables, no sql\seeds, no demo threads);
 # the generic seeds the screens need (operation templates, the placeholder shipper-ID pool);
-# sql\seeds_demo\*.sql in name order; then every verify_*.sql here. Any failure stops the build.
+# sql\seeds_demo\*.sql in name order; sanitize_db.py (customer text -> sample text); every
+# verify_*.sql here; the sanitized gate (test_dump_text.py). Any failure stops the build.
 [CmdletBinding()]
 param(
     [string]$ServerInstance = "localhost",
@@ -44,6 +45,10 @@ foreach ($f in @("022_seed_die_cast_operation_template.sql", "024_seed_trim_oper
 Write-Host "[demo 3/4] Sample-plant seeds..." -ForegroundColor Cyan
 Get-ChildItem (Join-Path $SqlRoot "seeds_demo") -Filter "*.sql" | Sort-Object Name | ForEach-Object { Invoke-DemoSqlFile $_.FullName }
 
-Write-Host "[demo 4/4] Verify..." -ForegroundColor Cyan
+Write-Host "[demo 4/4] Sanitize, verify, gate..." -ForegroundColor Cyan
+& python -I (Join-Path $Here "sanitize_db.py") --server $ServerInstance
+if ($LASTEXITCODE -ne 0) { throw "sanitize_db.py failed" }
 Get-ChildItem $Here -Filter "verify_*.sql" | Sort-Object Name | ForEach-Object { Invoke-DemoSqlFile $_.FullName }
-Write-Host "MPP_MES_Demo built and verified." -ForegroundColor Green
+& python -I (Join-Path $Here "test_dump_text.py")
+if ($LASTEXITCODE -ne 0) { throw "sanitized gate failed: customer text left in MPP_MES_Demo" }
+Write-Host "MPP_MES_Demo built, sanitized and verified." -ForegroundColor Green

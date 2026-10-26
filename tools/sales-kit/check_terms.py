@@ -1,6 +1,6 @@
 """Grep a sales-kit folder for terms that must not leave Blue Ridge.
 
-Usage: python -I check_terms.py <folder>
+Usage: python -I check_terms.py <folder> [--terms-only] [--skip-prefix <line prefix>]
 
 Scans every text file, and the XML inside every .pptx / .docx / .zip, against banned_terms.txt
 (one case-insensitive regex per line, '#' comments) plus ISO dates and month-name years.
@@ -15,28 +15,34 @@ BINARY_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".ico", ".pdf", ".woff", ".woff2
 MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december"
 
 
-def load_patterns():
+def load_patterns(terms_only=False):
     pats = []
     with open(os.path.join(HERE, "banned_terms.txt"), encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith("#"):
                 pats.append(re.compile(line, re.IGNORECASE))
-    pats.append(re.compile(r"\b20\d\d-\d\d-\d\d\b"))
-    pats.append(re.compile(rf"\b({MONTHS})\s+20\d\d\b", re.IGNORECASE))
+    if not terms_only:   # dates matter in sales material, not in a database's audit columns
+        pats.append(re.compile(r"\b20\d\d-\d\d-\d\d\b"))
+        pats.append(re.compile(rf"\b({MONTHS})\s+20\d\d\b", re.IGNORECASE))
     return pats
+
+
+SKIP_PREFIXES = []
 
 
 def scan_text(label, text, pats, hits):
     for n, line in enumerate(text.splitlines(), 1):
+        if any(line.startswith(p) for p in SKIP_PREFIXES):
+            continue
         for p in pats:
             m = p.search(line)
             if m:
                 hits.append(f"{label}:{n}: {m.group(0)}")
 
 
-def main(folder):
-    pats = load_patterns()
+def main(folder, terms_only=False):
+    pats = load_patterns(terms_only)
     hits = []
     for root, dirs, files in os.walk(folder):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
@@ -59,4 +65,13 @@ def main(folder):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1]))
+    args = sys.argv[1:]
+    # --skip-prefix P (repeatable): ignore lines starting with P, e.g. a database column that holds
+    # functional configuration rather than displayed text (the icon-library path column).
+    while "--skip-prefix" in args:
+        i = args.index("--skip-prefix")
+        SKIP_PREFIXES.append(args[i + 1])
+        del args[i:i + 2]
+    terms_only = "--terms-only" in args
+    args = [a for a in args if a != "--terms-only"]
+    sys.exit(main(args[0], terms_only))

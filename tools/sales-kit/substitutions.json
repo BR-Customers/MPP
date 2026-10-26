@@ -1,0 +1,26 @@
+{
+  "_comment": "Customer-identifying text -> sample-plant text. Ordered: specific before general. Python regexes. Used by demo-db/sanitize_db.py (database) and capture/sanitize.py (captured screens). Lives in the MPP repo only: it names the customer.",
+  "rules": [
+    ["Madison Precision Products Inc\\., 94 E 400 North, Madison, IN 47250", "Sample Components Plant, 100 Industrial Way"],
+    ["Madison Precision Products", "Sample Components Co."],
+    ["Madison Facility", "Sample Components Plant"],
+    ["MPP MES", "MES Track & Trace"],
+    ["MPP Inc\\.", "Sample Components Co."],
+    ["Non-Specific MPP", "Non-Specific"],
+    ["\\bmpp/", "app/"],
+    ["\\bMPP\\b", "the plant"],
+    ["(?i)\\bHonda AIM\\b", "customer"],
+    ["(?i)\\bHonda\\b", "customer"],
+    ["\\bAIM\\b", "Shipping System"],
+    ["\\bLTT\\b", "LOT ticket"],
+    ["\\bT-Out-A\\b", "TrimOut"],
+    ["\\bM-Out-A\\b", "MachiningOut"],
+    ["\\bM-In-A\\b", "MachiningIn"],
+    ["(?i)\\bzebra\\b", "label"],
+    ["(?i)\\bomniserver\\b", "scale server"],
+    ["(?i)\\btopserver\\b", "OPC server"],
+    ["\\b5G0\\b", "model A"],
+    ["\\b(6MA|6MD|6A0|66V|64S|66B|5PA|RPY|6NA|6VJ|P8A|RJ2|59B|6F9|6FB|5J6|5K8|64A|6C2)\\b", "model"],
+    ["172\\.17\\.\\d+\\.\\d+", "127.0.0.1"]
+  ]
+}

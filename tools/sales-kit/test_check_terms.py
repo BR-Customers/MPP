@@ -55,6 +55,23 @@ def test_skips_node_modules():
         assert code == 0, out
 
 
+def test_terms_only_ignores_dates():
+    with tempfile.TemporaryDirectory() as d:
+        write(d, "notes.md", "Released 2026-10-26")
+        p = subprocess.run([sys.executable, "-I", CHECK, d, "--terms-only"], capture_output=True, text=True)
+        assert p.returncode == 0, p.stdout
+        write(d, "more.md", "Ships to Honda")
+        p = subprocess.run([sys.executable, "-I", CHECK, d, "--terms-only"], capture_output=True, text=True)
+        assert p.returncode == 1, p.stdout
+
+
+def test_skip_column_lines():
+    with tempfile.TemporaryDirectory() as d:
+        write(d, "db_text.txt", "Location.LocationTypeDefinition.Icon\tmpp/account_balance\n")
+        p = subprocess.run([sys.executable, "-I", CHECK, d, "--terms-only", "--skip-prefix", "Location.LocationTypeDefinition.Icon\t"], capture_output=True, text=True)
+        assert p.returncode == 0, p.stdout
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0
