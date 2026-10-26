@@ -39,6 +39,7 @@ param(
     [string]$Username      = "",
     [string]$Password      = "",
     [switch]$SkipDemoSeed,
+    [switch]$SkipSeeds,   # skip sql\seeds entirely (Build-DemoDatabase.ps1 loads its own sample-plant seeds)
     [switch]$Force,
     [switch]$JpValidation
 )
@@ -222,7 +223,9 @@ if ($repeatables.Count -eq 0) {
 # STEP 6: Run seed scripts (auto-discovered)
 # ============================================================
 Write-Host "[6/7] Running seed scripts..." -ForegroundColor Cyan
-if (Test-Path $Seeds) {
+if ($SkipSeeds) {
+    Write-Host "  -SkipSeeds set: sql\seeds not loaded." -ForegroundColor DarkYellow
+} elseif (Test-Path $Seeds) {
     $seeds = @(Get-ChildItem -Path $Seeds -Filter "*.sql" | Sort-Object Name)
     if ($seeds.Count -eq 0) {
         Write-Host "  (no seed scripts found)" -ForegroundColor DarkYellow
