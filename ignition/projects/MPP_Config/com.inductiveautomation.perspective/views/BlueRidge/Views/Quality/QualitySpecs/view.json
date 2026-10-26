@@ -1,5 +1,6 @@
 {
   "custom": {
+    "stateDirty": false,
     "activeVersionId": null,
     "dataTypes": [
       {
@@ -49,20 +50,7 @@
     },
     "state": {
       "editDraft": {
-        "attributes": [
-          {
-            "attributeName": "",
-            "dataType": "Numeric",
-            "id": null,
-            "isRequired": true,
-            "lowerLimit": null,
-            "sortOrder": null,
-            "targetValue": null,
-            "uomCode": "",
-            "uomId": null,
-            "upperLimit": null
-          }
-        ],
+        "attributes": [],
         "deprecatedAt": null,
         "effectiveFrom": null,
         "effectiveFromDisplay": "",
@@ -206,10 +194,24 @@
         "script": "\tself.rootContainer.loadActiveVersion()"
       }
     },
+    "custom.stateDirty": {
+      "binding": {
+        "config": {
+          "path": "view.custom.state"
+        },
+        "transforms": [
+          {
+            "code": "\t# Property binding + transform, never runScript ARGS: a container passed\n\t# as a runScript arg arrives as a Perspective ImmutableMap that\n\t# extractQualifiedValues cannot unwrap, and the JSON compare then misfires\n\t# -- \u0027unsaved changes\u0027 with nothing edited (Plant Hierarchy, 2026-10-23).\n\ts \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\ttoJson \u003d BlueRidge.Common.Util.convertWrapperObjectToJson\n\td \u003d s.get(\"editDraft\") or {}\n\tb \u003d s.get(\"selected\") or {}\n\treturn toJson(d.get(\"attributes\")) !\u003d toJson(b.get(\"attributes\")) or d.get(\"effectiveFromDisplay\") !\u003d b.get(\"effectiveFromDisplay\")",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      }
+    },
     "custom.isDirty": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft.attributes}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected.attributes}) || {view.custom.state.editDraft.effectiveFromDisplay} !\u003d {view.custom.state.selected.effectiveFromDisplay} || {view.custom.specHeader.editDraft.name} !\u003d {view.custom.specHeader.selected.name} || {view.custom.specHeader.editDraft.description} !\u003d {view.custom.specHeader.selected.description}"
+          "expression": "{view.custom.stateDirty} || {view.custom.specHeader.editDraft.name} !\u003d {view.custom.specHeader.selected.name} || {view.custom.specHeader.editDraft.description} !\u003d {view.custom.specHeader.selected.description}"
         },
         "type": "expr"
       }
@@ -2073,7 +2075,7 @@
         {
           "name": "loadActiveVersion",
           "params": [],
-          "script": "\tvid \u003d self.view.custom.activeVersionId\n\tif not vid:\n\t\tself.view.custom.state \u003d {\"selected\": self._emptyVersion(), \"editDraft\": self._emptyVersion()}\n\t\treturn\n\tbundle \u003d BlueRidge.Quality.QualitySpec.getVersionFull(vid)\n\tself.view.custom.state \u003d {\"selected\": bundle, \"editDraft\": self._clone(bundle)}"
+          "script": "\tvid \u003d self.view.custom.activeVersionId\n\tif not vid:\n\t\tself.view.custom.state \u003d {\"selected\": self._emptyVersion(), \"editDraft\": self._emptyVersion()}\n\t\treturn\n\tbundle \u003d BlueRidge.Quality.QualitySpec.getVersionFull(vid)\n\t# Clone BOTH halves: the JSON round trip turns DECIMAL attribute values\n\t# (5.0000) into 5.0, so a raw baseline against a cloned draft compared\n\t# unequal and every spec with numeric attributes loaded as unsaved.\n\tself.view.custom.state \u003d {\"selected\": self._clone(bundle), \"editDraft\": self._clone(bundle)}"
         },
         {
           "name": "refreshVersions",

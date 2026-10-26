@@ -52,9 +52,15 @@
     "custom.isDirty": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected})"
+          "path": "view.custom.state"
         },
-        "type": "expr"
+        "transforms": [
+          {
+            "code": "\t# Property binding + transform, never runScript ARGS: a container passed\n\t# as a runScript arg arrives as a Perspective ImmutableMap that\n\t# extractQualifiedValues cannot unwrap, and the JSON compare then misfires\n\t# -- \u0027unsaved changes\u0027 with nothing edited (Plant Hierarchy, 2026-10-23).\n\ts \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\ttoJson \u003d BlueRidge.Common.Util.convertWrapperObjectToJson\n\treturn toJson(s.get(\"editDraft\")) !\u003d toJson(s.get(\"selected\"))",
+            "type": "script"
+          }
+        ],
+        "type": "property"
       },
       "onChange": {
         "enabled": true,
