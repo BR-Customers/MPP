@@ -7,6 +7,7 @@
     "defaultValue": "",
     "definitionId": null,
     "index": 0,
+    "locationId": null,
     "name": "",
     "required": false,
     "totalRows": 1,
@@ -32,6 +33,9 @@
       "paramDirection": "input"
     },
     "params.index": {
+      "paramDirection": "input"
+    },
+    "params.locationId": {
       "paramDirection": "input"
     },
     "params.name": {
@@ -107,7 +111,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.params.dataType} !\u003d \"BIT\" && len({view.custom.options}) \u003d 0"
+                    "expression": "{view.params.dataType} !\u003d \"BIT\" && len({view.custom.options}) \u003d 0 && {view.params.name} !\u003d \"DefaultMachines\""
                   },
                   "type": "expr"
                 }
@@ -236,6 +240,52 @@
               }
             },
             "type": "ia.input.dropdown"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t# DefaultMachines is a list of machine ids, edited as toggles in a popup.\n\t# The popup replies with locAttrValueUpdate, the same message every other\n\t# attribute row uses, so the value lands in the Plant Hierarchy draft.\n\tif self.view.params.locationId is None:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-default-machines\",\n\t\tview\u003d\"BlueRidge/Components/Popups/DefaultMachinesEditor\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"terminalId\": self.view.params.locationId,\n\t\t\t\"value\":      self.view.params.value or \"\",\n\t\t\t\"index\":      self.view.params.index,\n\t\t},\n\t)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DefaultMachinesButton"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.name} \u003d \"DefaultMachines\""
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.params.name} = \"DefaultMachines\", runScript(\"BlueRidge.Location.Terminal.summarizeDefaultMachines\", 0, {view.params.locationId}, {view.params.value}), \"\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm",
+                "height": "30px"
+              },
+              "text": ""
+            },
+            "type": "ia.input.button"
           }
         ],
         "meta": {

@@ -161,6 +161,109 @@ def getContextCellsForDropdown(terminalLocationId, kindFilter=None):
     return out
 
 
+def listDefaultMachineIds(terminalLocationId):
+    """The terminal's DefaultMachines (migration 0115) that are still active
+       equipment cells under its parent -- the proc drops anything else.
+       Returns a set of LocationIds; empty = none configured."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return set()
+    rows = BlueRidge.Common.Db.execList(
+        "location/Terminal_ListDefaultMachines",
+        {"terminalId": tid},
+    ) or []
+    return set(r.get("LocationId") for r in rows)
+
+
+def getMachineButtonInstances(terminalLocationId, kindFilter=None, showAll=False, selectedCellId=None, refreshToken=None):
+    """Flex-repeater instances for the press picker (die cast header):
+       one button per press, then a Show all / Show fewer toggle.
+
+       With no DefaultMachines configured every press shows and there is no
+       toggle -- the same set the old dropdown offered. With defaults, only
+       those show until the operator presses Show all. The press the session
+       is on always shows, so picking one from the full list does not make it
+       vanish when the list folds back.
+
+       Instance shape (LocationMachineButton params):
+         {kind: 'machine'|'toggle', locationId, label, selected}
+       refreshToken is unused; it is there so a binding can force a re-read."""
+    cells = getContextCellsForDropdown(terminalLocationId, kindFilter)
+    selectedCellId = BlueRidge.Common.Util.extractQualifiedValues(selectedCellId)
+    defaults = listDefaultMachineIds(terminalLocationId) if cells else set()
+    folded = bool(defaults) and not showAll
+    out = []
+    for c in cells:
+        cid = c.get("value")
+        if folded and cid not in defaults and cid != selectedCellId:
+            continue
+        out.append({
+            "kind":       "machine",
+            "locationId": cid,
+            "label":      c.get("name") or c.get("code") or "",
+            "selected":   cid == selectedCellId,
+        })
+    if defaults and len(defaults) < len(cells):
+        out.append({
+            "kind":       "toggle",
+            "locationId": None,
+            "label":      "Show fewer" if showAll else "Show all (%d)" % len(cells),
+            "selected":   False,
+        })
+    return out
+
+
+# ---- DefaultMachines editing (Config Tool, Plant Hierarchy) -----------------
+# The attribute value is a comma-separated list of Location ids (migration
+# 0115). These helpers only translate between that string and the toggle UI;
+# which ids actually count is decided by Location.Terminal_ListDefaultMachines.
+
+def _parseIdList(csv):
+    out = []
+    for part in ("%s" % (BlueRidge.Common.Util.extractQualifiedValues(csv) or "")).split(","):
+        part = part.strip()
+        if part.isdigit():
+            out.append(long(part))
+    return out
+
+
+def getDefaultMachineToggles(terminalLocationId, csv):
+    """One toggle per equipment cell under the terminal's parent:
+       [{machineId, label, on}]. Always a list."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return []
+    picked = set(_parseIdList(csv))
+    return [
+        {"machineId": c.get("value"), "label": c.get("label") or "", "on": c.get("value") in picked}
+        for c in getContextCellsForDropdown(tid)
+    ]
+
+
+def summarizeDefaultMachines(terminalLocationId, csv):
+    """Button text for the DefaultMachines attribute row."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return "Save the terminal first"
+    cells = getContextCellsForDropdown(tid)
+    if not cells:
+        return "No machines beside this terminal"
+    ids = set(c.get("value") for c in cells)
+    n = len([i for i in set(_parseIdList(csv)) if i in ids])
+    if n == 0:
+        return "All %d machines (none chosen)" % len(cells)
+    return "%d of %d machines" % (n, len(cells))
+
+
+def toggleDefaultMachine(csv, machineId, on):
+    """Return the list string with machineId added (on) or removed."""
+    mid = BlueRidge.Common.Util.extractQualifiedValues(machineId)
+    ids = [i for i in _parseIdList(csv) if i != mid]
+    if on and mid is not None:
+        ids.append(long(mid))
+    return ",".join(str(i) for i in sorted(set(ids)))
+
+
 def getPrinter(terminalLocationId):
     """Arc 2 Phase 4. Resolve the terminal's child Printer Location + its
        Endpoint/Model attribute values for the onStartup session resolution +

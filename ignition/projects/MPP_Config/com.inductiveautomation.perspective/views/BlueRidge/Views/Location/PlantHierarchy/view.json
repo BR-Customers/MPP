@@ -1631,7 +1631,7 @@
                               },
                               "transforms": [
                                 {
-                                  "code": "\trows \u003d value or []\n\tn \u003d len(rows)\n\treturn [\n\t\t{\n\t\t\t\"index\":        i,\n\t\t\t\"totalRows\":    n,\n\t\t\t\"definitionId\": r.get(\"definitionId\"),\n\t\t\t\"name\":         r.get(\"name\") or \"\",\n\t\t\t\"value\":        r.get(\"value\") or \"\",\n\t\t\t\"dataType\":     r.get(\"dataType\") or \"\",\n\t\t\t\"uom\":          r.get(\"uom\") or \"\",\n\t\t\t\"required\":     bool(r.get(\"required\")),\n\t\t\t\"defaultValue\": r.get(\"defaultValue\") or \"\"\n\t\t}\n\t\tfor i, r in enumerate(rows)\n\t]",
+                                  "code": "\t# locationId lets a row reach its own Location (DefaultMachines lists the\n\t# machines beside this terminal).\n\tlocId \u003d self.view.custom.state.editDraft.id\n\trows \u003d value or []\n\tn \u003d len(rows)\n\treturn [\n\t\t{\n\t\t\t\"index\":        i,\n\t\t\t\"locationId\":   locId,\n\t\t\t\"totalRows\":    n,\n\t\t\t\"definitionId\": r.get(\"definitionId\"),\n\t\t\t\"name\":         r.get(\"name\") or \"\",\n\t\t\t\"value\":        r.get(\"value\") or \"\",\n\t\t\t\"dataType\":     r.get(\"dataType\") or \"\",\n\t\t\t\"uom\":          r.get(\"uom\") or \"\",\n\t\t\t\"required\":     bool(r.get(\"required\")),\n\t\t\t\"defaultValue\": r.get(\"defaultValue\") or \"\"\n\t\t}\n\t\tfor i, r in enumerate(rows)\n\t]",
                                   "type": "script"
                                 }
                               ],

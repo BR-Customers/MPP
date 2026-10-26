@@ -1,0 +1,43 @@
+{
+  "custom": {},
+  "params": { "kind": "machine", "label": "", "locationId": null, "messageName": "machinePicked", "selected": false },
+  "propConfig": {
+    "params.kind": { "paramDirection": "input" },
+    "params.label": { "paramDirection": "input" },
+    "params.locationId": { "paramDirection": "input" },
+    "params.messageName": { "paramDirection": "input" },
+    "params.selected": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 52, "width": 160 }
+  },
+  "root": {
+    "meta": { "name": "root" },
+    "events": {
+      "component": {
+        "onActionPerformed": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# One press button (or the Show all toggle) in a host's machine picker.\n\t# The host owns what a pick means; this only reports which button was hit.\n\tsystem.perspective.sendMessage(self.view.params.messageName, payload={\"kind\": self.view.params.kind, \"locationId\": self.view.params.locationId}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "propConfig": {
+      "props.text": {
+        "binding": { "config": { "path": "view.params.label" }, "type": "property" }
+      },
+      "props.style.classes": {
+        "binding": { "config": { "expression": "if({view.params.selected}, 'pf-btn pf-btn-primary', 'pf-btn pf-btn-secondary')" }, "type": "expr" }
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    },
+    "props": { "text": "" },
+    "type": "ia.input.button"
+  }
+}

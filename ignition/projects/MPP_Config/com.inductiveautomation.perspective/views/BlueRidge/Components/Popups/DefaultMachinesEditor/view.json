@@ -1,0 +1,179 @@
+{
+  "custom": { "value": "" },
+  "params": { "index": null, "popupId": "mpp-default-machines", "terminalId": null, "value": "" },
+  "propConfig": {
+    "params.index": { "paramDirection": "input" },
+    "params.popupId": { "paramDirection": "input" },
+    "params.terminalId": { "paramDirection": "input" },
+    "params.value": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 520, "width": 420 }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": { "name": "Title" },
+        "position": { "shrink": 0 },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "14px",
+            "fontWeight": "600",
+            "padding": "14px 16px 4px 16px"
+          },
+          "text": "Default machines for this terminal"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Help" },
+        "position": { "shrink": 0 },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px",
+            "lineHeight": "1.5",
+            "padding": "4px 16px 8px 16px",
+            "whiteSpace": "normal"
+          },
+          "text": "Checked machines show as buttons on the die cast screen at this terminal. Operators reach the rest with Show all. Leave every box clear to show all machines."
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Toggles" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "expression": "runScript(\"BlueRidge.Location.Terminal.getDefaultMachineToggles\", 0, {view.params.terminalId}, {view.custom.value})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "elementPosition": { "basis": "32px", "grow": 0, "shrink": 0 },
+          "instances": [],
+          "path": "BlueRidge/Components/DefaultMachineToggle",
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false,
+          "style": { "overflowY": "auto", "padding": "0 16px" }
+        },
+        "type": "ia.display.flex-repeater"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": { "name": "CancelButton" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "btn btn-sm" }, "text": "Cancel" },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.value = \"\""
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": { "name": "ClearButton" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "btn btn-sm" }, "text": "Clear" },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": { "name": "Spacer" },
+            "position": { "grow": 1 },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t# Hand the list back through the Plant Hierarchy's own attribute-row\n\t# message, so it lands in editDraft like any typed value and is saved\n\t# (and audited) by the normal Save.\n\tsystem.perspective.sendMessage(\"locAttrValueUpdate\", payload={\"index\": self.view.params.index, \"value\": self.view.custom.value or \"\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": { "name": "ApplyButton" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "btn btn-primary btn-sm" }, "text": "Apply" },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": { "name": "Footer" },
+        "position": { "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "overflow": "hidden",
+            "padding": "12px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tself.view.custom.value = self.view.params.value or \"\""
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "defaultMachineToggled",
+          "pageScope": true,
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tself.view.custom.value = BlueRidge.Location.Terminal.toggleDefaultMachine(self.view.custom.value, p.get(\"machineId\"), p.get(\"on\"))",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

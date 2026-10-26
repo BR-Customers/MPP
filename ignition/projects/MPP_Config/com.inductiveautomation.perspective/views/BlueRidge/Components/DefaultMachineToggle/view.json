@@ -1,0 +1,39 @@
+{
+  "custom": {},
+  "params": { "label": "", "machineId": null, "on": false },
+  "propConfig": {
+    "params.label": { "paramDirection": "input" },
+    "params.machineId": { "paramDirection": "input" },
+    "params.on": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 32, "width": 320 }
+  },
+  "root": {
+    "meta": { "name": "root" },
+    "events": {
+      "component": {
+        "onActionPerformed": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# One machine in the DefaultMachinesEditor popup. The popup owns the list.\n\tsystem.perspective.sendMessage(\"defaultMachineToggled\", payload={\"machineId\": self.view.params.machineId, \"on\": bool(self.props.selected)}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "propConfig": {
+      "props.text": {
+        "binding": { "config": { "path": "view.params.label" }, "type": "property" }
+      },
+      "props.selected": {
+        "binding": { "config": { "path": "view.params.on" }, "type": "property" }
+      }
+    },
+    "props": {
+      "style": { "color": "var(--mpp-text-primary)", "fontSize": "13px" },
+      "text": ""
+    },
+    "type": "ia.input.checkbox"
+  }
+}

@@ -37,6 +37,7 @@
     "refreshToken": 29,
     "selectedShiftId": null,
     "shotLossDefectCodeId": null,
+    "showAllMachines": false,
     "shotLossQty": "",
     "watchedCellId": null
   },
@@ -242,65 +243,52 @@
                 "type": "ia.display.label"
               },
               {
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "config": {
-                        "script": "\tself.view.rootContainer.applyCell(self.props.value)"
-                      },
-                      "scope": "G",
-                      "type": "script"
-                    }
-                  }
-                },
                 "meta": {
-                  "name": "CellPickerDropdown"
+                  "name": "MachinePicker"
                 },
                 "position": {
-                  "basis": "300px",
-                  "shrink": 0
+                  "basis": "0",
+                  "grow": 1,
+                  "shrink": 1
                 },
                 "propConfig": {
-                  "props.options": {
+                  "props.instances": {
                     "binding": {
                       "config": {
-                        "path": "view.custom.cells"
+                        "expression": "runScript(\"BlueRidge.Location.Terminal.getMachineButtonInstances\", 0, {session.custom.terminal.terminalLocationId}, \"Die Cast Machine\", {view.custom.showAllMachines}, {session.custom.cell.locationId}, {view.custom.refreshToken})"
                       },
-                      "transforms": [
-                        {
-                          "code": "\tcells \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
-                          "type": "script"
-                        }
-                      ],
-                      "type": "property"
-                    }
-                  },
-                  "props.value": {
-                    "binding": {
-                      "config": {
-                        "path": "session.custom.cell.locationId"
-                      },
-                      "type": "property"
+                      "type": "expr"
                     }
                   }
                 },
                 "props": {
-                  "placeholder": {
-                    "text": "Scan or pick a cell"
+                  "alignContent": "flex-start",
+                  "alignItems": "center",
+                  "elementPosition": {
+                    "basis": "auto",
+                    "grow": 0,
+                    "shrink": 0
                   },
+                  "instances": [],
+                  "path": "BlueRidge/Components/PlantFloor/MachinePickButton",
                   "style": {
-                    "classes": "pf-field-select",
-                    "width": "300px"
-                  }
+                    "gap": "8px",
+                    "overflow": "visible"
+                  },
+                  "useDefaultViewHeight": true,
+                  "useDefaultViewWidth": false,
+                  "wrap": "wrap"
                 },
-                "type": "ia.input.dropdown"
+                "type": "ia.display.flex-repeater"
               }
             ],
             "meta": {
               "name": "HeaderCellPicker"
             },
             "position": {
-              "shrink": 0
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
             },
             "propConfig": {
               "position.display": {
@@ -2742,6 +2730,13 @@
       ],
       "extensionFunctions": null,
       "messageHandlers": [
+        {
+          "messageType": "machinePicked",
+          "pageScope": true,
+          "script": "\t# A press button (or Show all / Show fewer) in the header picker.\n\t# A pick goes through applyCell exactly as the old dropdown did, then the\n\t# list folds back to this terminal\u0027s default presses -- the picked press\n\t# stays on screen because getMachineButtonInstances always keeps the\n\t# session\u0027s current cell.\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tif p.get(\"kind\") \u003d\u003d \"toggle\":\n\t\tself.view.custom.showAllMachines \u003d not self.view.custom.showAllMachines\n\t\treturn\n\tif p.get(\"locationId\") is None:\n\t\treturn\n\tself.applyCell(p.get(\"locationId\"))\n\tself.view.custom.showAllMachines \u003d False",
+          "sessionScope": false,
+          "viewScope": false
+        },
         {
           "messageType": "dieMountRequested",
           "pageScope": true,
