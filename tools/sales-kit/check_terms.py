@@ -47,6 +47,8 @@ def main(folder, terms_only=False):
     for root, dirs, files in os.walk(folder):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for name in files:
+            if name.startswith("~$"):   # Office lock file left by an open (or crashed) editor
+                continue
             path = os.path.join(root, name)
             rel = os.path.relpath(path, folder)
             ext = os.path.splitext(name)[1].lower()

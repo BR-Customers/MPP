@@ -83,6 +83,14 @@ def test_session_panel_gateway_url_and_component_paths():
         assert 'data-component-path="C$0:0$0:1"' in html, html
 
 
+def test_strips_css_comments():
+    with tempfile.TemporaryDirectory() as d:
+        css = CSS + ' /* trimmed 2026-09-15 for the plant */ .a{color:red}'
+        p, caps = run(fixture(d, css=css))
+        assert p.returncode == 0, p.stdout + p.stderr
+        out_css = open(os.path.join(caps, "bundle.css"), encoding="utf-8").read()
+        assert "2026" not in out_css and ".a{color:red}" in out_css, out_css
+
 def test_fails_on_gateway_reference():
     with tempfile.TemporaryDirectory() as d:
         page = PAGE.replace("<p>", '<img src="http://localhost:8088/system/images/x.png"><p>')

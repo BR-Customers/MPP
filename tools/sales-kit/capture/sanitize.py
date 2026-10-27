@@ -65,7 +65,11 @@ def sanitize_html(page):
     return "".join(sanitize_tag(p) if p.startswith("<") else sub_escaped(p) for p in parts)
 
 
+CSS_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+
+
 def sanitize_css(css):
+    css = CSS_COMMENT.sub("", css)   # developer notes (dates, names) - never needed to render
     css = CSS_CONTENT.sub(lambda m: m.group(1) + sub(m.group(2)) + m.group(3), css)
     return rename_ident(css)
 

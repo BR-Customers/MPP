@@ -82,6 +82,13 @@ def test_skip_column_lines():
         assert p.returncode == 0, p.stdout
 
 
+
+def test_skips_office_lock_files():
+    with tempfile.TemporaryDirectory() as d:
+        write(d, "~$deck.pptx", "not a zip")
+        code, out = run(d)
+        assert code == 0, out
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0
