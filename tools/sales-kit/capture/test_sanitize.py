@@ -113,6 +113,19 @@ def test_drops_perspective_client_chrome():
         assert "KEEP-ME" in html and "<p>Tom" in html, html
 
 
+def test_strips_capture_dates_keeps_times_and_counts():
+    with tempfile.TemporaryDirectory() as d:
+        page = PAGE.replace("<p>", "<p>Tue Oct 27   8:52:18 AM</p><p>10/27/26 08:49</p><p>9m ago  ·  L. Brooks  ·  10/27 08:49</p>"
+                                   "<p>First Shift - 10/27 (current)</p><p>Open boxes: FG-4100 12/48</p><p>")
+        p, caps = run(fixture(d, page=page))
+        assert p.returncode == 0, p.stdout + p.stderr
+        out = json.load(open(os.path.join(caps, "s1.json"), encoding="utf-8"))["html"]
+        for gone in ("Oct 27", "10/27"):
+            assert gone not in out, out
+        for kept in (">8:52:18 AM<", ">08:49<", "L. Brooks  ·  08:49", ">First Shift (current)<", "FG-4100 12/48"):
+            assert kept in out, (kept, out)
+
+
 def test_fails_on_gateway_reference():
     with tempfile.TemporaryDirectory() as d:
         page = PAGE.replace("<p>", '<img src="http://localhost:8088/system/images/x.png"><p>')

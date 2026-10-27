@@ -102,6 +102,18 @@ def test_skip_column_lines():
 
 
 
+def test_flags_screen_dates_but_not_counts():
+    for text in ("Tue Oct 27   8:52:18 AM", "at 10/27/26 08:49", "arrived 10/27 08:49", "First Shift - 10/27 (current)"):
+        with tempfile.TemporaryDirectory() as d:
+            write(d, "page.html", text)
+            code, out = run(d)
+            assert code == 1, (text, out)
+    with tempfile.TemporaryDirectory() as d:
+        write(d, "page.html", "Open boxes: FG-4100 12/48 at 08:49")
+        code, out = run(d)
+        assert code == 0, out
+
+
 def test_skips_office_lock_files():
     with tempfile.TemporaryDirectory() as d:
         write(d, "~$deck.pptx", "not a zip")

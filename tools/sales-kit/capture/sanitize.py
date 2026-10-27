@@ -25,8 +25,20 @@ BAD_URL = re.compile(r"localhost|https?://(?!www\.w3\.org/)", re.I)
 rules = [(re.compile(p), r) for p, r in json.load(open(os.path.join(KIT_TOOLS, "substitutions.json"), encoding="utf-8"))["rules"]]
 
 
+# The capture date shows on screen (terminal clock, LOT timestamps, the shift picker). Sales
+# material carries no dates: drop the date and keep the time. A date is recognised only next to a
+# time or the shift picker's "(current)", so counts like "12/48" are left alone. Screens only - the
+# database's own timestamps are not displayed text.
+MON = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
+DATE_RULES = [
+    (re.compile(r"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) " + MON + r" +\d{1,2}\s+(?=\d{1,2}:\d\d)"), ""),
+    (re.compile(r"\b\d{1,2}/\d{1,2}(?:/\d{2,4})? (?=\d{1,2}:\d\d)"), ""),
+    (re.compile(r"\s*-\s*\d{1,2}/\d{1,2}(?= \(current\))"), ""),
+]
+
+
 def sub(text):
-    for p, r in rules:
+    for p, r in rules + DATE_RULES:
         text = p.sub(r, text)
     return text
 

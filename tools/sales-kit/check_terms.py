@@ -25,6 +25,11 @@ def load_patterns(terms_only=False):
     if not terms_only:   # dates matter in sales material, not in a database's audit columns
         pats.append(re.compile(r"\b20\d\d-\d\d-\d\d(?!\d)"))   # also ISO timestamps (2026-10-27T08:32)
         pats.append(re.compile(rf"\b({MONTHS})\s+20\d\d\b", re.IGNORECASE))
+        # On-screen dates from a captured application: "Tue Oct 27", "10/27/26 08:49",
+        # "10/27 08:49", "Shift - 10/27 (current)". A bare "12/48" is a count, not a date.
+        pats.append(re.compile(r"\b(mon|tue|wed|thu|fri|sat|sun) (jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec) +\d{1,2}\b", re.IGNORECASE))
+        pats.append(re.compile(r"\b\d{1,2}/\d{1,2}(/\d{2,4})? \d{1,2}:\d\d"))
+        pats.append(re.compile(r"\b\d{1,2}/\d{1,2} \(current\)"))
     return pats
 
 

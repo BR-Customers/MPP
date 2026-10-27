@@ -83,8 +83,11 @@ application, captured against a sample-plant database. Spec
 - **Sanitize.** `capture/sanitize.py` applies `substitutions.json`, renames the project token in
   classes, styles, ids and popup component paths, strips CSS comments and drops the Perspective
   client chrome (session panel with the gateway host name, trial notice, banners), renders the deck
-  PNGs and gates the result. The kit-wide `check_terms.py` gate also catches ISO timestamps and
-  plural `LTTs`.
+  PNGs and gates the result. It also drops the capture date from on-screen text and keeps the time
+  (terminal clock "Tue Oct 27", LOT timestamps "10/27/26 08:49" / "10/27 08:49", the shift picker's
+  "First Shift - 10/27 (current)"); a date is recognised only beside a time or "(current)", so
+  counts like "12/48" survive. The kit-wide `check_terms.py` gate catches those formats too, plus
+  ISO timestamps and plural `LTTs`.
 - **Demo.** `demo-build/src/ui/rs.js` mounts each captured screen in a same-origin iframe at its
   captured width, scaled to fit, and the module files fill live regions by `data-component-path`.
   Numbers follow the application: baskets `520` + press + sequence, sub-LOTs `<parent>-NN`, trays
