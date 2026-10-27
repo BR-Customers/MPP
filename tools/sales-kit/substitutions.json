@@ -21,6 +21,7 @@
     ["(?i)\\btopserver\\b", "OPC server"],
     ["\\b5G0\\b", "model A"],
     ["\\b(6MA|6MD|6A0|66V|64S|66B|5PA|RPY|6NA|6VJ|P8A|RJ2|59B|6F9|6FB|5J6|5K8|64A|6C2)\\b", "model"],
-    ["172\\.17\\.\\d+\\.\\d+", "127.0.0.1"]
+    ["172\\.17\\.\\d+\\.\\d+", "127.0.0.1"],
+    ["https?://localhost(:\\d+)?", "gateway"]
   ]
 }

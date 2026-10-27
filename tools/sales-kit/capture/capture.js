@@ -76,6 +76,32 @@ async function act(page, a) {
     if (a.into) { await page.waitForSelector(a.into, { visible: true }); await page.click(a.into, { clickCount: 3 }); }
     await page.keyboard.type(String(a.type), { delay: 40 });
   }
+  else if (a.typeNear) {
+    // the first visible input after the element whose text starts with `typeNear`
+    const pt = await page.evaluate((label) => {
+      const all = [...document.querySelectorAll('body *')];
+      const lab = all.filter(e => e.childElementCount === 0 && (e.innerText || '').trim().toUpperCase().startsWith(label.toUpperCase()) && e.getBoundingClientRect().height > 0)[0];
+      if (!lab) return null;
+      const inp = all.slice(all.indexOf(lab)).find(e => e.tagName === 'INPUT' && e.getBoundingClientRect().height > 0);
+      if (!inp) return null;
+      const r = inp.getBoundingClientRect();
+      return [r.left + r.width / 2, r.top + r.height / 2];
+    }, a.typeNear);
+    if (!pt) throw new Error('typeNear: no input after "' + a.typeNear + '"');
+    await page.mouse.click(pt[0], pt[1], { clickCount: 3 });
+    await page.keyboard.type(String(a.value), { delay: 40 });
+  }
+  // keypad digits are paced: clicked faster than the pad processes them, they land out of order
+  else if (a.pin) { for (const d of String(a.pin)) { await clickText(page, d); await sleep(400); } }
+  else if (a.signIn) {
+    // enter the PIN only if the sign-in pad is showing (a previous step may have left it half-typed)
+    if (await page.evaluate(() => document.body.innerText.includes('Enter your PIN'))) {
+      await clickText(page, 'Clear');
+      await sleep(300);
+      for (const d of String(a.signIn)) { await clickText(page, d); await sleep(400); }
+      await sleep(2000);
+    }
+  }
   else if (a.key) await page.keyboard.press(a.key);
   else if (a.wait) await ready(page, a.wait, a.timeout);
   else if (a.sleep) await sleep(a.sleep);
@@ -83,24 +109,46 @@ async function act(page, a) {
   if (!a.noSettle) await settle(page, 800, 8000);
 }
 
-async function selectTerminal(page, code) {
-  // The Terminal Selector accepts a scanned terminal code; typing it + Enter is what a scan does.
-  await page.goto(url('/shop-floor/terminal-selector'), { waitUntil: 'networkidle2', timeout: 60000 });
+async function selectTerminal(page, treePath) {
+  // A capture session is not on a registered IP, so it lands on the Terminal Selector; the
+  // location tree is the way to a terminal. treePath = node labels below the site, e.g.
+  // ['Machining & Assembly', 'Housing line', 'Machining In']; the last one is the terminal.
+  await page.goto(url('/shop-floor/terminal-selector'), { waitUntil: 'domcontentloaded', timeout: 60000 });
   await ready(page, 'text:Select your terminal');
   await settle(page);
-  const input = await page.$('input');
-  if (!input) throw new Error('selectTerminal: no scan field on the Terminal Selector');
-  await input.click({ clickCount: 3 });
-  await page.keyboard.type(code, { delay: 40 });
-  await page.keyboard.press('Enter');
+  // The page holds a second, hidden copy of the tree, and labels repeat ("Terminal" under both Die
+  // Cast and Trim Shop): only visible rows count, and each label is looked for AFTER the previous
+  // node's row in document order -- i.e. among that node's children.
+  await page.evaluate(() => { window.__treeAfter = 0; });
+  for (let i = 0; i < treePath.length; i++) {
+    const label = treePath[i], last = i === treePath.length - 1;
+    const where = await page.evaluate((lab, isLast) => {
+      const rows = [...document.querySelectorAll('.tree-row')].filter(r => r.getBoundingClientRect().height > 0);
+      const idx = rows.findIndex((r, k) => k >= window.__treeAfter && (r.querySelector('.tree-item-label') || {}).innerText?.trim() === lab);
+      if (idx < 0) return null;
+      window.__treeAfter = idx + 1;
+      const row = rows[idx];
+      const target = isLast ? row.querySelector('.tree-item-label') : row.querySelector('.expand-icon');
+      if (!isLast && !row.className.includes('--collapsed')) return 'open';
+      if (!target) return null;
+      target.scrollIntoView({ block: 'center' });
+      const r = target.getBoundingClientRect();
+      return [r.left + r.width / 2, r.top + r.height / 2];
+    }, label, last);
+    if (!where) throw new Error('selectTerminal: no tree node "' + label + '"');
+    if (where !== 'open') await page.mouse.click(where[0], where[1]);
+    await settle(page, 600, 6000);
+  }
   await page.waitForFunction(() => !location.pathname.endsWith('/terminal-selector'), { timeout: 30000 });
   await settle(page);
 }
 
 async function snapshotHtml(page) {
   return page.evaluate(async (gateway) => {
+    // every fetch is capped: one resource that never answers must not hang the whole capture
+    const fetchT = (u) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), 10000); return fetch(u, { signal: c.signal }).finally(() => clearTimeout(t)); };
     const toDataUri = async (u) => {
-      const r = await fetch(u); const b = await r.blob();
+      const r = await fetchT(u); const b = await r.blob();
       return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
     };
     const doc = document.documentElement.cloneNode(true);
@@ -120,7 +168,7 @@ async function snapshotHtml(page) {
       if (!href || href.startsWith('#')) continue;
       const [file, id] = href.split('#');
       try {
-        const txt = await (await fetch(new URL(file, location.href))).text();
+        const txt = await (await fetchT(new URL(file, location.href))).text();
         const svgDoc = new DOMParser().parseFromString(txt, 'image/svg+xml');
         const sym = id ? svgDoc.getElementById(id) : svgDoc.documentElement;
         const svg = use.closest('svg');
@@ -149,8 +197,10 @@ async function snapshotHtml(page) {
 
 async function bundleCss(page) {
   return page.evaluate(async () => {
+    // every fetch is capped: one resource that never answers must not hang the whole capture
+    const fetchT = (u) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), 10000); return fetch(u, { signal: c.signal }).finally(() => clearTimeout(t)); };
     const toDataUri = async (u) => {
-      const r = await fetch(u); const b = await r.blob();
+      const r = await fetchT(u); const b = await r.blob();
       return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
     };
     // Only the font faces this page actually loaded are kept: the gateway offers a dozen
@@ -167,7 +217,7 @@ async function bundleCss(page) {
     let out = '';
     for (const sheet of [...document.styleSheets]) {
       let text = '';
-      if (sheet.href) text = await (await fetch(sheet.href)).text();
+      if (sheet.href) text = await (await fetchT(sheet.href)).text();
       else if (sheet.ownerNode) text = sheet.ownerNode.textContent;
       text = text.replace(/@font-face\s*\{[^}]*\}/gi, b => keepFace(b) ? b : '');
       const base = sheet.href || location.href;
@@ -211,22 +261,28 @@ async function bundleCss(page) {
     fs.mkdirSync(raw, { recursive: true });
     let terminal = null, bundled = false;
     for (const s of list) {
-      process.stdout.write(s.name + ' ... ');
-      await page.setViewport(s.viewport || VIEWPORT);
-      if (s.terminal && s.terminal !== terminal) { await selectTerminal(page, s.terminal); terminal = s.terminal; }
-      if (s.route) {
-        await page.goto(url(s.route), { waitUntil: 'networkidle2', timeout: 60000 });
-        await settle(page);
-      }
-      for (const a of s.actions || []) await act(page, a);
-      if (s.ready) await ready(page, s.ready);
-      await settle(page);
-      if (s.after) await sleep(s.after);
-      const vp = page.viewport();
-      fs.writeFileSync(path.join(raw, s.name + '.json'), JSON.stringify({ w: vp.width, h: vp.height, route: s.route || '', html: await snapshotHtml(page) }));
-      await page.screenshot({ path: path.join(raw, s.name + '.png') });
-      if (!bundled) { fs.writeFileSync(path.join(raw, 'bundle.css'), await bundleCss(page)); bundled = true; }
-      console.log('ok');
+      console.log(s.name + ' ...');
+      // a step that stalls fails loudly with its name instead of hanging the run
+      await Promise.race([
+        (async () => {
+          await page.setViewport(s.viewport || VIEWPORT);
+          if (s.terminal && s.terminal.join('/') !== terminal) { await selectTerminal(page, s.terminal); terminal = s.terminal.join('/'); }
+          if (s.route) {
+            await page.goto(url(s.route), { waitUntil: 'domcontentloaded', timeout: 60000 });
+            await settle(page);
+          }
+          for (const a of s.actions || []) await act(page, a);
+          if (s.ready) await ready(page, s.ready);
+          await settle(page);
+          if (s.after) await sleep(s.after);
+          const vp = page.viewport();
+          fs.writeFileSync(path.join(raw, s.name + '.json'), JSON.stringify({ w: vp.width, h: vp.height, route: s.route || '', html: await snapshotHtml(page) }));
+          await page.screenshot({ path: path.join(raw, s.name + '.png') });
+          if (!bundled) { fs.writeFileSync(path.join(raw, 'bundle.css'), await bundleCss(page)); bundled = true; }
+        })(),
+        sleep(120000).then(() => { throw new Error('step ' + s.name + ' took over 120 s'); })
+      ]);
+      console.log('  ok');
     }
   } finally {
     await browser.close();

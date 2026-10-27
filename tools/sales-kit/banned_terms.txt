@@ -33,7 +33,7 @@ zebra
 omniserver
 topserver
 baxter
-\$\s?\d
+(?<![A-Za-z0-9\]])\$\s?\d
 \bcontinuous\b
 # Real part-number shape, model codes, line names, press/machine codes, IPs (from the plant seed)
 \b\d{5}-[A-Z0-9]{3}\b

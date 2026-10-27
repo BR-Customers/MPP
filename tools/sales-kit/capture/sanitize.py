@@ -51,7 +51,7 @@ def rename_ident(text):
 def sanitize_tag(tag):
     def attr(m):
         name, val = m.group(1), m.group(2)
-        if name.strip().lower() == "class":
+        if name.strip().lower() in ("class", "style", "id"):   # identifiers and CSS variables, renamed like the bundle
             return f"{name}={rename_ident(val)}"
         if STRUCTURAL.match(name.strip()):
             return m.group(0)

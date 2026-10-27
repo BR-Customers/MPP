@@ -55,6 +55,16 @@ def test_skips_node_modules():
         assert code == 0, out
 
 
+def test_price_rule_ignores_component_paths():
+    with tempfile.TemporaryDirectory() as d:
+        write(d, "page.html", '<div data-component-path="C$0:0$0:1">x</div><i data-component-path="L[0]$0:0.0">y</i>')
+        code, out = run(d)
+        assert code == 0, out
+        write(d, "deck.txt", "It costs $5 a seat")
+        code, out = run(d)
+        assert code == 1, out
+
+
 def test_terms_only_ignores_dates():
     with tempfile.TemporaryDirectory() as d:
         write(d, "notes.md", "Released 2026-10-26")

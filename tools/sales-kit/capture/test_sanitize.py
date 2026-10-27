@@ -47,16 +47,40 @@ def test_replaces_text_attributes_hidden_and_css():
 def test_renames_project_token_in_classes_and_css_consistently():
     with tempfile.TemporaryDirectory() as d:
         css = CSS + ' .psc-mpp-header{color:red} .psc-MPP\\/Card{margin:0}'
-        page = PAGE.replace('<p>', '<div class="psc-MPP/Card x">c</div><p>')
+        page = PAGE.replace('<p>', '<div class="psc-MPP/Card x">c</div><div id="popup-mpp-elevation-modal">m</div><p>')
         p, caps = run(fixture(d, page=page, css=css))
         assert p.returncode == 0, p.stdout + p.stderr
         html = json.load(open(os.path.join(caps, "s1.json"), encoding="utf-8"))["html"]
         out_css = open(os.path.join(caps, "bundle.css"), encoding="utf-8").read()
         assert 'class="psc-app-header"' in html, html
         assert 'class="psc-APP/Card x"' in html, html
+        assert 'id="popup-app-elevation-modal"' in html, html
         assert ".psc-app-header{color:red}" in out_css, out_css
         assert ".psc-APP\\/Card{margin:0}" in out_css, out_css
         assert 'data-component="ia.display.label"' in html, html
+
+
+def test_style_attribute_variables_renamed_like_the_css():
+    with tempfile.TemporaryDirectory() as d:
+        css = CSS + ' :root{--mpp-text-primary:#fff}'
+        page = PAGE.replace('<p>', '<div style="color: var(--mpp-text-primary)">x</div><p>')
+        p, caps = run(fixture(d, page=page, css=css))
+        assert p.returncode == 0, p.stdout + p.stderr
+        html = json.load(open(os.path.join(caps, "s1.json"), encoding="utf-8"))["html"]
+        out_css = open(os.path.join(caps, "bundle.css"), encoding="utf-8").read()
+        assert 'style="color: var(--app-text-primary)"' in html, html
+        assert "--app-text-primary:#fff" in out_css, out_css
+
+
+def test_session_panel_gateway_url_and_component_paths():
+    with tempfile.TemporaryDirectory() as d:
+        page = PAGE.replace('<p>', '<div class="detail-data">http://localhost:8088</div>'
+                                   '<div data-component-path="C$0:0$0:1">y</div><p>')
+        p, caps = run(fixture(d, page=page))
+        assert p.returncode == 0, p.stdout + p.stderr
+        html = json.load(open(os.path.join(caps, "s1.json"), encoding="utf-8"))["html"]
+        assert "localhost" not in html, html
+        assert 'data-component-path="C$0:0$0:1"' in html, html
 
 
 def test_fails_on_gateway_reference():
