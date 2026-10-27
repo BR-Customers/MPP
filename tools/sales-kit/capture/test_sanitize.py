@@ -91,6 +91,18 @@ def test_strips_css_comments():
         out_css = open(os.path.join(caps, "bundle.css"), encoding="utf-8").read()
         assert "2026" not in out_css and ".a{color:red}" in out_css, out_css
 
+def test_drops_perspective_client_chrome():
+    with tempfile.TemporaryDirectory() as d:
+        page = PAGE.replace('<p>', '<div class="connection-banner banner-inactive"><div class="connection-message">No Connection</div></div>'
+                                   '<div class="app-modal-wrapper no-print"><div><div>Session ID 98a2</div></div></div>'
+                                   '<div class="center view-parent"><div>KEEP-ME</div></div><p>')
+        p, caps = run(fixture(d, page=page))
+        assert p.returncode == 0, p.stdout + p.stderr
+        html = json.load(open(os.path.join(caps, "s1.json"), encoding="utf-8"))["html"]
+        assert "No Connection" not in html and "Session ID" not in html, html
+        assert "KEEP-ME" in html and "<p>Tom" in html, html
+
+
 def test_fails_on_gateway_reference():
     with tempfile.TemporaryDirectory() as d:
         page = PAGE.replace("<p>", '<img src="http://localhost:8088/system/images/x.png"><p>')

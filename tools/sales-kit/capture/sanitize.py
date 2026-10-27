@@ -60,7 +60,33 @@ def sanitize_tag(tag):
     return ATTR.sub(attr, tag)
 
 
+# Perspective client chrome, not the application: the gateway-connection banner, the session
+# panel (gateway host name, session id, project timestamps), the app bar, the trial notice and the
+# notification area. Dropped whole so none of it reaches the kit.
+CHROME_CLASSES = ["connection-banner", "app-modal-wrapper", "app-bar", "action-panel-overlay", "notification-wrapper"]
+DIV_TAG = re.compile(r"<(/?)div\b[^>]*>", re.I)
+
+
+def drop_divs_with_class(page, cls):
+    opener = re.compile(r'<div\b[^>]*\bclass="(?:[^"]*\s)?' + re.escape(cls) + r'(?:\s[^"]*)?"[^>]*>', re.I)
+    while True:
+        m = opener.search(page)
+        if not m:
+            return page
+        depth, end = 0, None
+        for t in DIV_TAG.finditer(page, m.start()):
+            depth += -1 if t.group(1) else 1
+            if depth == 0:
+                end = t.end()
+                break
+        if end is None:
+            raise SystemExit("unbalanced <div> after class " + cls)
+        page = page[:m.start()] + page[end:]
+
+
 def sanitize_html(page):
+    for cls in CHROME_CLASSES:
+        page = drop_divs_with_class(page, cls)
     parts = TAG_SPLIT.split(page)
     return "".join(sanitize_tag(p) if p.startswith("<") else sub_escaped(p) for p in parts)
 

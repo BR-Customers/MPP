@@ -23,7 +23,7 @@ def load_patterns(terms_only=False):
             if line and not line.startswith("#"):
                 pats.append(re.compile(line, re.IGNORECASE))
     if not terms_only:   # dates matter in sales material, not in a database's audit columns
-        pats.append(re.compile(r"\b20\d\d-\d\d-\d\d\b"))
+        pats.append(re.compile(r"\b20\d\d-\d\d-\d\d(?!\d)"))   # also ISO timestamps (2026-10-27T08:32)
         pats.append(re.compile(rf"\b({MONTHS})\s+20\d\d\b", re.IGNORECASE))
     return pats
 
@@ -44,6 +44,7 @@ def scan_text(label, text, pats, hits):
 def main(folder, terms_only=False):
     pats = load_patterns(terms_only)
     hits = []
+    term_pats = load_patterns(True)   # Office file timestamps (docProps/core.xml) are not content
     for root, dirs, files in os.walk(folder):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for name in files:
@@ -56,7 +57,8 @@ def main(folder, terms_only=False):
                 with zipfile.ZipFile(path) as z:
                     for member in z.namelist():
                         if member.endswith((".xml", ".rels", ".txt")):
-                            scan_text(f"{rel}!{member}", z.read(member).decode("utf-8", "replace"), pats, hits)
+                            scan_text(f"{rel}!{member}", z.read(member).decode("utf-8", "replace"),
+                                      term_pats if member == "docProps/core.xml" else pats, hits)
             elif ext not in BINARY_EXTS:
                 with open(path, encoding="utf-8", errors="replace") as f:
                     scan_text(rel, f.read(), pats, hits)

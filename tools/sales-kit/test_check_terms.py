@@ -41,9 +41,28 @@ def test_flags_term_inside_pptx_xml():
         assert "slide1.xml" in out, out
 
 
+def test_office_timestamps_not_flagged_but_terms_are():
+    with tempfile.TemporaryDirectory() as d:
+        with zipfile.ZipFile(os.path.join(d, "x.pptx"), "w") as z:
+            z.writestr("docProps/core.xml", "<dcterms:created>2026-10-27T13:39:24Z</dcterms:created>")
+        code, out = run(d)
+        assert code == 0, out
+        with zipfile.ZipFile(os.path.join(d, "y.pptx"), "w") as z:
+            z.writestr("docProps/core.xml", "<dc:creator>MPP</dc:creator>")
+        code, out = run(d)
+        assert code == 1, out
+
+
 def test_flags_iso_date():
     with tempfile.TemporaryDirectory() as d:
         write(d, "notes.md", "Released 2026-10-26")
+        code, out = run(d)
+        assert code == 1, out
+
+
+def test_flags_iso_timestamp():
+    with tempfile.TemporaryDirectory() as d:
+        write(d, "page.html", "Last modified: 2026-10-27T08:32:35-04:00")
         code, out = run(d)
         assert code == 1, out
 
