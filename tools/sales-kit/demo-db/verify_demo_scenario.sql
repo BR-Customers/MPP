@@ -26,5 +26,9 @@ INSERT @r SELECT CASE WHEN (SELECT SUM(l.PieceCount) FROM Lots.Lot l JOIN Parts.
     WHERE i.PartNumber = N'SEAL-01' AND o.Code = N'Received' AND l.CurrentLocationId = @L1) BETWEEN 12 AND 23 THEN 1 ELSE 0 END, N'seal kits one tray from the lock (12..23 left)';
 INSERT @r SELECT CASE WHEN (SELECT COUNT(*) FROM Lots.Lot l JOIN Parts.Item i ON i.Id = l.ItemId JOIN Location.Location loc ON loc.Id = l.CurrentLocationId
     WHERE i.PartNumber IN (N'HSG-410', N'HSG-440') AND loc.Code = N'TRIM') >= 2 THEN 1 ELSE 0 END, N'baskets waiting at trim';
+-- the base build carries no quality state: modules 1-3 are captured without holds or super-lots
+-- (Build-DemoDatabase.ps1 runs this before the opt quality scenario is loaded)
+INSERT @r SELECT CASE WHEN NOT EXISTS (SELECT 1 FROM Quality.ControlledRun) AND NOT EXISTS (SELECT 1 FROM Quality.HoldEvent)
+    THEN 1 ELSE 0 END, N'no super-lot and no hold in the base build';
 SELECT CASE Ok WHEN 1 THEN N'PASS  ' ELSE N'FAIL  ' END + Check_ AS Result FROM @r ORDER BY Seq;
 IF EXISTS (SELECT 1 FROM @r WHERE Ok = 0) RAISERROR('verify_demo_scenario: one or more checks FAILED', 16, 1);
