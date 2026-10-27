@@ -63,3 +63,48 @@ as inline commands rather than with a relaxed execution policy.
 
 Open: the booking link for "Schedule a live demo with one of our engineers" is a placeholder in
 `demo-build/src/config.js` (`cta`) - set it there and rebuild.
+
+## Real screens (2026-10-27)
+
+The first kit's screens were a lookalike drawn in the demo. Both deliverables now show the real
+application, captured against a sample-plant database. Spec
+`docs/superpowers/specs/2026-10-26-mes-sales-kit-real-screens-design.md`, plan
+`docs/superpowers/plans/2026-10-26-mes-sales-kit-real-screens.md`.
+
+- **Database.** `tools/sales-kit/demo-db/Build-DemoDatabase.ps1` builds `MPP_MES_Demo` from the
+  migrations (`Reset-DevDatabase.ps1 -SkipSeeds`), the generic code-table seeds, `sql/seeds_demo/`
+  (sample plant, people, parts, dies) and a one-shift scenario run through the real procs, then
+  `sanitize_db.py` and the text-dump gate. Never loaded into Dev or prod.
+- **Capture.** Jacques points the gateway's `MPP` connection at `MPP_MES_Demo`,
+  `capture/capture.js` drives Chrome through 16 steps (terminal chosen through the location tree,
+  since the capture browser's IP is not a registered terminal), and the connection is switched
+  back to `MPP_MES_Dev` the same session (`demo-db/Check-GatewayDb.ps1 -Expect Dev`). Raw output
+  stays in the gitignored `tools/sales-kit/captures/`.
+- **Sanitize.** `capture/sanitize.py` applies `substitutions.json`, renames the project token in
+  classes, styles, ids and popup component paths, strips CSS comments and drops the Perspective
+  client chrome (session panel with the gateway host name, trial notice, banners), renders the deck
+  PNGs and gates the result. The kit-wide `check_terms.py` gate also catches ISO timestamps and
+  plural `LTTs`.
+- **Demo.** `demo-build/src/ui/rs.js` mounts each captured screen in a same-origin iframe at its
+  captured width, scaled to fit, and the module files fill live regions by `data-component-path`.
+  Numbers follow the application: baskets `520` + press + sequence, sub-LOTs `<parent>-NN`, trays
+  and received boxes `MESL…`, containers `Container #N`. 37 Node tests. Verified at 1600x900,
+  1024x768, 700x900, in an iframe and from `file://` (headless Chrome: no console errors, no
+  outside requests, every tour highlight found); all four tours at 10x with a reset mid-tour;
+  half-typed PIN, open elevation dialog, LOT detail tab and trim selection survive ticks.
+- **Deck.** 26 slides on `deck-build/screens-real/`; `check_deck.py` 10/10, `validate.py` passes.
+
+Rulings taken while building (not customer-visible):
+
+- Dropped: the Reports page (the rendered PDF carried the customer name in its pixels) and the
+  assembly low-inventory lock capture (could not be triggered on the sample data). The demo shows
+  the lock with the application's own station banner, worded for the lock, and a check-in dialog
+  of the demo's own.
+- Supervisor Dashboard: the three tiles the application still shows as placeholders
+  ("pending", "Phase 7") are hidden in the demo; "Paused LOTs" is relabelled "Open Baskets".
+- Assembly's printer banner ("No printer set up for this station") is a dev-environment artifact:
+  hidden in the demo, still visible on deck slide "Trays and containers at the line".
+- The unknown-PIN and register dialogs, the trim/press scrap dialogs and the reason picker are the
+  demo's own (the real popups were not captured).
+- Seen in passing, not investigated: Complete Tray with nobody signed in shows the expected refusal
+  plus a second "Required parameter missing (AppUserId)" toast.
