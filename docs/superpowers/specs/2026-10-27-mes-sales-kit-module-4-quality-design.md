@@ -1,7 +1,7 @@
 # MES sales kit -- module 4, Quality & containment (design)
 
 **Date:** 2026-10-27
-**Status:** Draft for Jacques's review (maturity decided; target deck file open, section 9)
+**Status:** Draft for Jacques's review (all decisions answered)
 **Builds on:** `docs/superpowers/specs/2026-10-22-mes-sales-kit-design.md` (the kit) and
 `docs/superpowers/specs/2026-10-26-mes-sales-kit-real-screens-design.md` (real screens, the sample
 plant database `MPP_MES_Demo`, the capture and sanitize pipeline). Everything in those stays in
@@ -175,10 +175,9 @@ beat is dropped from the kit and noted); the session does not stop for it.
 
 ## 9. Deck
 
-- **Target deck file -- OPEN, for Jacques.** The kit's committed deck is `MES Track & Trace -
-  Overview.pptx`; on 2026-10-27 the working tree has it deleted and an untracked
-  `MES Track & Trace - MPP.pptx` in its place. Which file module 4 goes into is settled before the
-  deck task starts. (A kit file name may not contain "MPP" -- the term gate bans it.)
+- **Target deck file:** `MES Track & Trace - Overview.pptx`, built by `deck-build/build_deck.js`.
+  (Jacques, 2026-10-27: the `- MPP.pptx` copy was a rename by mistake; content identical; the
+  committed Overview file was restored and the stray copy is deleted once PowerPoint closes it.)
 - Four slides after the menu, structured like modules 1-3 and ending with "Back to the menu":
   1. **Suspect material is caught automatically** -- super-lot page, window open, members growing.
   2. **Nothing suspect gets through** -- the refusals side by side, each naming the run.
