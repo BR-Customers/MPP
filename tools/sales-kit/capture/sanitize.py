@@ -44,6 +44,9 @@ def sub_escaped(fragment, quote=False):
 PROJECT_TOKEN = re.compile(r"(?<![A-Za-z0-9])(MPP|mpp|Mpp)(?![A-Za-z0-9])")
 
 
+POPUP_PATH = re.compile(r"\bP([A-Za-z]+)(?=-)")
+
+
 def rename_ident(text):
     return PROJECT_TOKEN.sub(lambda m: {"MPP": "APP", "mpp": "app", "Mpp": "App"}[m.group(1)], text)
 
@@ -53,6 +56,8 @@ def sanitize_tag(tag):
         name, val = m.group(1), m.group(2)
         if name.strip().lower() in ("class", "style", "id"):   # identifiers and CSS variables, renamed like the bundle
             return f"{name}={rename_ident(val)}"
+        if name.strip().lower() == "data-component-path":      # popup paths are P<popup id>: Pmpp-initials.0
+            return f"{name}={POPUP_PATH.sub(lambda p: 'P' + rename_ident(p.group(1)), val)}"
         if STRUCTURAL.match(name.strip()):
             return m.group(0)
         q, inner = val[0], val[1:-1]

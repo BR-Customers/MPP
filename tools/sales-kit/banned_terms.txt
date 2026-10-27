@@ -18,7 +18,7 @@ excsrv
 \b64A\b
 \b6C2\b
 \bDM\d{4}\b
-\bLTT\b
+\bLTTs?\b
 T-Out-A
 M-Out-A
 M-In-A

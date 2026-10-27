@@ -60,6 +60,16 @@ def test_renames_project_token_in_classes_and_css_consistently():
         assert 'data-component="ia.display.label"' in html, html
 
 
+def test_popup_component_paths_renamed():
+    with tempfile.TemporaryDirectory() as d:
+        page = PAGE.replace('<p>', '<div data-component-path="Pmpp-initials.0:0">x</div><div data-component-path="C$0:1[0].0">y</div><p>')
+        p, caps = run(fixture(d, page=page))
+        assert p.returncode == 0, p.stdout + p.stderr
+        html = json.load(open(os.path.join(caps, "s1.json"), encoding="utf-8"))["html"]
+        assert 'data-component-path="Papp-initials.0:0"' in html, html
+        assert 'data-component-path="C$0:1[0].0"' in html, html
+
+
 def test_style_attribute_variables_renamed_like_the_css():
     with tempfile.TemporaryDirectory() as d:
         css = CSS + ' :root{--mpp-text-primary:#fff}'

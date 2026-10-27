@@ -12,6 +12,7 @@
     ["(?i)\\bHonda AIM\\b", "customer"],
     ["(?i)\\bHonda\\b", "customer"],
     ["\\bAIM\\b", "Shipping System"],
+    ["\\bLTTs\\b", "LOT tickets"],
     ["\\bLTT\\b", "LOT ticket"],
     ["\\bT-Out-A\\b", "TrimOut"],
     ["\\bM-Out-A\\b", "MachiningOut"],
