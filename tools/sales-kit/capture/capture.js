@@ -3,6 +3,14 @@
 //
 //   node capture.js --steps all|name1,name2 --out <dir>      capture steps from steps.js
 //   node capture.js --probe                                  print the Terminal Selector's root node text
+//   options: --headed (visible Chrome, for steps a person signs in on), --steps-file <path>
+//            (default ./steps.js), --project <name> (default MPP; a step may set project)
+//
+// Step fields beyond steps.js's: stay:true (no navigation: carry on from the current page),
+// signIn:'jacques' + signInPrompt (after the actions, pause until the presenter has typed their
+// credentials in the window and pressed Enter here; no step timeout), noCapture:true (actions only).
+// Password inputs are never saved: their values are not copied, and a step whose screen still
+// shows a filled password field refuses to save (close the login popup first).
 //
 // Drives the installed Chrome through puppeteer-core (no browser download). Real input events, so
 // Perspective input bindings commit as they do for an operator. Output per step:
@@ -16,14 +24,15 @@ const fs = require('fs');
 const path = require('path');
 
 const GATEWAY = 'http://localhost:8088';
-const PROJECT = 'MPP';
+const PROJECT = 'MPP';   // default; --project or a step's project overrides
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const VIEWPORT = { width: 1904, height: 882 };
 
 const args = process.argv.slice(2);
 const arg = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const url = route => GATEWAY + '/data/perspective/client/' + PROJECT + route;
+let project = PROJECT;
+const url = (route, proj) => GATEWAY + '/data/perspective/client/' + (proj || project) + route;
 
 async function ready(page, what, timeout = 30000) {
   // `what` is a CSS selector, or text:<visible text> to wait for.
@@ -144,6 +153,9 @@ async function selectTerminal(page, treePath) {
 }
 
 async function snapshotHtml(page) {
+  const filled = await page.evaluate(() => [...document.querySelectorAll('input[type=password]')]
+    .some(el => el.value && el.getBoundingClientRect().height > 0));
+  if (filled) throw new Error('password field has a value - close the login popup before capturing');
   return page.evaluate(async (gateway) => {
     // every fetch is capped: one resource that never answers must not hang the whole capture
     const fetchT = (u) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), 10000); return fetch(u, { signal: c.signal }).finally(() => clearTimeout(t)); };
@@ -159,8 +171,10 @@ async function snapshotHtml(page) {
       const c = copies[i]; if (!c) return;
       if (el.tagName === 'TEXTAREA') c.textContent = el.value;
       else if (el.tagName === 'SELECT') [...c.options].forEach((o, j) => { if (j === el.selectedIndex) o.setAttribute('selected', ''); });
+      else if ((el.type || '').toLowerCase() === 'password') c.removeAttribute('value');   // never saved
       else { c.setAttribute('value', el.value); if (el.checked) c.setAttribute('checked', ''); }
     });
+    doc.querySelectorAll('input[type=password]').forEach(c => c.removeAttribute('value'));
     doc.querySelectorAll('script, link, style, noscript, iframe').forEach(e => e.remove());
     // <use> pointing at an external sprite -> inline the referenced symbol's content
     for (const use of [...doc.querySelectorAll('use')]) {
@@ -237,8 +251,17 @@ async function bundleCss(page) {
   });
 }
 
-(async () => {
-  const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', defaultViewport: VIEWPORT });
+function waitForEnter(prompt) {
+  process.stdout.write('\x07\n>>> SIGN-IN: ' + prompt + '\n>>> Press Enter here when you are signed in. ');
+  return new Promise(res => { process.stdin.resume(); process.stdin.once('data', () => { process.stdin.pause(); res(); }); });
+}
+
+async function main() {
+  const headed = args.includes('--headed');
+  project = arg('--project', PROJECT);
+  const browser = await puppeteer.launch(headed
+    ? { executablePath: CHROME, headless: false, defaultViewport: null, args: ['--window-size=' + VIEWPORT.width + ',' + (VIEWPORT.height + 140)] }
+    : { executablePath: CHROME, headless: 'new', defaultViewport: VIEWPORT });
   const page = await browser.newPage();
   try {
     if (args.includes('--probe')) {
@@ -253,7 +276,7 @@ async function bundleCss(page) {
       console.log(root);
       return;
     }
-    const steps = require('./steps.js');
+    const steps = require(path.resolve(arg('--steps-file', path.join(__dirname, 'steps.js'))));
     const want = arg('--steps', 'all');
     const list = want === 'all' ? steps : steps.filter(s => want.split(',').includes(s.name));
     if (!list.length) throw new Error('no steps match ' + want);
@@ -265,26 +288,31 @@ async function bundleCss(page) {
       // a step that stalls fails loudly with its name instead of hanging the run
       await Promise.race([
         (async () => {
-          await page.setViewport(s.viewport || VIEWPORT);
+          if (!headed || s.viewport) await page.setViewport(s.viewport || VIEWPORT);
           if (s.terminal && s.terminal.join('/') !== terminal) { await selectTerminal(page, s.terminal); terminal = s.terminal.join('/'); }
-          if (s.route) {
-            await page.goto(url(s.route), { waitUntil: 'domcontentloaded', timeout: 60000 });
+          if (s.route && !s.stay) {
+            await page.goto(url(s.route, s.project), { waitUntil: 'domcontentloaded', timeout: 60000 });
             await settle(page);
           }
           for (const a of s.actions || []) await act(page, a);
+          if (s.signIn) { await waitForEnter(s.signInPrompt || s.name); await settle(page); }
+          if (s.noCapture) return;
           if (s.ready) await ready(page, s.ready);
           await settle(page);
           if (s.after) await sleep(s.after);
-          const vp = page.viewport();
+          const vp = page.viewport() || await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
           fs.writeFileSync(path.join(raw, s.name + '.json'), JSON.stringify({ w: vp.width, h: vp.height, route: s.route || '', html: await snapshotHtml(page) }));
           await page.screenshot({ path: path.join(raw, s.name + '.png') });
           if (!bundled) { fs.writeFileSync(path.join(raw, 'bundle.css'), await bundleCss(page)); bundled = true; }
         })(),
-        sleep(120000).then(() => { throw new Error('step ' + s.name + ' took over 120 s'); })
+        s.signIn ? new Promise(() => {}) : sleep(120000).then(() => { throw new Error('step ' + s.name + ' took over 120 s'); })
       ]);
       console.log('  ok');
     }
   } finally {
     await browser.close();
   }
-})().catch(e => { console.error('\nFAILED: ' + e.message); process.exit(1); });
+}
+
+if (require.main === module) main().catch(e => { console.error('\nFAILED: ' + e.message); process.exit(1); });
+module.exports = { snapshotHtml, act, settle, ready, url };

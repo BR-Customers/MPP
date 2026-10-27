@@ -9,7 +9,7 @@ class, id, style, data-component*, href, src) and to CSS content:"..." strings. 
 sanitized <name>.json and bundle.css to --out-captures, and renders <name>.png into --out-screens
 by loading the sanitized page in headless Chrome at its captured viewport.
 Exits non-zero if any output still references a gateway (localhost / http(s) URL other than the
-SVG namespace) or if check_terms.py finds a customer term in it.
+SVG namespace), if a password input carries a value, or if check_terms.py finds a customer term in it.
 """
 import argparse, html, json, os, re, shutil, subprocess, sys, tempfile
 
@@ -21,6 +21,8 @@ TAG_SPLIT = re.compile(r"(<[^>]*>)")
 ATTR = re.compile(r"""(\s[\w:.-]+)=("[^"]*"|'[^']*')""")
 CSS_CONTENT = re.compile(r'(content\s*:\s*")([^"]*)(")')
 BAD_URL = re.compile(r"localhost|https?://(?!www\.w3\.org/)", re.I)
+# A login popup left open when a step was saved: what was typed must never reach the kit.
+PASSWORD_VALUE = re.compile(r'<input\b[^>]*type="password"[^>]*\bvalue="[^"]+"', re.I)
 
 rules = [(re.compile(p), r) for p, r in json.load(open(os.path.join(KIT_TOOLS, "substitutions.json"), encoding="utf-8"))["rules"]]
 
@@ -159,6 +161,8 @@ def main():
         m = BAD_URL.search(cap["html"])
         if m:
             problems.append(f"{name}: gateway reference near '{cap['html'][max(0, m.start() - 40):m.end() + 40]}'")
+        if PASSWORD_VALUE.search(cap["html"]):
+            problems.append(f"{name}: password input with a value")
         json.dump(cap, open(os.path.join(a.out_captures, name + ".json"), "w", encoding="utf-8"), ensure_ascii=False)
         if not a.no_render and not problems:
             render(cap["html"], css, cap["w"], cap["h"], os.path.join(a.out_screens, name + ".png"))

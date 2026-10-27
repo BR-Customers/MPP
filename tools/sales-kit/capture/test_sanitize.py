@@ -126,6 +126,15 @@ def test_strips_capture_dates_keeps_times_and_counts():
             assert kept in out, (kept, out)
 
 
+def test_fails_on_password_value():
+    # a login popup still open when a step was saved must never reach the kit with what was typed
+    page = '<html><body><input type="text" value="jdoe"><input type="password" value="hunter2"></body></html>'
+    with tempfile.TemporaryDirectory() as d:
+        p, _ = run(fixture(d, page=page))
+        assert p.returncode != 0, p.stdout
+        assert "password input" in p.stdout, p.stdout
+
+
 def test_fails_on_gateway_reference():
     with tempfile.TemporaryDirectory() as d:
         page = PAGE.replace("<p>", '<img src="http://localhost:8088/system/images/x.png"><p>')
