@@ -1,0 +1,229 @@
+<style>
+  .pf { background:#0f1a2b; color:#dfe7f2; font-family:Inter,Segoe UI,sans-serif; border-radius:8px; padding:16px; }
+  .pf .bar { display:flex; gap:8px; align-items:center; margin-bottom:14px; font-size:13px; flex-wrap:wrap; }
+  .pf .crumb { color:#8fa3bf; font-size:13px; }
+  .pf .title { font-size:20px; font-weight:700; margin-right:10px; }
+  .pf .chip { background:#1b2a42; border:1px solid #2c3f5e; border-radius:14px; padding:3px 10px; }
+  .pf .chip.on { background:#2563eb; border-color:#2563eb; color:#fff; }
+  .pf .seg { display:inline-flex; border:1px solid #2c3f5e; border-radius:14px; overflow:hidden; }
+  .pf .seg span { padding:3px 12px; background:#1b2a42; }
+  .pf .seg span.on { background:#2563eb; color:#fff; }
+  .pf .kpis { display:flex; gap:10px; margin-bottom:14px; }
+  .pf .kpi { flex:1; background:#1b2a42; border:1px solid #2c3f5e; border-radius:6px; padding:10px 12px; }
+  .pf .kpi .l { font-size:11px; text-transform:uppercase; color:#8fa3bf; letter-spacing:.06em; }
+  .pf .kpi.future { background:#0b1322; border-style:dashed; flex:.7; }
+  .pf .kpi.future .big { color:#34445e; } .pf .kpi.future .l { color:#4b5d78; }
+  .pf .big { font-size:26px; font-weight:700; }
+  .pf .sub { font-size:12px; color:#6b7f9c; }
+  .pf .g { color:#4ade80 } .pf .y { color:#facc15 } .pf .r { color:#f87171 } .pf .a { color:#f59e0b }
+  .pf .main { display:flex; gap:12px; }
+  .pf .left { flex:2.2; min-width:0; } .pf .right { flex:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
+  .pf .grp { background:#14223a; border:1px solid #22344f; border-radius:8px; padding:12px; margin-bottom:12px; }
+  .pf .ghead { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .pf .ghead b { font-size:16px; }
+  .pf .tiles { display:flex; flex-wrap:wrap; gap:8px; }
+  .pf .tile { background:#1b2a42; border:1px solid #2c3f5e; border-radius:6px; padding:8px 10px; width:150px; font-size:13px; cursor:pointer; }
+  .pf .tile.wide { width:230px; }
+  .pf .tile.bad { border-color:#f87171; }
+  .pf .tile.idle { opacity:.45; }
+  .pf .tile .nm { font-weight:600; font-size:14px; display:flex; justify-content:space-between; }
+  .pf .tile .val { font-size:24px; font-weight:700; margin:2px 0; }
+  .pf .row { display:flex; justify-content:space-between; color:#9fb0c8; font-size:12px; }
+  .pf .row.child { padding-left:10px; border-left:2px solid #2c3f5e; margin-top:2px; }
+  .pf .panel { background:#14223a; border:1px solid #22344f; border-radius:8px; padding:12px; }
+  .pf .panel h5, .pf .grp h5 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#8fa3bf; }
+  .pf .pbar { display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:6px; }
+  .pf .pbar .lb { width:46%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#c7d3e3; }
+  .pf .pbar .t { flex:1; } .pf .pbar .b { height:12px; background:#dc2626; border-radius:2px; }
+  .pf .pbar .b.p { background:#475569; } .pf .pbar .b.n { background:#f59e0b; }
+  .pf .pbar .q { width:40px; text-align:right; }
+  .pf table { width:100%; border-collapse:collapse; font-size:13px; }
+  .pf th { text-align:left; color:#8fa3bf; font-weight:500; padding:4px; border-bottom:1px solid #22344f; font-size:12px; }
+  .pf td { padding:4px; border-bottom:1px solid #1b2a42; }
+  .pf td.n, .pf th.n { text-align:right; }
+</style>
+
+<h2>Area pages: Die Cast, Trim, Machining &amp; Assembly</h2>
+<p class="subtitle">What opens when you tap an area card on the site overview. Same frame on all three: header and zoom, the area's numbers, tiles grouped by the real plant areas, and two panels on the right (downtime by reason, scrap). Tapping a tile opens the v5 drill-down. Numbers are made up; names are from the location seed.</p>
+
+<!-- ===================== DIE CAST ===================== -->
+<div class="mockup">
+  <div class="mockup-header">1 · Die Cast</div>
+  <div class="mockup-body"><div class="pf">
+    <div class="bar"><span class="crumb">Plant ›</span><span class="title">Die Cast</span>
+      <span class="seg"><span class="on">Shift</span><span>Day</span><span>Week</span></span>
+      <span class="chip">‹</span><span class="chip on">2nd · Tue Oct 27</span><span class="chip">›</span></div>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Availability</div><div class="big y">81%</div><div class="sub">384 min unplanned</div></div>
+      <div class="kpi"><div class="l">Quality</div><div class="big g">95.6%</div><div class="sub">5,240 good · 241 scrap</div></div>
+      <div class="kpi"><div class="l">No reason</div><div class="big a">2</div><div class="sub">entries · 45 min</div></div>
+      <div class="kpi future"><div class="l">Performance</div><div class="big">—</div><div class="sub">Future deployment</div></div>
+      <div class="kpi future"><div class="l">OEE</div><div class="big">—</div><div class="sub">Future deployment</div></div>
+    </div>
+    <div class="main">
+      <div class="left">
+        <div class="grp"><div class="ghead"><b>Die Cast 1</b><span class="sub">Avail 79% · Quality 95.2%</span></div>
+          <div class="tiles">
+            <div class="tile"><div class="nm">DC1-M01</div><div class="val g">94%</div><div class="row"><span>Quality</span><span>97.8%</span></div><div class="row"><span>Down</span><span>22 min</span></div><div class="row"><span>Die</span><span>DM0124</span></div></div>
+            <div class="tile"><div class="nm">DC1-M02</div><div class="val g">91%</div><div class="row"><span>Quality</span><span>96.1%</span></div><div class="row"><span>Down</span><span>34 min</span></div><div class="row"><span>Die</span><span>DM0031</span></div></div>
+            <div class="tile"><div class="nm">DC1-M03</div><div class="val g">96%</div><div class="row"><span>Quality</span><span>98.4%</span></div><div class="row"><span>Down</span><span>12 min</span></div><div class="row"><span>Die</span><span>DM0077</span></div></div>
+            <div class="tile"><div class="nm">DC1-M04</div><div class="val y">74%</div><div class="row"><span>Quality</span><span>94.0%</span></div><div class="row"><span>Down</span><span>95 min</span></div><div class="row"><span>Die</span><span>DM0052</span></div></div>
+            <div class="tile idle"><div class="nm">DC1-M05</div><div class="val">—</div><div class="row"><span>Not scheduled</span></div></div>
+            <div class="tile"><div class="nm">DC1-M06</div><div class="val g">89%</div><div class="row"><span>Quality</span><span>95.5%</span></div><div class="row"><span>Down</span><span>41 min</span></div><div class="row"><span>Die</span><span>DM0108</span></div></div>
+            <div class="tile bad"><div class="nm">DC1-M11 <span class="a" style="font-size:11px">no reason</span></div><div class="val r">61%</div><div class="row"><span>Quality</span><span>95.0%</span></div><div class="row"><span>Down</span><span>175 min</span></div><div class="row"><span>Die</span><span>DM0124</span></div></div>
+            <div class="tile" style="border-style:dashed;color:#6b7f9c;display:flex;align-items:center;justify-content:center">+ 4 more</div>
+          </div>
+        </div>
+        <div class="grp"><div class="ghead"><b>Die Cast 2</b><span class="sub">Avail 77% · Quality 95.9%</span></div>
+          <div class="tiles">
+            <div class="tile bad"><div class="nm">DC2-M07</div><div class="val r">52%</div><div class="row"><span>Quality</span><span>96.3%</span></div><div class="row"><span>Down</span><span>216 min</span></div><div class="row"><span>Die</span><span>DM0140</span></div></div>
+            <div class="tile"><div class="nm">DC2-M08</div><div class="val g">92%</div><div class="row"><span>Quality</span><span>95.7%</span></div><div class="row"><span>Down</span><span>30 min</span></div><div class="row"><span>Die</span><span>DM0061</span></div></div>
+            <div class="tile" style="border-style:dashed;color:#6b7f9c;display:flex;align-items:center;justify-content:center">+ 5 more</div>
+          </div>
+        </div>
+        <div class="sub">Die Cast 3 and Die Cast 4 below, same shape.</div>
+      </div>
+      <div class="right">
+        <div class="panel"><h5>Downtime by reason</h5>
+          <div class="pbar"><span class="lb">Die change overrun</span><span class="t"><div class="b" style="width:100%"></div></span><span class="q">148</span></div>
+          <div class="pbar"><span class="lb">Ladle fault</span><span class="t"><div class="b" style="width:62%"></div></span><span class="q">92</span></div>
+          <div class="pbar"><span class="lb">Spray adjust</span><span class="t"><div class="b" style="width:38%"></div></span><span class="q">56</span></div>
+          <div class="pbar"><span class="lb">(no reason)</span><span class="t"><div class="b n" style="width:30%"></div></span><span class="q">45</span></div>
+          <div class="pbar"><span class="lb">Lunch / breaks (planned)</span><span class="t"><div class="b p" style="width:90%"></div></span><span class="q">330</span></div>
+        </div>
+        <div class="panel"><h5>Scrap by defect</h5>
+          <table><tr><th>Defect</th><th>Part</th><th class="n">Qty</th></tr>
+            <tr><td>Porosity</td><td>5G0-A</td><td class="n">96</td></tr>
+            <tr><td>Cold shut</td><td>5G0-A</td><td class="n">58</td></tr>
+            <tr><td>Flash</td><td>6MA-CH</td><td class="n">41</td></tr>
+            <tr><td>Misrun</td><td>RPY-CB</td><td class="n">27</td></tr>
+          </table></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<p class="subtitle">Each press tile shows the die it ran this shift. My guess at what's useful: tell me if you'd rather see the part. If a press ran two dies in one shift, the tile shows the last one.</p>
+
+<!-- ===================== TRIM ===================== -->
+<div class="mockup" style="margin-top:16px">
+  <div class="mockup-header">2 · Trim</div>
+  <div class="mockup-body"><div class="pf">
+    <div class="bar"><span class="crumb">Plant ›</span><span class="title">Trim</span>
+      <span class="seg"><span class="on">Shift</span><span>Day</span><span>Week</span></span>
+      <span class="chip">‹</span><span class="chip on">2nd · Tue Oct 27</span><span class="chip">›</span></div>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Availability</div><div class="big g">87%</div><div class="sub">141 min unplanned</div></div>
+      <div class="kpi"><div class="l">Quality</div><div class="big g">97.1%</div><div class="sub">2,930 good · 87 scrap</div></div>
+      <div class="kpi"><div class="l">No reason</div><div class="big">0</div><div class="sub">entries</div></div>
+      <div class="kpi future"><div class="l">Performance</div><div class="big">—</div><div class="sub">Future deployment</div></div>
+      <div class="kpi future"><div class="l">OEE</div><div class="big">—</div><div class="sub">Future deployment</div></div>
+    </div>
+    <div class="main">
+      <div class="left">
+        <div class="grp"><div class="ghead"><b>Trim Shop 1</b><span class="sub">Avail 85% · Shop quality <b class="g">96.8%</b></span></div>
+          <div class="tiles">
+            <div class="tile"><div class="nm">TRIM1-P01</div><div class="val g">90%</div><div class="row"><span>Down</span><span>48 min</span></div></div>
+            <div class="tile"><div class="nm">TRIM1-P02</div><div class="val y">78%</div><div class="row"><span>Down</span><span>96 min</span></div></div>
+            <div class="tile"><div class="nm">TRIM1-P03</div><div class="val g">88%</div><div class="row"><span>Down</span><span>58 min</span></div></div>
+          </div>
+          <h5 style="margin-top:12px">Shop scrap by part</h5>
+          <table><tr><th>Part</th><th>Top defect</th><th class="n">Good</th><th class="n">Scrap</th><th class="n">Quality</th></tr>
+            <tr><td>5G0-A</td><td>Trim crack</td><td class="n">820</td><td class="n">31</td><td class="n">96.4%</td></tr>
+            <tr><td>6MA-CH</td><td>Burr</td><td class="n">610</td><td class="n">17</td><td class="n">97.3%</td></tr>
+          </table>
+        </div>
+        <div class="grp"><div class="ghead"><b>Trim Shop 2</b><span class="sub">Avail 89% · Shop quality <b class="g">97.4%</b></span></div>
+          <div class="tiles">
+            <div class="tile"><div class="nm">TRIM2-P01</div><div class="val g">92%</div><div class="row"><span>Down</span><span>38 min</span></div></div>
+            <div class="tile"><div class="nm">TRIM2-P02</div><div class="val g">86%</div><div class="row"><span>Down</span><span>67 min</span></div></div>
+            <div class="tile idle"><div class="nm">TRIM2-P03</div><div class="val">—</div><div class="row"><span>Not scheduled</span></div></div>
+          </div>
+          <h5 style="margin-top:12px">Shop scrap by part</h5>
+          <table><tr><th>Part</th><th>Top defect</th><th class="n">Good</th><th class="n">Scrap</th><th class="n">Quality</th></tr>
+            <tr><td>RPY-CB</td><td>Burr</td><td class="n">900</td><td class="n">22</td><td class="n">97.6%</td></tr>
+            <tr><td>66B-TC</td><td>Trim crack</td><td class="n">600</td><td class="n">17</td><td class="n">97.2%</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="right">
+        <div class="panel"><h5>Downtime by reason</h5>
+          <div class="pbar"><span class="lb">Die swap</span><span class="t"><div class="b" style="width:100%"></div></span><span class="q">62</span></div>
+          <div class="pbar"><span class="lb">Jam</span><span class="t"><div class="b" style="width:64%"></div></span><span class="q">40</span></div>
+          <div class="pbar"><span class="lb">Hydraulic fault</span><span class="t"><div class="b" style="width:62%"></div></span><span class="q">39</span></div>
+          <div class="pbar"><span class="lb">Lunch / breaks (planned)</span><span class="t"><div class="b p" style="width:100%"></div></span><span class="q">150</span></div>
+        </div>
+        <div class="panel"><h5>Scrap by defect</h5>
+          <table><tr><th>Defect</th><th>Part</th><th class="n">Qty</th></tr>
+            <tr><td>Trim crack</td><td>5G0-A</td><td class="n">31</td></tr>
+            <tr><td>Burr</td><td>RPY-CB</td><td class="n">22</td></tr>
+            <tr><td>Burr</td><td>6MA-CH</td><td class="n">17</td></tr>
+            <tr><td>Trim crack</td><td>66B-TC</td><td class="n">17</td></tr>
+          </table></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<p class="subtitle">Press tiles carry availability and downtime only. Quality sits on the shop, broken out by part, because that's the level trim scrap is recorded at.</p>
+
+<!-- ===================== M&A ===================== -->
+<div class="mockup" style="margin-top:16px">
+  <div class="mockup-header">3 · Machining &amp; Assembly</div>
+  <div class="mockup-body"><div class="pf">
+    <div class="bar"><span class="crumb">Plant ›</span><span class="title">Machining &amp; Assembly</span>
+      <span class="seg"><span class="on">Shift</span><span>Day</span><span>Week</span></span>
+      <span class="chip">‹</span><span class="chip on">2nd · Tue Oct 27</span><span class="chip">›</span></div>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Availability</div><div class="big y">84%</div><div class="sub">87 min unplanned</div></div>
+      <div class="kpi"><div class="l">Quality</div><div class="big g">98.8%</div><div class="sub">3,300 good · 40 scrap</div></div>
+      <div class="kpi"><div class="l">No reason</div><div class="big a">2</div><div class="sub">entries · 50 min</div></div>
+      <div class="kpi future"><div class="l">Performance</div><div class="big">—</div><div class="sub">Future deployment</div></div>
+      <div class="kpi future"><div class="l">OEE</div><div class="big">—</div><div class="sub">Future deployment</div></div>
+    </div>
+    <div class="main">
+      <div class="left">
+        <div class="grp"><div class="ghead"><b>Machining &amp; Assembly 2</b><span class="sub">Avail 83% · Quality 98.6%</span></div>
+          <div class="tiles">
+            <div class="tile wide"><div class="nm">6MA Cam Holder Line 1</div><div class="val y">82%</div>
+              <div class="row"><span>Quality</span><span>96.9%</span></div><div class="row"><span>Good / scrap</span><span>620 / 20</span></div>
+              <div class="row child"><span>Machining</span><span class="g">90%</span></div>
+              <div class="row child"><span>Assembly Conveyor A</span><span class="r">71%</span></div>
+              <div class="row child"><span>Assembly Conveyor B</span><span class="g">85%</span></div></div>
+            <div class="tile wide"><div class="nm">6MA Cam Holder Line 2</div><div class="val g">91%</div>
+              <div class="row"><span>Quality</span><span>99.2%</span></div><div class="row"><span>Good / scrap</span><span>590 / 5</span></div>
+              <div class="row child"><span>Machining</span><span class="g">93%</span></div>
+              <div class="row child"><span>Assembly Conveyor A</span><span class="g">90%</span></div>
+              <div class="row child"><span>Assembly Conveyor B</span><span class="g">90%</span></div></div>
+            <div class="tile"><div class="nm">6ma oil pan</div><div class="val g">88%</div><div class="row"><span>Quality</span><span>99.0%</span></div><div class="row"><span>Good / scrap</span><span>410 / 4</span></div></div>
+            <div class="tile"><div class="nm">64A Oil Pan</div><div class="val g">94%</div><div class="row"><span>Quality</span><span>99.5%</span></div><div class="row"><span>Good / scrap</span><span>380 / 2</span></div></div>
+            <div class="tile idle"><div class="nm">59b Cam holder</div><div class="val">—</div><div class="row"><span>Not scheduled</span></div></div>
+            <div class="tile" style="border-style:dashed;color:#6b7f9c;display:flex;align-items:center;justify-content:center">+ 8 more</div>
+          </div>
+        </div>
+        <div class="grp"><div class="ghead"><b>Machining &amp; Assembly 1</b><span class="sub">Avail 86% · Quality 99.1%</span></div>
+          <div class="tiles">
+            <div class="tile"><div class="nm">5G0 Front</div><div class="val g">92%</div><div class="row"><span>Quality</span><span>99.1%</span></div><div class="row"><span>Good / scrap</span><span>450 / 4</span></div></div>
+            <div class="tile bad"><div class="nm">5G0 Rear <span class="a" style="font-size:11px">no reason</span></div><div class="val y">76%</div><div class="row"><span>Quality</span><span>98.7%</span></div><div class="row"><span>Good / scrap</span><span>300 / 4</span></div></div>
+            <div class="tile" style="border-style:dashed;color:#6b7f9c;display:flex;align-items:center;justify-content:center">+ 5 more</div>
+          </div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="panel"><h5>Downtime by reason</h5>
+          <div class="pbar"><span class="lb">Fixture fault</span><span class="t"><div class="b" style="width:100%"></div></span><span class="q">38</span></div>
+          <div class="pbar"><span class="lb">(no reason)</span><span class="t"><div class="b n" style="width:100%"></div></span><span class="q">50</span></div>
+          <div class="pbar"><span class="lb">Tool change</span><span class="t"><div class="b" style="width:55%"></div></span><span class="q">21</span></div>
+          <div class="pbar"><span class="lb">Camera fault</span><span class="t"><div class="b" style="width:40%"></div></span><span class="q">15</span></div>
+          <div class="pbar"><span class="lb">Lunch / breaks (planned)</span><span class="t"><div class="b p" style="width:100%"></div></span><span class="q">390</span></div>
+        </div>
+        <div class="panel"><h5>Scrap by line</h5>
+          <table><tr><th>Line</th><th>Top defect</th><th class="n">Qty</th></tr>
+            <tr><td>6MA Cam Holder Line 1</td><td>Bore oversize</td><td class="n">20</td></tr>
+            <tr><td>6MA Cam Holder Line 2</td><td>Leak test</td><td class="n">5</td></tr>
+            <tr><td>6ma oil pan</td><td>Thread</td><td class="n">4</td></tr>
+            <tr><td>5G0 Front</td><td>Bore oversize</td><td class="n">4</td></tr>
+          </table></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<p class="subtitle">A line's big number is the line's availability, which is the average of its stations that have OEE turned on. Lines with stations list them inside the tile; quality and scrap stay on the line. Lines with no flagged stations show just the line. The scrap panel lists lines here instead of defects, since there are many lines and each has its own defects.</p>

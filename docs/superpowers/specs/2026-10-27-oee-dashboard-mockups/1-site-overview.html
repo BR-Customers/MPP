@@ -1,0 +1,125 @@
+<style>
+  .pf { background:#0f1a2b; color:#dfe7f2; font-family:Inter,Segoe UI,sans-serif; border-radius:8px; padding:16px; }
+  .pf .bar { display:flex; gap:8px; align-items:center; margin-bottom:14px; font-size:13px; flex-wrap:wrap; }
+  .pf .title { font-size:20px; font-weight:700; margin-right:10px; }
+  .pf .chip { background:#1b2a42; border:1px solid #2c3f5e; border-radius:14px; padding:3px 10px; }
+  .pf .chip.on { background:#2563eb; border-color:#2563eb; color:#fff; }
+  .pf .seg { display:inline-flex; border:1px solid #2c3f5e; border-radius:14px; overflow:hidden; }
+  .pf .seg span { padding:3px 12px; background:#1b2a42; }
+  .pf .seg span.on { background:#2563eb; color:#fff; }
+  .pf .note { font-size:12px; color:#8fa3bf; }
+  .pf .kpis { display:flex; gap:10px; margin-bottom:14px; }
+  .pf .kpi { flex:1; background:#1b2a42; border:1px solid #2c3f5e; border-radius:6px; padding:10px 12px; }
+  .pf .kpi .l { font-size:11px; text-transform:uppercase; color:#8fa3bf; letter-spacing:.06em; }
+  .pf .kpi.future { background:#0b1322; border-style:dashed; }
+  .pf .kpi.future .big { color:#34445e; } .pf .kpi.future .l { color:#4b5d78; }
+  .pf .big { font-size:28px; font-weight:700; }
+  .pf .sub { font-size:12px; color:#6b7f9c; }
+  .pf .g { color:#4ade80 } .pf .y { color:#facc15 } .pf .r { color:#f87171 } .pf .a { color:#f59e0b }
+  .pf .areas { display:flex; gap:12px; }
+  .pf .area { flex:1; background:#14223a; border:1px solid #22344f; border-radius:8px; padding:12px; cursor:pointer; }
+  .pf .area:hover { border-color:#2563eb; }
+  .pf .ahead { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .pf .ahead b { font-size:17px; }
+  .pf .gauges { display:flex; justify-content:space-around; margin:4px 0 6px; }
+  .pf .gauges .l { font-size:11px; text-transform:uppercase; color:#8fa3bf; text-align:center; letter-spacing:.06em; }
+  .pf .stats { display:flex; justify-content:space-between; font-size:13px; padding:6px 0; border-top:1px solid #22344f; border-bottom:1px solid #22344f; margin-bottom:8px; }
+  .pf h5 { margin:8px 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#8fa3bf; }
+  .pf table { width:100%; border-collapse:collapse; font-size:13px; }
+  .pf td { padding:4px 2px; border-bottom:1px solid #1b2a42; }
+  .pf td.n { text-align:right; white-space:nowrap; }
+  .pf .spark { display:flex; align-items:flex-end; gap:4px; height:38px; margin-top:4px; }
+  .pf .spark div { flex:1; background:#2c4a7a; border-radius:2px 2px 0 0; }
+  .pf .spark div.last { background:#2563eb; }
+  .pf .days { display:flex; gap:4px; font-size:10px; color:#6b7f9c; } .pf .days span { flex:1; text-align:center; }
+  .pf .open { margin-top:10px; text-align:right; font-size:13px; color:#60a5fa; }
+</style>
+
+<h2>Site-wide OEE: one card per area</h2>
+<p class="subtitle">The landing page. It opens on the <b>last completed shift</b>, because downtime is only entered at shift end. Tapping an area card opens that area's tile page (layout A), and tapping a tile there opens the drill-down (v5). Shift / Day / Week works on every level.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Site overview · 2nd shift, Tue Oct 27 (last completed)</div>
+  <div class="mockup-body">
+  <div class="pf">
+    <div class="bar"><span class="title">Madison Plant OEE</span>
+      <span class="seg"><span class="on">Shift</span><span>Day</span><span>Week</span></span>
+      <span class="chip">‹</span><span class="chip on">2nd · Tue Oct 27 · 14:00–22:00</span><span class="chip">›</span>
+      <span class="note" style="margin-left:auto">Current shift (3rd) in progress, so its downtime isn't entered yet</span></div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="l">Plant availability</div><div class="big y">84%</div><div class="sub">612 min unplanned downtime</div></div>
+      <div class="kpi"><div class="l">Plant quality</div><div class="big g">96.4%</div><div class="sub">9,870 good · 368 scrap</div></div>
+      <div class="kpi"><div class="l">Downtime with no reason</div><div class="big a">4</div><div class="sub">entries · 95 min</div></div>
+      <div class="kpi future"><div class="l">Performance</div><div class="big">—</div><div class="sub">Coming in a future deployment</div></div>
+      <div class="kpi future"><div class="l">OEE</div><div class="big">—</div><div class="sub">Coming in a future deployment</div></div>
+    </div>
+
+    <div class="areas">
+
+      <!-- DIE CAST -->
+      <div class="area">
+        <div class="ahead"><b>Die Cast</b><span class="sub">22 presses</span></div>
+        <div class="gauges">
+          <div><svg viewBox="0 0 120 70" width="130"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#2c3f5e" stroke-width="12" stroke-linecap="round"/><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#facc15" stroke-width="12" stroke-linecap="round" stroke-dasharray="127 200"/><text x="60" y="58" text-anchor="middle" fill="#facc15" font-size="22" font-weight="700">81%</text></svg><div class="l">Availability</div></div>
+          <div><svg viewBox="0 0 120 70" width="130"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#2c3f5e" stroke-width="12" stroke-linecap="round"/><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#4ade80" stroke-width="12" stroke-linecap="round" stroke-dasharray="150 200"/><text x="60" y="58" text-anchor="middle" fill="#4ade80" font-size="22" font-weight="700">95.6%</text></svg><div class="l">Quality</div></div>
+        </div>
+        <div class="stats"><span>Down <b>384 min</b></span><span class="a">2 no reason</span><span>Scrap <b>241</b></span></div>
+        <h5>Lowest availability</h5>
+        <table>
+          <tr><td>DC2-M07</td><td class="n r">52%</td><td class="n sub">Die change overrun</td></tr>
+          <tr><td>DC1-M11</td><td class="n r">61%</td><td class="n sub">Ladle fault</td></tr>
+          <tr><td>DC1-M04</td><td class="n y">74%</td><td class="n sub">Spray adjust</td></tr>
+        </table>
+        <h5>Availability · last 7 days</h5>
+        <div class="spark"><div style="height:84%"></div><div style="height:88%"></div><div style="height:79%"></div><div style="height:86%"></div><div style="height:90%"></div><div style="height:83%"></div><div class="last" style="height:81%"></div></div>
+        <div class="days"><span>W</span><span>T</span><span>F</span><span>S</span><span>M</span><span>T</span><span>W</span></div>
+        <div class="open">Open Die Cast ›</div>
+      </div>
+
+      <!-- TRIM -->
+      <div class="area">
+        <div class="ahead"><b>Trim</b><span class="sub">9 machines · 2 shops</span></div>
+        <div class="gauges">
+          <div><svg viewBox="0 0 120 70" width="130"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#2c3f5e" stroke-width="12" stroke-linecap="round"/><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#4ade80" stroke-width="12" stroke-linecap="round" stroke-dasharray="136 200"/><text x="60" y="58" text-anchor="middle" fill="#4ade80" font-size="22" font-weight="700">87%</text></svg><div class="l">Availability</div></div>
+          <div><svg viewBox="0 0 120 70" width="130"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#2c3f5e" stroke-width="12" stroke-linecap="round"/><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#4ade80" stroke-width="12" stroke-linecap="round" stroke-dasharray="152 200"/><text x="60" y="58" text-anchor="middle" fill="#4ade80" font-size="22" font-weight="700">97.1%</text></svg><div class="l">Quality</div></div>
+        </div>
+        <div class="stats"><span>Down <b>141 min</b></span><span class="sub">0 no reason</span><span>Scrap <b>87</b></span></div>
+        <h5>Lowest availability</h5>
+        <table>
+          <tr><td>Hangar Blaster A</td><td class="n y">78%</td><td class="n sub">Media change</td></tr>
+          <tr><td>WTB Blaster</td><td class="n g">90%</td><td class="n sub">Jam</td></tr>
+          <tr><td>Trim Press 3</td><td class="n g">92%</td><td class="n sub">Die swap</td></tr>
+        </table>
+        <h5>Availability · last 7 days</h5>
+        <div class="spark"><div style="height:89%"></div><div style="height:91%"></div><div style="height:86%"></div><div style="height:88%"></div><div style="height:90%"></div><div style="height:85%"></div><div class="last" style="height:87%"></div></div>
+        <div class="days"><span>W</span><span>T</span><span>F</span><span>S</span><span>M</span><span>T</span><span>W</span></div>
+        <div class="open">Open Trim ›</div>
+      </div>
+
+      <!-- M&A -->
+      <div class="area">
+        <div class="ahead"><b>Machining &amp; Assembly</b><span class="sub">11 lines</span></div>
+        <div class="gauges">
+          <div><svg viewBox="0 0 120 70" width="130"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#2c3f5e" stroke-width="12" stroke-linecap="round"/><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#facc15" stroke-width="12" stroke-linecap="round" stroke-dasharray="132 200"/><text x="60" y="58" text-anchor="middle" fill="#facc15" font-size="22" font-weight="700">84%</text></svg><div class="l">Availability</div></div>
+          <div><svg viewBox="0 0 120 70" width="130"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#2c3f5e" stroke-width="12" stroke-linecap="round"/><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#4ade80" stroke-width="12" stroke-linecap="round" stroke-dasharray="155 200"/><text x="60" y="58" text-anchor="middle" fill="#4ade80" font-size="22" font-weight="700">98.8%</text></svg><div class="l">Quality</div></div>
+        </div>
+        <div class="stats"><span>Down <b>87 min</b></span><span class="a">2 no reason</span><span>Scrap <b>40</b></span></div>
+        <h5>Lowest availability</h5>
+        <table>
+          <tr><td>6MA Cam Holder 1</td><td class="n y">82%</td><td class="n sub">Conveyor A · fixture</td></tr>
+          <tr><td>5J6 Oil Pan</td><td class="n g">88%</td><td class="n sub">Tool change</td></tr>
+          <tr><td>5G0 Fronts</td><td class="n g">92%</td><td class="n sub">Camera fault</td></tr>
+        </table>
+        <h5>Availability · last 7 days</h5>
+        <div class="spark"><div style="height:86%"></div><div style="height:83%"></div><div style="height:88%"></div><div style="height:85%"></div><div style="height:87%"></div><div style="height:89%"></div><div class="last" style="height:84%"></div></div>
+        <div class="days"><span>W</span><span>T</span><span>F</span><span>S</span><span>M</span><span>T</span><span>W</span></div>
+        <div class="open">Open Machining &amp; Assembly ›</div>
+      </div>
+
+    </div>
+  </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:10px">Numbers are made up. Area and plant figures are pooled minutes and pooled counts, not an average of percentages, so a press that ran 8 hours weighs more than one that ran 2. Trim quality is the two shops combined, since trim scrap is recorded by shop and part, not by machine.</p>

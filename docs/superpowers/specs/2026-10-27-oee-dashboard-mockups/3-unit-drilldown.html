@@ -1,0 +1,95 @@
+<style>
+  .pf { background:#0f1a2b; color:#dfe7f2; font-family:Inter,Segoe UI,sans-serif; border-radius:8px; padding:14px; }
+  .pf .bar { display:flex; gap:8px; align-items:center; margin-bottom:12px; font-size:13px; flex-wrap:wrap; }
+  .pf .chip { background:#1b2a42; border:1px solid #2c3f5e; border-radius:14px; padding:3px 10px; }
+  .pf .chip.on { background:#2563eb; border-color:#2563eb; color:#fff; }
+  .pf .seg { display:inline-flex; border:1px solid #2c3f5e; border-radius:14px; overflow:hidden; }
+  .pf .seg span { padding:3px 12px; background:#1b2a42; }
+  .pf .seg span.on { background:#2563eb; color:#fff; }
+  .pf .crumb { color:#8fa3bf; font-size:12px; }
+  .pf .title { font-size:18px; font-weight:700; }
+  .pf .kpis { display:flex; gap:8px; margin-bottom:12px; }
+  .pf .kpi { flex:1; background:#1b2a42; border:1px solid #2c3f5e; border-radius:6px; padding:8px 10px; }
+  .pf .kpi .l { font-size:10px; text-transform:uppercase; color:#8fa3bf; letter-spacing:.06em; }
+  .pf .kpi.future { background:#0b1322; border-style:dashed; }
+  .pf .kpi.future .big { color:#34445e; }
+  .pf .big { font-size:24px; font-weight:700; }
+  .pf .sub { font-size:12px; color:#6b7f9c; }
+  .pf .g { color:#4ade80 } .pf .y { color:#facc15 } .pf .r { color:#f87171 }
+  .pf .panel { background:#14223a; border:1px solid #22344f; border-radius:8px; padding:10px; margin-bottom:10px; }
+  .pf .panel h5 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#8fa3bf; }
+  .pf .cols { display:flex; gap:10px; align-items:flex-start; }
+  .pf .pbar .track { flex:1; } .pf .pbar .n { width:36px; text-align:right; }
+  .pf td.fill { width:99%; }
+  .pf .cols > div { flex:1; }
+  .pf .pbar { display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:7px; }
+  .pf .pbar .lb { width:190px; flex:none; color:#c7d3e3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pf .pbar .b { height:12px; background:#dc2626; border-radius:2px; }
+  .pf .pbar .b.p { background:#475569; }
+  .pf table { width:100%; border-collapse:collapse; font-size:13px; }
+  .pf th { text-align:left; color:#8fa3bf; font-weight:500; padding:5px 6px; white-space:nowrap; border-bottom:1px solid #22344f; }
+  .pf td { padding:5px 6px; border-bottom:1px solid #1b2a42; }
+  .pf tr.click td { cursor:pointer; }
+  .pf .btn { background:#1b2a42; border:1px solid #2c3f5e; border-radius:4px; padding:1px 8px; font-size:10px; }
+  .pf .mini { display:inline-block; height:8px; background:#4ade80; border-radius:2px; vertical-align:middle; }
+</style>
+
+<h2>Drill-down v5 — tighter, three panels side by side, larger text</h2>
+<p class="subtitle">Shown at <b>Day</b> zoom. Downtime is durations (entered at shift end), not clock times. Each row in "Breakdown" zooms in one level.</p>
+
+<div class="mockup">
+  <div class="mockup-header">DC1-M11 · Tuesday (3rd → 1st → 2nd)</div>
+  <div class="mockup-body">
+  <div class="pf">
+    <div class="bar"><span class="crumb">Plant › Die Cast 1 ›</span><span class="title">DC1-M11</span>
+      <span style="margin-left:auto" class="seg"><span>Shift</span><span class="on">Day</span><span>Week</span></span>
+      <span class="chip">‹</span><span class="chip on">Tue Oct 27</span><span class="chip">›</span></div>
+
+    <div class="kpis">
+      <div class="kpi" style="text-align:center"><div class="l">Availability</div>
+        <svg viewBox="0 0 120 70" width="150"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#2c3f5e" stroke-width="12" stroke-linecap="round"/><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#facc15" stroke-width="12" stroke-linecap="round" stroke-dasharray="130 200"/><text x="60" y="58" text-anchor="middle" fill="#facc15" font-size="22" font-weight="700">83%</text></svg></div>
+      <div class="kpi" style="text-align:center"><div class="l">Quality</div>
+        <svg viewBox="0 0 120 70" width="150"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#2c3f5e" stroke-width="12" stroke-linecap="round"/><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#4ade80" stroke-width="12" stroke-linecap="round" stroke-dasharray="151 200"/><text x="60" y="58" text-anchor="middle" fill="#4ade80" font-size="22" font-weight="700">96.2%</text></svg></div>
+      <div class="kpi"><div class="l">Downtime</div><div class="big">320 min</div><div class="sub">14 entries · 2 with no reason</div></div>
+      <div class="kpi future"><div class="l">Performance</div><div class="big">—</div><div class="sub">Coming in a future deployment</div></div>
+      <div class="kpi future"><div class="l">OEE</div><div class="big">—</div><div class="sub">Coming in a future deployment</div></div>
+    </div>
+
+    <div class="panel"><h5>Breakdown — shifts in this day (tap to zoom in)</h5>
+      <table><tr><th>Shift</th><th>Availability</th><th></th><th>Quality</th><th>Unplanned</th><th>Planned</th><th>Good</th><th>Scrap</th></tr>
+        <tr class="click"><td>3rd · Mon 22:00–06:00</td><td class="g">94%</td><td><span class="mini" style="width:94px"></span></td><td>97.1%</td><td>27 min</td><td>30 min</td><td>1,150</td><td>34</td></tr>
+        <tr class="click"><td>1st · 06:00–14:00</td><td class="g">93%</td><td><span class="mini" style="width:93px"></span></td><td>96.8%</td><td>28 min</td><td>30 min</td><td>1,120</td><td>37</td></tr>
+        <tr class="click"><td>2nd · 14:00–22:00</td><td class="r">61%</td><td><span class="mini" style="width:61px;background:#f87171"></span></td><td>95.0%</td><td>175 min</td><td>30 min</td><td>1,140</td><td>64</td></tr>
+      </table>
+      <div class="sub" style="margin-top:4px">At Week zoom this lists the 7 days; at Shift zoom this panel is replaced by the downtime entries.</div>
+    </div>
+
+    <div class="cols">
+      <div class="panel"><h5>Downtime by reason <span class="chip" style="font-size:9px">reason</span> <span class="chip" style="font-size:9px">type</span></h5>
+        <div class="pbar"><span class="lb">DC-0041 Die change overrun</span><div class="track"><div class="b" style="width:100%"></div></div><span class="n">132</span></div>
+        <div class="pbar"><span class="lb">DC-0012 Ladle fault</span><div class="track"><div class="b" style="width:44%"></div></div><span class="n">58</span></div>
+        <div class="pbar"><span class="lb">(no reason)</span><div class="track"><div class="b" style="width:23%;background:#f59e0b"></div></div><span class="n">30</span></div>
+        <div class="pbar"><span class="lb">DC-0003 Spray adjust</span><div class="track"><div class="b" style="width:8%"></div></div><span class="n">10</span></div>
+        <div class="pbar"><span class="lb">Lunch / breaks</span><div class="track"><div class="b p" style="width:68%"></div></div><span class="n">90</span></div>
+      </div>
+      <div class="panel"><h5>Scrap by defect</h5>
+        <table><tr><th class="fill">Defect</th><th>Part</th><th>Qty</th></tr>
+          <tr><td>Porosity</td><td>5G0-A</td><td>71</td></tr>
+          <tr><td>Cold shut</td><td>5G0-A</td><td>40</td></tr>
+          <tr><td>Flash</td><td>5G0-B</td><td>24</td></tr>
+          <tr><td class="sub">Warm-up (non-reject)</td><td class="sub">—</td><td class="sub">41</td></tr>
+        </table>
+      </div>
+      <div class="panel" style="flex:1.3"><h5>Downtime entries (Shift zoom)</h5>
+      <table><tr><th>Min</th><th class="fill">Reason</th><th>Type</th><th>By</th><th></th></tr>
+        <tr><td>~87 min</td><td>DC-0041 Die change overrun</td><td>Setup</td><td>RK</td><td><span class="btn">Edit</span></td></tr>
+        <tr><td>~58 min</td><td>DC-0012 Ladle fault</td><td>Equipment</td><td>RK</td><td><span class="btn">Edit</span></td></tr>
+        <tr><td>~30 min</td><td style="color:#f59e0b">— no reason —</td><td></td><td>RK</td><td><span class="btn">Edit</span></td></tr>
+        <tr><td>30 min</td><td>Lunch</td><td>Break</td><td>RK</td><td><span class="btn">Edit</span></td></tr>
+      </table>
+    </div>
+
+</div>
+  </div>
+  </div>
+</div>
