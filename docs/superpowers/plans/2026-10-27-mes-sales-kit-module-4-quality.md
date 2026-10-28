@@ -8,6 +8,8 @@
 
 **Tech Stack:** SQL Server 2022 + sqlcmd; PowerShell; Node 24 + `puppeteer-core` driving the installed Chrome; Python 3.14 + PyMuPDF 1.28 (`import pymupdf`); the kit's vanilla-JS demo build (`build_demo.py`, `node --test`) and its pptxgenjs deck (`build_deck.js`, `check_deck.py`).
 
+> **Progress (2026-10-28):** Tasks 1-5 and 8 are done; resume at Task 6 step 2 (capture session with Jacques). State, rulings taken while building, and machine-specific paths: `notes/2026-10-28_sales-kit-module-4-HANDOFF.md`. Read it before continuing.
+
 **Spec:** `docs/superpowers/specs/2026-10-27-mes-sales-kit-module-4-quality-design.md`. Read it first, together with its parents: `2026-10-26-mes-sales-kit-real-screens-design.md` and `2026-10-22-mes-sales-kit-design.md`. The super-lot feature itself is described in `notes/2026-10-12_crt-super-lot-and-nonconformance-overview.md`.
 
 ## Global Constraints

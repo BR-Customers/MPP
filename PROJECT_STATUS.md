@@ -1,5 +1,17 @@
 # MPP MES — Project Status
 
+> ## 🚧 IN PROGRESS (2026-10-28) — Sales-kit module 4, Quality & containment (super-lots)
+>
+> Plan `docs/superpowers/plans/2026-10-27-mes-sales-kit-module-4-quality.md` approved, run natively: tasks 1-5 and 8 done (fact sheet, opt-in quality scenario in `MPP_MES_Demo`, headed capture with sign-in pauses, module 4 steps, PDF sanitizer, demo model). **Next: Task 6, the capture session with Jacques at the gateway** (also the super-lot screens' first gateway walk; bugs logged, not fixed). Handoff with state + rulings: `notes/2026-10-28_sales-kit-module-4-HANDOFF.md`. No application change.
+
+> ## 🚧 IN DESIGN (2026-10-27) — OEE dashboard: availability + quality, site -> area -> unit
+>
+> Spec drafted and builder-checked, **NOT approved, nothing built**: `docs/superpowers/specs/2026-10-27-oee-dashboard-design.md`, mockups in `docs/superpowers/specs/2026-10-27-oee-dashboard-mockups/`. Blocked on four questions for Jacques (scrap by where-found vs charged-to party; production-day boundary; SubAssembly-only M&A lines; whether a change order is needed, since the scope matrix lists OEE/KPIs as Not Included). **Handoff with decisions, verified facts and next steps: `notes/2026-10-28_handoff-oee-dashboard.md`.**
+
+> ## 🚧 OPEN (raised 2026-10-27) — MPP questions: can held parts ship? + part status matrix
+>
+> Investigated, answer drafted, **not sent to MPP, nothing built.** Held containers cannot ship (`Lots.Container_Ship` refuses an open hold), but only when shipping goes through the Shipping Dock scan -- so the benched "remove the Shipping Dock" idea conflicts with this. Suspected gap to discuss with Jacques: a hold on an FG tray LOT does not block its container. DC/TS/MS/FG are process stages, not statuses; the matrix is built from part type, route stage, LOT status, hold type and container status. Three open questions for Jacques. Full findings, draft content and the questions: **`notes/2026-10-28_mpp-hold-shipping-and-status-matrix.md`**.
+
 > ## 🚧 OPEN TODO (raised 2026-09-18, NEXT RELEASE) — Part-type recategorization
 >
 > MPP (phone call, 2026-09-18) uses five part categories: **MPP Cast**, **Components** (purchased), **Pass Through**, Sub-Assembly, Finished Good. What prod calls `PassThrough` today (the 33 parts `0089` retyped) are really **Components**; the true pass-through parts are the vendor-cast / vendor-machined finished goods in `reference/MPP pass through parts.pdf` (scanned, upside down: MPP + DSI tables and "New Model"; LMC / METTS / Hailin / DSI suppliers). The code keys on type **codes**, so the 2026-09-18 release behaves correctly on today's data -- only the labels are wrong.
