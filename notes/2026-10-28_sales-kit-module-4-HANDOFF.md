@@ -1,4 +1,4 @@
-# Sales-kit module 4 (Quality & containment) -- handoff, 2026-10-28
+# Sales-kit module 4 (Quality & containment) -- handoff, 2026-10-28 (updated 2026-10-29)
 
 Written so a fresh Claude session (another account, no memory of this one) can carry on from the
 two repos alone. Nothing below is in auto-memory or a session scratchpad.
@@ -36,19 +36,49 @@ ONE fresh review of the whole work on the most capable model at the end). Skills
 | 4 Module 4 steps (`tools/sales-kit/capture/steps_m4.js`, 29 steps, 10 sign-in pauses) | done | MPP `01a655f..65e37f7` |
 | 5 PDF sanitizer (`sanitize_pdf.py` + 6 tests) | done | MPP `65e37f7..433d3bf` |
 | 8 Demo model (holds, tags, super-lots) | done, 50/50 tests (37 old + 13 new) -- done before 6 on purpose | KIT `56472f9..92158cb` |
-| **6 Capture session with Jacques** | **step 1 done; resume at step 2** | -- |
-| 7 Deck module 4 | not started (needs Task 6 captures) | -- |
-| 9 Demo module 4 views + tour | not started (needs Task 6 captures + Task 8 API) | -- |
+| 6 Capture session (gateway walk) | done 2026-10-29: 23 captures in the kit, bug log written, gateway back on Dev (checked) | MPP `924469a`, KIT `e464f8d` |
+| 7 Deck module 4 | done: 4 slides + menu tile live; `check_deck.py` 14/14, `validate.py` passes, kit gate 0 hits | KIT `9eb207e` |
+| **9 Demo module 4 views + tour** | **not started -- resume here** | -- |
 | 10 Verify, document, final review | not started | -- |
 
-## Resume here: Task 6, step 2 (needs Jacques at the gateway)
+## Resume here: Task 9 (demo module 4 views + tour)
+
+Captures available in `KIT\demo-build\captures\` (all sanitized, same `bundle.css` as modules 1-3, so
+no second bundle): `m4-superlot-list`, `-members` (1904x1100), `-history`, `-results` (1100),
+`-results-saved` (1100), `m4-wizard-preview`, `m4-holds`, `m4-lot-held`, `m4-lot-member`,
+`-superlots-tab`, `-member-history`, `m4-lot-released-history` (1904x1400), `m4-genealogy`, `m4-trace`,
+`m4-dashboard`, `m4-refuse-machining-in`, `-in-hold`, `-machining-out`, `m4-refuse-dock`, `m4-repack`,
+`m4-deviation`, `m4-signoff-release`, `m4-history-after` (1100). Not captured: the label, the
+Super-lot PDF (BUG-1), the Assembly check-in refusal, Config Tool specs, the CRT clear, and a usable
+Sign-off-after-release (`m4-signoff-done` was removed: it caught the page deselected). The demo's
+"View the report" action and its sign-off-after-release state therefore have no capture to mount --
+draw them from the `m4-signoff-release` / `m4-history-after` captures or leave them out (rule it).
+
+## Rulings taken 2026-10-29 (capture session and Task 7)
+
+- Jacques (2026-10-29): this gateway is a test bed; the builder signs in itself with the test
+  logins he gave in chat (never written to a file). The "Active Directory" user source here is an
+  INTERNAL test source; the presenter login `admin1` is in `banned_terms.txt` / `substitutions.json`
+  (-> `quality.sample`). The Config Tool's own login (default IdP) does not know `admin1`.
+- The deck's last module 4 slide shows LOT Detail's Super-lots tab + the genealogy, not the PDF
+  (BUG-1). Slide 2 (refusals) shows Machining IN tagged / held, Machining OUT and the dock; Assembly
+  is described in the notes as "carries the tag onto the tray" (F23/F24). Slide 3 uses the release
+  popup, not the after-release Sign-off tab.
+- The dock's refusal (F12) does not name the super-lot; the deck says "a station's refusal names the
+  super-lot", which is true for F2 / F4.
+- The Sign-off tab's own banner ("Any network account registered in the MES can sign today...") is
+  visible in the capture; the notes answer "who can sign" from it (F47). Not a live claim.
+- `check_deck.py`'s continuous-wording regex held literal backspace characters and never matched;
+  fixed with the new checks.
+
+## (Done) Task 6 as it was briefed
 
 Already true: `MPP_MES_Demo` is built with `-WithQualityScenario` (rebuild if in doubt:
 `.\tools\sales-kit\demo-db\Build-DemoDatabase.ps1 -WithQualityScenario`, expect 46 PASS and
 "MPP_MES_Demo built, sanitized and verified."). The sample Quality user `EN` (E. Novak, PIN 61030)
 has `AdAccount = quality.sample`.
 
-1. Ask Jacques to: reset the Perspective trial; switch the gateway's `MPP` connection to
+1. (done) Ask Jacques to: reset the Perspective trial; switch the gateway's `MPP` connection to
    `MPP_MES_Demo` (he does it himself); tell you the AD login he will sign in with.
 2. Add that login to `banned_terms.txt` (word pattern) and `substitutions.json` (-> `quality.sample`),
    then `.\tools\sales-kit\demo-db\Set-QualityAdAccount.ps1 -Login <it>`; `.\tools\sales-kit\demo-db\Check-GatewayDb.ps1 -Expect Demo` -> PASS.

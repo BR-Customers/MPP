@@ -80,7 +80,9 @@ State at walk end (changed from 060): results recorded for every member with pie
 - **Expected:** the card shows "Release of 10 members" and the confirmation statement on its own lines.
 - **Actual:** the statement is squeezed into the title row: two lines drawn on top of each other and
   clipped. The deviation card below it renders fine.
-- **Screenshot:** `captures/m4/raw/m4-signoff-done.png`. **Likely place:** the signature row
+- **Screenshot:** none kept -- seen live at 11:17; the saved `m4-signoff-done` capture caught the
+  page after a websocket reconnect had deselected the super-lot, so it was removed from the kit.
+  Reproduce: rebuild, release any member, look at the card. **Likely place:** the signature row
   template's fixed height / text wrap in the Sign-off tab view.
 
 ## Observations and questions (not called bugs -- Jacques to rule)

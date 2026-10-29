@@ -1,8 +1,8 @@
 # MPP MES — Project Status
 
-> ## 🚧 IN PROGRESS (2026-10-28) — Sales-kit module 4, Quality & containment (super-lots)
+> ## 🚧 IN PROGRESS (2026-10-29) — Sales-kit module 4, Quality & containment (super-lots)
 >
-> Plan `docs/superpowers/plans/2026-10-27-mes-sales-kit-module-4-quality.md` approved, run natively: tasks 1-5 and 8 done (fact sheet, opt-in quality scenario in `MPP_MES_Demo`, headed capture with sign-in pauses, module 4 steps, PDF sanitizer, demo model). **Next: Task 6, the capture session with Jacques at the gateway** (also the super-lot screens' first gateway walk; bugs logged, not fixed). Handoff with state + rulings: `notes/2026-10-28_sales-kit-module-4-HANDOFF.md`. No application change.
+> Plan `docs/superpowers/plans/2026-10-27-mes-sales-kit-module-4-quality.md`: tasks 1-8 done. **2026-10-29: gateway walk + captures done, deck module 4 built** (KIT `9eb207e`: 4 slides + menu tile live, `check_deck.py` 14/14, `validate.py` passes, kit term gate 0 hits). 23 sanitized captures in the kit; gateway back on `MPP_MES_Dev` (checked). First gateway walk of the super-lot screens: `notes/2026-10-27_super-lot-gateway-walk-bugs.md` -- **2 bugs** (Reports Print PDF throws a ClassCastException, so no Super-lot PDF; release signature card text overlaps) and **11 questions for Jacques** (e.g. accepting a hard-held member, zero-piece members that cannot be released). Dropped from the kit: Super-lot PDF, label, Assembly check-in refusal (F6, unreachable on the scenario), Config Tool specs (none seeded). **Next: Task 9 (demo module 4 views + tour), then Task 10.** Handoff: `notes/2026-10-28_sales-kit-module-4-HANDOFF.md`. No application change.
 
 > ## 🚧 IN DESIGN (2026-10-27) — OEE dashboard: availability + quality, site -> area -> unit
 >
