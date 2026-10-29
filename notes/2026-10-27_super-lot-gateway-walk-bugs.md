@@ -54,7 +54,7 @@ State at walk end (changed from 060): results recorded for every member with pie
 
 ## Bugs
 
-### BUG-1 -- Reports: Print PDF throws for the Super-lot report (no PDF is produced)
+### BUG-1 -- Reports: Print PDF throws for the Super-lot report (no PDF is produced) -- FIXED `523867a0`
 
 - **Screen / route:** Reports (`/shop-floor/reports`), Super-lot report, `CR000001` picked.
 - **Steps:** state above; pick Super-lot, pick `CR000001` (the viewer renders 3 pages fine), press
@@ -72,8 +72,16 @@ State at walk end (changed from 060): results recorded for every member with pie
 - **Effect on the kit:** no Super-lot PDF; the deck's last module 4 slide uses LOT Detail + genealogy
   instead. (The on-screen viewer is not usable either: it draws the report as an image and the
   customer name is in its pixels.)
+- **Fixed 2026-10-29 (`523867a0`):** `view.custom.reportParams` reads back as a live
+  `PropertyTreeScriptWrapper$ObjectWrapper`, which `extractQualifiedValues` passes through untouched.
+  `printPdf` now copies it key by key into a plain dict (not a JSON round-trip, which would turn the
+  date-range params into strings) and catches Java exceptions too, so a failure reaches the toast
+  instead of only `wrapper.log`. The path is shared by every report on the page, so all of them were
+  broken. **Verified** on the gateway against `MPP_MES_Dev`: Print PDF returned `application/pdf`
+  (`%PDF-`) for Super-lot `CR000001` (44 KB, 3 pages) and Rejects - Plant Summary (14-day date range);
+  no errors in `wrapper.log`.
 
-### BUG-2 -- Super-lot Sign-off: the release signature card's text overlaps
+### BUG-2 -- Super-lot Sign-off: the release signature card's text overlaps -- FIXED `523867a0`
 
 - **Screen:** super-lot page, Sign-off tab, "Signatures on this super-lot", after a release.
 - **Steps:** release ticked members with a signature.
@@ -84,6 +92,12 @@ State at walk end (changed from 060): results recorded for every member with pie
   page after a websocket reconnect had deselected the super-lot, so it was removed from the kit.
   Reproduce: rebuild, release any member, look at the card. **Likely place:** the signature row
   template's fixed height / text wrap in the Sign-off tab view.
+- **Fixed 2026-10-29 (`523867a0`):** the Sign-off tab's deviation and signature repeaters held each
+  `Components/PlantFloor/ControlledRunInfoRow` at a fixed 84px (`useDefaultViewHeight`) with the
+  statement label at `basis: 0; grow: 1`. Both repeaters now use `basis: auto` rows and the statement
+  label sizes to its content. **Verified** on the gateway against `MPP_MES_Dev` (`CR000001`, its one
+  signed release): the card shows the title, the full two-line statement and the signer line; the
+  statement's height equals its content height, so nothing is clipped.
 
 ## Observations and questions (not called bugs -- Jacques to rule)
 
