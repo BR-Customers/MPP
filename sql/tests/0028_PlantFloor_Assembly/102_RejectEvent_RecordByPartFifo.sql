@@ -26,6 +26,9 @@
 --                 - short on the TOTAL -> refused, nothing recorded
 --                 - repeated reason / zero quantity / no lines / unknown or
 --                   deprecated reason / unreadable JSON -> refused
+--               v1.2 (OEE dashboard, spec 2026-10-27 sec 7.1):
+--                 - the reject row is stamped with the line (CellLocationId =
+--                   @LocationId) and the shift (Oee.ufn_ShiftIdForInstant)
 --               EXEC args are pre-assigned @variables (no inline CAST).
 -- =============================================
 SET NOCOUNT ON;
@@ -40,6 +43,8 @@ DELETE FROM Lots.LotMovement         WHERE LotId IN (SELECT Id FROM Lots.Lot WHE
 DELETE FROM Lots.LotEventLog         WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'SFT-%');
 DELETE FROM Lots.Lot                 WHERE LotName LIKE N'SFT-%';
 DELETE FROM Quality.DefectCode       WHERE Code IN (N'TEST-DEF-SF', N'TEST-DEF-SF2', N'TEST-DEF-SFX');
+DELETE FROM Oee.Shift                WHERE Remarks = N'SFT-SHIFT';
+DELETE FROM Oee.ShiftSchedule        WHERE Name = N'SFT-SHIFT-SCHED';
 GO
 
 -- ---- fixture ----
@@ -72,6 +77,21 @@ INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
 
 INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, MovedAt) VALUES ((SELECT Id FROM Lots.Lot WHERE LotName = N'SFT-A1'), NULL, @Cell, 1, @Now);
 INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, MovedAt) VALUES ((SELECT Id FROM Lots.Lot WHERE LotName = N'SFT-A2'), NULL, @Cell, 1, DATEADD(SECOND, 10, @Now));
+GO
+
+-- ---- shift fixture: a schedule whose window covers NOW (local), so
+-- Oee.ufn_ShiftIdForInstant resolves the reject's shift to OUR row. It starts
+-- one minute ago, so it is the latest-starting covering window and wins over
+-- any seeded schedule (resolver orders by StartLocal DESC). Closed (ActualEnd
+-- set) so it cannot collide with UIX_Shift_SingleOpen. Removed in cleanup so
+-- no later suite resolves "now" to it.
+DECLARE @NowLocal   DATETIME2(0) = CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(0));
+DECLARE @StartLocal DATETIME2(0) = DATEADD(MINUTE, -1, DATEADD(SECOND, -DATEPART(SECOND, @NowLocal), @NowLocal));
+DECLARE @EndLocal   DATETIME2(0) = DATEADD(HOUR, 2, @StartLocal);
+INSERT INTO Oee.ShiftSchedule (Name, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedByUserId)
+VALUES (N'SFT-SHIFT-SCHED', CAST(@StartLocal AS TIME(0)), CAST(@EndLocal AS TIME(0)), 127, DATEADD(DAY, -2, CAST(@StartLocal AS DATE)), 1);
+INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks)
+VALUES ((SELECT Id FROM Oee.ShiftSchedule WHERE Name = N'SFT-SHIFT-SCHED'), @StartLocal, @EndLocal, N'SFT-SHIFT');
 GO
 
 -- =============================================
@@ -117,6 +137,12 @@ EXEC test.Assert_IsEqual @TestName = N'[SfOne] exactly one reject row', @Expecte
 DECLARE @Stamp NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent
                                WHERE Id = (SELECT NewId FROM #R) AND ItemId = @A);
 EXEC test.Assert_IsEqual @TestName = N'[SfOne] NewId row carries the stamped ItemId', @Expected = N'1', @Actual = @Stamp;
+DECLARE @CellExp NVARCHAR(20) = CAST(@Cell AS NVARCHAR(20));
+DECLARE @CellAct NVARCHAR(20) = (SELECT CAST(CellLocationId AS NVARCHAR(20)) FROM Workorder.RejectEvent WHERE Id = (SELECT NewId FROM #R));
+EXEC test.Assert_IsEqual @TestName = N'[SfOne] reject CellLocationId = @LocationId (the line)', @Expected = @CellExp, @Actual = @CellAct;
+DECLARE @ShiftExp NVARCHAR(20) = (SELECT CAST(Id AS NVARCHAR(20)) FROM Oee.Shift WHERE Remarks = N'SFT-SHIFT');
+DECLARE @ShiftAct NVARCHAR(20) = (SELECT CAST(ShiftId AS NVARCHAR(20)) FROM Workorder.RejectEvent WHERE Id = (SELECT NewId FROM #R));
+EXEC test.Assert_IsEqual @TestName = N'[SfOne] reject ShiftId = ufn_ShiftIdForInstant(line, now)', @Expected = @ShiftExp, @Actual = @ShiftAct;
 DROP TABLE #R;
 GO
 
@@ -416,6 +442,8 @@ DELETE FROM Lots.LotMovement         WHERE LotId IN (SELECT Id FROM Lots.Lot WHE
 DELETE FROM Lots.LotEventLog         WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'SFT-%');
 DELETE FROM Lots.Lot                 WHERE LotName LIKE N'SFT-%';
 DELETE FROM Quality.DefectCode       WHERE Code IN (N'TEST-DEF-SF', N'TEST-DEF-SF2', N'TEST-DEF-SFX');
+DELETE FROM Oee.Shift                WHERE Remarks = N'SFT-SHIFT';
+DELETE FROM Oee.ShiftSchedule        WHERE Name = N'SFT-SHIFT-SCHED';
 GO
 
 EXEC test.EndTestFile;

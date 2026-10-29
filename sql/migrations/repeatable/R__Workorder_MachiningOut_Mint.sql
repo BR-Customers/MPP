@@ -2,7 +2,9 @@
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
--- Version:     2.7 (2026-10-21, super-lot piece 6) - CRT refusal names the open super-lot ('is marked CRT (super-lot <RN>)', via
+-- Version:     2.8 (2026-10-29, OEE dashboard spec sec 7.2) - the Machining OUT scrap rows now STAMP ShiftId from
+--              Oee.ufn_ShiftIdForInstant(<the line>, now), so line scrap lands in its shift on the OEE dashboard.
+--              2.7 (2026-10-21, super-lot piece 6) - CRT refusal names the open super-lot ('is marked CRT (super-lot <RN>)', via
 --              Quality.ufn_OpenControlledRunForLot); no open super-lot = the text is unchanged.
 --              2.6 (2026-09-15, reject identity) - the Machining OUT scrap rows now
 --              STAMP ItemId + CellLocationId + TerminalLocationId. 0084 made a reject
@@ -267,11 +269,13 @@ BEGIN
             -- in the plant collapses into that one bucket on the scrap matrix.
             -- @SrcItem is the CONSUMED casting's part, which is what was
             -- scrapped -- NOT @ProducedItemId, which was never made.
-            -- ToolId / ToolCavityId / ShiftId stay NULL deliberately: a
-            -- machining line has no die and no cavity, and this proc carries
-            -- no shift context.
-            INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
-            SELECT NULL, @SourceLotId, @SrcItem, @SrcLoc, s.DefectCodeId, s.Quantity, NULL, N'Machining OUT scrap', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
+            -- ToolId / ToolCavityId stay NULL deliberately: a machining line
+            -- has no die and no cavity. v2.8: ShiftId is resolved for the line
+            -- (@SrcLoc) the same way TrimOut_Record does it.
+            DECLARE @RejShiftId BIGINT = (SELECT TOP 1 ShiftId
+                                          FROM Oee.ufn_ShiftIdForInstant(@SrcLoc, SYSUTCDATETIME()));
+            INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt, ShiftId)
+            SELECT NULL, @SourceLotId, @SrcItem, @SrcLoc, s.DefectCodeId, s.Quantity, NULL, N'Machining OUT scrap', @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @RejShiftId
             FROM @Scrap s;
         END
 

@@ -20,6 +20,23 @@ SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0027_PlantFloor_Machining/080_MachiningOut_Mint_scrap.sql';
 GO
 
+-- ---- shift fixture (v2.8, OEE dashboard spec sec 7.2): a schedule whose
+-- window covers NOW (local), starting one minute ago so it is the
+-- latest-starting covering window and Oee.ufn_ShiftIdForInstant resolves to
+-- OUR row. Closed (ActualEnd set) so it cannot collide with
+-- UIX_Shift_SingleOpen. Removed in cleanup.
+DELETE FROM Workorder.RejectEvent WHERE ShiftId IN (SELECT Id FROM Oee.Shift WHERE Remarks = N'MOS-SHIFT');
+DELETE FROM Oee.Shift         WHERE Remarks = N'MOS-SHIFT';
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'MOS-SHIFT-SCHED';
+DECLARE @NowLocal   DATETIME2(0) = CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(0));
+DECLARE @StartLocal DATETIME2(0) = DATEADD(MINUTE, -1, DATEADD(SECOND, -DATEPART(SECOND, @NowLocal), @NowLocal));
+DECLARE @EndLocal   DATETIME2(0) = DATEADD(HOUR, 2, @StartLocal);
+INSERT INTO Oee.ShiftSchedule (Name, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedByUserId)
+VALUES (N'MOS-SHIFT-SCHED', CAST(@StartLocal AS TIME(0)), CAST(@EndLocal AS TIME(0)), 127, DATEADD(DAY, -2, CAST(@StartLocal AS DATE)), 1);
+INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks)
+VALUES ((SELECT Id FROM Oee.ShiftSchedule WHERE Name = N'MOS-SHIFT-SCHED'), @StartLocal, @EndLocal, N'MOS-SHIFT');
+GO
+
 -- =============================================
 -- Test 1: multi-line scrap -> N RejectEvent rows (ProductionEventId NULL) on the
 --   source casting; casting decremented by consumption AND scrap total.
@@ -363,6 +380,13 @@ SET @v7 = ISNULL(CAST((SELECT TOP 1 ToolCavityId FROM Workorder.RejectEvent
     WHERE LotId = @A7) AS NVARCHAR(50)), N'<NULL>');
 EXEC test.Assert_IsEqual @TestName = N'[MoScrap] reject row leaves ToolCavityId NULL (die-cast only)',
     @Expected = N'<NULL>', @Actual = @v7;
+
+-- v2.8: the row carries its shift, resolved for the line it was recorded at.
+SET @e7 = ISNULL(CAST((SELECT Id FROM Oee.Shift WHERE Remarks = N'MOS-SHIFT') AS NVARCHAR(50)), N'<no fixture>');
+SET @v7 = ISNULL(CAST((SELECT TOP 1 ShiftId FROM Workorder.RejectEvent
+    WHERE LotId = @A7) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[Mint scrap] reject ShiftId = ufn_ShiftIdForInstant(line, now)',
+    @Expected = @e7, @Actual = @v7;
 GO
 
 -- =============================================
@@ -436,6 +460,9 @@ DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Lots.Lot WHERE Id IN (SELECT Id FROM @Lots);
 -- BOM 12270-6NA-M <- 12270-6NA is auto-created by this test's fixture; leave it in place.
+DELETE FROM Workorder.RejectEvent WHERE ShiftId IN (SELECT Id FROM Oee.Shift WHERE Remarks = N'MOS-SHIFT');
+DELETE FROM Oee.Shift         WHERE Remarks = N'MOS-SHIFT';
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'MOS-SHIFT-SCHED';
 GO
 
 EXEC test.EndTestFile;

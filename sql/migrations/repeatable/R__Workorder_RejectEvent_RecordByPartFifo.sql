@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_RejectEvent_RecordByPartFifo.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-12
--- Version:     1.1
+-- Modified:    2026-10-29
+-- Version:     1.2
 -- Description: Scrap by PART at a line, consumed FIFO. The Scrap Entry popup
 --              on the Assembly + Machining terminals names a part and a
 --              quantity; this proc charges that quantity to the part's LOTs at
@@ -60,6 +60,14 @@
 --                  as well as audited -- Workorder.MachiningOut_Mint already
 --                  does this. Quality.DefectCode_ListRankedForLocation reads it
 --                  to rank a line's most-used reasons.
+--
+--              v1.2 (2026-10-29) -- OEE dashboard (spec
+--              docs/superpowers/specs/2026-10-27-oee-dashboard-design.md sec 7.1):
+--              the reject row now STAMPS CellLocationId = @LocationId (the line
+--              the LOTs are taken from) and ShiftId from
+--              Oee.ufn_ShiftIdForInstant(@LocationId, now), resolved once per
+--              call. Both were NULL, which left every M&A scrap entry off the
+--              dashboard's line quality. No signature change.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Workorder.RejectEvent_RecordByPartFifo
@@ -347,6 +355,12 @@ BEGIN
         IF ISNULL((SELECT SUM(Take) FROM @Alloc), 0) <> @Quantity
             RAISERROR(N'Line inventory changed while the scrap was being recorded. Reload and retry.', 16, 1);
 
+        -- v1.2: the shift the scrap belongs to, resolved for the line (an
+        -- override makes the answer per-equipment). Same call shape as
+        -- TrimOut_Record. NULL when no schedule covers now -- recorded as-is.
+        DECLARE @ShiftId BIGINT = (SELECT TOP 1 ShiftId
+                                   FROM Oee.ufn_ShiftIdForInstant(@LocationId, SYSUTCDATETIME()));
+
         DECLARE @Seq INT = 1, @MaxSeq INT = (SELECT MAX(Seq) FROM @Alloc);
         DECLARE @LotCount INT = (SELECT COUNT(DISTINCT LotId) FROM @Alloc), @ClosedCount INT = 0;
         DECLARE @RowDefectCodeId BIGINT, @DefCode NVARCHAR(50);
@@ -372,7 +386,7 @@ BEGIN
             VALUES (
                 NULL, @LotId, @RowDefectCodeId, @Take,
                 NULL, @Remarks, @AppUserId, SYSUTCDATETIME(),
-                @ItemId, @ToolId, NULL, NULL, NULL,
+                @ItemId, @ToolId, NULL, @ShiftId, @LocationId,
                 @TerminalLocationId
             );
             SET @RejectId = CAST(SCOPE_IDENTITY() AS BIGINT);
