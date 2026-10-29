@@ -83,6 +83,17 @@ EXEC test.Assert_IsEqual @TestName = N'[Place] trim shop -> the shop itself', @E
 
 SET @a = (SELECT CAST(ProductionAreaId AS NVARCHAR(20)) FROM Oee.ufn_AreaFamily((SELECT Id FROM Location.Location WHERE Code = N'ZZ-DSH-TR-P2')));
 EXEC test.Assert_IsEqual @TestName = N'[Place] trim press ProductionArea = its shop', @Expected = @e, @Actual = @a;
+
+-- A shop terminal is under no press: it lands on its ProductionArea (the shop),
+-- flagged as an area placement. That is where trim good and scrap are booked.
+SET @a = (SELECT CAST(PlacementLocationId AS NVARCHAR(20)) FROM Oee.ufn_AreaFamily((SELECT Id FROM Location.Location WHERE Code = N'ZZ-DSH-TR-T1')));
+EXEC test.Assert_IsEqual @TestName = N'[Place] trim shop terminal -> the shop', @Expected = @e, @Actual = @a;
+SET @a = (SELECT CAST(PlacementIsArea AS NVARCHAR(20)) FROM Oee.ufn_AreaFamily((SELECT Id FROM Location.Location WHERE Code = N'ZZ-DSH-TR-T1')));
+EXEC test.Assert_IsEqual @TestName = N'[Place] shop placement is flagged PlacementIsArea', @Expected = N'1', @Actual = @a;
+SET @a = (SELECT AreaFamily FROM Oee.ufn_AreaFamily((SELECT Id FROM Location.Location WHERE Code = N'ZZ-DSH-TR-T1')));
+EXEC test.Assert_IsEqual @TestName = N'[Place] trim shop terminal -> trim', @Expected = N'trim', @Actual = @a;
+SET @a = (SELECT CAST(PlacementIsArea AS NVARCHAR(20)) FROM Oee.ufn_AreaFamily((SELECT Id FROM Location.Location WHERE Code = N'ZZ-DSH-MA-L-T1')));
+EXEC test.Assert_IsEqual @TestName = N'[Place] unit placement is not PlacementIsArea', @Expected = N'0', @Actual = @a;
 GO
 
 -- =============================================
