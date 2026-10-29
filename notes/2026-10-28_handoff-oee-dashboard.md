@@ -12,7 +12,13 @@ conversation it came from (2026-10-27) is not needed.
 The mockup files are fragments written for the superpowers brainstorming "visual companion"
 frame; they render fine opened directly in a browser (unstyled page chrome, styled screens).
 
-## Where it stands
+## Update 2026-10-29 -- approved, plan written
+
+Jacques answered the four questions and **approved spec v0.2**. The answers are in spec Section 11 and decisions D11-D15. The implementation plan is `docs/superpowers/plans/2026-10-29-oee-dashboard.md`. Next: choose an execution method and start Task 1. The questions and steps below are historical.
+
+Note: the highest versioned migration is now `0116` (AIM FailureLog). The plan needs none; re-check before adding one.
+
+## Where it stood (2026-10-28)
 
 1. Research done: how operators and gateway processes feed the OEE tables (spec sections 1, 6, 7).
 2. Screens designed and approved by Jacques: site screen (one card per area), the three area
