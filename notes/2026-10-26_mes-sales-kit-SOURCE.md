@@ -111,3 +111,32 @@ Rulings taken while building (not customer-visible):
   demo's own (the real popups were not captured).
 - Seen in passing, not investigated: Complete Tray with nobody signed in shows the expected refusal
   plus a second "Required parameter missing (AppUserId)" toast.
+
+## Module 4, Quality & containment (2026-10-27 .. 2026-10-29)
+
+Spec `docs/superpowers/specs/2026-10-27-mes-sales-kit-module-4-quality-design.md`, plan
+`docs/superpowers/plans/2026-10-27-mes-sales-kit-module-4-quality.md`, handoff with every ruling
+`notes/2026-10-28_sales-kit-module-4-HANDOFF.md`, fact sheet (every refusal / tagging claim cites a
+row) `notes/2026-10-27_super-lot-refusal-facts.md`.
+
+- **Maturity ruling (Jacques, 2026-10-27).** Super-lots are shown with no in-production wording: module 4's
+  slides, notes and tour say what a screen does, never whether it is live anywhere. The super-lot work is
+  built on `jacques/working` but not deployed to MPP's prod. `check_deck.py` refuses "in production /
+  deployed / live at / running at" on any module 4 slide.
+- **The capture session was also the super-lot screens' first gateway walk.** Bug log:
+  `notes/2026-10-27_super-lot-gateway-walk-bugs.md` (2 bugs, 11 questions, the beats not reached and why).
+  Nothing in the application was changed.
+- **Re-capturing module 4.** `tools\sales-kit\demo-db\Build-DemoDatabase.ps1 -WithQualityScenario`;
+  `Set-QualityAdAccount.ps1 -Login <presenter login>` (add the login to `banned_terms.txt` and
+  `substitutions.json` first); switch the gateway's `MPP` connection to `MPP_MES_Demo` and back
+  (`Check-GatewayDb.ps1 -Expect Demo|Dev`). Drive it with `capture/drive_session.js` (one headed Chrome kept
+  open, sign-ins typed from env vars, never stored) -- `steps_m4.js` needs the two fixes noted in the bug log
+  before it is run. Then `capture/sanitize.py` into a staging folder (the m4 `bundle.css` matched modules
+  1-3; copy only the `m4-*` files into the kit) and, once Print PDF works, `capture/sanitize_pdf.py` for
+  the Super-lot report.
+- **What module 4 shows and does not.** Deck: super-lot members, the refusals (Machining IN tagged / held,
+  Machining OUT, dock), results + signed release, LOT Super-lots tab + genealogy. Not shown: the Super-lot PDF
+  (BUG-1), the label (prints direct), the Assembly check-in refusal (F6, unreachable on the scenario),
+  Config Tool quality specs (none seeded). Assembly is described as carrying the tag onto the tray (F23/F24).
+- **Demo.** Super-lot page, Hold Management, dock, station refusals, a 9-step tour; the build now embeds only
+  the captures the code names (5.6 MB).
