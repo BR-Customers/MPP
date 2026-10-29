@@ -315,4 +315,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch(e => { console.error('\nFAILED: ' + e.message); process.exit(1); });
-module.exports = { snapshotHtml, act, settle, ready, url };
+module.exports = { snapshotHtml, act, settle, ready, url, selectTerminal, bundleCss, clickText };

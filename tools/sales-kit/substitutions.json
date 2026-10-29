@@ -8,6 +8,8 @@
     ["MPP Inc\\.", "Sample Components Co."],
     ["Non-Specific MPP", "Non-Specific"],
     ["\\bmpp/", "app/"],
+    ["(?i)\\badmin1\\b", "quality.sample"],
+    ["(?i)\\bMPP reference\\b", "Plant reference"],
     ["\\bMPP\\b", "the plant"],
     ["(?i)\\bHonda AIM\\b", "customer"],
     ["(?i)\\bHonda\\b", "customer"],
