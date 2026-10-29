@@ -25,6 +25,17 @@
    Neither function raises. Both return an outcome dict. Bounded timeouts: a container
    completion must never hang on AIM.
 
+   FAILURE LOG (2026-10-29, migration 0116): this module writes Audit.InterfaceLog only,
+   never Audit.FailureLog. The CALLERS (AimPost.postOne, AimPoolGateway.topupTick) hold
+   the container / LOT / location context, so they write the one FailureLog row per
+   failed attempt. To let them, every outcome dict also carries:
+     disabled       - True only for the AimPostingEnabled = 0 return (no row is logged
+                      for those, by decision -- posting switched off is not a failure)
+     httpStatus     - the HTTP response code, or None (no call, or transport error)
+     endpoint       - the URL with the path token replaced by '<token>' and the query
+                      string dropped; safe to store. NEVER store the real URL.
+     interfaceLogId - the Audit.InterfaceLog row this call wrote, or None
+
    THIS is the transport-layer gate (Migration 0050): both nextSerial() and postSerial()
    check Lots.AimPoolConfig.AimPostingEnabled FIRST, before anything else, and make NO
    network call when it is false (the shipped default). AIM calls consume serials that
@@ -58,6 +69,24 @@ def _config():
     r = rows[0]
     return (r.get("AimBaseUrl"), r.get("AimCompanyCode"), r.get("AimPathToken"),
             bool(r.get("AimPostingEnabled")))
+
+
+def postingEnabled():
+    """True when Lots.AimPoolConfig.AimPostingEnabled is on. Lets a caller apply the
+       'posting switched off = no FailureLog row' rule on paths that never reach an
+       HTTP call (incomplete payload, missing pool row, exception). Never raises:
+       an unreadable config reads as off, the same fail-safe as _config()."""
+    try:
+        return _config()[3]
+    except:
+        return False
+
+
+def _endpoint(base, company, action):
+    """The call's URL safe to store: path token replaced, query string dropped."""
+    if not base:
+        return None
+    return "%s/mes/floor/%s/<token>/%s" % (base, company or "<company>", action)
 
 
 def _configError(base, company, token):
@@ -145,7 +174,8 @@ def _readAll(stream):
 
 
 def _post(urlString, bodyText):
-    """POST to a pre-encoded URL string. Returns (ok, replyText, error).
+    """POST to a pre-encoded URL string. Returns (ok, replyText, error, httpStatus);
+       httpStatus is None when no response code was read (transport failure).
        java.net.URL does NO encoding - the caller owns the exact bytes of the query.
 
        HttpURLConnection.getInputStream() THROWS on a 4xx/5xx response - the
@@ -156,6 +186,7 @@ def _post(urlString, bodyText):
     from java.lang import Throwable
     from java.net import URL
     conn = None
+    code = None
     try:
         conn = URL(urlString).openConnection()
         conn.setRequestMethod("POST")
@@ -175,13 +206,13 @@ def _post(urlString, bodyText):
         code = conn.getResponseCode()
         if code >= 200 and code < 300:
             reply = _readAll(conn.getInputStream())
-            return (True, reply, None)
+            return (True, reply, None, code)
         errorBody = _readAll(conn.getErrorStream())
-        return (False, errorBody, "HTTP %s: %s" % (code, errorBody))
+        return (False, errorBody, "HTTP %s: %s" % (code, errorBody), code)
     except Throwable, t:
-        return (False, None, str(t))
+        return (False, None, str(t), code)
     except Exception, e:
-        return (False, None, str(e))
+        return (False, None, str(e), code)
     finally:
         try:
             if conn is not None:
@@ -190,9 +221,12 @@ def _post(urlString, bodyText):
             pass
 
 
-def _logAim(action, detail, ok, err=None):
+def _logAim(action, detail, ok, err=None, locationId=None, itemId=None, lotId=None):
     """Best-effort Audit.InterfaceLog write (FDS-01-014). Never breaks the caller.
-       The audit NQ is UpdateQuery-typed, so it goes through execNonQuery."""
+       Goes through Audit.InterfaceLog_Record (Query NQ, status row) so the new
+       InterfaceLog Id comes back for the caller's FailureLog row; returns it, or
+       None when the write failed. locationId / itemId / lotId fill the 0113
+       context columns when the caller knows them."""
     params = {
         "systemName":       "AIM",
         "direction":        "Outbound",
@@ -203,12 +237,13 @@ def _logAim(action, detail, ok, err=None):
         "errorCondition":   None if ok else "AimCallFailed",
         "errorDescription": err,
         "isHighFidelity":   True,
-        "locationId":   None, "itemId": None, "lotId": None,
+        "locationId":   locationId, "itemId": itemId, "lotId": lotId,
     }
     try:
-        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
+        res = BlueRidge.Common.Db.execMutation("audit/InterfaceLog_Record", params)
+        return res.get("NewId") if res and res.get("Status") else None
     except:
-        pass
+        return None
 
 
 def _normalizeSerial(value):
@@ -250,25 +285,31 @@ def nextSerial():
        Checks AimPostingEnabled FIRST - no network call is made when it is false,
        regardless of whether the connection settings are otherwise complete."""
     base, company, token, postingEnabled = _config()
+    endpoint = _endpoint(base, company, "nextserial.csv")
+
+    def out(ok, serial, error, disabled=False, httpStatus=None, interfaceLogId=None):
+        return {"ok": ok, "serial": serial, "error": error, "disabled": disabled,
+                "httpStatus": httpStatus, "endpoint": endpoint, "interfaceLogId": interfaceLogId}
+
     if not postingEnabled:
-        return {"ok": False, "serial": None, "error": _POSTING_DISABLED_ERROR}
+        return out(False, None, _POSTING_DISABLED_ERROR, disabled=True)
     if not base or not company or not token:
-        return {"ok": False, "serial": None, "error": _configError(base, company, token)}
+        return out(False, None, _configError(base, company, token))
     url = "%s/mes/floor/%s/%s/nextserial.csv" % (base, company, token)
-    ok, reply, err = _post(url, "\r\n\r\n")
+    ok, reply, err, httpStatus = _post(url, "\r\n\r\n")
     if not ok:
-        _logAim("nextserial", url, False, err)
-        return {"ok": False, "serial": None, "error": err}
+        logId = _logAim("nextserial", url, False, err)
+        return out(False, None, err, httpStatus=httpStatus, interfaceLogId=logId)
     serial = (reply or "").strip()
     if not _NINE_DIGITS.match(serial):
         msg = "Unexpected nextserial reply: %s" % (serial[:200],)
-        _logAim("nextserial", url, False, msg)
-        return {"ok": False, "serial": None, "error": msg}
-    _logAim("nextserial", url, True)
-    return {"ok": True, "serial": serial, "error": None}
+        logId = _logAim("nextserial", url, False, msg)
+        return out(False, None, msg, httpStatus=httpStatus, interfaceLogId=logId)
+    logId = _logAim("nextserial", url, True)
+    return out(True, serial, None, httpStatus=httpStatus, interfaceLogId=logId)
 
 
-def postSerial(serial, customerPart, qty, lot):
+def postSerial(serial, customerPart, qty, lot, locationId=None, itemId=None, lotId=None):
     """Bind content to an issued serial. Returns {ok, error}. Never raises.
        `serial` is the serial AS ISSUED (normally the zero-padded 9-digit string
        nextSerial() returned; a bare int is also accepted). What is POSTED is
@@ -279,22 +320,28 @@ def postSerial(serial, customerPart, qty, lot):
        Checks AimPostingEnabled FIRST - no network call is made when it is false,
        regardless of whether the connection settings are otherwise complete."""
     base, company, token, postingEnabled = _config()
+    endpoint = _endpoint(base, company, "postserial.csv")
+
+    def out(ok, error, disabled=False, httpStatus=None, interfaceLogId=None):
+        return {"ok": ok, "error": error, "disabled": disabled, "httpStatus": httpStatus,
+                "endpoint": endpoint, "interfaceLogId": interfaceLogId}
+
     if not postingEnabled:
-        return {"ok": False, "error": _POSTING_DISABLED_ERROR}
+        return out(False, _POSTING_DISABLED_ERROR, disabled=True)
     if not base or not company or not token:
-        return {"ok": False, "error": _configError(base, company, token)}
+        return out(False, _configError(base, company, token))
     wireSerial = _wireSerial(serial)
     query = _buildPostQuery(wireSerial, customerPart, qty, lot)
     url = "%s/mes/floor/%s/%s/postserial.csv?%s" % (base, company, token, query)
-    ok, reply, err = _post(url, "")
+    ok, reply, err, httpStatus = _post(url, "")
     if not ok:
-        _logAim("postserial", url, False, err)
-        return {"ok": False, "error": err}
+        logId = _logAim("postserial", url, False, err, locationId, itemId, lotId)
+        return out(False, err, httpStatus=httpStatus, interfaceLogId=logId)
     got = (reply or "").strip()
     if got == wireSerial:
-        _logAim("postserial", url, True)
-        return {"ok": True, "error": None}
+        logId = _logAim("postserial", url, True, None, locationId, itemId, lotId)
+        return out(True, None, httpStatus=httpStatus, interfaceLogId=logId)
     # A reply starting 'POST ' is the listener echoing an unrecognized request.
     msg = "AIM rejected: %s" % (got[:200],)
-    _logAim("postserial", url, False, msg)
-    return {"ok": False, "error": msg}
+    logId = _logAim("postserial", url, False, msg, locationId, itemId, lotId)
+    return out(False, msg, httpStatus=httpStatus, interfaceLogId=logId)

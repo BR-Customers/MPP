@@ -6,8 +6,10 @@
     "entityId": null,
     "failureReason": "",
     "id": null,
+    "locationName": "",
     "logEntityTypeName": "",
     "logEventTypeCode": "",
+    "lotName": "",
     "popupId": "mpp-failure-detail",
     "procedureName": "",
     "userDisplayName": ""
@@ -28,10 +30,16 @@
     "params.id": {
       "paramDirection": "input"
     },
+    "params.locationName": {
+      "paramDirection": "input"
+    },
     "params.logEntityTypeName": {
       "paramDirection": "input"
     },
     "params.logEventTypeCode": {
+      "paramDirection": "input"
+    },
+    "params.lotName": {
       "paramDirection": "input"
     },
     "params.popupId": {
@@ -160,6 +168,31 @@
                 "binding": {
                   "config": {
                     "expression": "\"Procedure:  \" + coalesce({view.params.procedureName}, \"\") + \"   |   Entity:  \" + coalesce({view.params.logEntityTypeName}, \"\") + \"  \\u00B7  \" + coalesce({view.params.entityId}, \"(new)\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "12px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ContextLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Location:  \" + if(isNull({view.params.locationName}) || {view.params.locationName} = \"\", \"(none)\", {view.params.locationName}) + \"   |   LOT:  \" + if(isNull({view.params.lotName}) || {view.params.lotName} = \"\", \"(none)\", {view.params.lotName})"
                   },
                   "type": "expr"
                 }

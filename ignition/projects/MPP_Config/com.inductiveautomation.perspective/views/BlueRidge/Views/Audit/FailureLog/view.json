@@ -11,6 +11,8 @@
         "$ts": 1784299619182
       },
       "entityTypeCode": null,
+      "locationId": null,
+      "lotName": "",
       "procedureName": null,
       "searchText": "",
       "startDate": {
@@ -109,6 +111,12 @@
       "persistent": true
     },
     "custom.filter.entityTypeCode": {
+      "persistent": true
+    },
+    "custom.filter.locationId": {
+      "persistent": true
+    },
+    "custom.filter.lotName": {
       "persistent": true
     },
     "custom.filter.procedureName": {
@@ -367,6 +375,123 @@
                     ],
                     "meta": {
                       "name": "EndDateField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "LocationLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Location"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "LocationDropdown"
+                        },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")"
+                              },
+                              "transforms": [
+                                {
+                                  "code": "\treturn [{\"label\": \"(All)\", \"value\": None}] + [{\"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\"), \"value\": r.get(\"Id\")} for r in (value or [])]",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "expr"
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.locationId"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "search": {
+                            "enabled": true
+                          },
+                          "style": {
+                            "classes": "select"
+                          }
+                        },
+                        "type": "ia.input.dropdown"
+                      }
+                    ],
+                    "meta": {
+                      "name": "LocationField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "LotLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "LOT"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "LotInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.lotName"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "deferUpdates": false,
+                          "placeholder": "LOT name contains",
+                          "style": {
+                            "classes": "search-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": {
+                      "name": "LotField"
                     },
                     "props": {
                       "direction": "column",
@@ -709,7 +834,7 @@
                           "component": {
                             "onRowClick": {
                               "config": {
-                                "script": "\trow \u003d event.row if hasattr(event, \"row\") else None\n\tdata \u003d row.data if row and hasattr(row, \"data\") else None\n\tif data is None:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-failure-detail\",\n\t\tview\u003d\"BlueRidge/Components/Popups/FailureDetail\",\n\t\tmodal\u003dTrue,\n\t\tdraggable\u003dFalse,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"id\":                  data.get(\"Id\"),\n\t\t\t\"attemptedAt\":         data.get(\"AttemptedAt\"),\n\t\t\t\"userDisplayName\":     data.get(\"UserDisplayName\"),\n\t\t\t\"logEntityTypeName\":   data.get(\"LogEntityTypeName\"),\n\t\t\t\"entityId\":            data.get(\"EntityId\"),\n\t\t\t\"logEventTypeCode\":    data.get(\"LogEventTypeCode\"),\n\t\t\t\"procedureName\":       data.get(\"ProcedureName\"),\n\t\t\t\"failureReason\":       data.get(\"FailureReason\"),\n\t\t\t\"attemptedParameters\": data.get(\"AttemptedParameters\")\n\t\t}\n\t)"
+                                "script": "\trow \u003d event.row if hasattr(event, \"row\") else None\n\tdata \u003d row.data if row and hasattr(row, \"data\") else None\n\tif data is None:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-failure-detail\",\n\t\tview\u003d\"BlueRidge/Components/Popups/FailureDetail\",\n\t\tmodal\u003dTrue,\n\t\tdraggable\u003dFalse,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"id\":                  data.get(\"Id\"),\n\t\t\t\"attemptedAt\":         data.get(\"AttemptedAt\"),\n\t\t\t\"userDisplayName\":     data.get(\"UserDisplayName\"),\n\t\t\t\"logEntityTypeName\":   data.get(\"LogEntityTypeName\"),\n\t\t\t\"entityId\":            data.get(\"EntityId\"),\n\t\t\t\"logEventTypeCode\":    data.get(\"LogEventTypeCode\"),\n\t\t\t\"procedureName\":       data.get(\"ProcedureName\"),\n\t\t\t\"failureReason\":       data.get(\"FailureReason\"),\n\t\t\t\"attemptedParameters\": data.get(\"AttemptedParameters\"),\n\t\t\t\"locationName\":        data.get(\"LocationName\"),\n\t\t\t\"lotName\":             data.get(\"LotName\")\n\t\t}\n\t)"
                               },
                               "scope": "G",
                               "type": "script"
@@ -757,6 +882,22 @@
                               "field": "LogEntityTypeName",
                               "header": {
                                 "title": "Entity Type"
+                              },
+                              "sortable": true,
+                              "visible": true
+                            },
+                            {
+                              "field": "LocationName",
+                              "header": {
+                                "title": "Location"
+                              },
+                              "sortable": true,
+                              "visible": true
+                            },
+                            {
+                              "field": "LotName",
+                              "header": {
+                                "title": "LOT"
                               },
                               "sortable": true,
                               "visible": true
@@ -872,7 +1013,7 @@
         {
           "name": "resetFilter",
           "params": [],
-          "script": "\timport system\n\tnow \u003d system.date.now()\n\tself.view.custom.filter \u003d {\n\t\t\"startDate\":      system.date.addDays(now, -7),\n\t\t\"endDate\":        now,\n\t\t\"entityTypeCode\": None,\n\t\t\"procedureName\":  None,\n\t\t\"appUserId\":      None,\n\t\t\"searchText\":     \"\"\n\t}\n\tself.applySearch()"
+          "script": "\timport system\n\tnow \u003d system.date.now()\n\tself.view.custom.filter \u003d {\n\t\t\"startDate\":      system.date.addDays(now, -7),\n\t\t\"endDate\":        now,\n\t\t\"entityTypeCode\": None,\n\t\t\"procedureName\":  None,\n\t\t\"appUserId\":      None,\n\t\t\"locationId\":     None,\n\t\t\"lotName\":        \"\",\n\t\t\"searchText\":     \"\"\n\t}\n\tself.applySearch()"
         }
       ],
       "extensionFunctions": null,

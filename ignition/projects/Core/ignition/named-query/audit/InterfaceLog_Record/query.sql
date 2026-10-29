@@ -1,0 +1,13 @@
+EXEC Audit.InterfaceLog_Record
+    @SystemName       = :systemName,
+    @Direction        = :direction,
+    @LogEventTypeCode = :logEventTypeCode,
+    @Description      = :description,
+    @RequestPayload   = :requestPayload,
+    @ResponsePayload  = :responsePayload,
+    @ErrorCondition   = :errorCondition,
+    @ErrorDescription = :errorDescription,
+    @IsHighFidelity   = :isHighFidelity,
+    @LocationId       = :locationId,
+    @ItemId           = :itemId,
+    @LotId            = :lotId

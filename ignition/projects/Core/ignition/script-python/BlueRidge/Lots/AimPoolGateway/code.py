@@ -5,6 +5,9 @@
      pooling it via AimPool.topup(). AIM's nextserial.csv is per COMPANY CODE and takes
      no part parameter, so there is no per-part loop (FDS-07-010 adapted to the verified
      contract). Stops at target, on first failure, or at a hard per-tick cap.
+     A failed fetch while AIM posting is ON writes one Audit.FailureLog row
+     (entity AimShipperIdPool, event AimSerialFetchFailed, AppUser 1; migration 0116).
+     Posting switched off writes nothing.
    - alarmTick(): TWO INDEPENDENT rising-edge session alarms, each with its own state so
      one recovering never clears the other - pool DEPTH vs AlarmWarningDepth /
      AlarmCriticalDepth (existing), and post BACKLOG AGE (oldest row from
@@ -34,6 +37,9 @@ def topupTick():
        a timer must not throw."""
     from java.lang import Throwable
     _MAX_PER_TICK = 25
+    depth = 0
+    target = None
+    fetched = 0
     try:
         cfgRows = BlueRidge.Lots.AimPoolConfig.get() or []
         cfg = cfgRows[0] if cfgRows else {}
@@ -51,8 +57,11 @@ def topupTick():
             if not res.get("ok"):
                 BlueRidge.Common.Util.log(
                     "topupTick stopping: %s" % res.get("error"), level="warn")
+                if not res.get("disabled"):
+                    _logFetchFailure(res.get("error"), res, depth, target, fetched)
                 break
-            up = BlueRidge.Lots.AimPool.topup(res.get("serial"))
+            up = BlueRidge.Lots.AimPool.topup(res.get("serial"),
+                                               fetchedInterfaceLogId=res.get("interfaceLogId"))
             if not (up and up.get("Status")):
                 BlueRidge.Common.Util.log(
                     "topupTick could not pool %s: %s"
@@ -64,10 +73,35 @@ def topupTick():
         return {"fetched": fetched, "depth": depth + fetched}
     except Throwable, t:
         BlueRidge.Common.Util.log("topupTick failed: %s" % t, level="error")
+        if BlueRidge.Lots.AimHttp.postingEnabled():
+            _logFetchFailure("topupTick raised: %s" % t, None, depth, target, fetched)
         return {"fetched": 0, "depth": 0}
     except Exception, e:
         BlueRidge.Common.Util.log("topupTick failed: %s" % e, level="error")
+        if BlueRidge.Lots.AimHttp.postingEnabled():
+            _logFetchFailure("topupTick raised: %s" % e, None, depth, target, fetched)
         return {"fetched": 0, "depth": 0}
+
+
+def _logFetchFailure(reason, httpRes, depth, target, fetched):
+    """One FailureLog row for a failed pool top-up fetch. The pool is global (AIM
+       issues serials per company code), so there is no Location or LOT. Attributed to
+       AppUser 1: this only ever runs from the AimPoolTopupTimer. Never raises."""
+    httpRes = httpRes or {}
+    BlueRidge.Audit.FailureLog.record(
+        procedureName="BlueRidge.Lots.AimPoolGateway.topupTick",
+        failureReason=reason or "AIM serial fetch failed.",
+        entityTypeCode="AimShipperIdPool",
+        eventTypeCode="AimSerialFetchFailed",
+        appUserId=BlueRidge.Common.Util.systemAppUserId(),
+        meta={
+            "endpoint":        httpRes.get("endpoint"),
+            "httpStatus":      httpRes.get("httpStatus"),
+            "interfaceLogId":  httpRes.get("interfaceLogId"),
+            "depth":           depth,
+            "target":          target,
+            "fetchedThisTick": fetched,
+        })
 
 
 def _sendAlarm(payload):

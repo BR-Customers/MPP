@@ -3,15 +3,16 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-19
-# Version:          1.0
+# Version:          1.1
 #
 # Description:
-#   Read surface for the FailureLog Browser page (FDS-11-004). Three
-#   public functions:
+#   Read surface for the FailureLog Browser page (FDS-11-004), plus the ONE
+#   Ignition-side writer (v1.1, 2026-10-29, migration 0116):
 #
 #   search(filter)                  -> {rows, totalCount, topReasons, topProcs}
 #   getByEntity(typeCode, entityId) -> list[dict]
 #   distinctProcedures()            -> list[dict]
+#   record(...)                     -> status dict | None   (never raises)
 #
 #   search() bundles 3 NQ calls (List + GetTopReasons + GetTopProcs) so
 #   the view's Apply handler stays a one-liner. The List proc returns
@@ -64,6 +65,8 @@ def search(filter):
             "appUserId":         f.get("appUserId"),
             "procedureName":     f.get("procedureName"),
             "failureReasonLike": (f.get("searchText") or None),
+            "locationId":        f.get("locationId"),
+            "lotNameLike":       (f.get("lotName") or None),
         }
         rows = BlueRidge.Common.Db.execList("audit/FailureLog_List", listParams)
 
@@ -124,3 +127,58 @@ def distinctProcedures():
         BlueRidge.Common.Util.log("distinctProcedures failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load procedures", str(e), "error")
         return []
+
+
+def record(procedureName, failureReason, entityTypeCode, eventTypeCode, appUserId,
+           entityId=None, locationId=None, lotId=None, meta=None):
+    """
+    Write one Audit.FailureLog row for a failure that happened OUTSIDE a
+    mutation proc (e.g. AIM refused a post). Goes through Audit.FailureLog_Record
+    -- the status-row twin of the silent Audit_LogFailure -- via a Query NQ.
+
+    NEVER RAISES. The caller is a container completion, a CRT validation or a
+    gateway timer; a failure to log a failure must not change what they do.
+    A refusal (Status 0) or an exception is written to the gateway log at
+    ERROR, naming the procedure and the reason, and None is returned.
+
+    Args:
+        procedureName (str):  the script function / proc that failed.
+        failureReason (str):  why (truncated to 500 in SQL).
+        entityTypeCode (str): Audit.LogEntityType.Code, e.g. 'Container'.
+        eventTypeCode (str):  Audit.LogEventType.Code, e.g. 'AimPostFailed'.
+        appUserId (long):     REQUIRED, supplied by the caller -- the operator,
+                              or Common.Util.systemAppUserId() from gateway scope.
+                              No fallback (the 2026-09-18 attribution rule).
+        entityId, locationId, lotId: optional ids.
+        meta (dict|None):     JSON-encoded into AttemptedParameters. Callers must
+                              never put the AIM path token in it.
+    Returns:
+        dict {Status, Message, NewId} on success, else None.
+    """
+    from java.lang import Exception as JavaException
+    try:
+        appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
+        metaJson = None
+        if meta is not None:
+            metaJson = system.util.jsonEncode(BlueRidge.Common.Util.extractQualifiedValues(meta))
+        res = BlueRidge.Common.Db.execMutation("audit/FailureLog_Record", {
+            "appUserId":           appUserId,
+            "logEntityTypeCode":   entityTypeCode,
+            "entityId":            _u(entityId),
+            "logEventTypeCode":    eventTypeCode,
+            "failureReason":       failureReason,
+            "procedureName":       procedureName,
+            "attemptedParameters": metaJson,
+            "locationId":          _u(locationId),
+            "lotId":               _u(lotId),
+        })
+        if res and res.get("Status"):
+            return res
+        BlueRidge.Common.Util.log(
+            "FailureLog not written for %s (%s): %s"
+            % (procedureName, failureReason, (res or {}).get("Message")), level="error")
+    except (Exception, JavaException), e:
+        BlueRidge.Common.Util.log(
+            "FailureLog write raised for %s (%s): %s" % (procedureName, failureReason, e),
+            level="error")
+    return None

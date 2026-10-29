@@ -122,14 +122,39 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
                                  "error": "Container is pending Controlled Run Tag validation."}
             return result
         try:
-            result["AimPost"] = BlueRidge.Lots.AimPost.postOne(result.get("AimShipperId"))
+            result["AimPost"] = BlueRidge.Lots.AimPost.postOne(
+                result.get("AimShipperId"), appUserId, terminalLocationId, "complete")
         except Throwable as t:
             BlueRidge.Common.Util.log("AIM post-back failed: %s" % t, level="error")
             result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(t)}
+            _logAimPostRaised(containerId, result.get("AimShipperId"), t, appUserId,
+                              terminalLocationId, "complete")
         except Exception as e:
             BlueRidge.Common.Util.log("AIM post-back failed: %s" % e, level="error")
             result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(e)}
+            _logAimPostRaised(containerId, result.get("AimShipperId"), e, appUserId,
+                              terminalLocationId, "complete")
     return result
+
+
+def _logAimPostRaised(containerId, aimShipperId, err, appUserId, terminalLocationId, caller):
+    """Second net: a FailureLog row when AimPost.postOne raised past its own guard
+       (it logs every failure it catches itself). Same rule as postOne: nothing while
+       AIM posting is switched off. Never raises."""
+    try:
+        if not BlueRidge.Lots.AimHttp.postingEnabled():
+            return
+        BlueRidge.Audit.FailureLog.record(
+            procedureName="BlueRidge.Lots.Container." + caller,
+            failureReason="AIM post raised: %s" % err,
+            entityTypeCode="Container",
+            eventTypeCode="AimPostFailed",
+            appUserId=appUserId,
+            entityId=BlueRidge.Common.Util.extractQualifiedValues(containerId),
+            meta={"aimShipperId": aimShipperId, "caller": caller,
+                  "terminalLocationId": terminalLocationId})
+    except:
+        pass
 
 
 def _isCrtHeld(containerId):
@@ -185,13 +210,16 @@ def validateCrt(containerId, appUserId, terminalLocationId):
 
     if result and result.get("Status") and serial:
         try:
-            result["AimPost"] = BlueRidge.Lots.AimPost.postOne(serial)
+            result["AimPost"] = BlueRidge.Lots.AimPost.postOne(
+                serial, appUserId, terminalLocationId, "validateCrt")
         except Throwable as t:
             BlueRidge.Common.Util.log("CRT validate post failed: %s" % t, level="error")
             result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(t)}
+            _logAimPostRaised(containerId, serial, t, appUserId, terminalLocationId, "validateCrt")
         except Exception as e:
             BlueRidge.Common.Util.log("CRT validate post failed: %s" % e, level="error")
             result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(e)}
+            _logAimPostRaised(containerId, serial, e, appUserId, terminalLocationId, "validateCrt")
     return result
 
 

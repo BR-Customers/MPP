@@ -4,4 +4,6 @@ EXEC Audit.FailureLog_List
     @LogEntityTypeCode = :logEntityTypeCode,
     @AppUserId         = :appUserId,
     @ProcedureName     = :procedureName,
-    @FailureReasonLike = :failureReasonLike
+    @FailureReasonLike = :failureReasonLike,
+    @LocationId        = :locationId,
+    @LotNameLike       = :lotNameLike

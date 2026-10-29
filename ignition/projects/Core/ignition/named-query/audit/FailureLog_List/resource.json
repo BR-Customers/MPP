@@ -27,7 +27,7 @@
     ],
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-05-19T00:00:00Z"
+      "timestamp": "2026-10-29T12:00:00Z"
     },
     "parameters": [
       {
@@ -58,6 +58,16 @@
       {
         "type": "Parameter",
         "identifier": "failureReasonLike",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "locationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lotNameLike",
         "sqlType": 7
       }
     ]

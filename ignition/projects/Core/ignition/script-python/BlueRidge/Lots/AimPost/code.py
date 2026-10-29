@@ -16,11 +16,58 @@
    is passed through unchanged into LastPostError / the returned error, because a
    supervisor reads it verbatim to diagnose the failure.
 
-   Nothing here raises. A container completion must never fail because AIM is down."""
+   Nothing here raises. A container completion must never fail because AIM is down.
+
+   FAILURE LOG (2026-10-29, migration 0116; MPP request 2026-09-16): every failing
+   outcome of postOne -- failed, incomplete_payload, not_found, an exception -- writes
+   ONE Audit.FailureLog row (entity Container, event AimPostFailed) carrying the
+   container's cell as Location, the LOT named in the payload, and the metadata, BUT
+   ONLY WHILE AIM POSTING IS SWITCHED ON. Posting switched off (AimPostingEnabled = 0)
+   writes nothing, from any caller -- decided with Jacques 2026-10-29: it ships off and
+   is turned off on purpose, so a row per owed container per tick would never end.
+   An outage with posting ON is logged in full: retryTick writes a row per owed row per
+   tick, accepted knowingly. AimHttp writes InterfaceLog only; this module writes the
+   FailureLog row because it is the layer that knows the container, LOT and location."""
+
+_PROC = "BlueRidge.Lots.AimPost.postOne"
 
 
-def postOne(aimShipperId):
+def _logFailure(row, reason, appUserId, terminalLocationId, caller, httpRes=None, attempted=False):
+    """Write the one FailureLog row for a failed postOne attempt. No-op while AIM posting
+       is switched off. Never raises (FailureLog.record never raises; postingEnabled()
+       reads off on error)."""
+    if not BlueRidge.Lots.AimHttp.postingEnabled():
+        return
+    row = row or {}
+    httpRes = httpRes or {}
+    attempts = row.get("PostAttempts") or 0
+    BlueRidge.Audit.FailureLog.record(
+        procedureName=_PROC,
+        failureReason=reason or "AIM post failed.",
+        entityTypeCode="Container",
+        eventTypeCode="AimPostFailed",
+        appUserId=appUserId,
+        entityId=row.get("ContainerId"),
+        locationId=row.get("LocationId"),
+        lotId=row.get("LotId"),
+        meta={
+            "aimShipperId":       row.get("AimShipperId"),
+            "containerId":        row.get("ContainerId"),
+            "lotNumber":          row.get("LotNumber"),
+            "endpoint":           httpRes.get("endpoint"),
+            "httpStatus":         httpRes.get("httpStatus"),
+            "attempt":            (attempts + 1) if attempted else attempts,
+            "terminalLocationId": terminalLocationId,
+            "interfaceLogId":     httpRes.get("interfaceLogId"),
+            "caller":             caller,
+        })
+
+
+def postOne(aimShipperId, appUserId=None, terminalLocationId=None, caller="complete"):
     """Post one owed serial to AIM and record the outcome.
+       appUserId attributes a FailureLog row (the operator; Common.Util.systemAppUserId()
+       from the retry timer). terminalLocationId and caller ('complete' / 'validateCrt' /
+       'retry') only go into that row's metadata.
        Returns {ok, outcome, error, itemPartNumber}. Outcomes:
          posted             - AIM accepted it
          already_posted     - nothing owed; no call made
@@ -36,11 +83,13 @@ def postOne(aimShipperId):
                                is worse than not posting at all.
          failed              - AIM refused or was unreachable"""
     from java.lang import Throwable
+    row = {"AimShipperId": aimShipperId}
     try:
         rows = BlueRidge.Lots.AimPool.getForPost(aimShipperId) or []
         if not rows:
-            return {"ok": False, "outcome": "not_found",
-                    "error": "No AIM pool row for %s." % aimShipperId,
+            msg = "No AIM pool row for %s." % aimShipperId
+            _logFailure(row, msg, appUserId, terminalLocationId, caller)
+            return {"ok": False, "outcome": "not_found", "error": msg,
                     "itemPartNumber": None}
         row = rows[0]
         if row.get("PostedAt") is not None:
@@ -76,23 +125,30 @@ def postOne(aimShipperId):
             msg = "AIM payload incomplete for %s: missing %s." % (
                 itemPartNumber or "this item", " and ".join(missing))
             BlueRidge.Lots.AimPool.recordPostResult(row.get("Id"), False, msg)
+            _logFailure(row, msg, appUserId, terminalLocationId, caller)
             return {"ok": False, "outcome": "incomplete_payload", "error": msg,
                     "itemPartNumber": itemPartNumber}
 
         res = BlueRidge.Lots.AimHttp.postSerial(
-            aimShipperId, customerPart, quantity, lotNumber)
+            aimShipperId, customerPart, quantity, lotNumber,
+            locationId=row.get("LocationId"), lotId=row.get("LotId"))
         BlueRidge.Lots.AimPool.recordPostResult(
             row.get("Id"), res.get("ok"), res.get("error"))
         if res.get("ok"):
             return {"ok": True, "outcome": "posted", "error": None,
                     "itemPartNumber": itemPartNumber}
+        if not res.get("disabled"):
+            _logFailure(row, res.get("error"), appUserId, terminalLocationId, caller,
+                        httpRes=res, attempted=True)
         return {"ok": False, "outcome": "failed", "error": res.get("error"),
                 "itemPartNumber": itemPartNumber}
     except Throwable, t:
         BlueRidge.Common.Util.log("postOne %s failed: %s" % (aimShipperId, t), level="error")
+        _logFailure(row, "postOne raised: %s" % t, appUserId, terminalLocationId, caller)
         return {"ok": False, "outcome": "failed", "error": str(t), "itemPartNumber": None}
     except Exception, e:
         BlueRidge.Common.Util.log("postOne %s failed: %s" % (aimShipperId, e), level="error")
+        _logFailure(row, "postOne raised: %s" % e, appUserId, terminalLocationId, caller)
         return {"ok": False, "outcome": "failed", "error": str(e), "itemPartNumber": None}
 
 
@@ -107,7 +163,7 @@ def retryTick(batch=50):
             serial = row.get("AimShipperId")
             stats["attempted"] += 1
             try:
-                res = postOne(serial)
+                res = postOne(serial, BlueRidge.Common.Util.systemAppUserId(), None, "retry")
                 if res.get("ok"):
                     stats["posted"] += 1
                 else:
