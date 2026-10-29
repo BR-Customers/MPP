@@ -38,10 +38,38 @@ ONE fresh review of the whole work on the most capable model at the end). Skills
 | 8 Demo model (holds, tags, super-lots) | done, 50/50 tests (37 old + 13 new) -- done before 6 on purpose | KIT `56472f9..92158cb` |
 | 6 Capture session (gateway walk) | done 2026-10-29: 23 captures in the kit, bug log written, gateway back on Dev (checked) | MPP `924469a`, KIT `e464f8d` |
 | 7 Deck module 4 | done: 4 slides + menu tile live; `check_deck.py` 14/14, `validate.py` passes, kit gate 0 hits | KIT `9eb207e` |
-| **9 Demo module 4 views + tour** | **not started -- resume here** | -- |
-| 10 Verify, document, final review | not started | -- |
+| 9 Demo module 4 views + tour | done 2026-10-29: super-lot page, Hold Management, dock, refusals, 9-step tour; 50/50 tests, all five tours pass at 3 viewports + iframe, 0 errors, 0 outside requests | KIT `5bc4e2f` |
+| **10 Verify, document, final review** | **not started -- resume here** | -- |
 
-## Resume here: Task 9 (demo module 4 views + tour)
+## Resume here: Task 10 (verify, document, review)
+
+Follow the plan's Task 10. Task 9 is built and checked; its rulings are below. Still open from the plan:
+`KIT/README.md` and the SOURCE note's module 4 section, the claim-by-claim walk of every module 4 caption /
+note / tour step against its capture and fact id, deleting `KIT/MES Track & Trace - MPP.pptx` (PowerPoint
+held it on 2026-10-29), and the whole-work review on the most capable model.
+
+Verification scripts: `KIT/tools/verify_demo.js` (now runs the m4 tour too) and a deeper m4 check kept
+in the session scratchpad (refusal wording, release frees the LOT, 10x with RESET, a form open across ticks) --
+its checks are listed in the Task 9 commit message if it needs rebuilding.
+
+## Rulings taken 2026-10-29 (Task 9)
+
+- **No "View the report".** There is no Super-lot PDF (BUG-1); Print report on the super-lot page says the PDF
+  is part of the live engineer demo.
+- **Tour step 4 is "Assembly carries the tag onto the tray"**, not "Assembly refuses" (F23/F24): the tour builds a
+  tray from a tagged machined part and the toast says the tray carries the tag and joins the super-lot.
+- **LOT Detail's Super-lots tab opens the super-lot page** for that LOT's run rather than mounting the captured
+  tab; the CRT / super-lot / on-hold pills already in the m1 capture are shown and filled.
+- **Tour step 8** releases every READY member and ends the window (F46: release and ending the window are
+  separate; the tour does both and says so). The casting refused at step 3 is picked at Machining IN.
+- **The demo shows the signature card un-clipped** (BUG-2 lives in the application; the demo lets the card grow).
+- **Build embeds only captures the code names**, so deck-only m4 captures stay out: demo 5.6 MB (was 2.6 MB before
+  module 4). Most of the growth is the four super-lot page captures (~0.9 MB each, the per-member scrap-reason
+  grids); trimming those bodies at build time would roughly halve it if size matters.
+- Fixed in passing: the model logs a super-lot release with kind `Released`, the same kind as a basket release;
+  LOT Detail history now tells them apart.
+
+## (Done) Task 9 brief -- captures available
 
 Captures available in `KIT\demo-build\captures\` (all sanitized, same `bundle.css` as modules 1-3, so
 no second bundle): `m4-superlot-list`, `-members` (1904x1100), `-history`, `-results` (1100),
