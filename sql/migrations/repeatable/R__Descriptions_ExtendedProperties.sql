@@ -6751,12 +6751,12 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Quality].[ControlledRunResult]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Quality].[ControlledRunResult]'), N'DispositionCodeId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Accepted, Scrap, Rework, ReturnToSupplier, UseAsIs',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Accepted, Scrap, ReturnToSupplier, UseAsIs. Rework is no longer accepted as an entry (piece 5: rework is the override move into trim, tracked in Lots.LotRework). ReturnToSupplier is applied at record time (piece 5): ControlledRunResult_Record takes the pieces off the LOT and writes a Lots.VendorReturn row pointing back here through VendorReturn.ControlledRunResultId; such an entry cannot be voided, the return is cancelled instead',
                          @level0type = N'SCHEMA', @level0name = N'Quality',
                          @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
                          @level2type = N'COLUMN', @level2name = N'DispositionCodeId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Accepted, Scrap, Rework, ReturnToSupplier, UseAsIs',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Accepted, Scrap, ReturnToSupplier, UseAsIs. Rework is no longer accepted as an entry (piece 5: rework is the override move into trim, tracked in Lots.LotRework). ReturnToSupplier is applied at record time (piece 5): ControlledRunResult_Record takes the pieces off the LOT and writes a Lots.VendorReturn row pointing back here through VendorReturn.ControlledRunResultId; such an entry cannot be voided, the return is cancelled instead',
                          @level0type = N'SCHEMA', @level0name = N'Quality',
                          @level1type = N'TABLE',  @level1name = N'ControlledRunResult',
                          @level2type = N'COLUMN', @level2name = N'DispositionCodeId';
@@ -8354,6 +8354,40 @@ BEGIN
                          @level1type = N'TABLE',  @level1name = N'LogEventType',
                          @level2type = N'COLUMN', @level2name = N'Code';
     END
+
+    IF COL_LENGTH(N'[Audit].[LogEventType]', N'RepeatsLotTimeline') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Audit].[LogEventType]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Audit].[LogEventType]'), N'RepeatsLotTimeline', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Super-lot piece 6 (migration 0114). 1 = this event''s fact is already a row in one of the LOT history streams (movement, status, attribute change, genealogy, die-cast contribution, production event), so the History tab must not show the audit row as well. 0 = the audit row is the only record and is shown. The inventory of which codes carry 1 is pinned by sql/tests/0114_SuperLotVisibility/010_schema.sql.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'LogEventType',
+                         @level2type = N'COLUMN', @level2name = N'RepeatsLotTimeline';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Super-lot piece 6 (migration 0114). 1 = this event''s fact is already a row in one of the LOT history streams (movement, status, attribute change, genealogy, die-cast contribution, production event), so the History tab must not show the audit row as well. 0 = the audit row is the only record and is shown. The inventory of which codes carry 1 is pinned by sql/tests/0114_SuperLotVisibility/010_schema.sql.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'LogEventType',
+                         @level2type = N'COLUMN', @level2name = N'RepeatsLotTimeline';
+    END
+
+    IF COL_LENGTH(N'[Audit].[LogEventType]', N'LotTimelineKind') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Audit].[LogEventType]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Audit].[LogEventType]'), N'LotTimelineKind', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The History-tab kind label for an unflagged event: Super-lot, CRT, Vendor return, Rework. NULL on an unflagged type shows as Event. Labels come from SQL, never Python.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'LogEventType',
+                         @level2type = N'COLUMN', @level2name = N'LotTimelineKind';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The History-tab kind label for an unflagged event: Super-lot, CRT, Vendor return, Rework. NULL on an unflagged type shows as Event. Labels come from SQL, never Python.',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'LogEventType',
+                         @level2type = N'COLUMN', @level2name = N'LotTimelineKind';
+    END
 END
 GO
 
@@ -8779,7 +8813,41 @@ BEGIN
                          @level1type = N'TABLE',  @level1name = N'FailureLog',
                          @level2type = N'COLUMN', @level2name = N'AttemptedParameters';
     END
+
+    IF COL_LENGTH(N'[Audit].[FailureLog]', N'LocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Audit].[FailureLog]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Audit].[FailureLog]'), N'LocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Where the attempt was made (e.g. the Assembly OUT cell of an AIM post); NULL when the writer has no location (migration 0116)',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'FailureLog',
+                         @level2type = N'COLUMN', @level2name = N'LocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Where the attempt was made (e.g. the Assembly OUT cell of an AIM post); NULL when the writer has no location (migration 0116)',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'FailureLog',
+                         @level2type = N'COLUMN', @level2name = N'LocationId';
+    END
+
+    IF COL_LENGTH(N'[Audit].[FailureLog]', N'LotId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Audit].[FailureLog]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Audit].[FailureLog]'), N'LotId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The LOT the attempt concerned (e.g. the LOT named in an AIM post); NULL when there is none (migration 0116)',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'FailureLog',
+                         @level2type = N'COLUMN', @level2name = N'LotId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The LOT the attempt concerned (e.g. the LOT named in an AIM post); NULL when there is none (migration 0116)',
+                         @level0type = N'SCHEMA', @level0name = N'Audit',
+                         @level1type = N'TABLE',  @level1name = N'FailureLog',
+                         @level2type = N'COLUMN', @level2name = N'LotId';
+    END
 END
 GO
 
--- 85 table descriptions, 434 column descriptions
+-- 84 table descriptions, 428 column descriptions
