@@ -66,8 +66,8 @@
           "name": "Text"
         },
         "position": {
-          "basis": "0",
-          "grow": 1
+          "basis": "auto",
+          "shrink": 0
         },
         "propConfig": {
           "props.text": {

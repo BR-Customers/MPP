@@ -512,9 +512,9 @@
               "direction": "column",
               "alignItems": "stretch",
               "useDefaultViewWidth": false,
-              "useDefaultViewHeight": true,
+              "useDefaultViewHeight": false,
               "elementPosition": {
-                "basis": "84px",
+                "basis": "auto",
                 "shrink": 0
               },
               "path": "BlueRidge/Components/PlantFloor/ControlledRunInfoRow",
@@ -566,9 +566,9 @@
               "direction": "column",
               "alignItems": "stretch",
               "useDefaultViewWidth": false,
-              "useDefaultViewHeight": true,
+              "useDefaultViewHeight": false,
               "elementPosition": {
-                "basis": "84px",
+                "basis": "auto",
                 "shrink": 0
               },
               "path": "BlueRidge/Components/PlantFloor/ControlledRunInfoRow",
