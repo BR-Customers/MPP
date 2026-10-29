@@ -39,18 +39,28 @@ ONE fresh review of the whole work on the most capable model at the end). Skills
 | 6 Capture session (gateway walk) | done 2026-10-29: 23 captures in the kit, bug log written, gateway back on Dev (checked) | MPP `924469a`, KIT `e464f8d` |
 | 7 Deck module 4 | done: 4 slides + menu tile live; `check_deck.py` 14/14, `validate.py` passes, kit gate 0 hits | KIT `9eb207e` |
 | 9 Demo module 4 views + tour | done 2026-10-29: super-lot page, Hold Management, dock, refusals, 9-step tour; 50/50 tests, all five tours pass at 3 viewports + iframe, 0 errors, 0 outside requests | KIT `5bc4e2f` |
-| **10 Verify, document, final review** | **not started -- resume here** | -- |
+| 10 Verify, document, final review | done 2026-10-29 except deleting the stray deck copy (locked by PowerPoint) | KIT `4564ebc`, `ca31bf4`; MPP `917da21d` |
 
-## Resume here: Task 10 (verify, document, review)
+## State: module 4 is complete (2026-10-29)
 
-Follow the plan's Task 10. Task 9 is built and checked; its rulings are below. Still open from the plan:
-`KIT/README.md` and the SOURCE note's module 4 section, the claim-by-claim walk of every module 4 caption /
-note / tour step against its capture and fact id, deleting `KIT/MES Track & Trace - MPP.pptx` (PowerPoint
-held it on 2026-10-29), and the whole-work review on the most capable model.
+Deck (31 slides, module 4 = 4 slides + intro, menu tile 04 live), demo (module 4 views + 9-step tour) and the
+README / SOURCE note are done and committed. Final checks: `check_deck.py` 14/14, `validate.py` passes, 55/55
+demo tests, all five tours at 1600x900 / 1024x768 / 700x900 / iframe with 0 errors and 0 outside requests,
+kit term gate 0 hits.
 
-Verification scripts: `KIT/tools/verify_demo.js` (now runs the m4 tour too) and a deeper m4 check kept
-in the session scratchpad (refusal wording, release frees the LOT, 10x with RESET, a form open across ticks) --
-its checks are listed in the Task 9 commit message if it needs rebuilding.
+Whole-work review (fresh reviewer, 2026-10-29): anonymization clean; claims matched the fact sheet apart from
+two nits (fixed); demo bugs fixed in KIT `ca31bf4` (dock step threw after a container member was purged;
+release / close threw on purged members; module 3's tour and Machining OUT picked a held / tagged casting
+left by the m4 tour; scrapping a held LOT to zero left it on hold). Four test gaps closed (F41, F45, F46
+signer, F49).
+
+**Left open, on purpose:**
+- `KIT\MES Track & Trace - MPP.pptx` is still locked by PowerPoint. It is byte-identical to the pre-module-4
+  Overview in git; delete it once PowerPoint closes it (its name carries the customer abbreviation).
+- A member consumed down to zero while tagged (e.g. a machined housing used in a tray) cannot be given a
+  result, so it keeps its tag and blocks Close. The demo mirrors the application here -- this is question 9
+  in the bug log, for Jacques to rule on.
+- The bug log's 2 application bugs and 11 questions: `notes/2026-10-27_super-lot-gateway-walk-bugs.md`.
 
 ## Rulings taken 2026-10-29 (Task 9)
 
