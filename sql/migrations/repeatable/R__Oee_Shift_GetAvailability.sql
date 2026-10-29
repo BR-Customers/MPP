@@ -2,7 +2,7 @@
 -- Procedure:   Oee.Shift_GetAvailability
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-19
--- Version:     2.0.1
+-- Version:     3.0
 --
 -- Description:
 --   Per-equipment availability for one runtime shift instance: planned minutes
@@ -95,6 +95,8 @@
 --   2026-08-19 - 1.0 - Initial version (backlog 6.1 / 6.2).
 --   2026-09-17 - 2.0 - Base-shrinking availability + ancestor inheritance + mean roll-up.
 --   2026-09-17 - 2.0.1 - Review fixes: no null-aggregate warning, honest minute-grid note, single rounding.
+--   2026-10-29 - 3.0 - Body moved to Oee.ufn_ShiftAvailability (OEE dashboard spec sec 6.1); this proc
+--                      is now a filtered, ordered SELECT from it. Behaviour and columns unchanged.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.Shift_GetAvailability
     @ShiftId    BIGINT,
@@ -103,239 +105,20 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- ActualStart is LOCAL (OI-38) -- cast straight to DATE, no conversion.
-    DECLARE @SchedId      BIGINT;
-    DECLARE @BusinessDate DATE;
-    SELECT @SchedId      = s.ShiftScheduleId,
-           @BusinessDate = CAST(s.ActualStart AS DATE)
-    FROM Oee.Shift s
-    WHERE s.Id = @ShiftId;
-
-    IF @SchedId IS NULL
-        RETURN;   -- empty result set = shift not found (no invented 404)
-
-    DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
-
-    -- ================================================================
-    -- 1. Every OEE unit, its window, and its nearest flagged parent
-    -- ================================================================
-    CREATE TABLE #Unit (
-        LocationId               BIGINT        NOT NULL PRIMARY KEY,
-        Code                     NVARCHAR(50)  NULL,
-        Name                     NVARCHAR(200) NULL,
-        ParentName               NVARCHAR(200) NULL,
-        SortOrder                INT           NULL,
-        FlaggedParentId          BIGINT        NULL,
-        IsRollup                 BIT           NOT NULL DEFAULT 0,
-        ShiftScheduleId          BIGINT        NULL,
-        ScheduleName             NVARCHAR(100) NULL,
-        BusinessDate             DATE          NULL,
-        StartLocal               DATETIME2(3)  NULL,
-        EndLocal                 DATETIME2(3)  NULL,
-        PlannedMinutes           INT           NULL,
-        StartUtc                 DATETIME2(3)  NULL,
-        EndUtc                   DATETIME2(3)  NULL,
-        IsOverridden             BIT           NULL,
-        ShiftOverrideId          BIGINT        NULL,
-        OverrideReason           NVARCHAR(500) NULL,
-        PlannedDowntimeMinutes   INT           NOT NULL DEFAULT 0,
-        UnplannedDowntimeMinutes INT           NOT NULL DEFAULT 0,
-        DowntimeEventCount       INT           NOT NULL DEFAULT 0,
-        AvailabilityRaw          DECIMAL(19,10) NULL,
-        Done                     BIT           NOT NULL DEFAULT 0
-    );
-
-    INSERT INTO #Unit (LocationId, Code, Name, ParentName, SortOrder, FlaggedParentId,
-                       ShiftScheduleId, ScheduleName, BusinessDate, StartLocal, EndLocal,
-                       PlannedMinutes, StartUtc, EndUtc, IsOverridden, ShiftOverrideId, OverrideReason)
-    SELECT e.LocationId, e.Code, e.Name, e.ParentName, e.SortOrder,
-           (SELECT TOP 1 a.AncestorLocationId
-            FROM Oee.ufn_OeeAncestors(e.LocationId) a
-            ORDER BY a.Distance),
-           w.ShiftScheduleId, w.ScheduleName, w.BusinessDate, w.StartLocal, w.EndLocal,
-           w.DurationMinutes,
-           -- Local window -> UTC for comparison against Oee.DowntimeEvent.StartedAt.
-           -- AT TIME ZONE is DST-aware, so this conversion is exact.
-           CAST(w.StartLocal AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)),
-           CAST(w.EndLocal   AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)),
-           w.IsOverridden, w.ShiftOverrideId, w.OverrideReason
-    FROM Oee.ufn_ResolveOeeEquipment() e
-    CROSS APPLY Oee.ufn_ShiftWindowForLocation(e.LocationId, @SchedId, @BusinessDate) w;
-
-    -- A unit with a flagged unit beneath it reports the MEAN of those units.
-    UPDATE u
-       SET IsRollup = 1
-    FROM #Unit u
-    WHERE EXISTS (SELECT 1 FROM #Unit c WHERE c.FlaggedParentId = u.LocationId);
-
-    -- ================================================================
-    -- 2. Which locations' downtime each unit counts
-    --    Itself always; for a LEAF also every flagged ancestor -- "if the line
-    --    is down, all stations are impacted" (spec D5). A roll-up counts only
-    --    its own events: its children already carry them, and adding them to
-    --    the mean's input would double-count.
-    -- ================================================================
-    CREATE TABLE #Src (
-        LocationId       BIGINT NOT NULL,
-        SourceLocationId BIGINT NOT NULL,
-        PRIMARY KEY (LocationId, SourceLocationId)
-    );
-
-    INSERT INTO #Src (LocationId, SourceLocationId)
-    SELECT u.LocationId, u.LocationId FROM #Unit u;
-
-    INSERT INTO #Src (LocationId, SourceLocationId)
-    SELECT u.LocationId, a.AncestorLocationId
-    FROM #Unit u
-    CROSS APPLY Oee.ufn_OeeAncestors(u.LocationId) a
-    WHERE u.IsRollup = 0
-      AND a.AncestorLocationId <> u.LocationId;
-
-    -- ================================================================
-    -- 3. Downtime intervals, clipped to each unit's own window
-    -- ================================================================
-    CREATE TABLE #Iv (
-        LocationId BIGINT       NOT NULL,
-        EventId    BIGINT       NOT NULL,
-        S          DATETIME2(3) NOT NULL,
-        E          DATETIME2(3) NOT NULL,
-        IsPlanned  BIT          NOT NULL,
-        INDEX IX_Iv (LocationId, S)
-    );
-
-    INSERT INTO #Iv (LocationId, EventId, S, E, IsPlanned)
-    SELECT u.LocationId,
-           de.Id,
-           CASE WHEN de.StartedAt > u.StartUtc THEN de.StartedAt ELSE u.StartUtc END,
-           CASE WHEN COALESCE(de.EndedAt, @Now) < u.EndUtc THEN COALESCE(de.EndedAt, @Now) ELSE u.EndUtc END,
-           COALESCE(rc.IsExcused, CAST(0 AS BIT))
-    FROM #Unit u
-    INNER JOIN #Src s               ON s.LocationId = u.LocationId
-    INNER JOIN Oee.DowntimeEvent de ON de.LocationId = s.SourceLocationId
-    LEFT  JOIN Oee.DowntimeReasonCode rc ON rc.Id = de.DowntimeReasonCodeId
-    WHERE de.VoidedAt IS NULL
-      AND de.StartedAt < u.EndUtc
-      AND COALESCE(de.EndedAt, @Now) > u.StartUtc;
-
-    -- ================================================================
-    -- 4. Merge by TIME, not by adding events up: two events that overlap cost
-    --    the operator one stretch of clock, and a minute covered by anything
-    --    PLANNED is planned. Measured on a minute grid (each minute's
-    --    midpoint) -- exact for minute-aligned events; a second-precision
-    --    live event carries at most about a minute's error per edge (see
-    --    MINUTE GRID above).
-    -- ================================================================
-    ;WITH D(n) AS (
-        SELECT n FROM (VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9)) v(n)
-    ),
-    Tally(n) AS (
-        SELECT a.n + 10*b.n + 100*c.n + 1000*d.n
-        FROM D a CROSS JOIN D b CROSS JOIN D c CROSS JOIN D d   -- 0..9999 minutes: ~6.9 days, ample for any shift + override
-    ),
-    Slot AS (
-        SELECT u.LocationId, DATEADD(SECOND, 30 + 60 * t.n, u.StartUtc) AS Mid
-        FROM #Unit u
-        INNER JOIN Tally t ON t.n < DATEDIFF(MINUTE, u.StartUtc, u.EndUtc)
-        WHERE EXISTS (SELECT 1 FROM #Iv iv WHERE iv.LocationId = u.LocationId)
-    ),
-    Cover AS (
-        SELECT s.LocationId, s.Mid, MAX(CAST(iv.IsPlanned AS INT)) AS AnyPlanned
-        FROM Slot s
-        INNER JOIN #Iv iv ON iv.LocationId = s.LocationId
-                         AND iv.S <= s.Mid
-                         AND iv.E >  s.Mid
-        GROUP BY s.LocationId, s.Mid
-    )
-    UPDATE u
-       SET PlannedDowntimeMinutes   = x.Planned,
-           UnplannedDowntimeMinutes = x.Unplanned
-    FROM #Unit u
-    INNER JOIN (
-        SELECT LocationId,
-               SUM(CASE WHEN AnyPlanned = 1 THEN 1 ELSE 0 END) AS Planned,
-               SUM(CASE WHEN AnyPlanned = 0 THEN 1 ELSE 0 END) AS Unplanned
-        FROM Cover
-        GROUP BY LocationId
-    ) x ON x.LocationId = u.LocationId;
-
-    UPDATE u
-       SET DowntimeEventCount = c.Cnt
-    FROM #Unit u
-    INNER JOIN (SELECT LocationId, COUNT(DISTINCT EventId) AS Cnt FROM #Iv GROUP BY LocationId) c
-        ON c.LocationId = u.LocationId;
-
-    -- ================================================================
-    -- 5. Leaf availability. PLANNED downtime shrinks the base (a lunch break
-    --    is not a loss); UNPLANNED downtime comes off what is left.
-    -- ================================================================
-    UPDATE #Unit
-       SET AvailabilityRaw =
-               CASE
-                   WHEN PlannedMinutes - PlannedDowntimeMinutes <= 0 THEN NULL
-                   WHEN PlannedMinutes - PlannedDowntimeMinutes - UnplannedDowntimeMinutes <= 0 THEN 0
-                   ELSE CAST(PlannedMinutes - PlannedDowntimeMinutes - UnplannedDowntimeMinutes AS DECIMAL(28,10))
-                        / (PlannedMinutes - PlannedDowntimeMinutes)
-               END,
-           Done = 1
-    WHERE IsRollup = 0;
-
-    -- ================================================================
-    -- 6. Roll-ups, deepest first: the unweighted mean of the flagged units
-    --    directly beneath. AVG ignores NULL children (a zero base), and a
-    --    roll-up whose children are all NULL stays NULL.
-    -- ================================================================
-    WHILE EXISTS (SELECT 1 FROM #Unit WHERE Done = 0)
-    BEGIN
-        UPDATE u
-           SET AvailabilityRaw = c.AvgAvailability,
-               Done            = 1
-        FROM #Unit u
-        CROSS APPLY (
-            SELECT AVG(ch.AvailabilityRaw) AS AvgAvailability
-            FROM #Unit ch
-            WHERE ch.FlaggedParentId = u.LocationId
-              AND ch.AvailabilityRaw IS NOT NULL
-        ) c
-        WHERE u.Done = 0
-          AND NOT EXISTS (SELECT 1 FROM #Unit ch WHERE ch.FlaggedParentId = u.LocationId AND ch.Done = 0);
-
-        IF @@ROWCOUNT = 0 BREAK;   -- defensive: a parent cycle would otherwise spin
-    END
-
-    -- ================================================================
-    -- 7. Result
-    -- ================================================================
+    -- v3.0: the calculation lives in Oee.ufn_ShiftAvailability (same rules,
+    -- same columns). An unknown shift returns no rows there, so the empty
+    -- result set still means "shift not found".
     SELECT
-        @ShiftId                  AS ShiftId,
-        u.ShiftScheduleId,
-        u.ScheduleName,
-        u.BusinessDate,
-        u.LocationId,
-        u.Code                    AS LocationCode,
-        u.Name                    AS LocationName,
-        u.StartLocal,
-        u.EndLocal,
-        u.PlannedMinutes,
-        u.PlannedDowntimeMinutes + u.UnplannedDowntimeMinutes AS DowntimeMinutes,
-        u.UnplannedDowntimeMinutes AS UnexcusedDowntimeMinutes,
-        CASE WHEN b.BaseMinutes - u.UnplannedDowntimeMinutes < 0
-             THEN 0 ELSE b.BaseMinutes - u.UnplannedDowntimeMinutes END AS RunMinutes,
-        CAST(u.AvailabilityRaw AS DECIMAL(5,4)) AS Availability,
-        u.DowntimeEventCount,
-        u.IsOverridden,
-        u.ShiftOverrideId,
-        u.OverrideReason,
-        u.PlannedDowntimeMinutes,
-        u.UnplannedDowntimeMinutes,
-        b.BaseMinutes,
-        u.IsRollup,
-        u.FlaggedParentId         AS ParentLocationId
-    FROM #Unit u
-    CROSS APPLY (
-        SELECT CASE WHEN u.PlannedMinutes - u.PlannedDowntimeMinutes < 0
-                    THEN 0 ELSE u.PlannedMinutes - u.PlannedDowntimeMinutes END AS BaseMinutes
-    ) b
-    WHERE @LocationId IS NULL OR u.LocationId = @LocationId
-    ORDER BY u.ParentName, u.SortOrder, u.Name;
+        a.ShiftId, a.ShiftScheduleId, a.ScheduleName, a.BusinessDate,
+        a.LocationId, a.LocationCode, a.LocationName,
+        a.StartLocal, a.EndLocal, a.PlannedMinutes,
+        a.DowntimeMinutes, a.UnexcusedDowntimeMinutes, a.RunMinutes,
+        a.Availability, a.DowntimeEventCount, a.IsOverridden,
+        a.ShiftOverrideId, a.OverrideReason,
+        a.PlannedDowntimeMinutes, a.UnplannedDowntimeMinutes, a.BaseMinutes,
+        a.IsRollup, a.ParentLocationId
+    FROM Oee.ufn_ShiftAvailability(@ShiftId) a
+    WHERE @LocationId IS NULL OR a.LocationId = @LocationId
+    ORDER BY a.SortParentName, a.SortOrder, a.LocationName;
 END
 GO
