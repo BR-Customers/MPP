@@ -1,8 +1,10 @@
 # MPP questions: hold parts vs shipping, and a part status matrix (2026-10-27/28)
 
-**Status:** investigation done, answer drafted, **nothing sent to MPP and nothing built**. Two
-questions are waiting on Jacques (end of this note) before the reply goes out. Dev and prod
-untouched; everything below came from reading the SQL and read-only queries on `MPP_MES_Dev`.
+**Status (2026-10-29):** Jacques ruled on the open questions (see "Rulings" at the end). The
+reply email (below) and the matrix doc
+([MES Part Status Matrix and Hold Controls](https://claude.ai/artifact/4oj5aZFBjVRxNsLbgCymgs))
+are **ready for Jacques to send. Nothing sent to MPP.** The tray-hold fix is built (Rulings 1). Prod untouched;
+everything below came from reading the SQL and read-only queries on `MPP_MES_Dev`.
 
 ## The ask
 
@@ -104,16 +106,70 @@ Ownership is not modelled in MES -- MPP fills that column (e.g. Quality owns hol
 - Item 2: documentation only; every row already exists in the system.
 - Pricing is Jacques's call -- no figures given.
 
-## Waiting on Jacques
+## Rulings (Jacques, 2026-10-29)
 
-1. The suspected gap above: operator job, or should LOT holds block containers?
-2. "Documentation" in MPP's list -- no MES equivalent found. Missing-paperwork hold (certs, PPAP)?
-   That would be a fifth `HoldTypeCode` row.
-3. (Side item) "high inventory" comment for pass-through parts -- MES has a low-inventory lock
-   only; high-inventory would be new work. Also "centralized location monitor for daily order
-   versus inventory" on the slide was not investigated.
+1. **Tray-hold gap: a LOT hold should block its containers.** Re-verified against the procs on
+   2026-10-29 (`Container_Ship` line 54 checks only container holds, line 67 only `CrtActive`;
+   `Container_Complete` lines 222-230 skip a held tray but still complete; `Hold_Place` accepts a
+   Closed LOT). Told to MPP as a small, separately quoted change. Write-up:
+   `notes/2026-10-29_followon-tray-lot-hold-blocks-container.md`. **Built the same day**
+   (`Container_Ship` v1.1 + test `035_Container_Ship_lot_hold.sql`); not in prod yet.
+2. **"Documentation": ask MPP what they mean.** If it is a missing-paperwork hold (certs, PPAP),
+   it is one new `HoldTypeCode` row.
+3. **High inventory on pass-through parts + daily order-vs-inventory monitor: new projects.**
+   MES has no integration with MPP's ERP, no production orders and no shipping tie-in beyond AIM.
+   Both need ERP / production-scheduling integration and deeper AIM integration -- doable, but an
+   engineering effort to scope.
+   *Correction to the earlier draft:* MES has no "low-inventory lock". What exists is the
+   consumption-point cap (`Parts.ItemLocation.MaxQuantity`; `Lots.Lot_Create` refuses a Received
+   LOT past it) and the M&A Line Inventory panel colouring (orange <= 30 % of Max, red <= 10 %).
+   The low-inventory toast was retired 2026-09-17 (migration 0095).
+4. **Format:** email text + a one-page matrix doc for their meeting.
 
-## Next steps once answered
+Still open in the doc: whether to keep the container "Rework" row (Controlled Run release, not
+in prod yet) -- comment left for Jacques on the doc.
 
-Turn sections 1-2 into the reply to MPP (and optionally a one-page matrix document for their
-meeting), in Jacques's voice. Do not build anything without agreement.
+## Reply email (draft, Jacques's voice -- ready to paste)
+
+> Subject: MES -- held parts and part status matrix
+>
+> Hi all,
+>
+> Following up on the two items from the business plan. The detail and the matrix are in the
+> attached one-pager; the short version:
+>
+> **1. Can held parts ship?** No, as long as shipments are scanned out in MES. Quality can hold a
+> LOT or a container in MES. A held LOT cannot be moved, consumed, machined, assembled or packed,
+> and the Shipping Dock scan refuses a held container. Release restores the previous status, and
+> both steps are recorded with who and when.
+>
+> One case is not covered yet: holding a single finished-good tray does not stop the container
+> it is packed in, unless the container is held as well. We recommend closing that with a small
+> change, which we will quote separately.
+>
+> To retire the manual hold tags, MPP would need to (a) place holds in MES instead of on paper,
+> and (b) scan every shipment out at the MES Shipping Dock, since that scan is where the block
+> is enforced. Lines still running in parallel with the legacy system keep the current hold
+> process until they cut over.
+>
+> **2. Part status matrix.** DC, TS, MS and FG are stages in the process rather than statuses.
+> MES tracks the part type, the process stage, the LOT status (Open, Good, Hold, Scrap, Closed),
+> the hold reason and the container status (which decides whether it can ship). The one-pager
+> maps your terms to those and lists what each status allows. We left the ownership column for
+> you to fill in.
+>
+> Two questions back to you:
+> - "Documentation" -- we could not find an equivalent in MES. What does it mean for you? If it
+>   is a hold for missing paperwork (certs, PPAP), that is a new hold type and a configuration
+>   change.
+> - The high-inventory comment for pass-through parts and the daily order-versus-inventory
+>   monitor both need data MES does not have today: MES is not connected to your ERP,
+>   production orders or schedule. Those would be new projects (ERP and scheduling integration
+>   plus a deeper AIM integration). Very doable, but an engineering effort we should scope
+>   together.
+>
+> Happy to walk through it on Thursday's call.
+>
+> Jacques
+
+Cost figures are deliberately absent -- pricing is Jacques's call.

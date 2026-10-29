@@ -1,12 +1,21 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Container_Ship.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0
+-- Version:     1.1
 -- Description: Ships a container at the Shipping Dock (Arc 2 Phase 7). Validates the
---              container is Complete (2), has NO open hold, is not still pending a
---              Controlled Run Tag validation (any tray's FG LOT CrtActive = 1), and the
---              shipping label is not void; flips status -> Shipped (3); audits
---              'ContainerShipped'.
+--              container is Complete (2), has NO open hold, holds no LOT that is on
+--              hold, is not still pending a Controlled Run Tag validation (any tray's
+--              FG LOT CrtActive = 1), and the shipping label is not void; flips
+--              status -> Shipped (3); audits 'ContainerShipped'.
+--
+--              v1.1 (2026-10-29): a held LOT packed in the container blocks the ship
+--              even when the container itself was never held. "Packed in it" = the two
+--              paths Quality.Hold_ListAssociatedContainers uses: a finished-good tray
+--              LOT (ContainerTray.FinishedGoodLotId) or the producing LOT of a serial
+--              still in the container (ContainerSerial.RemovedAt IS NULL). Upstream
+--              ancestors (a held casting) are deliberately NOT followed. Container_Complete
+--              is unchanged: it still completes with a held tray, and Hold_Release
+--              closes that tray later (FAT #21) -- this check is the only gate.
 --              No OUTPUT params (FDS-11-011); single terminal SELECT @Status,@Message.
 -- ============================================================
 
@@ -22,6 +31,7 @@ BEGIN
     DECLARE @Status  BIT           = 0;
     DECLARE @Message NVARCHAR(500) = N'Unknown error';
     DECLARE @ContainerId BIGINT, @IsVoid BIT, @ConStatus BIGINT, @Activity NVARCHAR(500), @ShipLoc BIGINT;
+    DECLARE @HeldLotName NVARCHAR(50) = NULL;
 
     BEGIN TRY
         IF @ShippingLabelId IS NULL OR @AppUserId IS NULL
@@ -54,6 +64,25 @@ BEGIN
         IF EXISTS (SELECT 1 FROM Quality.HoldEvent WHERE ContainerId = @ContainerId AND ReleasedAt IS NULL)
         BEGIN
             SET @Message = N'Container is on hold (cannot ship).';
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- v1.1: a held LOT inside the container (tray LOT or a packed serial's
+        -- producing LOT). Named in the refusal so the dock knows which hold to chase.
+        SELECT TOP 1 @HeldLotName = l.LotName
+        FROM Lots.Lot l
+        WHERE l.Id IN (SELECT ct.FinishedGoodLotId FROM Lots.ContainerTray ct
+                       WHERE ct.ContainerId = @ContainerId AND ct.FinishedGoodLotId IS NOT NULL
+                       UNION
+                       SELECT sp.ProducingLotId FROM Lots.ContainerSerial cs
+                       INNER JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId
+                       WHERE cs.ContainerId = @ContainerId AND cs.RemovedAt IS NULL)
+          AND EXISTS (SELECT 1 FROM Quality.HoldEvent h WHERE h.LotId = l.Id AND h.ReleasedAt IS NULL)
+        ORDER BY l.LotName;
+        IF @HeldLotName IS NOT NULL
+        BEGIN
+            SET @Message = N'LOT ' + @HeldLotName + N' in this container is on hold (cannot ship).';
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
         END
