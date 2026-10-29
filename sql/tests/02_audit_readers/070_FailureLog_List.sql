@@ -80,7 +80,11 @@ CREATE TABLE #List1 (
     FailureReason       NVARCHAR(500),
     ProcedureName       NVARCHAR(200),
     AttemptedParameters NVARCHAR(MAX),
-    TotalCount          INT
+    TotalCount          INT,
+    LocationId          BIGINT,
+    LocationName        NVARCHAR(200),
+    LotId               BIGINT,
+    LotName             NVARCHAR(50)
 );
 
 INSERT INTO #List1
@@ -119,7 +123,11 @@ CREATE TABLE #List2 (
     FailureReason       NVARCHAR(500),
     ProcedureName       NVARCHAR(200),
     AttemptedParameters NVARCHAR(MAX),
-    TotalCount          INT
+    TotalCount          INT,
+    LocationId          BIGINT,
+    LocationName        NVARCHAR(200),
+    LotId               BIGINT,
+    LotName             NVARCHAR(50)
 );
 
 INSERT INTO #List2
@@ -191,7 +199,11 @@ CREATE TABLE #FL_Like (
     FailureReason       NVARCHAR(500),
     ProcedureName       NVARCHAR(200),
     AttemptedParameters NVARCHAR(MAX),
-    TotalCount          INT
+    TotalCount          INT,
+    LocationId          BIGINT,
+    LocationName        NVARCHAR(200),
+    LotId               BIGINT,
+    LotName             NVARCHAR(50)
 );
 INSERT INTO #FL_Like EXEC Audit.FailureLog_List
     @StartDate         = @Start,

@@ -2,7 +2,7 @@
 -- Procedure:   Audit.FailureLog_GetByEntity
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-13
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Returns all FailureLog rows for a specific entity type and entity ID,
@@ -23,6 +23,8 @@
 -- Change Log:
 --   2026-04-13 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-14 - 2.0 - Removed OUTPUT params for Named Query compatibility
+--   2026-10-29 - 2.1 - Migration 0116: + trailing LocationId, LocationName,
+--                       LotId, LotName (LEFT JOINs)
 -- =============================================
 CREATE OR ALTER PROCEDURE Audit.FailureLog_GetByEntity
     @LogEntityTypeCode  NVARCHAR(50),
@@ -51,11 +53,17 @@ BEGIN
         let.Name                AS LogEventTypeName,
         fl.FailureReason,
         fl.ProcedureName,
-        fl.AttemptedParameters
+        fl.AttemptedParameters,
+        fl.LocationId,
+        loc.Name                AS LocationName,
+        fl.LotId,
+        lot.LotName             AS LotName
     FROM Audit.FailureLog           fl
     INNER JOIN Location.AppUser     au   ON au.Id   = fl.AppUserId
     INNER JOIN Audit.LogEntityType  lent ON lent.Id = fl.LogEntityTypeId
     INNER JOIN Audit.LogEventType   let  ON let.Id  = fl.LogEventTypeId
+    LEFT JOIN  Location.Location    loc  ON loc.Id  = fl.LocationId
+    LEFT JOIN  Lots.Lot             lot  ON lot.Id  = fl.LotId
     WHERE fl.LogEntityTypeId = @LogEntityTypeId
       AND fl.EntityId = @EntityId
     ORDER BY fl.AttemptedAt DESC;

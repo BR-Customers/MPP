@@ -53,7 +53,7 @@ DECLARE @PoolId BIGINT = SCOPE_IDENTITY();
 -- GetForPost returns the payload.
 DECLARE @G TABLE (Id BIGINT, AimShipperId NVARCHAR(50), CustomerPartNumber NVARCHAR(50),
                   Quantity INT, LotNumber NVARCHAR(50), PostedAt DATETIME2(3), VoidedAt DATETIME2(3), PostAttempts INT,
-                  ContainerId BIGINT, ItemPartNumber NVARCHAR(50));
+                  ContainerId BIGINT, ItemPartNumber NVARCHAR(50), LocationId BIGINT, LotId BIGINT);
 INSERT INTO @G EXEC Lots.AimShipperIdPool_GetForPost @AimShipperId = N'000900201';
 DECLARE @GotPart NVARCHAR(50) = (SELECT CustomerPartNumber FROM @G);
 EXEC test.Assert_IsEqual

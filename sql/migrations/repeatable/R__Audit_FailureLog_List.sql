@@ -19,6 +19,8 @@
 --   @AppUserId         BIGINT        NULL - exact match
 --   @ProcedureName     NVARCHAR(200) NULL - exact match
 --   @FailureReasonLike NVARCHAR(500) NULL - substring match via LIKE '%X%'
+--   @LocationId        BIGINT        NULL - exact match on FailureLog.LocationId
+--   @LotNameLike       NVARCHAR(50)  NULL - substring match on the LOT's name
 --
 -- Result set: top 1000 rows + TotalCount window aggregate.
 --
@@ -29,6 +31,9 @@
 --                       renamed @FilterAppUserId -> @AppUserId; added LogEntityTypeCode
 --                       and LogEventTypeCode columns; switched @EndDate to exclusive
 --                       upper bound (< DATEADD(day,1,@EndDate))
+--   2026-10-29 - 3.1 - Migration 0116: + @LocationId / @LotNameLike filters;
+--                       + trailing LocationId, LocationName, LotId, LotName columns
+--                       (AFTER TotalCount, so existing positional captures widen only)
 -- =============================================
 CREATE OR ALTER PROCEDURE Audit.FailureLog_List
     @StartDate           DATETIME2(3),
@@ -36,7 +41,9 @@ CREATE OR ALTER PROCEDURE Audit.FailureLog_List
     @LogEntityTypeCode   NVARCHAR(50)  = NULL,
     @AppUserId           BIGINT        = NULL,
     @ProcedureName       NVARCHAR(200) = NULL,
-    @FailureReasonLike   NVARCHAR(500) = NULL
+    @FailureReasonLike   NVARCHAR(500) = NULL,
+    @LocationId          BIGINT        = NULL,
+    @LotNameLike         NVARCHAR(50)  = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -54,17 +61,25 @@ BEGIN
         fl.FailureReason,
         fl.ProcedureName,
         fl.AttemptedParameters,
-        COUNT(*) OVER()              AS TotalCount
+        COUNT(*) OVER()              AS TotalCount,
+        fl.LocationId,
+        loc.Name                     AS LocationName,
+        fl.LotId,
+        lot.LotName                  AS LotName
     FROM Audit.FailureLog fl
     INNER JOIN Audit.LogEntityType let ON let.Id = fl.LogEntityTypeId
     LEFT JOIN  Audit.LogEventType  lev ON lev.Id = fl.LogEventTypeId
     LEFT JOIN  Location.AppUser    au  ON au.Id  = fl.AppUserId
+    LEFT JOIN  Location.Location   loc ON loc.Id = fl.LocationId
+    LEFT JOIN  Lots.Lot            lot ON lot.Id = fl.LotId
     WHERE fl.AttemptedAt >= @StartDate
       AND fl.AttemptedAt <  DATEADD(day, 1, @EndDate)
       AND (@LogEntityTypeCode IS NULL OR let.Code = @LogEntityTypeCode)
       AND (@AppUserId         IS NULL OR fl.AppUserId = @AppUserId)
       AND (@ProcedureName     IS NULL OR fl.ProcedureName = @ProcedureName)
       AND (@FailureReasonLike IS NULL OR fl.FailureReason LIKE N'%' + @FailureReasonLike + N'%')
+      AND (@LocationId        IS NULL OR fl.LocationId = @LocationId)
+      AND (@LotNameLike       IS NULL OR lot.LotName LIKE N'%' + @LotNameLike + N'%')
     ORDER BY fl.AttemptedAt DESC;
 END;
 GO

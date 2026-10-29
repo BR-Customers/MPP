@@ -12,6 +12,11 @@
 --
 --              This proc must be safe to call outside of any transaction
 --              context — it commits its own insert standalone.
+--
+--              v1.1 (2026-10-29, migration 0116): optional @LocationId /
+--              @LotId -- where the attempt was made and the LOT it concerned
+--              (MPP 2026-09-16, AIM failures). NULL when not supplied (every
+--              caller before 0116). Still emits NO result set.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Audit.Audit_LogFailure
@@ -21,7 +26,9 @@ CREATE OR ALTER PROCEDURE Audit.Audit_LogFailure
     @LogEventTypeCode    NVARCHAR(50),
     @FailureReason       NVARCHAR(500),
     @ProcedureName       NVARCHAR(200),
-    @AttemptedParameters NVARCHAR(MAX)   = NULL
+    @AttemptedParameters NVARCHAR(MAX)   = NULL,
+    @LocationId          BIGINT          = NULL,
+    @LotId               BIGINT          = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -42,7 +49,9 @@ BEGIN
         LogEventTypeId,
         FailureReason,
         ProcedureName,
-        AttemptedParameters
+        AttemptedParameters,
+        LocationId,
+        LotId
     )
     VALUES (
         SYSUTCDATETIME(),
@@ -52,7 +61,9 @@ BEGIN
         ISNULL(@LogEventTypeId, 1),      -- default if code not found
         @FailureReason,
         @ProcedureName,
-        @AttemptedParameters
+        @AttemptedParameters,
+        @LocationId,
+        @LotId
     );
 
 END;

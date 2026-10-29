@@ -68,7 +68,11 @@ CREATE TABLE #GetByEntity1 (
     LogEventTypeName    NVARCHAR(100),
     FailureReason       NVARCHAR(500),
     ProcedureName       NVARCHAR(200),
-    AttemptedParameters NVARCHAR(MAX)
+    AttemptedParameters NVARCHAR(MAX),
+    LocationId          BIGINT,
+    LocationName        NVARCHAR(200),
+    LotId               BIGINT,
+    LotName             NVARCHAR(50)
 );
 
 INSERT INTO #GetByEntity1
@@ -119,7 +123,11 @@ CREATE TABLE #GetByEntity2 (
     LogEventTypeName    NVARCHAR(100),
     FailureReason       NVARCHAR(500),
     ProcedureName       NVARCHAR(200),
-    AttemptedParameters NVARCHAR(MAX)
+    AttemptedParameters NVARCHAR(MAX),
+    LocationId          BIGINT,
+    LocationName        NVARCHAR(200),
+    LotId               BIGINT,
+    LotName             NVARCHAR(50)
 );
 
 INSERT INTO #GetByEntity2

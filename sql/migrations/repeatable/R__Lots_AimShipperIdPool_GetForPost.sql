@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_AimShipperIdPool_GetForPost.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.2
+-- Version:     1.3
 -- Description: Reads one pool row's AIM post-back payload by shipper ID, for
 --              BlueRidge.Lots.AimPost.postOne. Re-read on EVERY attempt (not
 --              cached by the caller). Read proc: empty rowset = not found, no
@@ -20,6 +20,12 @@
 --              still returned. Also returns ContainerId + ItemPartNumber so
 --              postOne can render diagnostics from this one read, including on
 --              the retry-sweep path where no container context exists.
+--              v1.3 (2026-10-29, Migration 0116): + LocationId (the container's
+--              CurrentLocationId) and LotId (the Lots.Lot whose LotName is the
+--              FROZEN LotNumber -- the LOT AIM was told about, not re-derived from
+--              trays that may have changed since completion), appended at the END
+--              for the AIM Failure Log row. Both NULL when there is no container /
+--              no LotNumber / no LOT by that name.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.AimShipperIdPool_GetForPost
     @AimShipperId NVARCHAR(50)
@@ -40,10 +46,13 @@ BEGIN
         p.VoidedAt                                                AS VoidedAt,   -- 0111: AimPost.postOne refuses a voided row
         p.PostAttempts                                            AS PostAttempts,
         p.ConsumedByContainerId                                   AS ContainerId,
-        i.PartNumber                                              AS ItemPartNumber
+        i.PartNumber                                              AS ItemPartNumber,
+        c.CurrentLocationId                                       AS LocationId,   -- 0116
+        l.Id                                                      AS LotId         -- 0116
     FROM Lots.AimShipperIdPool p
     LEFT JOIN Lots.Container c ON c.Id = p.ConsumedByContainerId
     LEFT JOIN Parts.Item i ON i.Id = c.ItemId
+    LEFT JOIN Lots.Lot l ON l.LotName = p.LotNumber
     WHERE p.AimShipperId = @AimShipperId;
 END;
 GO
