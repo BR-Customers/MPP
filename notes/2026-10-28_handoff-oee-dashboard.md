@@ -18,6 +18,22 @@ Jacques answered the four questions and **approved spec v0.2**. The answers are 
 
 Note: the highest versioned migration is now `0116` (AIM FailureLog). The plan needs none; re-check before adding one.
 
+## Update 2026-10-30 (later) -- spec v0.3 written, awaiting re-approval
+
+After the gate miss, Jacques reviewed the design: the whole-plant Week read was 12.6-24.8 s
+because every shift was recomputed on every read and facts were re-derived instead of
+recorded. Agreed direction, now spec v0.3 (sections 6.1, 6.7, 6.8, 7.4-7.5, 13):
+- Availability from **summed durations** (the clock-overlap merge under-counts end-of-shift
+  duration entries, which all sit at shift start). `Shift_GetAvailability` adopts it.
+- Per-shift figures stored in **`Oee.ShiftSummary`**: computed at shift close, refreshed within
+  30 min of any later edit (15-min timer), nightly 7-day safety rebuild.
+- **`Lots.Lot.ShiftId`** stamped by the Assembly OUT mint, one-time backfill. Good = quantity at
+  mint (split / merge / rework children create new Manufactured LOTs and must not count).
+- Full writer inventory in spec 6.8.
+Open for Jacques: Q5 minted-quantity column, Q6 change detection vs writers marking stale.
+The plan must be rewritten after re-approval; Tasks 1-6 code is partly carried forward
+(spec 13).
+
 ## Update 2026-10-30 -- building; STOPPED at the benchmark gate (plan Task 7)
 
 Running the plan natively on `jacques/working`. Ledger (rulings, per-task evidence):

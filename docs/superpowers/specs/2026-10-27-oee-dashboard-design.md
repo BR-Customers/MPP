@@ -1,13 +1,14 @@
 # OEE Dashboard -- Availability and Quality, Site to Unit
 
 **Date:** 2026-10-27
-**Status:** Approved by Jacques 2026-10-29 (v0.2)
+**Status:** Draft v0.3 -- needs Jacques's re-approval (v0.2 was approved 2026-10-29; the build stopped at the benchmark gate and this revision changes how the numbers are computed and stored)
 **Mockups:** `docs/superpowers/specs/2026-10-27-oee-dashboard-mockups/` (open in a browser; the dark-navy frames are the screens, the text around them is commentary)
 
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-10-27 | First draft from the brainstorm with Jacques. |
 | 0.2 | 2026-10-29 | Jacques answered the four open questions (Section 11). Scrap is charged by defect code at area level (6.4); production day runs 3rd -> 1st -> 2nd (6.6); FG-only M&A good confirmed; no change order -- everything ships. |
+| 0.3 | 2026-10-30 | Rework after the benchmark gate missed (Section 13). Availability is computed from entered DURATIONS, not clock overlap (6.1, D17). Per-shift figures are stored in a summary table, computed when a shift closes and refreshed within 30 minutes of any later edit, with a nightly safety net (6.7, 6.8, D16, D19). Finished-good LOTs carry the shift they were minted in (7.4, D18). INSP + Offsite lines sit under M&A (D20). Writer inventory added (6.8). |
 
 ---
 
@@ -27,13 +28,13 @@ This feature puts what the plant already records in front of supervisors and man
 - G4. **Shift / Day / Week zoom** with previous/next stepping on all three levels.
 - G5. **Performance and OEE shown as darkened "Coming in a future deployment" cards** on every level so the shape of the finished product is visible without implying numbers that do not exist.
 - G6. Fix the two scrap writers that drop shift and line, so M&A quality is not empty.
+- G7. **Every screen answers in under 2 seconds at any zoom**, including a whole-plant Week. Per-shift figures are stored, so a read never recomputes history (6.7).
 
 **Non-goals (this deployment)**
 
 - Performance and OEE numbers. They need ideal cycle times (Section 9).
 - Any timeline / Gantt of downtime. Downtime is entered at shift end as durations; clock positions would be fiction.
 - PLC-sourced downtime. `DowntimePlcWatcher` is not commissioned (`_WATCH = []`) and there is no Tag Historian.
-- `Oee.OeeSnapshot` or any stored roll-up. Everything is computed on read.
 - Changing how operators record scrap. No new pickers, no per-machine scrap at Trim, no per-side scrap on M&A lines.
 
 **Anti-goals** -- it fails even if it works if:
@@ -42,13 +43,16 @@ This feature puts what the plant already records in front of supervisors and man
 - Area or plant figures average percentages, so a press that ran 2 hours weighs as much as one that ran 8.
 - It forces a workflow change operators have refused (live downtime entry, scrap side selection).
 - It invents precision: a trim press "quality" figure when trim scrap is only known by shop.
+- It under-counts downtime: two 30-minute end-of-shift entries on one press must cost 60 minutes, not 30 (6.1).
+- It counts the same pieces twice: splitting, merging or reworking a finished-good LOT is not new production (6.4).
 
 ## 3. Constraints
 
 - **Scope.** `reference/MPP_Scope_Matrix.xlsx` rows 16 (OEE) and 18 (KPIs) read "Not Included"; FDS-09-011 tags OEE FUTURE. Row 17 (Downtime) and FDS 9.4 (shift availability, MVP) are in. **Jacques, 2026-10-29: no change order.** Availability, downtime and quality are built and shipped now. The plant already records good and bad parts, and showing two of OEE's three factors has clear precedent. Only Performance and OEE stay as future cards (Section 11, Q4).
 - **Downtime is entered at end of shift**, by operators who will not change that. Figures for a shift are only complete once its end-of-shift entry is done.
 - **SQL conventions** from CLAUDE.md: read procs return one result set, no OUTPUT parameters, timestamps stored UTC and displayed ET, business rules in SQL not Python, `EXEC` parameters literal or `@variable`.
-- **INSERT-EXEC cannot nest.** Tests capture procs with INSERT-EXEC, so a new read proc cannot itself INSERT-EXEC `Oee.Shift_GetAvailability`. The availability calculation must be shared through a function (Section 6.1).
+- **Late entries are normal.** End-of-shift downtime, scrap and die-cast reconciliation routinely arrive after the shift has closed, sometimes much later. Stored figures must follow them (6.8).
+- **INSERT-EXEC cannot nest.** Tests capture procs with INSERT-EXEC, so a read proc cannot itself INSERT-EXEC another status-row or read proc; shared logic lives in functions or in the summary table.
 - **Ignition**: all named queries in Core; new views in MPP; new view folders need `view.json` + `resource.json`; run `scan.ps1` after adding resources. File edits to existing views are permitted for this work (Jacques, 2026-10-27).
 - **Shared Dev DB and gateway.** Do not reset `MPP_MES_Dev`; validate on a throwaway `MPP_MES_Test`.
 
@@ -58,7 +62,7 @@ This feature puts what the plant already records in front of supervisors and man
 |---|---|
 | D1 | Build now: Availability, downtime, shifts, Quality (good vs scrap). Performance and OEE are darkened future cards. |
 | D2 | Performance, when it comes, uses an ideal cycle time **per die or cast part** -- "that's as good as it gets". |
-| D3 | On M&A the **line** is the OEE unit. Its stations (Machining, Assembly Conveyor A/B, ...) contribute **downtime only**. Line availability is the mean of its OEE-enabled stations -- which is what `Shift_GetAvailability` v2.0 already does. |
+| D3 | On M&A the **line** is the OEE unit. Its stations (Machining, Assembly Conveyor A/B, ...) contribute **downtime only**. Line availability is the mean of its OEE-enabled stations -- which is what `Shift_GetAvailability` v2.0 already does. Kept under D17: a line-level entry counts against every station. |
 | D4 | The `IsOeeEnabled` flag ("OEE / downtime enabled" in the Plant Hierarchy editor) decides which locations are units. Already how `DowntimeScope_ListForTerminal` and `Shift_GetAvailability` work; no change. |
 | D5 | **Trim scrap stays at shop (area) level.** The part is known (`RejectEvent.ItemId`), which is enough. Trim press tiles carry availability only; quality lives on the shop, broken out by part. |
 | D6 | **M&A scrap stays at line level.** No side picker. "No need to force something operators and staff are not ready to integrate." |
@@ -71,6 +75,11 @@ This feature puts what the plant already records in front of supervisors and man
 | D13 | **Production day runs 3rd -> 1st -> 2nd.** The 3rd shift starting Monday 22:30 belongs to Tuesday (6.6). |
 | D14 | M&A good stays Manufactured FinishedGood LOTs only: no MPP line ends in a SubAssembly. |
 | D15 | No change order. Everything in this spec ships now, including the Supervisor Dashboard tile and the PDF report. The pages are named "OEE" (`/shop-floor/oee`). |
+| D16 | **Per-shift figures are stored** in a summary table (6.7) and the dashboard reads them; it does not recompute history on every read (Jacques, 2026-10-30, after the benchmark). |
+| D17 | **Availability is computed from entered durations, summed.** Clock-overlap merging is dropped: MPP's downtime is mostly a duration entered at the end of the shift, and those entries all sit at the shift start, so merging them by clock under-counts (6.1). `Oee.Shift_GetAvailability` adopts the same method -- one definition of availability. |
+| D18 | **A finished-good LOT records the shift it was minted in** (`Lots.Lot.ShiftId`), stamped by the Assembly OUT mint; existing LOTs are backfilled once (7.4). |
+| D19 | **Refresh:** a shift is computed when it closes and recomputed within 30 minutes of any later edit; a nightly sweep rebuilds the last 7 days as a safety net (6.8). The writer inventory has to be complete (6.8). |
+| D20 | Inspection (INSP) and Offsite (OS-PROD) OEE lines are units under **M&A**, each in its own ProductionArea group (Jacques, 2026-10-30). |
 
 ## 5. The screens
 
@@ -126,11 +135,32 @@ One Reporting Module PDF, **"OEE Summary"**, registry key `oee_summary`, paramet
 
 ## 6. How the numbers are computed
 
-### 6.1 Availability -- reuse, don't rewrite
+### 6.1 Availability -- summed durations (D17)
 
-The per-shift calculation in `Oee.Shift_GetAvailability` v2.0.1 is the authority (schedule-based planned time, overrides, time-overlap downtime matching, one-minute grid, planned = `IsExcused`, ancestor inheritance, mean roll-up). It has to become a table-valued function **`Oee.ufn_ShiftAvailability(@ShiftId)`** returning the same columns, and the proc reduces to `SELECT ... FROM Oee.ufn_ShiftAvailability(@ShiftId) WHERE @LocationId IS NULL OR LocationId = @LocationId`. Its existing tests must pass unchanged. All new procs read the function.
+**Why the method changed.** v0.2 reused `Shift_GetAvailability` v2.0, which merges downtime by clock position on a one-minute grid. That is the right model only when downtime has real start and end times from a live source such as a PLC. MPP's downtime is mostly a duration entered at the end of the shift: `Oee.DowntimeEvent_RecordApproximate` stores it with a nominal window, `StartedAt` = shift start and `EndedAt` = start + duration, and only `DurationMinutes` + `ShiftId` are authoritative (its header says so). Every such entry for a press starts at the same instant, so a clock merge counts a 30-minute and a 45-minute entry as 45 minutes, not 75. Availability would read too high on exactly the data MPP enters most.
 
-**This is a rewrite, not a move.** The proc is built on `#temp` tables, `UPDATE`s and a `WHILE` loop (`R__Oee_Shift_GetAvailability.sql` ~111-332), none of which a function allows. It becomes a multi-statement TVF on table variables, or (better if it can be done) a set-based inline TVF. Table variables carry no statistics, and Week zoom calls it ~21 times per request, and the 7-day trend calls it for ~21 shifts too. **Benchmark first:** before any view work, time a Week-zoom `Dashboard_GetUnitSummary` across the whole plant on a DB holding a realistic month of downtime. Target: under 2 s. If it misses, that is the trigger to revisit a per-shift cache (the non-goal in Section 2 is "not this deployment unless the benchmark forces it", and the builder raises it rather than deciding it).
+**The rule** (standard OEE, per OEE location per shift):
+
+```
+PlannedMinutes  = the location's scheduled window for the shift (+ override)   -- unchanged
+Downtime        = SUM of the durations of the shift's downtime entries
+                  (DowntimeEvent.ShiftId = the shift, not voided)
+  duration      = DurationMinutes                 when IsApproximate = 1
+                = EndedAt - StartedAt             otherwise; an open entry runs to
+                                                  min(now, window end)
+PlannedDowntime = entries whose reason IsExcused (Break, lunch, ...)
+Unplanned       = every other entry, including entries with no reason
+BaseMinutes     = max(0, PlannedMinutes - PlannedDowntime)
+Unplanned       capped at BaseMinutes
+Availability    = (BaseMinutes - Unplanned) / BaseMinutes      NULL when BaseMinutes = 0
+```
+
+- **Which entries a location counts** is unchanged: its own, plus (for a leaf) every flagged ancestor's -- a line-level stop hits each station (D3). A roll-up line is the mean of its stations (D3).
+- **Entries are attributed by `ShiftId`**, the shift they were entered against, not by clock overlap with the window. That also retires v2.0's known flaw where an override reaching into the next shift double-counted its minutes.
+- **Duplicates are counted twice.** Two people entering the same stop is a data-quality problem the drill-down's entry list shows; the old clock merge hid it.
+- `Oee.Shift_GetAvailability` moves to this method (same columns, a new major version) so the plant has one definition. Its tests are rewritten as worked examples (two duration entries at one shift start = their sum; a line entry reaching each station; planned shrinking the base; the cap), not as parity with v2.0.
+
+**Performance.** History is read from the summary table (6.7); only the computation that fills it and the shift in progress use this rule directly. Targets: any dashboard read under 2 s at any zoom; one shift's computation for the whole plant well under a second; a full 7-day rebuild under a minute. The benchmark in `sql/scratch/2026-10-29_oee_dashboard_benchmark.sql` is re-run against these targets before any view work.
 
 ### 6.2 Units and areas
 
@@ -150,6 +180,10 @@ At area and site level, `Scrap` also includes that area's found-downstream and n
 
 A **roll-up unit** (a line with stations) contributes its own `BaseMinutes` and an *effective* unplanned figure `BaseMinutes * (1 - Availability)`, where Availability is its station mean for that shift. That keeps the line's own number exactly what `Shift_GetAvailability` reports while letting it pool into area totals by its run time.
 
+**Only active (unit, shift) pairs pool**: a unit-shift with good, scrap or a downtime entry (a trim press is active when its shop made or scrapped anything that shift). An idle press would otherwise report 100% and dilute its area (anti-goal). A unit with no active shift in the period shows "No production".
+
+The summary table stores minutes and counts, never percentages, so every zoom pools from the same stored facts.
+
 Units with `BaseMinutes = 0` are excluded from availability (NULL, shown "--").
 
 ### 6.4 Good and scrap counts
@@ -160,9 +194,9 @@ Good-count rules are the ones already agreed for `Quality.Reject_GetPlantSummary
 |---|---|---|---|
 | Die Cast | `SUM(Workorder.DieCastContribution.PieceDelta)` | `CellLocationId` (the press) | `ShiftId` |
 | Trim | **per-shift checkpoint credit**: each trim `ProductionEvent` (partial checkpoint via `TrimPartial_Record`, and the closing `TrimOut`) is credited with its count minus the LOT's previous trim checkpoint -- the rule `TrimPartial_Record` already defines, via `Workorder.ufn_TrimPassPreviousCount` | the Trim Shop above `ProductionEvent.TerminalLocationId` | `ProductionEvent.ShiftId`; rows with `ShiftId NULL` (rework passes) are not shift production and are excluded |
-| M&A | `PieceCount` of **Manufactured**-origin FinishedGood LOTs | the line above `Lot.CreatedAtTerminalId` | shift window containing `Lot.CreatedAt` |
+| M&A | the **minted quantity** of FinishedGood LOTs minted at Assembly OUT (Section 11, Q5) | the line above `Lot.CreatedAtTerminalId` | `Lot.ShiftId` (D18) |
 
-The M&A rule tightens the plant-summary rule in one way: pass-through repack trays are minted as `Manufactured` LOTs, but the **Received**-origin LOTs they consume are excluded, so a part received finished is not counted twice. (The plant summary counts every FinishedGood LOT; the builder should check and note whether that proc double-counts received FG, as a side observation, not a fix.)
+**Why the M&A rule changed.** v0.2 counted every Manufactured FinishedGood LOT by `CreatedAt`. The writer inventory (6.8) showed that `Lots.Lot_Split`, `Lots.Lot_Merge` and `Lots.ContainerRework_MovePieces` also create LOTs stamped `Manufactured` with a fresh `CreatedAt` -- splitting or reworking a tray would have counted as new production. And `PieceCount` shrinks when the LOT is later scrapped, so the same pieces would have been charged as both less good and as scrap. Good is therefore the quantity **at mint**, on LOTs that **only the mint** stamps with a shift. Split, merge and rework children never carry `ShiftId`. Received-origin LOTs stay excluded, so a part received finished is not counted twice. (The plant summary counts every FinishedGood LOT; whether that proc double-counts is a side observation for the builder, not a fix here.)
 
 **Scrap** = `Workorder.RejectEvent` rows whose defect code is not `IsNonRejectScrap`. **It is charged by defect code** (D11), the rule `Quality.Reject_GetPlantSummary` uses, so the dashboard and the reject report agree on which area owns a piece of scrap.
 
@@ -201,33 +235,95 @@ The production day runs **3rd -> 1st -> 2nd**: the 3rd shift that starts Monday 
 - **The existing `BusinessDate` is not changed.** In `Shift_GetAvailability`, `ufn_ShiftWindowForLocation` and the shift-override procs/screens, `BusinessDate` is the calendar date a shift *starts*. It is the key that schedule windows and overrides are looked up by, not a reporting day. Renumbering it would reach the override editor and its stored rows, and the dashboard does not need that. The dashboard groups by production day only. Its Day/Week labels say "Production day Tue 10/27" so the two dates are not confused.
 - An override that stretches a shift past its normal end can move that shift's end date. The function uses the *scheduled* window end, so an override never moves a shift into another production day (my call).
 
+### 6.7 The summary table (D16)
+
+**`Oee.ShiftSummary`** -- one row per (shift, location) where location is an OEE unit, a station, or an area-level placement (a trim shop), plus one row per (shift, area family) for scrap charged to an area but placed on no unit. Additive facts only:
+
+| Column group | Columns |
+|---|---|
+| Key | `ShiftId`, `LocationId` (NULL on an area-charge row), `RowKind` (`Unit` / `Station` / `AreaPlacement` / `AreaCharge`), `AreaFamily`, `ProductionAreaId`, `ParentUnitLocationId` |
+| Time | `PlannedMinutes`, `PlannedDowntimeMinutes`, `UnplannedDowntimeMinutes`, `BaseMinutes`, `EffectiveUnplannedMinutes` (roll-up lines), `DowntimeEventCount`, `NoReasonCount`, `NoReasonMinutes` |
+| Quality | `Good`, `Scrap`, `NonRejectScrap`, `FoundDownstreamScrap`, `UnplacedScrap` |
+| Context | `LastToolId` (presses), `IsActive` |
+| Bookkeeping | `ComputedAt`, `InputFingerprint` |
+
+- **No percentages are stored.** Every read pools from the minutes and counts (6.3), so a Week is never an average of averages.
+- **Detail panels read the source rows directly** by `ShiftId` (downtime by reason, scrap by defect, the entry list): indexed range reads over a period's rows, measured at about 100 ms for a whole-plant week. Only the expensive pooled metrics live in the table.
+- **The shift in progress is never stored.** It is computed live with the same procedure, for one shift.
+- **Size.** About 60 units x 3 shifts x 365 days, roughly 65k rows a year. Kept indefinitely, not partitioned.
+- One proc, **`Oee.ShiftSummary_Compute(@ShiftId)`**, computes and replaces one shift's rows in a single transaction. The shift-close compute, the refresher, the nightly sweep and the in-progress read all use the same calculation.
+
+### 6.8 Refresh: closed shifts, late edits, safety net (D19)
+
+**When a shift is computed.**
+1. **At shift close.** The `ShiftBoundaryTicker` already ends shifts; the shift is computed then.
+2. **Within 30 minutes of any later edit.** A gateway timer runs every 15 minutes and recomputes every shift whose inputs changed since it was computed (below).
+3. **Nightly safety net.** A full rebuild of the last 7 days catches anything the change detection missed.
+4. **On request.** `Oee.ShiftSummary_RecomputeRange(@FromUtc, @ToUtc)` for configuration changes, data repairs and deployments.
+
+The dashboard labels a shift that closed less than an hour ago "entries may still be arriving" (my call).
+
+**How a changed shift is found -- decision for Jacques (Section 11, Q6).**
+
+- **(a) Change detection (my recommendation).** Every 15 minutes the refresher computes a cheap fingerprint per shift for the last 7 days over the fact tables below (row count, quantity sums, a checksum of the columns the calculation reads) and recomputes the shifts whose fingerprint differs from the stored `InputFingerprint`. No fact writer changes, and a writer added next year is covered automatically. Configuration changes do not alter fact rows, so the configuration procs (second table) call `RecomputeRange`; the nightly sweep backs them up.
+- **(b) Writers mark shifts stale.** Each writer below calls `Oee.ShiftSummary_MarkStale(@ShiftId)` inside its transaction (a silent proc, like the audit writers, so INSERT-EXEC capture is unaffected); the refresher recomputes the marked shifts. Exact and cheap, but every one of these writers -- and every future one -- has to remember.
+
+Either way the inventory below is the contract, and each entry gets a test that an edit through it reaches the summary.
+
+**Writer inventory -- fact tables** (repeatable procs that INSERT / UPDATE / DELETE, alias forms included; checked 2026-10-30):
+
+| Input | Writers |
+|---|---|
+| `Oee.DowntimeEvent` | `DowntimeEvent_Start`, `_End`, `_RecordApproximate`, `_RecordHistorical`, `_UpdateReason`, `_UpdateTimes` (can move an entry to another shift: both shifts), `_Void`; `EndOfShiftEntry_Submit`; `DowntimeReasonCode_Assign`; `ShiftOverride_Restamp` (moves `ShiftId`) |
+| `Workorder.RejectEvent` | `RejectEvent_Record`, `RejectEvent_RecordByPartFifo`, `DieCastScrap_Write`, `TrimOut_Record`, `TrimPartial_Record`, `MachiningOut_Mint`, `Lots.ContainerRework_Scrap`, `Quality.ControlledRunResult_Record`, `DieCastEntry_Restamp` (moves shift) |
+| `Workorder.DieCastContribution` | `DieCastCredit_Write`, `DieCastEntry_Restamp`, `ShiftOverride_Restamp` (`DieCastShiftReconciliation_Save` writes through these) |
+| `Workorder.ProductionEvent` (trim checkpoints) | `TrimOut_Record`, `TrimPartial_Record` (also written by `ProductionEvent_Record`, `MachiningIn_RecordPick`, `MachiningOut_Mint`, which the trim credit filters out by operation type) |
+| `Lots.Lot` (finished-good mints) | `Assembly_CompleteTray` -- the only writer that stamps `ShiftId` (7.4). The other ~34 `Lots.Lot` writers (moves, holds, splits, merges, status, scrap decrements, rework) cannot change good, because good is the stamped minted quantity. |
+
+**Writer inventory -- configuration** (change how existing rows are read; call `RecomputeRange` for the affected window):
+
+| Input | Writers | What it changes |
+|---|---|---|
+| `Oee.Shift` | `Shift_Start`, `Shift_End`, `Shift_Reconcile` | which shifts exist / are closed (`Shift_End` triggers the first compute) |
+| `Oee.ShiftOverride` | `ShiftOverride_Create`, `_Update`, `_Deprecate` | planned minutes for one location on one day |
+| `Oee.ShiftSchedule` | `ShiftSchedule_Create`, `_Update`, `_Deprecate` | planned minutes plant-wide |
+| `Oee.DowntimeReasonCode` | `DowntimeReasonCode_Create`, `_Update` (`IsExcused`), `_Deprecate`, `_BulkLoadFromSeed` | planned vs unplanned |
+| `Quality.DefectCode` | `DefectCode_Create`, `_Update` (`ChargeToPartyId`, `IsNonRejectScrap`), `_Deprecate` | which area owns scrap |
+| `Location.Location` | `Location_Create`, `_Update`, `_SaveAll`, `_Deprecate`, `_MoveUp`, `_MoveDown` | `IsOeeEnabled`, parentage: which locations are units |
+| `Location.LocationTypeDefinition` | `LocationTypeDefinition_SaveAll`, `_Deprecate` | area family of a unit type |
+| `Tools.ToolAssignment` | `ToolAssignment_Assign`, `_Release` | the die shown on a press tile |
+
+Versioned migrations that repair data (e.g. `0077`) are one-offs; their deployment runbook calls `RecomputeRange`. Gateway Python writes no raw SQL to any of these tables (checked: no `runUpdateQuery` / `runPrepUpdate` in project scripts); named queries call the procs above.
+
 ## 7. Writer fixes (G6)
 
 1. **`Workorder.RejectEvent_RecordByPartFifo`** (the Scrap Entry popup on Assembly and Machining terminals) inserts `NULL` for `ShiftId` and `CellLocationId`. It already knows the line: `@LocationId` is where it finds the LOTs. Write `CellLocationId = @LocationId` and `ShiftId = (SELECT TOP 1 ShiftId FROM Oee.ufn_ShiftIdForInstant(@LocationId, <now>))` -- it is an inline TVF keyed on location because overrides make the answer per-equipment; call it the way `TrimOut_Record` does (~377). No signature change; no popup change. *Without this, almost all M&A scrap is invisible to the dashboard* (my call -- it follows D6, and the scrap stays line-level).
 2. **`Workorder.MachiningOut_Mint`** writes `CellLocationId` = the LOT's line but no `ShiftId`. Add `ShiftId` from `Oee.ufn_ShiftIdForInstant(<the line>, <now>)`, same call shape (D10).
 3. No backfill. The time-window fallback in 6.4 covers older rows that have a cell.
 
-Both are repeatable-proc changes with version bumps and change-log lines; each gets a test asserting the new columns. `Oee.ShiftOverride_Restamp` deliberately ignores reject rows and stays that way.
+Both are repeatable-proc changes with version bumps and change-log lines; each gets a test asserting the new columns. `Oee.ShiftOverride_Restamp` deliberately ignores reject rows and stays that way. (Built: commit `b1326ab3`.)
+
+4. **`Workorder.Assembly_CompleteTray` stamps the mint (D18).** New nullable columns on `Lots.Lot`: `ShiftId` (FK `Oee.Shift`) and the minted quantity (Section 11, Q5). The mint writes `ShiftId` from `Oee.ufn_ShiftIdForInstant(<the line>, now)`, the same call shape as the scrap writers. `MachiningOut_Mint` stamps its SubAssembly LOTs the same way, for consistency (my call). `Lot_Split`, `Lot_Merge` and `ContainerRework_MovePieces` list their insert columns explicitly and do not copy `ShiftId`; a test pins that.
+5. **One-time backfill** (Jacques agreed). A versioned migration (next free number at build time; `0116` is the highest today) stamps existing finished-good LOTs that were **minted** -- the produced side of a `Consumption` genealogy link, or a pass-through mint -- with `ShiftId` resolved from the line and `CreatedAt`, and with a reconstructed minted quantity (current `PieceCount` + pieces scrapped from it + pieces split out of it). Split, merge and rework children are left NULL. The migration reports what it could not reconstruct rather than guessing.
 
 ## 8. Build shape
 
-**SQL** (repeatable procs, `Oee` schema; versioned migration only if the builder needs a new object that cannot be repeatable):
+**SQL**
 
 | Object | Purpose |
 |---|---|
-| `Oee.ufn_ShiftAvailability` | Extracted from `Shift_GetAvailability` (6.1). |
-| `Oee.ufn_ProductionDay(@ShiftId)` | Production day of a shift = Eastern date its scheduled window ends (6.6). |
-| `Oee.ufn_ShiftsForPeriod(@Zoom, @AnchorShiftId)` | The shift set for a period, built on `ufn_ProductionDay`. Day = the production day's three shifts (3rd -> 1st -> 2nd). Week = Monday-Sunday production week. |
-| `Oee.ufn_RejectChargeFamily` | ChargeToParty -> charge family, with the "where found" rule for Non-Specific parties (6.4). |
-| `Oee.Dashboard_GetUnitSummary(@Zoom, @AnchorShiftId, @AreaFamily NULL)` | One row per unit (and station rows flagged as such): area family, ProductionArea, pooled minutes, availability, good, scrap, non-reject, no-reason count/minutes, last die, band. Feeds the site cards, area tiles and group headers. |
-| `Oee.Dashboard_GetTrend(@AnchorShiftId, @AreaFamily NULL, @LocationId NULL)` | Daily pooled availability and quality for the 7 production days ending at the anchor. |
-| `Oee.Dashboard_GetDowntimeByReason(@Zoom, @AnchorShiftId, @AreaFamily NULL, @LocationId NULL)` | Pareto rows: reason, type, planned flag, minutes, count; NULL reason as its own row. |
-| `Oee.Dashboard_GetScrap(@Zoom, @AnchorShiftId, @AreaFamily NULL, @LocationId NULL, @GroupBy)` | By defect+part, by part (Trim shop table), or by line (M&A panel). |
-| `Oee.Dashboard_GetBreakdown(@Zoom, @AnchorShiftId, @LocationId)` | Drill-down breakdown rows (shifts of a day / days of a week). |
-| `Oee.Dashboard_GetDowntimeEntries(@AnchorShiftId, @LocationId)` | Entries for one unit (and its stations) in one shift; or reuse `DowntimeEvent_GetByScope` if it already fits. |
-| `Oee.ufn_AreaFamily`, `Oee.ufn_OeeBand` | 6.2, 6.5. |
+| Migration (next free number) | `Oee.ShiftSummary`; `Lots.Lot.ShiftId` + minted quantity; the finished-good backfill (7.4, 7.5). If option (b) of 6.8 is chosen, a stale-mark table. |
+| `Oee.Shift_GetAvailability` (new major version) + the availability function behind it | Summed-duration rule (6.1). |
+| `Oee.ShiftSummary_Compute(@ShiftId)` | One shift's rows, one transaction (6.7). |
+| `Oee.ShiftSummary_RecomputeRange(@FromUtc, @ToUtc)`, `Oee.ShiftSummary_RefreshChanged()` | Configuration changes / deployments; the 15-minute change detection (6.8). |
+| `Oee.ufn_ProductionDay`, `Oee.ufn_ShiftsForPeriod` | Production day and period (6.6). Built. |
+| `Oee.ufn_OeeUnits`, `Oee.ufn_AreaFamily`, `Oee.ufn_RejectChargeFamily`, `Oee.ufn_OeeBand` | Classification (6.2, 6.4, 6.5). Built. |
+| `Oee.Dashboard_GetUnitSummary`, `_GetTrend`, `_GetBreakdown` | Pool from `Oee.ShiftSummary` (+ the live in-progress shift). |
+| `Oee.Dashboard_GetDowntimeByReason`, `_GetScrap`, `_GetDowntimeEntries`, `_GetPeriod` | Detail panels and navigation, read from source rows by `ShiftId`. |
 
-Tests in `sql/tests/` per existing pattern, including: pooled vs averaged (a 2-hour unit and an 8-hour unit), roll-up line pooling, no-production unit, NULL-reason row, trim scrap on the shop not the press, FIFO scrap appearing on the line, received FG excluded, a DC-charged defect recorded on an M&A line (in Die Cast area quality, not on the line, not on any press), Die Maintenance scrap in Die Cast, Non-Specific scrap where found, a no-cell DC reject at Die Cast area level, and a 3rd shift starting Monday 22:30 grouped into Tuesday.
+**Gateway (Core):** a 15-minute timer calling `RefreshChanged`, a nightly 7-day rebuild, and the shift-close compute hooked to the `ShiftBoundaryTicker`; all attributed to the system user (`Common.Util.systemAppUserId()`), committed disabled per the timer convention.
+
+Tests in `sql/tests/` per existing pattern, including: two duration entries at one shift start summed; a line entry reaching each station; the unplanned cap; a split / merge / rework child not counted as good; a later scrap not shrinking good; every inventory writer reaching the summary (6.8); pooled vs averaged (a 2-hour unit and an 8-hour unit), roll-up line pooling, no-production unit, NULL-reason row, trim scrap on the shop not the press, FIFO scrap appearing on the line, received FG excluded, a DC-charged defect recorded on an M&A line (in Die Cast area quality, not on the line, not on any press), Die Maintenance scrap in Die Cast, Non-Specific scrap where found, a no-cell DC reject at Die Cast area level, and a 3rd shift starting Monday 22:30 grouped into Tuesday.
 
 **Ignition**
 
@@ -243,11 +339,13 @@ Not built. Recorded so the cards have a destination:
 
 - Ideal cycle time per die or cast part (D2) -- likely on the Tool/Item rather than the unused `RefCycleTimeSec` location attribute, which is per machine.
 - Performance = (ideal cycle time x total count) / run time; OEE = A x P x Q.
-- Whether to persist `Oee.OeeSnapshot` is decided then, on measured read cost.
+- Performance adds ideal-cycle facts to `Oee.ShiftSummary`; nothing else about storage changes.
 
 ## 10. Known limits carried in
 
-- Overrides that cross into the next shift double-count those minutes in both shifts (`Shift_GetAvailability` choice 2).
+- Duplicate downtime entries for the same stop are counted twice (6.1); the entry list on the drill-down is where they show.
+- An entry with real start and end times that runs past its shift's end is counted in full against the shift it was entered against.
+- Edits older than the 7-day safety window reach the summary only through change detection (if within its window) or an explicit `RecomputeRange`.
 - DST Sundays are off by an hour's ratio (OI-38).
 - Non-Specific rejects with no cell (6.4) are outside dashboard quality.
 - Found-downstream scrap is charged to an area, not traced to the press or die that made it. Tracing it through LOT genealogy is possible later and was not chosen now (D11).
@@ -260,6 +358,13 @@ Not built. Recorded so the cards have a destination:
 2. **Production day boundary?** *3rd -> 1st -> 2nd*: the Monday 22:30 3rd shift is Tuesday's (D13). Folded into 6.6 and 8. `BusinessDate` is left as is (6.6).
 3. **SubAssembly-only M&A lines?** *None at MPP.* FG-only good stands (D14).
 4. **Change order?** *No.* Everything ships now, quality included; pages stay "OEE" with Performance and OEE as future cards (D15, Section 3).
+
+**Answered 2026-10-30:** INSP + Offsite lines under M&A (D20); stored per-shift figures with stale refresh and a nightly safety net (D16, D19); fix availability (D17); `ShiftId` on the finished-good LOT with a one-time backfill (D18).
+
+**Open (v0.3):**
+
+5. **The minted quantity.** Good must be the quantity at mint (6.4), and `PieceCount` changes afterwards. Recommendation: a second new column on `Lots.Lot`, e.g. `MintedPieceCount`, written by the mint alongside `ShiftId`. Alternative: derive it from consumption records, which is fragile for pass-through mints.
+6. **How a changed shift is found** (6.8): (a) change detection by fingerprint (recommended -- no writer edits, future writers covered) or (b) every writer marks its shift stale.
 
 ## 12. Calls I made (check these)
 
@@ -277,4 +382,24 @@ Not built. Recorded so the cards have a destination:
 - No-cell rejects charged to a production area count at that area's level by plant shift (6.4).
 - Placeholder colour bands (6.5).
 - Trim good from per-shift checkpoint credits, not the whole LOT at Trim OUT; rework passes excluded (6.4).
-- Benchmark the availability function before building views (6.1).
+- Benchmark before building views (6.1) -- kept, against the v0.3 targets.
+- Only active (unit, shift) pairs pool (6.3).
+- "Entries may still be arriving" label for a shift closed under an hour ago (6.8).
+- `MachiningOut_Mint` stamps `ShiftId` on SubAssembly LOTs too (7.4).
+- Detail panels read source rows; only pooled metrics are stored (6.7).
+
+## 13. Build record -- why v0.3
+
+v0.2 was approved on 2026-10-29 and built as plan Tasks 1-6 on `jacques/working` (`b1326ab3`..`970de47d`, SQL only, tests green). The Task 7 benchmark -- a month of synthetic data on `MPP_MES_Test`: 58 units, 90 shifts, 31k downtime entries, 12.6k finished-good LOTs, 10k rejects -- missed the 2 s target badly:
+
+| Zoom | Measured (whole plant) |
+|---|---|
+| Shift | 1.1-1.2 s |
+| Day | 2.2-3.8 s |
+| Week | 12.6-24.8 s |
+
+Stepped timing of one Week read: re-resolving each finished-good LOT's shift 9.3 s, the minute-grid availability 2.8 s, everything else under 0.5 s. The data volume was never the problem; recomputing every shift on every read, and re-deriving facts that should have been recorded, was. Reviewing that with Jacques also surfaced the duration-stacking flaw (6.1) and the split/merge double-count (6.4).
+
+**Carried forward from the build:** the scrap writer fixes (Task 1); the classification functions; production day and periods; the scrap placement function; the test fixture (`sql/tests/helpers/0117_fixture_oee_dashboard.sql`) and the classification, production-day and scrap tests.
+
+**Replaced:** the minute-grid availability function and `Shift_GetAvailability` v3.0 (by the summed-duration rule); the finished-good branch of the good count (by the mint stamp); `Dashboard_GetUnitSummary`'s per-shift recomputation (by reads from `Oee.ShiftSummary`).
