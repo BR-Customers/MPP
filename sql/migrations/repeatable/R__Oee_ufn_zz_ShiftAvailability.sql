@@ -3,7 +3,7 @@
 -- Object:      Oee.ufn_ShiftAvailability
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-29
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   THE availability calculation: per OEE unit, for one runtime shift instance.
@@ -37,6 +37,9 @@
 --
 -- Change Log:
 --   2026-10-29 - 1.0 - Extracted from Oee.Shift_GetAvailability v2.0.1.
+--   2026-10-29 - 1.1 - Minute grid enumerates only the minutes inside each interval (same
+--                      coverage test). Benchmark: ~1.3 s -> ~0.7 s per shift; still the
+--                      largest cost (plan Task 7 gate).
 -- =============================================
 CREATE OR ALTER FUNCTION Oee.ufn_ShiftAvailability
 (
@@ -185,6 +188,10 @@ BEGIN
     -- 4. Merge by TIME on a minute grid (each minute's midpoint); a minute
     --    covered by anything PLANNED is planned.
     -- ================================================================
+    --    Only the minutes INSIDE an interval are enumerated (v1.1): slot i
+    --    (midpoint StartUtc + 30 s + 60 s * i) is covered by [S, E) exactly
+    --    when Lo <= i <= Hi below -- the same test as "S <= mid < E", without
+    --    building every minute of every unit and joining it to every interval.
     ;WITH D(n) AS (
         SELECT n FROM (VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9)) v(n)
     ),
@@ -192,19 +199,27 @@ BEGIN
         SELECT a.n + 10*b.n + 100*c.n + 1000*d.n
         FROM D a CROSS JOIN D b CROSS JOIN D c CROSS JOIN D d   -- 0..9999 minutes
     ),
-    Slot AS (
-        SELECT u.LocationId, DATEADD(SECOND, 30 + 60 * t.n, u.StartUtc) AS Mid
-        FROM @Unit u
-        INNER JOIN Tally t ON t.n < DATEDIFF(MINUTE, u.StartUtc, u.EndUtc)
-        WHERE EXISTS (SELECT 1 FROM @Iv iv WHERE iv.LocationId = u.LocationId)
+    Rng AS (
+        SELECT iv.LocationId, iv.IsPlanned,
+               CASE WHEN r.Lo < 0 THEN 0 ELSE r.Lo END AS Lo,
+               CASE WHEN r.Hi > r.SlotCount - 1 THEN r.SlotCount - 1 ELSE r.Hi END AS Hi
+        FROM @Iv iv
+        INNER JOIN @Unit u ON u.LocationId = iv.LocationId
+        CROSS APPLY (
+            SELECT CAST(CEILING((DATEDIFF_BIG(MILLISECOND, u.StartUtc, iv.S) - 30000) / 60000.0) AS INT)     AS Lo,
+                   CAST(CEILING((DATEDIFF_BIG(MILLISECOND, u.StartUtc, iv.E) - 30000) / 60000.0) AS INT) - 1 AS Hi,
+                   DATEDIFF(MINUTE, u.StartUtc, u.EndUtc)                                                    AS SlotCount
+        ) r
     ),
     Cover AS (
-        SELECT s.LocationId, s.Mid, MAX(CAST(iv.IsPlanned AS INT)) AS AnyPlanned
-        FROM Slot s
-        INNER JOIN @Iv iv ON iv.LocationId = s.LocationId
-                         AND iv.S <= s.Mid
-                         AND iv.E >  s.Mid
-        GROUP BY s.LocationId, s.Mid
+        SELECT g.LocationId, s.n AS Slot, MAX(CAST(g.IsPlanned AS INT)) AS AnyPlanned
+        FROM Rng g
+        CROSS APPLY (
+            SELECT TOP (CASE WHEN g.Hi >= g.Lo THEN g.Hi - g.Lo + 1 ELSE 0 END) g.Lo + t.n AS n
+            FROM Tally t
+            ORDER BY t.n
+        ) s
+        GROUP BY g.LocationId, s.n
     )
     UPDATE u
        SET PlannedDowntimeMinutes   = x.Planned,
