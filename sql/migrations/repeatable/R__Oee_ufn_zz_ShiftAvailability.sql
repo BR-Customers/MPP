@@ -3,25 +3,37 @@
 -- Object:      Oee.ufn_ShiftAvailability
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-29
--- Version:     1.1
+-- Version:     2.0
 --
 -- Description:
---   THE availability calculation: per OEE unit, for one runtime shift instance.
---   Moved out of Oee.Shift_GetAvailability v2.0.1 unchanged in behaviour, so the
---   OEE dashboard procs can read it per shift (spec
---   docs/superpowers/specs/2026-10-27-oee-dashboard-design.md sec 6.1). A proc
---   cannot share it any other way: the dashboard procs are captured by tests
---   with INSERT-EXEC, and INSERT-EXEC cannot nest.
+--   THE availability calculation: per OEE unit, for one runtime shift instance
+--   (OEE dashboard spec docs/superpowers/specs/2026-10-27-oee-dashboard-design.md
+--   v0.3.1 sec 6.1, D17). Oee.Shift_GetAvailability is a SELECT from it; the
+--   dashboard's shift summary computes from it.
 --
---   Oee.Shift_GetAvailability v3.0 is now a SELECT from this function; read
---   that proc's header for the four deliberate choices (schedule-based planned
---   time, downtime matched by time overlap, planned downtime shrinks the base,
---   ancestor inheritance + mean roll-up), the minute grid and the time basis.
---   They all hold here verbatim.
+--   v2.0 -- SUMMED DURATIONS, attributed by ShiftId:
+--     PlannedMinutes  = the unit's scheduled window for the shift (+ override)
+--     Downtime        = SUM of the durations (Oee.ufn_DowntimeEventMinutes) of
+--                       the entries with DowntimeEvent.ShiftId = @ShiftId, not
+--                       voided, at the unit or (for a leaf) a flagged ancestor
+--     PlannedDowntime = entries whose reason IsExcused; every other entry,
+--                       including one with no reason, is unplanned
+--     BaseMinutes     = max(0, PlannedMinutes - PlannedDowntime)
+--     Unplanned       capped at BaseMinutes
+--     Availability    = (Base - Unplanned) / Base, NULL when Base = 0
+--     A roll-up (a unit with flagged units beneath) = the unweighted mean of the
+--     flagged units directly beneath (AVG ignores NULL), deepest first.
+--   v1.x merged entries by CLOCK position on a one-minute grid. MPP's downtime is
+--   mostly a duration entered at the end of the shift, stored at the shift start,
+--   so two such entries overlapped and were counted once. The clock merge also
+--   counted an entry against any shift its clock time touched, whatever shift it
+--   was entered for. Both are gone. Duplicates entered twice now count twice; the
+--   dashboard's entry list is where they show.
+--   Minute columns are rounded once to INT; Availability is computed from the
+--   unrounded minutes and rounded once to DECIMAL(5,4).
 --
---   Multi-statement TVF on table variables: the roll-up is computed deepest
---   first in a WHILE loop, as before. Table variables carry no statistics; the
---   dashboard benchmark (plan Task 7) is the check that this is fast enough.
+--   Multi-statement TVF on table variables; the roll-up is computed deepest
+--   first in a WHILE loop.
 --
 --   FILE NAME IS ORDER-SENSITIVE -- 'zz_' is a DEPLOY-ORDER MARKER, not part of
 --   the object name. A FUNCTION gets no deferred name resolution (Msg 4121) and
@@ -40,6 +52,8 @@
 --   2026-10-29 - 1.1 - Minute grid enumerates only the minutes inside each interval (same
 --                      coverage test). Benchmark: ~1.3 s -> ~0.7 s per shift; still the
 --                      largest cost (plan Task 7 gate).
+--   2026-10-30 - 2.0 - Summed entered durations attributed by ShiftId (spec v0.3.1 D17); the
+--                      clock-overlap minute grid is removed. Unplanned capped at the base.
 -- =============================================
 CREATE OR ALTER FUNCTION Oee.ufn_ShiftAvailability
 (
@@ -109,8 +123,8 @@ BEGIN
         IsOverridden             BIT           NULL,
         ShiftOverrideId          BIGINT        NULL,
         OverrideReason           NVARCHAR(500) NULL,
-        PlannedDowntimeMinutes   INT           NOT NULL DEFAULT 0,
-        UnplannedDowntimeMinutes INT           NOT NULL DEFAULT 0,
+        PlannedDowntimeRaw       DECIMAL(14,4) NOT NULL DEFAULT 0,
+        UnplannedDowntimeRaw     DECIMAL(14,4) NOT NULL DEFAULT 0,
         DowntimeEventCount       INT           NOT NULL DEFAULT 0,
         AvailabilityRaw          DECIMAL(19,10) NULL,
         Done                     BIT           NOT NULL DEFAULT 0
@@ -159,100 +173,45 @@ BEGIN
       AND a.AncestorLocationId <> u.LocationId;
 
     -- ================================================================
-    -- 3. Downtime intervals, clipped to each unit's own window
+    -- 3. The shift's entries, by ShiftId, summed per unit (D17)
     -- ================================================================
-    DECLARE @Iv TABLE (
-        LocationId BIGINT       NOT NULL,
-        EventId    BIGINT       NOT NULL,
-        S          DATETIME2(3) NOT NULL,
-        E          DATETIME2(3) NOT NULL,
-        IsPlanned  BIT          NOT NULL,
-        INDEX IX_Iv (LocationId, S)
-    );
-
-    INSERT INTO @Iv (LocationId, EventId, S, E, IsPlanned)
-    SELECT u.LocationId,
-           de.Id,
-           CASE WHEN de.StartedAt > u.StartUtc THEN de.StartedAt ELSE u.StartUtc END,
-           CASE WHEN COALESCE(de.EndedAt, @Now) < u.EndUtc THEN COALESCE(de.EndedAt, @Now) ELSE u.EndUtc END,
-           COALESCE(rc.IsExcused, CAST(0 AS BIT))
-    FROM @Unit u
-    INNER JOIN @Src s               ON s.LocationId = u.LocationId
-    INNER JOIN Oee.DowntimeEvent de ON de.LocationId = s.SourceLocationId
-    LEFT  JOIN Oee.DowntimeReasonCode rc ON rc.Id = de.DowntimeReasonCodeId
-    WHERE de.VoidedAt IS NULL
-      AND de.StartedAt < u.EndUtc
-      AND COALESCE(de.EndedAt, @Now) > u.StartUtc;
-
-    -- ================================================================
-    -- 4. Merge by TIME on a minute grid (each minute's midpoint); a minute
-    --    covered by anything PLANNED is planned.
-    -- ================================================================
-    --    Only the minutes INSIDE an interval are enumerated (v1.1): slot i
-    --    (midpoint StartUtc + 30 s + 60 s * i) is covered by [S, E) exactly
-    --    when Lo <= i <= Hi below -- the same test as "S <= mid < E", without
-    --    building every minute of every unit and joining it to every interval.
-    ;WITH D(n) AS (
-        SELECT n FROM (VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9)) v(n)
-    ),
-    Tally(n) AS (
-        SELECT a.n + 10*b.n + 100*c.n + 1000*d.n
-        FROM D a CROSS JOIN D b CROSS JOIN D c CROSS JOIN D d   -- 0..9999 minutes
-    ),
-    Rng AS (
-        SELECT iv.LocationId, iv.IsPlanned,
-               CASE WHEN r.Lo < 0 THEN 0 ELSE r.Lo END AS Lo,
-               CASE WHEN r.Hi > r.SlotCount - 1 THEN r.SlotCount - 1 ELSE r.Hi END AS Hi
-        FROM @Iv iv
-        INNER JOIN @Unit u ON u.LocationId = iv.LocationId
-        CROSS APPLY (
-            SELECT CAST(CEILING((DATEDIFF_BIG(MILLISECOND, u.StartUtc, iv.S) - 30000) / 60000.0) AS INT)     AS Lo,
-                   CAST(CEILING((DATEDIFF_BIG(MILLISECOND, u.StartUtc, iv.E) - 30000) / 60000.0) AS INT) - 1 AS Hi,
-                   DATEDIFF(MINUTE, u.StartUtc, u.EndUtc)                                                    AS SlotCount
-        ) r
-    ),
-    Cover AS (
-        SELECT g.LocationId, s.n AS Slot, MAX(CAST(g.IsPlanned AS INT)) AS AnyPlanned
-        FROM Rng g
-        CROSS APPLY (
-            SELECT TOP (CASE WHEN g.Hi >= g.Lo THEN g.Hi - g.Lo + 1 ELSE 0 END) g.Lo + t.n AS n
-            FROM Tally t
-            ORDER BY t.n
-        ) s
-        GROUP BY g.LocationId, s.n
-    )
     UPDATE u
-       SET PlannedDowntimeMinutes   = x.Planned,
-           UnplannedDowntimeMinutes = x.Unplanned
+       SET PlannedDowntimeRaw   = x.Planned,
+           UnplannedDowntimeRaw = x.Unplanned,
+           DowntimeEventCount   = x.Cnt
     FROM @Unit u
     INNER JOIN (
-        SELECT LocationId,
-               SUM(CASE WHEN AnyPlanned = 1 THEN 1 ELSE 0 END) AS Planned,
-               SUM(CASE WHEN AnyPlanned = 0 THEN 1 ELSE 0 END) AS Unplanned
-        FROM Cover
-        GROUP BY LocationId
+        SELECT u2.LocationId,
+               SUM(CASE WHEN COALESCE(rc.IsExcused, CAST(0 AS BIT)) = 1 THEN m.Minutes ELSE 0 END) AS Planned,
+               SUM(CASE WHEN COALESCE(rc.IsExcused, CAST(0 AS BIT)) = 1 THEN 0 ELSE m.Minutes END) AS Unplanned,
+               COUNT(*)                                                                         AS Cnt
+        FROM @Unit u2
+        INNER JOIN @Src s               ON s.LocationId = u2.LocationId
+        INNER JOIN Oee.DowntimeEvent de ON de.LocationId = s.SourceLocationId
+        LEFT  JOIN Oee.DowntimeReasonCode rc ON rc.Id = de.DowntimeReasonCodeId
+        CROSS APPLY Oee.ufn_DowntimeEventMinutes(
+            de.IsApproximate, de.DurationMinutes, de.StartedAt, de.EndedAt,
+            CASE WHEN @Now < u2.EndUtc THEN @Now ELSE u2.EndUtc END) m
+        WHERE de.ShiftId = @ShiftId
+          AND de.VoidedAt IS NULL
+        GROUP BY u2.LocationId
     ) x ON x.LocationId = u.LocationId;
-
-    UPDATE u
-       SET DowntimeEventCount = c.Cnt
-    FROM @Unit u
-    INNER JOIN (SELECT LocationId, COUNT(DISTINCT EventId) AS Cnt FROM @Iv GROUP BY LocationId) c
-        ON c.LocationId = u.LocationId;
 
     -- ================================================================
     -- 5. Leaf availability: planned downtime shrinks the base; unplanned
     --    downtime comes off what is left.
     -- ================================================================
-    UPDATE @Unit
+    UPDATE u
        SET AvailabilityRaw =
                CASE
-                   WHEN PlannedMinutes - PlannedDowntimeMinutes <= 0 THEN NULL
-                   WHEN PlannedMinutes - PlannedDowntimeMinutes - UnplannedDowntimeMinutes <= 0 THEN 0
-                   ELSE CAST(PlannedMinutes - PlannedDowntimeMinutes - UnplannedDowntimeMinutes AS DECIMAL(28,10))
-                        / (PlannedMinutes - PlannedDowntimeMinutes)
+                   WHEN b.Base <= 0                          THEN NULL
+                   WHEN u.UnplannedDowntimeRaw >= b.Base     THEN 0
+                   ELSE (b.Base - u.UnplannedDowntimeRaw) / b.Base
                END,
            Done = 1
-    WHERE IsRollup = 0;
+    FROM @Unit u
+    CROSS APPLY (SELECT CAST(u.PlannedMinutes AS DECIMAL(14,4)) - u.PlannedDowntimeRaw AS Base) b
+    WHERE u.IsRollup = 0;
 
     -- ================================================================
     -- 6. Roll-ups, deepest first: the unweighted mean of the flagged units
@@ -292,27 +251,33 @@ BEGIN
         u.StartLocal,
         u.EndLocal,
         u.PlannedMinutes,
-        u.PlannedDowntimeMinutes + u.UnplannedDowntimeMinutes,
-        u.UnplannedDowntimeMinutes,
-        CASE WHEN b.BaseMinutes - u.UnplannedDowntimeMinutes < 0
-             THEN 0 ELSE b.BaseMinutes - u.UnplannedDowntimeMinutes END,
+        r.EnteredDowntime,
+        r.Unplanned,
+        CASE WHEN r.Base - r.Unplanned < 0 THEN 0 ELSE r.Base - r.Unplanned END,
         CAST(u.AvailabilityRaw AS DECIMAL(5,4)),
         u.DowntimeEventCount,
         u.IsOverridden,
         u.ShiftOverrideId,
         u.OverrideReason,
-        u.PlannedDowntimeMinutes,
-        u.UnplannedDowntimeMinutes,
-        b.BaseMinutes,
+        r.PlannedDowntime,
+        r.Unplanned,
+        r.Base,
         u.IsRollup,
         u.FlaggedParentId,
         u.ParentName,
         u.SortOrder
     FROM @Unit u
     CROSS APPLY (
-        SELECT CASE WHEN u.PlannedMinutes - u.PlannedDowntimeMinutes < 0
-                    THEN 0 ELSE u.PlannedMinutes - u.PlannedDowntimeMinutes END AS BaseMinutes
-    ) b;
+        SELECT CASE WHEN u.PlannedMinutes - u.PlannedDowntimeRaw < 0 THEN 0
+                    ELSE CAST(ROUND(u.PlannedMinutes - u.PlannedDowntimeRaw, 0) AS INT) END AS Base
+    ) b
+    CROSS APPLY (
+        SELECT b.Base                                                        AS Base,
+               CAST(ROUND(u.PlannedDowntimeRaw, 0) AS INT)                   AS PlannedDowntime,
+               CAST(ROUND(u.PlannedDowntimeRaw + u.UnplannedDowntimeRaw, 0) AS INT) AS EnteredDowntime,
+               CASE WHEN ROUND(u.UnplannedDowntimeRaw, 0) > b.Base THEN b.Base
+                    ELSE CAST(ROUND(u.UnplannedDowntimeRaw, 0) AS INT) END   AS Unplanned
+    ) r;
 
     RETURN;
 END

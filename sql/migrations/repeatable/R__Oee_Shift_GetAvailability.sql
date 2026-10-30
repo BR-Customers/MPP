@@ -2,7 +2,7 @@
 -- Procedure:   Oee.Shift_GetAvailability
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-19
--- Version:     3.0
+-- Version:     4.0
 --
 -- Description:
 --   Per-equipment availability for one runtime shift instance: planned minutes
@@ -22,13 +22,16 @@
 --      boundary engine actually noticed the shift; a gateway outage that
 --      backfills late must not shrink the planned denominator.
 --
---   2. DOWNTIME is matched by TIME OVERLAP with the resolved window, NOT by
---      de.ShiftId -- when equipment is extended past the global boundary, the
---      downtime it incurs in the extension carries the NEXT shift's ShiftId.
---      CONSEQUENCE (needs a product decision -- see the report): where an
---      extension overlaps the next shift's window, those minutes count toward
---      BOTH shifts' availability for that equipment.
---
+--   2. DOWNTIME is the SUM of entered DURATIONS, attributed by de.ShiftId
+--      (v4.0, OEE dashboard spec v0.3.1 D17 -- a behaviour change). MPP's
+--      downtime is mostly a duration entered at the end of the shift and
+--      stored at the shift start (DowntimeEvent_RecordApproximate), so v2-v3's
+--      clock-overlap merge counted two such entries once. An entry counts
+--      against the shift it was entered for, wherever its clock time falls;
+--      that also retires v2's double-count where an extension overlapped the
+--      next shift's window. Duration rule: Oee.ufn_DowntimeEventMinutes.
+--      Unplanned is capped at the base.
+
 --   3. PLANNED DOWNTIME SHRINKS THE BASE (v2.0 -- a behaviour change).
 --      Availability was (scheduled - ALL downtime) / scheduled, so a 30-minute
 --      lunch counted against the operator like a breakdown. It is now
@@ -42,19 +45,13 @@
 --      side-A jam hits only side A, and the line's figure is the average of
 --      its stations -- the only number that matches the parts not made. No
 --      capacity weighting: WIP buffers decouple the stations, so a fixed
---      weight would be wrong minute to minute (spec D6). Overlapping events
---      are merged by clock so one stretch of downtime is counted once, and a
---      minute covered by anything planned counts as planned.
+--      weight would be wrong minute to minute (spec D6). Entries are summed,
+--      not merged: an entry entered twice counts twice (v4.0).
 --
---   MINUTE GRID. Coverage is measured at each minute's midpoint. That is
---   exact for minute-aligned events (such as the tests use); a live event
---   is second-precision (Oee.DowntimeEvent_Start / _End stamp
---   SYSUTCDATETIME(), and _RecordApproximate stamps SYSUTCDATETIME() minus
---   N minutes), so a live event carries an error of at most about one
---   minute per event edge, unbiased -- comparable to the old
---   DATEDIFF(MINUTE, ...) rounding. A unit's figure can therefore differ
---   from v1.0 by about a minute's worth even with no planned events.
---
+--   ROUNDING. Minute columns are rounded once to INT; Availability is computed
+--   from the unrounded minutes and rounded once to DECIMAL(5,4). A real-time
+--   entry with no EndedAt runs to min(now, window end).
+
 --   TIME BASIS. Oee.Shift.ActualStart, Oee.ShiftSchedule.StartTime and
 --   Oee.ShiftOverride.StartTime are all LOCAL (Eastern) wall clock (OI-38), so
 --   BusinessDate is taken from ActualStart with NO conversion -- converting it
@@ -97,6 +94,8 @@
 --   2026-09-17 - 2.0.1 - Review fixes: no null-aggregate warning, honest minute-grid note, single rounding.
 --   2026-10-29 - 3.0 - Body moved to Oee.ufn_ShiftAvailability (OEE dashboard spec sec 6.1); this proc
 --                      is now a filtered, ordered SELECT from it. Behaviour and columns unchanged.
+--   2026-10-30 - 4.0 - Summed entered durations attributed by ShiftId (Oee.ufn_ShiftAvailability v2.0,
+--                      spec v0.3.1 D17); unplanned capped at the base. Columns unchanged.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.Shift_GetAvailability
     @ShiftId    BIGINT,

@@ -206,16 +206,16 @@ DECLARE @av3 TABLE (ShiftId BIGINT, ShiftScheduleId BIGINT, ScheduleName NVARCHA
 INSERT INTO @av3 EXEC Oee.Shift_GetAvailability @ShiftId = @Shift, @LocationId = @B2;
 
 DECLARE @bTot NVARCHAR(10) = (SELECT CAST(DowntimeMinutes AS NVARCHAR(10)) FROM @av3);
-EXEC test.Assert_IsEqual @TestName = N'[Rollup] overlapping line + station events are merged (30 lunch + 45 union = 75, not 90)',
-     @Expected = N'75', @Actual = @bTot;
+EXEC test.Assert_IsEqual @TestName = N'[Rollup] line + station entries are summed, not clock-merged (60 planned + 30 unplanned = 90, v4.0 D17)',
+     @Expected = N'90', @Actual = @bTot;
 
 DECLARE @bPl NVARCHAR(10) = (SELECT CAST(PlannedDowntimeMinutes AS NVARCHAR(10)) FROM @av3);
 EXEC test.Assert_IsEqual @TestName = N'[Rollup] a minute covered by a planned event counts as planned (30 + 30)',
      @Expected = N'60', @Actual = @bPl;
 
 DECLARE @bUn3 NVARCHAR(10) = (SELECT CAST(UnplannedDowntimeMinutes AS NVARCHAR(10)) FROM @av3);
-EXEC test.Assert_IsEqual @TestName = N'[Rollup] only the 15 uncovered minutes stay unplanned',
-     @Expected = N'15', @Actual = @bUn3;
+EXEC test.Assert_IsEqual @TestName = N'[Rollup] the station entry stays fully unplanned (30, v4.0 D17)',
+     @Expected = N'30', @Actual = @bUn3;
 GO
 
 -- =============================================

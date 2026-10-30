@@ -113,10 +113,12 @@ EXEC test.Assert_IsEqual @TestName = N'[AV.downtime] availability 0.8750',
 GO
 
 -- =============================================
--- Test 3: downtime OUTSIDE the window is not counted, and downtime that
--- STRADDLES the end boundary is CLIPPED to the window.
---   16:00-17:00 local -> entirely after the 14:00 end -> 0 minutes.
---   13:30-14:30 local -> 30 minutes inside.
+-- Test 3 (rewritten for v4.0, OEE dashboard spec v0.3.1 D17): downtime is
+-- attributed by the shift it was ENTERED for, not by clock overlap. Both
+-- entries below carry @Shift3, so both count in full, 60 + 60 = 120 (v2-v3
+-- clipped the straddling one to 30 and ignored the one after the window).
+--   16:00-17:00 local -> after the 14:00 end -> still 60 minutes.
+--   13:30-14:30 local -> straddles the end   -> still 60 minutes.
 -- =============================================
 DECLARE @Sched3 BIGINT = (SELECT Id FROM Oee.ShiftSchedule WHERE Name = N'TEST_AV_Day');
 DECLARE @Shift3 BIGINT = (SELECT Id FROM Oee.Shift WHERE ShiftScheduleId = @Sched3);
@@ -148,10 +150,12 @@ INSERT INTO @a3 EXEC Oee.Shift_GetAvailability @ShiftId = @Shift3, @LocationId =
 
 DECLARE @dm3 NVARCHAR(10) = (SELECT CAST(DowntimeMinutes AS NVARCHAR(10)) FROM @a3);
 DECLARE @ec3 NVARCHAR(10) = (SELECT CAST(DowntimeEventCount AS NVARCHAR(10)) FROM @a3);
-EXEC test.Assert_IsEqual @TestName = N'[AV.clip] straddling event clipped to 30 min, outside event ignored',
-     @Expected = N'30', @Actual = @dm3;
-EXEC test.Assert_IsEqual @TestName = N'[AV.clip] only the overlapping event is counted',
-     @Expected = N'1', @Actual = @ec3;
+-- v4.0 (OEE dashboard spec v0.3.1 D17): entries count in full against the shift they
+-- were ENTERED for (both carry @Shift3), wherever their clock time falls -- no clipping.
+EXEC test.Assert_IsEqual @TestName = N'[AV.byShift] entries entered for the shift count in full (60 + 60), no clock clipping',
+     @Expected = N'120', @Actual = @dm3;
+EXEC test.Assert_IsEqual @TestName = N'[AV.byShift] both entries entered for the shift are counted',
+     @Expected = N'2', @Actual = @ec3;
 GO
 
 -- =============================================
