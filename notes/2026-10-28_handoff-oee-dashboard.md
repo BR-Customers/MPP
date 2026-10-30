@@ -30,7 +30,8 @@ recorded. Agreed direction, now spec v0.3 (sections 6.1, 6.7, 6.8, 7.4-7.5, 13):
 - **`Lots.Lot.ShiftId`** stamped by the Assembly OUT mint, one-time backfill. Good = quantity at
   mint (split / merge / rework children create new Manufactured LOTs and must not count).
 - Full writer inventory in spec 6.8.
-Open for Jacques: Q5 minted-quantity column, Q6 change detection vs writers marking stale.
+Q5/Q6 answered same day (spec v0.3.1): `Lots.Lot.MintedPieceCount` (D21); change detection
+by fingerprint, no writer edits (D22). Waiting on re-approval of the spec as a whole.
 The plan must be rewritten after re-approval; Tasks 1-6 code is partly carried forward
 (spec 13).
 

@@ -1,7 +1,7 @@
 # OEE Dashboard -- Availability and Quality, Site to Unit
 
 **Date:** 2026-10-27
-**Status:** Draft v0.3 -- needs Jacques's re-approval (v0.2 was approved 2026-10-29; the build stopped at the benchmark gate and this revision changes how the numbers are computed and stored)
+**Status:** Draft v0.3.1 -- Q5 and Q6 answered 2026-10-30; needs Jacques's re-approval (v0.2 was approved 2026-10-29; the build stopped at the benchmark gate and this revision changes how the numbers are computed and stored)
 **Mockups:** `docs/superpowers/specs/2026-10-27-oee-dashboard-mockups/` (open in a browser; the dark-navy frames are the screens, the text around them is commentary)
 
 | Version | Date | Change |
@@ -9,6 +9,7 @@
 | 0.1 | 2026-10-27 | First draft from the brainstorm with Jacques. |
 | 0.2 | 2026-10-29 | Jacques answered the four open questions (Section 11). Scrap is charged by defect code at area level (6.4); production day runs 3rd -> 1st -> 2nd (6.6); FG-only M&A good confirmed; no change order -- everything ships. |
 | 0.3 | 2026-10-30 | Rework after the benchmark gate missed (Section 13). Availability is computed from entered DURATIONS, not clock overlap (6.1, D17). Per-shift figures are stored in a summary table, computed when a shift closes and refreshed within 30 minutes of any later edit, with a nightly safety net (6.7, 6.8, D16, D19). Finished-good LOTs carry the shift they were minted in (7.4, D18). INSP + Offsite lines sit under M&A (D20). Writer inventory added (6.8). |
+| 0.3.1 | 2026-10-30 | Q5 and Q6 answered: `Lots.Lot.MintedPieceCount` (D21); changed shifts found by change detection (D22, 6.8). |
 
 ---
 
@@ -80,6 +81,8 @@ This feature puts what the plant already records in front of supervisors and man
 | D18 | **A finished-good LOT records the shift it was minted in** (`Lots.Lot.ShiftId`), stamped by the Assembly OUT mint; existing LOTs are backfilled once (7.4). |
 | D19 | **Refresh:** a shift is computed when it closes and recomputed within 30 minutes of any later edit; a nightly sweep rebuilds the last 7 days as a safety net (6.8). The writer inventory has to be complete (6.8). |
 | D20 | Inspection (INSP) and Offsite (OS-PROD) OEE lines are units under **M&A**, each in its own ProductionArea group (Jacques, 2026-10-30). |
+| D21 | **Minted quantity is stored:** a new column `Lots.Lot.MintedPieceCount`, written by the mint alongside `ShiftId` and never changed afterwards. Good = its sum (6.4, 7.4). Not reconstructed from consumption records (Jacques, 2026-10-30). |
+| D22 | **Changed shifts are found by change detection:** every 15 minutes the refresher fingerprints each shift of the last 7 days and recomputes those whose fingerprint differs. Fact writers are not edited; configuration procs call `RecomputeRange` (6.8) (Jacques, 2026-10-30). |
 
 ## 5. The screens
 
@@ -194,7 +197,7 @@ Good-count rules are the ones already agreed for `Quality.Reject_GetPlantSummary
 |---|---|---|---|
 | Die Cast | `SUM(Workorder.DieCastContribution.PieceDelta)` | `CellLocationId` (the press) | `ShiftId` |
 | Trim | **per-shift checkpoint credit**: each trim `ProductionEvent` (partial checkpoint via `TrimPartial_Record`, and the closing `TrimOut`) is credited with its count minus the LOT's previous trim checkpoint -- the rule `TrimPartial_Record` already defines, via `Workorder.ufn_TrimPassPreviousCount` | the Trim Shop above `ProductionEvent.TerminalLocationId` | `ProductionEvent.ShiftId`; rows with `ShiftId NULL` (rework passes) are not shift production and are excluded |
-| M&A | the **minted quantity** of FinishedGood LOTs minted at Assembly OUT (Section 11, Q5) | the line above `Lot.CreatedAtTerminalId` | `Lot.ShiftId` (D18) |
+| M&A | the **minted quantity** (`Lot.MintedPieceCount`, D21) of FinishedGood LOTs minted at Assembly OUT | the line above `Lot.CreatedAtTerminalId` | `Lot.ShiftId` (D18) |
 
 **Why the M&A rule changed.** v0.2 counted every Manufactured FinishedGood LOT by `CreatedAt`. The writer inventory (6.8) showed that `Lots.Lot_Split`, `Lots.Lot_Merge` and `Lots.ContainerRework_MovePieces` also create LOTs stamped `Manufactured` with a fresh `CreatedAt` -- splitting or reworking a tray would have counted as new production. And `PieceCount` shrinks when the LOT is later scrapped, so the same pieces would have been charged as both less good and as scrap. Good is therefore the quantity **at mint**, on LOTs that **only the mint** stamps with a shift. Split, merge and rework children never carry `ShiftId`. Received-origin LOTs stay excluded, so a part received finished is not counted twice. (The plant summary counts every FinishedGood LOT; whether that proc double-counts is a side observation for the builder, not a fix here.)
 
@@ -263,12 +266,13 @@ The production day runs **3rd -> 1st -> 2nd**: the 3rd shift that starts Monday 
 
 The dashboard labels a shift that closed less than an hour ago "entries may still be arriving" (my call).
 
-**How a changed shift is found -- decision for Jacques (Section 11, Q6).**
+**How a changed shift is found: change detection (D22).**
 
-- **(a) Change detection (my recommendation).** Every 15 minutes the refresher computes a cheap fingerprint per shift for the last 7 days over the fact tables below (row count, quantity sums, a checksum of the columns the calculation reads) and recomputes the shifts whose fingerprint differs from the stored `InputFingerprint`. No fact writer changes, and a writer added next year is covered automatically. Configuration changes do not alter fact rows, so the configuration procs (second table) call `RecomputeRange`; the nightly sweep backs them up.
-- **(b) Writers mark shifts stale.** Each writer below calls `Oee.ShiftSummary_MarkStale(@ShiftId)` inside its transaction (a silent proc, like the audit writers, so INSERT-EXEC capture is unaffected); the refresher recomputes the marked shifts. Exact and cheap, but every one of these writers -- and every future one -- has to remember.
+Every 15 minutes the refresher computes a cheap fingerprint per shift for the last 7 days over the fact tables below (row count, quantity sums, a checksum of the columns the calculation reads) and recomputes the shifts whose fingerprint differs from the stored `InputFingerprint`. No fact writer changes, and a writer added next year is covered automatically. An edit that moves a row to another shift (`_UpdateTimes`, the restamps) changes both shifts' fingerprints, so both are recomputed. Configuration changes do not alter fact rows, so the configuration procs (second table) call `RecomputeRange`; the nightly sweep backs them up.
 
-Either way the inventory below is the contract, and each entry gets a test that an edit through it reaches the summary.
+*Not chosen:* every writer calling a mark-stale proc inside its transaction -- exact, but every current and future writer has to remember.
+
+The inventory below is the contract: each entry gets a test that an edit through it changes the fingerprint and reaches the summary.
 
 **Writer inventory -- fact tables** (repeatable procs that INSERT / UPDATE / DELETE, alias forms included; checked 2026-10-30):
 
@@ -303,7 +307,7 @@ Versioned migrations that repair data (e.g. `0077`) are one-offs; their deployme
 
 Both are repeatable-proc changes with version bumps and change-log lines; each gets a test asserting the new columns. `Oee.ShiftOverride_Restamp` deliberately ignores reject rows and stays that way. (Built: commit `b1326ab3`.)
 
-4. **`Workorder.Assembly_CompleteTray` stamps the mint (D18).** New nullable columns on `Lots.Lot`: `ShiftId` (FK `Oee.Shift`) and the minted quantity (Section 11, Q5). The mint writes `ShiftId` from `Oee.ufn_ShiftIdForInstant(<the line>, now)`, the same call shape as the scrap writers. `MachiningOut_Mint` stamps its SubAssembly LOTs the same way, for consistency (my call). `Lot_Split`, `Lot_Merge` and `ContainerRework_MovePieces` list their insert columns explicitly and do not copy `ShiftId`; a test pins that.
+4. **`Workorder.Assembly_CompleteTray` stamps the mint (D18).** New nullable columns on `Lots.Lot`: `ShiftId` (FK `Oee.Shift`) and `MintedPieceCount` (D21), both written once by the mint. The mint writes `ShiftId` from `Oee.ufn_ShiftIdForInstant(<the line>, now)`, the same call shape as the scrap writers. `MachiningOut_Mint` stamps its SubAssembly LOTs the same way, for consistency (my call). `Lot_Split`, `Lot_Merge` and `ContainerRework_MovePieces` list their insert columns explicitly and do not copy `ShiftId`; a test pins that.
 5. **One-time backfill** (Jacques agreed). A versioned migration (next free number at build time; `0116` is the highest today) stamps existing finished-good LOTs that were **minted** -- the produced side of a `Consumption` genealogy link, or a pass-through mint -- with `ShiftId` resolved from the line and `CreatedAt`, and with a reconstructed minted quantity (current `PieceCount` + pieces scrapped from it + pieces split out of it). Split, merge and rework children are left NULL. The migration reports what it could not reconstruct rather than guessing.
 
 ## 8. Build shape
@@ -312,7 +316,7 @@ Both are repeatable-proc changes with version bumps and change-log lines; each g
 
 | Object | Purpose |
 |---|---|
-| Migration (next free number) | `Oee.ShiftSummary`; `Lots.Lot.ShiftId` + minted quantity; the finished-good backfill (7.4, 7.5). If option (b) of 6.8 is chosen, a stale-mark table. |
+| Migration (next free number) | `Oee.ShiftSummary` (with `InputFingerprint`); `Lots.Lot.ShiftId` + `MintedPieceCount`; the finished-good backfill (7.4, 7.5). |
 | `Oee.Shift_GetAvailability` (new major version) + the availability function behind it | Summed-duration rule (6.1). |
 | `Oee.ShiftSummary_Compute(@ShiftId)` | One shift's rows, one transaction (6.7). |
 | `Oee.ShiftSummary_RecomputeRange(@FromUtc, @ToUtc)`, `Oee.ShiftSummary_RefreshChanged()` | Configuration changes / deployments; the 15-minute change detection (6.8). |
@@ -361,10 +365,10 @@ Not built. Recorded so the cards have a destination:
 
 **Answered 2026-10-30:** INSP + Offsite lines under M&A (D20); stored per-shift figures with stale refresh and a nightly safety net (D16, D19); fix availability (D17); `ShiftId` on the finished-good LOT with a one-time backfill (D18).
 
-**Open (v0.3):**
+**Answered 2026-10-30 (v0.3):**
 
-5. **The minted quantity.** Good must be the quantity at mint (6.4), and `PieceCount` changes afterwards. Recommendation: a second new column on `Lots.Lot`, e.g. `MintedPieceCount`, written by the mint alongside `ShiftId`. Alternative: derive it from consumption records, which is fragile for pass-through mints.
-6. **How a changed shift is found** (6.8): (a) change detection by fingerprint (recommended -- no writer edits, future writers covered) or (b) every writer marks its shift stale.
+5. **The minted quantity.** *Stored:* `Lots.Lot.MintedPieceCount`, written by the mint (D21).
+6. **How a changed shift is found.** *Change detection* by fingerprint (D22, 6.8).
 
 ## 12. Calls I made (check these)
 
