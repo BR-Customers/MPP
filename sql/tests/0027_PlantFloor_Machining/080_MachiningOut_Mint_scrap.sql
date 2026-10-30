@@ -345,6 +345,10 @@ DECLARE @b7Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.
 EXEC test.Assert_IsEqual @TestName = N'[MoScrap] other casting consumed 10-8=2', @Expected = N'2', @Actual = @b7Pc;
 DECLARE @m7Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@m7Lot);
 EXEC test.Assert_IsEqual @TestName = N'[MoScrap] minted 8 from the other casting', @Expected = N'8', @Actual = @m7Pc;
+-- v2.9 (OEE dashboard spec 7.4): the minted SubAssembly LOT carries its shift and minted quantity.
+DECLARE @m7Stamp NVARCHAR(60) = (SELECT ISNULL(CAST(ShiftId AS NVARCHAR(20)), N'<NULL>') + N'/' + ISNULL(CAST(MintedPieceCount AS NVARCHAR(10)), N'<NULL>') FROM Lots.Lot WHERE Id=@m7Lot);
+DECLARE @m7StampExp NVARCHAR(60) = ISNULL(CAST((SELECT Id FROM Oee.Shift WHERE Remarks = N'MOS-SHIFT') AS NVARCHAR(20)), N'<no fixture>') + N'/8';
+EXEC test.Assert_IsEqual @TestName = N'[Mint] SubAssembly LOT ShiftId stamped + MintedPieceCount 8', @Expected = @m7StampExp, @Actual = @m7Stamp;
 DECLARE @a7Parent NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotGenealogy WHERE ParentLotId=@A7 AND ChildLotId=@m7Lot);
 EXEC test.Assert_IsEqual @TestName = N'[MoScrap] fully-scrapped casting NOT a genealogy parent', @Expected = N'0', @Actual = @a7Parent;
 DECLARE @rej7 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent WHERE LotId=@A7);

@@ -184,6 +184,18 @@ DECLARE @OutLoc BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @A1)
 
 DECLARE @jsonA NVARCHAR(MAX) = N'[' + CAST(@A1 AS NVARCHAR(20)) + N',' + CAST(@A2 AS NVARCHAR(20)) + N']';
 
+-- OEE mint stamp (spec 6.4, 7.4): stamp the source as if minted, so the
+-- children below can be checked for NOT inheriting it.
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'STAMP-030-SCHED' AND NOT EXISTS (SELECT 1 FROM Oee.Shift s WHERE s.Remarks = N'STAMP-030');
+IF NOT EXISTS (SELECT 1 FROM Oee.Shift WHERE Remarks = N'STAMP-030')
+BEGIN
+    INSERT INTO Oee.ShiftSchedule (Name, Description, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedByUserId)
+    VALUES (N'STAMP-030-SCHED', N'mint stamp fixture', '06:00:00', '14:00:00', 127, '2020-01-01', 1);
+    INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks)
+    VALUES (SCOPE_IDENTITY(), '2026-01-05T06:00:00', '2026-01-05T14:00:00', N'STAMP-030');
+END;
+UPDATE Lots.Lot SET ShiftId = (SELECT Id FROM Oee.Shift WHERE Remarks = N'STAMP-030'), MintedPieceCount = 30
+WHERE Id IN (@A1, @A2);
 DECLARE @rA TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO @rA EXEC Lots.Lot_Merge
     @SourceLotIdsJson = @jsonA, @OutputItemId = @ItemId, @OutputLocationId = @OutLoc, @AppUserId = 1;
@@ -197,6 +209,8 @@ INSERT INTO #MrgFix (Tag, LotId, LotName)
 
 DECLARE @outIdStr NVARCHAR(20) = CAST(@OutId AS NVARCHAR(20));
 EXEC test.Assert_IsNotNull @TestName = N'[Merge] output NewId returned', @Value = @outIdStr;
+DECLARE @outStamp NVARCHAR(60) = (SELECT ISNULL(CAST(ShiftId AS NVARCHAR(20)), N'NULL') + N'/' + ISNULL(CAST(MintedPieceCount AS NVARCHAR(10)), N'NULL') FROM Lots.Lot WHERE Id = @OutId);
+EXEC test.Assert_IsEqual @TestName = N'[Stamp] merge output carries no ShiftId / MintedPieceCount', @Expected = N'NULL/NULL', @Actual = @outStamp;
 
 DECLARE @outTool NVARCHAR(20) = CAST((SELECT ToolId FROM Lots.Lot WHERE Id = @OutId) AS NVARCHAR(20));
 EXEC test.Assert_IsNull @TestName = N'[Merge] output ToolId is NULL', @Value = @outTool;
@@ -492,6 +506,9 @@ DELETE FROM Tools.DieRankCompatibility WHERE Id IN (SELECT Id FROM #MrgRankCompa
 DELETE FROM Tools.Tool WHERE Id IN (SELECT ToolId FROM #MrgTool);
 DELETE FROM Tools.DieRank WHERE Id IN (SELECT RankId FROM #MrgRank);
 
+UPDATE Lots.Lot SET ShiftId = NULL WHERE ShiftId IN (SELECT Id FROM Oee.Shift WHERE Remarks = N'STAMP-030');
+DELETE FROM Oee.Shift WHERE Remarks = N'STAMP-030';
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'STAMP-030-SCHED';
 IF OBJECT_ID(N'tempdb..#MrgFix') IS NOT NULL DROP TABLE #MrgFix;
 IF OBJECT_ID(N'tempdb..#MrgTool') IS NOT NULL DROP TABLE #MrgTool;
 IF OBJECT_ID(N'tempdb..#MrgRank') IS NOT NULL DROP TABLE #MrgRank;

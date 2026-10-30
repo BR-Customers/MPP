@@ -44,6 +44,9 @@ DELETE FROM Lots.ContainerRework WHERE ContainerId IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.ContainerTray WHERE ContainerId IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.Container WHERE Id IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.Lot WHERE Id IN (SELECT Id FROM @TdLot);
+UPDATE Lots.Lot SET ShiftId = NULL WHERE ShiftId IN (SELECT Id FROM Oee.Shift WHERE Remarks = N'STAMP-RW');
+DELETE FROM Oee.Shift WHERE Remarks = N'STAMP-RW';
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'STAMP-RW-SCHED';
 UPDATE Lots.IdentifierSequence SET LastValue = 0 WHERE Code IN (N'ControlledRun', N'ControlledRunDeviation');
 GO
 
@@ -272,11 +275,25 @@ INSERT INTO @o EXEC Lots.ContainerRework_MovePieces @FromContainerTrayId = @Tray
 SET @n = (SELECT CAST(Status AS NVARCHAR(1)) + N'|' + CASE WHEN Message LIKE N'%is not open for rework.' THEN N'donor' ELSE Message END FROM @o);
 EXEC test.Assert_IsEqual @TestName = N'[Move] the DONOR must itself be open for rework', @Expected = N'0|donor', @Actual = @n;
 
+-- OEE mint stamp (spec 6.4, 7.4): stamp the source as if minted, so the
+-- children below can be checked for NOT inheriting it.
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'STAMP-RW-SCHED' AND NOT EXISTS (SELECT 1 FROM Oee.Shift s WHERE s.Remarks = N'STAMP-RW');
+IF NOT EXISTS (SELECT 1 FROM Oee.Shift WHERE Remarks = N'STAMP-RW')
+BEGIN
+    INSERT INTO Oee.ShiftSchedule (Name, Description, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedByUserId)
+    VALUES (N'STAMP-RW-SCHED', N'mint stamp fixture', '06:00:00', '14:00:00', 127, '2020-01-01', 1);
+    INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks)
+    VALUES (SCOPE_IDENTITY(), '2026-01-05T06:00:00', '2026-01-05T14:00:00', N'STAMP-RW');
+END;
+UPDATE Lots.Lot SET ShiftId = (SELECT Id FROM Oee.Shift WHERE Remarks = N'STAMP-RW'), MintedPieceCount = 24
+WHERE Id IN (SELECT FinishedGoodLotId FROM Lots.ContainerTray WHERE Id = @TrayB1);
 DECLARE @SeqBefore BIGINT = (SELECT LastValue FROM Lots.IdentifierSequence WHERE Code = N'Lot');
 DELETE FROM @o;
 INSERT INTO @o EXEC Lots.ContainerRework_MovePieces @FromContainerTrayId = @TrayB1, @ToContainerId = @ConA, @Quantity = 3, @AppUserId = @App, @TerminalLocationId = @Term;
 DECLARE @NewTray BIGINT = (SELECT NewId FROM @o);
 DECLARE @NewLot BIGINT = (SELECT FinishedGoodLotId FROM Lots.ContainerTray WHERE Id = @NewTray);
+SET @n = (SELECT ISNULL(CAST(ShiftId AS NVARCHAR(20)), N'NULL') + N'/' + ISNULL(CAST(MintedPieceCount AS NVARCHAR(10)), N'NULL') FROM Lots.Lot WHERE Id = @NewLot);
+EXEC test.Assert_IsEqual @TestName = N'[Stamp] rework child carries no ShiftId / MintedPieceCount', @Expected = N'NULL/NULL', @Actual = @n;
 SET @n = (SELECT CAST(Status AS NVARCHAR(1)) + N'|' + CASE WHEN Message LIKE N'3 moved into container %; it now holds ' + CAST(@Full AS NVARCHAR(10)) + N' of ' + CAST(@Full AS NVARCHAR(10)) + N'.' THEN N'full' ELSE Message END FROM @o);
 EXEC test.Assert_IsEqual @TestName = N'[Move] Status 1; the receiver is full again', @Expected = N'1|full', @Actual = @n;
 SET @n = (SELECT CAST(t.ContainerId AS NVARCHAR(20)) + N'|' + CAST(t.PartsClosedCount AS NVARCHAR(5)) + N'|' + CAST(l.PieceCount AS NVARCHAR(5)) + N'|' + CAST(l.LotStatusId AS NVARCHAR(5))
@@ -598,6 +615,9 @@ DELETE FROM Lots.ContainerRework WHERE ContainerId IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.ContainerTray WHERE ContainerId IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.Container WHERE Id IN (SELECT Id FROM @TdCon);
 DELETE FROM Lots.Lot WHERE Id IN (SELECT Id FROM @TdLot);
+UPDATE Lots.Lot SET ShiftId = NULL WHERE ShiftId IN (SELECT Id FROM Oee.Shift WHERE Remarks = N'STAMP-RW');
+DELETE FROM Oee.Shift WHERE Remarks = N'STAMP-RW';
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'STAMP-RW-SCHED';
 UPDATE Lots.IdentifierSequence SET LastValue = 0 WHERE Code IN (N'ControlledRun', N'ControlledRunDeviation');
 GO
 

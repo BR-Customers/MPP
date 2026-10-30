@@ -93,6 +93,20 @@ SELECT Id, Id, 0 FROM Lots.Lot WHERE LotName LIKE N'STG-092%'
   AND NOT EXISTS (SELECT 1 FROM Lots.LotGenealogyClosure c WHERE c.AncestorLotId = Lots.Lot.Id AND c.DescendantLotId = Lots.Lot.Id);
 GO
 
+-- ---- shift fixture (OEE dashboard spec 7.4): a closed shift whose window
+-- covers NOW, latest-starting so Oee.ufn_ShiftIdForInstant resolves to it
+-- (the 102_RejectEvent_RecordByPartFifo pattern). Removed in cleanup.
+DELETE FROM Oee.Shift WHERE Remarks = N'CT092-SHIFT';
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'CT092-SHIFT-SCHED';
+DECLARE @NowLocal   DATETIME2(0) = CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(0));
+DECLARE @StartLocal DATETIME2(0) = DATEADD(MINUTE, -1, DATEADD(SECOND, -DATEPART(SECOND, @NowLocal), @NowLocal));
+DECLARE @EndLocal   DATETIME2(0) = DATEADD(HOUR, 2, @StartLocal);
+INSERT INTO Oee.ShiftSchedule (Name, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedByUserId)
+VALUES (N'CT092-SHIFT-SCHED', CAST(@StartLocal AS TIME(0)), CAST(@EndLocal AS TIME(0)), 127, DATEADD(DAY, -2, CAST(@StartLocal AS DATE)), 1);
+INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks)
+VALUES ((SELECT Id FROM Oee.ShiftSchedule WHERE Name = N'CT092-SHIFT-SCHED'), @StartLocal, @EndLocal, N'CT092-SHIFT');
+GO
+
 -- =============================================
 -- Test 1: happy path - tray 1 mints FG LOT, consumes BOM FIFO, container not full
 -- =============================================
@@ -122,6 +136,13 @@ DECLARE @FgOrigin NVARCHAR(20) = (SELECT ot.Code FROM Lots.Lot l INNER JOIN Lots
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] FG LOT origin Manufactured', @Expected = N'Manufactured', @Actual = @FgOrigin;
 DECLARE @FgStatus NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @Fg1);
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] FG LOT status Good', @Expected = N'Good', @Actual = @FgStatus;
+
+-- OEE mint stamp (spec 7.4, D18, D21): shift + quantity at mint
+DECLARE @ShiftExp NVARCHAR(20) = (SELECT CAST(Id AS NVARCHAR(20)) FROM Oee.Shift WHERE Remarks = N'CT092-SHIFT');
+DECLARE @FgShift  NVARCHAR(20) = (SELECT CAST(ShiftId AS NVARCHAR(20)) FROM Lots.Lot WHERE Id = @Fg1);
+EXEC test.Assert_IsEqual @TestName = N'[Tray] FG LOT ShiftId = ufn_ShiftIdForInstant(cell, now)', @Expected = @ShiftExp, @Actual = @FgShift;
+DECLARE @FgMinted NVARCHAR(10) = (SELECT CAST(MintedPieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @Fg1);
+EXEC test.Assert_IsEqual @TestName = N'[Tray] FG LOT MintedPieceCount = PieceCount', @Expected = N'24', @Actual = @FgMinted;
 
 -- tray links to the FG LOT 1:1
 DECLARE @TrayFg NVARCHAR(20) = (SELECT CAST(FinishedGoodLotId AS NVARCHAR(20)) FROM Lots.ContainerTray WHERE Id = @Tid);
@@ -278,6 +299,8 @@ DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.
 DELETE FROM Lots.Container WHERE ItemId IN (@OutC, @ShortC);
 DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.ItemId IN (@OutC, @ShortC) OR l.LotName LIKE N'STG-092%';
 DELETE FROM Lots.Lot WHERE ItemId IN (@OutC, @ShortC) OR LotName LIKE N'STG-092%';
+DELETE FROM Oee.Shift WHERE Remarks = N'CT092-SHIFT';
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'CT092-SHIFT-SCHED';
 GO
 
 EXEC test.EndTestFile;

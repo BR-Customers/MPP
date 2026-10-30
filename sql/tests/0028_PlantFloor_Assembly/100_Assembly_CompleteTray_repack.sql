@@ -111,6 +111,13 @@ DECLARE @R1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'STG-100R1');
 DECLARE @Shape NVARCHAR(100) = (SELECT o.Code + N'/' + CAST(l.PieceCount AS NVARCHAR(10)) + N'/' + ISNULL(CAST(l.BomId AS NVARCHAR(20)), N'nobom')
                                 FROM Lots.Lot l INNER JOIN Lots.LotOriginType o ON o.Id = l.LotOriginTypeId WHERE l.Id = @Tray);
 EXEC test.Assert_IsEqual @TestName = N'[Repack] tray LOT is Manufactured, 24 pcs, no BOM', @Expected = N'Manufactured/24/nobom', @Actual = @Shape;
+-- OEE mint stamp (spec 7.4, D21): a pass-through mint is a mint too. The exact
+-- ShiftId is pinned in 092 (which owns a covering shift); here it must match
+-- whatever the resolver gives for the cell now ('none' when no shift covers it).
+DECLARE @MintStamp NVARCHAR(40) = (SELECT ISNULL(CAST(ShiftId AS NVARCHAR(20)), N'none') + N'/' + ISNULL(CAST(MintedPieceCount AS NVARCHAR(10)), N'null')
+                                   FROM Lots.Lot WHERE Id = @Tray);
+DECLARE @ExpStamp NVARCHAR(40) = ISNULL((SELECT TOP 1 CAST(ShiftId AS NVARCHAR(20)) FROM Oee.ufn_ShiftIdForInstant(@Cell, SYSUTCDATETIME())), N'none') + N'/24';
+EXEC test.Assert_IsEqual @TestName = N'[Repack] tray LOT stamped ShiftId + MintedPieceCount 24', @Expected = @ExpStamp, @Actual = @MintStamp;
 DECLARE @Left NVARCHAR(40) = (SELECT CAST(PieceCount AS NVARCHAR(10)) + N'/' + CAST(InventoryAvailable AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @R1);
 EXEC test.Assert_IsEqual @TestName = N'[Repack] received LOT drawn down to 6', @Expected = N'6/6', @Actual = @Left;
 DECLARE @Ev NVARCHAR(40) = (SELECT CAST(SUM(PieceCount) AS NVARCHAR(10)) + N'/' + CAST(COUNT(*) AS NVARCHAR(10))

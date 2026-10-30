@@ -88,6 +88,18 @@ DECLARE @json NVARCHAR(MAX) =
     N'[{"pieceCount":25,"currentLocationId":' + CAST(@LocId AS NVARCHAR(20)) + N'},'
   + N'{"pieceCount":25,"currentLocationId":' + CAST(@LocId AS NVARCHAR(20)) + N'}]';
 
+-- OEE mint stamp (spec 6.4, 7.4): stamp the source as if minted, so the
+-- children below can be checked for NOT inheriting it.
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'STAMP-020-SCHED' AND NOT EXISTS (SELECT 1 FROM Oee.Shift s WHERE s.Remarks = N'STAMP-020');
+IF NOT EXISTS (SELECT 1 FROM Oee.Shift WHERE Remarks = N'STAMP-020')
+BEGIN
+    INSERT INTO Oee.ShiftSchedule (Name, Description, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedByUserId)
+    VALUES (N'STAMP-020-SCHED', N'mint stamp fixture', '06:00:00', '14:00:00', 127, '2020-01-01', 1);
+    INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks)
+    VALUES (SCOPE_IDENTITY(), '2026-01-05T06:00:00', '2026-01-05T14:00:00', N'STAMP-020');
+END;
+UPDATE Lots.Lot SET ShiftId = (SELECT Id FROM Oee.Shift WHERE Remarks = N'STAMP-020'), MintedPieceCount = 50
+WHERE Id IN (@ParentId);
 CREATE TABLE #s (Status BIT, Message NVARCHAR(500), ChildLotId BIGINT, ChildLotName NVARCHAR(50), PieceCount INT);
 INSERT INTO #s EXEC Lots.Lot_Split
     @ParentLotId = @ParentId, @ChildrenJson = @json, @AppUserId = 1;
@@ -100,6 +112,11 @@ INSERT INTO #SplitFix (Tag, LotId, LotName)
 
 DECLARE @ok1 BIT = (SELECT TOP 1 Status FROM #s);
 EXEC test.Assert_IsTrue @TestName = N'[Split] 2-way split succeeds', @Condition = @ok1;
+DECLARE @stampedKids INT = (SELECT COUNT(*) FROM Lots.Lot l INNER JOIN #s s ON s.ChildLotId = l.Id
+                           WHERE l.ShiftId IS NOT NULL OR l.MintedPieceCount IS NOT NULL);
+EXEC test.Assert_RowCount @TestName = N'[Stamp] split children carry no ShiftId / MintedPieceCount', @ExpectedCount = 0, @ActualCount = @stampedKids;
+DECLARE @parentMinted NVARCHAR(10) = (SELECT CAST(MintedPieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @ParentId);
+EXEC test.Assert_IsEqual @TestName = N'[Stamp] parent MintedPieceCount unchanged after split', @Expected = N'50', @Actual = @parentMinted;
 
 DECLARE @cnt1 INT = (SELECT COUNT(*) FROM #s);
 EXEC test.Assert_RowCount @TestName = N'[Split] two child rows returned (Option A)',
@@ -315,6 +332,9 @@ DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM @ids);
 -- Break the self-referencing ParentLotId FK before deleting the LOT rows.
 UPDATE Lots.Lot SET ParentLotId = NULL WHERE Id IN (SELECT Id FROM @ids);
 DELETE FROM Lots.Lot WHERE Id IN (SELECT Id FROM @ids);
+UPDATE Lots.Lot SET ShiftId = NULL WHERE ShiftId IN (SELECT Id FROM Oee.Shift WHERE Remarks = N'STAMP-020');
+DELETE FROM Oee.Shift WHERE Remarks = N'STAMP-020';
+DELETE FROM Oee.ShiftSchedule WHERE Name = N'STAMP-020-SCHED';
 
 IF OBJECT_ID(N'tempdb..#SplitFix') IS NOT NULL DROP TABLE #SplitFix;
 GO

@@ -2,7 +2,10 @@
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
--- Version:     2.8 (2026-10-29, OEE dashboard spec sec 7.2) - the Machining OUT scrap rows now STAMP ShiftId from
+-- Version:     2.9 (2026-10-30, OEE dashboard spec v0.3.1 sec 7.4) - the minted SubAssembly LOT is STAMPED
+--              with ShiftId (Oee.ufn_ShiftIdForInstant(<the line>, now)) and MintedPieceCount = @PieceCount,
+--              the same stamp Assembly_CompleteTray v1.6 writes, for consistency.
+--              2.8 (2026-10-29, OEE dashboard spec sec 7.2) - the Machining OUT scrap rows now STAMP ShiftId from
 --              Oee.ufn_ShiftIdForInstant(<the line>, now), so line scrap lands in its shift on the OEE dashboard.
 --              2.7 (2026-10-21, super-lot piece 6) - CRT refusal names the open super-lot ('is marked CRT (super-lot <RN>)', via
 --              Quality.ufn_OpenControlledRunForLot); no open super-lot = the text is unchanged.
@@ -314,11 +317,15 @@ BEGIN
             (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ProducedItemId, @TerminalLocationId,
                                                        NULL));
 
+        -- v2.9: the shift this SubAssembly is minted in, resolved for the line (@SrcLoc).
+        DECLARE @MintShiftId BIGINT = (SELECT TOP 1 ShiftId FROM Oee.ufn_ShiftIdForInstant(@SrcLoc, SYSUTCDATETIME()));
         INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
             Weight, WeightUomId, ToolId, ToolCavityId, VendorLotNumber, MinSerialNumber, MaxSerialNumber,
-            CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId, CrtActive)
+            CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId, CrtActive,
+            ShiftId, MintedPieceCount)
         VALUES (@MintedName, @ProducedItemId, @ManufacturedOriginId, @GoodStatusId, @PieceCount, (SELECT MaxLotSize FROM Parts.Item WHERE Id=@ProducedItemId),
-            NULL, NULL, NULL, NULL, NULL, NULL, NULL, @SrcLoc, 0, @PieceCount, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive);
+            NULL, NULL, NULL, NULL, NULL, NULL, NULL, @SrcLoc, 0, @PieceCount, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive,
+            @MintShiftId, @PieceCount);
         SET @NewId = SCOPE_IDENTITY();
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
         VALUES (@NewId, NULL, @GoodStatusId, N'SubAssembly LOT minted at Machining OUT (FIFO).', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());

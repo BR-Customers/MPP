@@ -1,6 +1,12 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_CompleteTray.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.6 (2026-10-30, OEE dashboard spec v0.3.1 sec 7.4, D18, D21) - the minted
+--              tray LOT is STAMPED with ShiftId (Oee.ufn_ShiftIdForInstant(@CellLocationId,
+--              now), resolved before the transaction) and MintedPieceCount = @PieceCount.
+--              Written once, here only: good on the OEE dashboard is the minted quantity
+--              by Lot.ShiftId, so split / merge / rework children (which leave both NULL)
+--              are never counted as new production.
 -- Version:     1.5 (2026-10-06) - PASS-THROUGH REPACK. A finished good with NO
 --              published BOM used to be refused ("No active BOM"). It is now
 --              treated as a part MPP receives finished, inspects and repackages
@@ -336,6 +342,8 @@ BEGIN
         SET @MaxLotSize  = (SELECT MaxLotSize FROM Parts.Item WHERE Id = @FinishedGoodItemId);
         SET @PartNumber  = (SELECT PartNumber FROM Parts.Item WHERE Id = @FinishedGoodItemId);
         SET @CellCode    = (SELECT Code FROM Location.Location WHERE Id = @CellLocationId);
+        -- v1.6: the shift this tray is minted in (OEE dashboard good, D18). NULL when no shift covers now.
+        DECLARE @MintShiftId BIGINT = (SELECT TOP 1 ShiftId FROM Oee.ufn_ShiftIdForInstant(@CellLocationId, SYSUTCDATETIME()));
 
         -- ================= Mutation (atomic) =================
         BEGIN TRANSACTION;
@@ -388,13 +396,13 @@ BEGIN
             Weight, WeightUomId, ToolId, ToolCavityId, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
-            CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId, CrtActive)
+            CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId, CrtActive, ShiftId, MintedPieceCount)
         VALUES (
             @MintedName, @FinishedGoodItemId, @ManufacturedOriginId, @GoodStatusId, @PieceCount, @MaxLotSize,
             NULL, NULL, NULL, NULL, NULL,
             NULL, NULL, @CellLocationId,
             0, @PieceCount,
-            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive);
+            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive, @MintShiftId, @PieceCount);
         SET @FinishedGoodLotId = SCOPE_IDENTITY();
 
         -- side effects mirror Lot_Create: status-history / closure self-row / first placement
