@@ -1,5 +1,7 @@
 # OEE Dashboard (Availability + Quality, Site -> Area -> Unit) Implementation Plan
 
+> **Superseded 2026-10-30** by `docs/superpowers/plans/2026-10-30-oee-dashboard-v03.md` (spec v0.3.1). Tasks 1-6 here were built; kept as the record and for the column lists Tasks 11-15 of the new plan reference.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Put the availability, downtime and quality the plant already records in front of supervisors on three Perspective pages: site, area and unit. Performance and OEE appear as darkened future cards.
