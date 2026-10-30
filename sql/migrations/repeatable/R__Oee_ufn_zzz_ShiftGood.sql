@@ -3,7 +3,7 @@
 -- Object:      Oee.ufn_ShiftGood
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-29
--- Version:     1.0
+-- Version:     1.1
 -- Description: Good pieces made in one runtime shift, by where they are booked
 --              (OEE dashboard spec
 --              docs/superpowers/specs/2026-10-27-oee-dashboard-design.md
@@ -20,33 +20,32 @@
 --                          trim shop above the terminal (PlacementIsArea = 1).
 --                          Rows with ShiftId NULL (rework passes) are not shift
 --                          production and are excluded.
---                M&A       PieceCount of Manufactured-origin FinishedGood LOTs,
---                          on the line above Lot.CreatedAtTerminalId, in the
---                          shift Oee.ufn_ShiftIdForInstant gives that line at
---                          CreatedAt. Received-origin LOTs are excluded, so a
---                          pass-through part is not counted twice (D14: no
---                          SubAssembly-only lines at MPP).
+--                M&A       MintedPieceCount of Manufactured-origin FinishedGood
+--                          LOTs whose Lot.ShiftId is the shift (v1.1, spec v0.3.1
+--                          6.4, D18, D21), on the line above
+--                          Lot.CreatedAtTerminalId. Only the mint procs stamp
+--                          ShiftId, so split / merge / rework children (which
+--                          also carry Manufactured origin and a fresh CreatedAt)
+--                          are never new production, and later scrap that
+--                          shrinks PieceCount is not charged twice. Received-
+--                          origin LOTs are excluded, so a pass-through part is
+--                          not counted twice (D14: no SubAssembly-only lines).
 --              Placement and family come from Oee.ufn_AreaFamily.
 --              No rows for an unknown shift.
 --              FILE NAME IS ORDER-SENSITIVE -- 'zzz_' sorts after the 'zz_'
---              functions it calls (Oee.ufn_AreaFamily, ufn_ShiftIdForInstant).
+--              function it calls (Oee.ufn_AreaFamily).
 -- Change Log:
 --   2026-10-29 - 1.0 - Initial version.
+--   2026-10-30 - 1.1 - M&A good = MintedPieceCount by Lot.ShiftId (the mint stamp); the
+--                      per-LOT shift resolution by CreatedAt is gone (it was 9 s of a
+--                      whole-plant week, and it counted split/merge/rework children).
 -- =============================================
 CREATE OR ALTER FUNCTION Oee.ufn_ShiftGood (@ShiftId BIGINT)
 RETURNS TABLE
 AS
 RETURN
 (
-    WITH Win AS (
-        -- A generous UTC search window around the shift (ActualStart is LOCAL,
-        -- OI-38); the exact membership test is ufn_ShiftIdForInstant below.
-        SELECT DATEADD(HOUR, -12, CAST(s.ActualStart AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3))) AS FromUtc,
-               DATEADD(HOUR,  36, CAST(s.ActualStart AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3))) AS ToUtc
-        FROM Oee.Shift s
-        WHERE s.Id = @ShiftId
-    ),
-    TrimCp AS (
+    WITH TrimCp AS (
         SELECT pe.Id, pe.LotId, pe.ShiftId, pe.TerminalLocationId, pe.ShotCount, pe.EventAt,
                LAG(pe.ShotCount) OVER (PARTITION BY pe.LotId ORDER BY pe.EventAt, pe.Id) AS PrevShotCount
         FROM Workorder.ProductionEvent pe
@@ -88,20 +87,17 @@ RETURN
 
         UNION ALL
 
-        -- M&A: Manufactured finished goods
+        -- M&A: finished goods the mint stamped with this shift (D18, D21)
         SELECT af.PlacementLocationId, af.PlacementIsArea, af.AreaFamily,
                l.ItemId, CAST(NULL AS BIGINT), l.CreatedAt,
-               CAST(l.PieceCount AS BIGINT)
-        FROM Win w
-        INNER JOIN Lots.Lot l             ON l.CreatedAt >= w.FromUtc AND l.CreatedAt < w.ToUtc
+               CAST(ISNULL(l.MintedPieceCount, 0) AS BIGINT)
+        FROM Lots.Lot l
         INNER JOIN Lots.LotOriginType o   ON o.Id  = l.LotOriginTypeId AND o.Code = N'Manufactured'
         INNER JOIN Parts.Item i           ON i.Id  = l.ItemId
         INNER JOIN Parts.ItemType it      ON it.Id = i.ItemTypeId AND it.Code = N'FinishedGood'
         CROSS APPLY Oee.ufn_AreaFamily(l.CreatedAtTerminalId) af
-        CROSS APPLY (SELECT TOP 1 si.ShiftId
-                     FROM Oee.ufn_ShiftIdForInstant(af.PlacementLocationId, l.CreatedAt) si) sh
-        WHERE af.AreaFamily = N'ma'
-          AND sh.ShiftId = @ShiftId
+        WHERE l.ShiftId = @ShiftId
+          AND af.AreaFamily = N'ma'
     )
     SELECT UnitLocationId, PlacementIsArea, AreaFamily, ItemId, ToolId,
            MAX(EventAt) AS LastEventAt,

@@ -70,9 +70,18 @@ DECLARE @AtB DATETIME2(3) = CAST(CAST('2030-02-04T17:00:00' AS DATETIME2(3)) AT 
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt, CreatedAtTerminalId)
 VALUES (N'ZZ-DSH-DC1',  @Cast, @Mfg, @Good, 57, 57, @M1,  1, @AtA, @M1),
        (N'ZZ-DSH-TR1',  @Cast, @Mfg, @Good, 60, 60, @TrT, 1, @AtA, @M1),
-       (N'ZZ-DSH-FG1',  @Fg,   @Mfg, @Good, 24, 24, @LT,  1, @AtA, @LT),
-       (N'ZZ-DSH-FGR',  @Fg,   @Rcv, @Good, 99, 99, @LT,  1, @AtA, @LT),
-       (N'ZZ-DSH-FGB',  @Fg,   @Mfg, @Good, 12, 12, @LT,  1, @AtB, @LT);
+       (N'ZZ-DSH-FGR',  @Fg,   @Rcv, @Good, 99, 99, @LT,  1, @AtA, @LT);
+
+-- M&A (spec v0.3.1 6.4, D18, D21): good = MintedPieceCount on LOTs the mint
+-- stamped with ShiftId. FG1 was minted 24 in A and has since dropped to 17
+-- (scrap / a split); FG1-01 is its split child (Manufactured, unstamped);
+-- FGB was minted 12 in B.
+DECLARE @GsA BIGINT = (SELECT s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId WHERE ss.Name = N'TEST_GS_A');
+DECLARE @GsB BIGINT = (SELECT s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId WHERE ss.Name = N'TEST_GS_B');
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt, CreatedAtTerminalId, ShiftId, MintedPieceCount)
+VALUES (N'ZZ-DSH-FG1',    @Fg, @Mfg, @Good, 17, 17, @LT, 1, @AtA, @LT, @GsA,  24),
+       (N'ZZ-DSH-FG1-01', @Fg, @Mfg, @Good,  5,  5, @LT, 1, @AtA, @LT, NULL, NULL),
+       (N'ZZ-DSH-FGB',    @Fg, @Mfg, @Good, 12, 12, @LT, 1, @AtB, @LT, @GsB,  12);
 GO
 
 DECLARE @A   BIGINT = (SELECT s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId WHERE ss.Name = N'TEST_GS_A');
@@ -128,6 +137,12 @@ FROM (VALUES
     (N'ZZ-DSH-D-DC',  9, @AtB, @B,   @M1,  N'ZZ-DSH r-dc-shift-b')
 ) v (Code, Qty, At, ShiftId, Cell, Remarks)
 INNER JOIN Quality.DefectCode dc ON dc.Code = v.Code;
+
+-- The split child FG1-01 is scrapped 2 on the line in shift B.
+INSERT INTO Workorder.RejectEvent (LotId, DefectCodeId, Quantity, AppUserId, RecordedAt, ItemId, ShiftId, CellLocationId, Remarks)
+SELECT l.Id, dc.Id, 2, 1, @AtB, l.ItemId, @B, @L, N'ZZ-DSH r-ms-split-child'
+FROM Lots.Lot l CROSS JOIN Quality.DefectCode dc
+WHERE l.LotName = N'ZZ-DSH-FG1-01' AND dc.Code = N'ZZ-DSH-D-MS';
 GO
 
 -- =============================================
@@ -157,6 +172,13 @@ SET @v = (SELECT CAST(SUM(Good) AS NVARCHAR(20)) FROM Oee.ufn_ShiftGood(@A) WHER
 EXEC test.Assert_IsEqual @TestName = N'[Good] M&A FG counted on the line; Received-origin FG excluded', @Expected = N'24', @Actual = @v;
 SET @v = (SELECT CAST(SUM(Good) AS NVARCHAR(20)) FROM Oee.ufn_ShiftGood(@B) WHERE UnitLocationId = @L);
 EXEC test.Assert_IsEqual @TestName = N'[Good] M&A FG goes to the shift its CreatedAt falls in', @Expected = N'12', @Actual = @v;
+-- FG1: PieceCount 17 now, minted 24; its unstamped split child FG1-01 (5) adds nothing.
+SET @v = (SELECT CAST(SUM(Good) AS NVARCHAR(20)) FROM Oee.ufn_ShiftGood(@A) WHERE UnitLocationId = @L);
+EXEC test.Assert_IsEqual @TestName = N'[Good] M&A good = MintedPieceCount, not current PieceCount; ShiftId NULL child not counted', @Expected = N'24', @Actual = @v;
+-- The split child scrapped 2 in B: good in B is still the 12 minted there, the 2 count once as scrap.
+SET @v = (SELECT CAST(SUM(Good) AS NVARCHAR(20)) FROM Oee.ufn_ShiftGood(@B) WHERE UnitLocationId = @L)
+       + N'/' + (SELECT CAST(SUM(Quantity) AS NVARCHAR(20)) FROM Oee.ufn_ShiftScrap(@B) WHERE UnitLocationId = @L);
+EXEC test.Assert_IsEqual @TestName = N'[Good] split child then scrap -> good = minted, scrap 1x', @Expected = N'12/2', @Actual = @v;
 GO
 
 -- =============================================

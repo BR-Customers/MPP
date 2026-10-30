@@ -103,8 +103,10 @@ DECLARE @e0900 DATETIME2(3) = DATEADD(DAY, 1, @d0900);
 
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt, CreatedAtTerminalId)
 VALUES (N'ZZ-DSH-DC1', @Cast, @Mfg, @Good, 170, 170, @M1, 1, @d0900, @M1),
-       (N'ZZ-DSH-TR1', @Cast, @Mfg, @Good, 60, 60, @TrT, 1, @d0900, @M1),
-       (N'ZZ-DSH-FG1', @Fg,   @Mfg, @Good, 24, 24, @P,  1, @d0900, @P);
+       (N'ZZ-DSH-TR1', @Cast, @Mfg, @Good, 60, 60, @TrT, 1, @d0900, @M1);
+-- A finished-good LOT carries the shift it was minted in + the minted quantity (spec v0.3.1 D18, D21).
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt, CreatedAtTerminalId, ShiftId, MintedPieceCount)
+VALUES (N'ZZ-DSH-FG1', @Fg, @Mfg, @Good, 24, 24, @P, 1, @d0900, @P, (SELECT Id FROM Oee.Shift WHERE Remarks = N'TEST_US_A'), 24);
 DECLARE @Dc1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'ZZ-DSH-DC1');
 DECLARE @Tr1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'ZZ-DSH-TR1');
 
