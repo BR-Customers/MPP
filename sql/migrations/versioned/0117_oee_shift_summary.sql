@@ -11,8 +11,12 @@
 --                   Split / merge / rework children leave both NULL, which is
 --                   what keeps them out of good (spec 6.4).
 --                2. Oee.ShiftSummary -- one row per (shift, unit / station /
---                   trim-shop placement / area charge). Minutes and counts only,
+--                   area placement / area charge). Minutes and counts only,
 --                   never percentages; every zoom pools these facts.
+--                   PlannedMinutes / BaseMinutes are availability minutes (INT,
+--                   as Oee.ufn_ShiftAvailability reports them); the Planned /
+--                   Unplanned / NoReason downtime minutes are the ENTERED
+--                   durations placed on the row (DECIMAL, the Pareto's basis).
 --                3. Oee.ShiftSummaryConfig -- single row holding the
 --                   configuration fingerprint the refresher compares (D22).
 --
@@ -54,13 +58,13 @@ BEGIN
         ProductionAreaId          BIGINT         NULL     CONSTRAINT FK_ShiftSummary_ProductionArea REFERENCES Location.Location(Id),
         ParentUnitLocationId      BIGINT         NULL     CONSTRAINT FK_ShiftSummary_ParentUnit REFERENCES Location.Location(Id),
         PlannedMinutes            INT            NOT NULL CONSTRAINT DF_ShiftSummary_Planned      DEFAULT (0),
-        PlannedDowntimeMinutes    INT            NOT NULL CONSTRAINT DF_ShiftSummary_PlannedDt    DEFAULT (0),
-        UnplannedDowntimeMinutes  INT            NOT NULL CONSTRAINT DF_ShiftSummary_UnplannedDt  DEFAULT (0),
+        PlannedDowntimeMinutes    DECIMAL(12,2)  NOT NULL CONSTRAINT DF_ShiftSummary_PlannedDt    DEFAULT (0),
+        UnplannedDowntimeMinutes  DECIMAL(12,2)  NOT NULL CONSTRAINT DF_ShiftSummary_UnplannedDt  DEFAULT (0),
         BaseMinutes               INT            NOT NULL CONSTRAINT DF_ShiftSummary_Base         DEFAULT (0),
-        EffectiveUnplannedMinutes DECIMAL(9,2)   NOT NULL CONSTRAINT DF_ShiftSummary_EffUnplanned DEFAULT (0),
+        EffectiveUnplannedMinutes DECIMAL(12,4)  NOT NULL CONSTRAINT DF_ShiftSummary_EffUnplanned DEFAULT (0),
         DowntimeEventCount        INT            NOT NULL CONSTRAINT DF_ShiftSummary_DtCount      DEFAULT (0),
         NoReasonCount             INT            NOT NULL CONSTRAINT DF_ShiftSummary_NoReasonCnt  DEFAULT (0),
-        NoReasonMinutes           INT            NOT NULL CONSTRAINT DF_ShiftSummary_NoReasonMin  DEFAULT (0),
+        NoReasonMinutes           DECIMAL(12,2)  NOT NULL CONSTRAINT DF_ShiftSummary_NoReasonMin  DEFAULT (0),
         Good                      BIGINT         NOT NULL CONSTRAINT DF_ShiftSummary_Good         DEFAULT (0),
         Scrap                     BIGINT         NOT NULL CONSTRAINT DF_ShiftSummary_Scrap        DEFAULT (0),
         NonRejectScrap            BIGINT         NOT NULL CONSTRAINT DF_ShiftSummary_NonReject    DEFAULT (0),
