@@ -18,6 +18,29 @@ Jacques answered the four questions and **approved spec v0.2**. The answers are 
 
 Note: the highest versioned migration is now `0116` (AIM FailureLog). The plan needs none; re-check before adding one.
 
+## Update 2026-10-30 -- building; STOPPED at the benchmark gate (plan Task 7)
+
+Running the plan natively on `jacques/working`. Ledger (rulings, per-task evidence):
+`.superpowers/sdd/2026-10-29-oee-dashboard/progress.md` (git-ignored).
+
+Done and committed (all SQL, tests green; nothing in Ignition yet):
+- Task 1 `b1326ab3` -- FIFO + mint scrap stamp line and shift.
+- Task 2 `202010d4` -- `Oee.ufn_ShiftAvailability` (TVF), `Shift_GetAvailability` v3.0 over it.
+- Task 3 `8958adc2` -- `ufn_OeeUnits`, `ufn_AreaFamily`, `ufn_RejectChargeFamily`, `ufn_OeeBand`; test fixture `helpers/0117_fixture_oee_dashboard.sql`.
+- Task 4 `e4f87746` -- `ufn_ProductionDay`, `ufn_ShiftsForPeriod`.
+- Task 5 `7e6c0382` -- `ufn_ShiftGood`, `ufn_ShiftScrap`.
+- Task 6 `970de47d` -- `Oee.Dashboard_GetUnitSummary`.
+- Task 7 tuning `03d43782` -- faster minute grid + ancestor-walk `ufn_AreaFamily`; benchmark script `sql/scratch/2026-10-29_oee_dashboard_benchmark.sql`.
+
+Jacques ruled during the build: INSP and OFFSITE OEE lines go under M&A ("Both under M&A").
+
+**The gate missed.** On `MPP_MES_Test` with a month of synthetic data (58 units, 90 shifts,
+31k downtime events, 12.6k FG LOTs, 10k rejects), a whole-plant summary takes Week 24.8 s,
+Day 3.8 s, Shift 1.2 s (target: Week < 2 s). Per shift: availability ~0.7 s, good ~0.6 s,
+scrap ~60 ms. Indexes made no difference. Recomputing every shift on every read cannot reach
+2 s for a week. Spec 6.1 makes the per-shift cache Jacques's call -- **waiting on that decision**.
+Next after it: `Dashboard_GetPeriod` (rest of Task 7), then Tasks 8-14.
+
 ## Where it stood (2026-10-28)
 
 1. Research done: how operators and gateway processes feed the OEE tables (spec sections 1, 6, 7).
