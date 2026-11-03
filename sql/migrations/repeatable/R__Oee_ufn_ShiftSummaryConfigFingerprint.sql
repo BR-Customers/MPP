@@ -3,7 +3,7 @@
 -- Object:      Oee.ufn_ShiftSummaryConfigFingerprint
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-30
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   A fingerprint of the configuration that changes how EXISTING rows are read
@@ -16,7 +16,6 @@
 --   added later is covered.
 --
 --   Over:
---     Oee.ShiftSchedule        times, days, effective dates, DeprecatedAt
 --     Oee.DowntimeReasonCode   IsExcused, DeprecatedAt     (planned vs unplanned)
 --     Quality.DefectCode       ChargeToPartyId, IsNonRejectScrap, DeprecatedAt
 --     Location.Location        IsOeeEnabled, ParentLocationId,
@@ -24,11 +23,16 @@
 --     Location.LocationTypeDefinition  Code                (area family)
 --   Shift overrides and tool assignments are per day / per press and live in
 --   the per-shift Oee.ufn_ShiftInputFingerprint instead.
+--   Oee.ShiftSchedule is deliberately NOT here: a schedule change is a line in
+--   the sand. A recorded shift keeps the window it ran (Oee.Shift.ActualStart ->
+--   ActualEnd, via Oee.ufn_ShiftWindowForShift), so editing or deprecating a
+--   schedule changes no stored shift and must not mark history stale.
 --
 --   Inline TVF: one row, (Fingerprint VARBINARY(32)).
 --
 -- Change Log:
 --   2026-10-30 - 1.0 - Initial version.
+--   2026-11-03 - 1.1 - Oee.ShiftSchedule removed: schedule edits no longer recompute history.
 -- =============================================
 CREATE OR ALTER FUNCTION Oee.ufn_ShiftSummaryConfigFingerprint ()
 RETURNS TABLE
@@ -36,10 +40,7 @@ AS
 RETURN
 (
     SELECT HASHBYTES('SHA2_256', CONCAT(
-        N'SS', (SELECT COUNT(*) FROM Oee.ShiftSchedule), N':',
-               ISNULL((SELECT CHECKSUM_AGG(CHECKSUM(Id, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, DeprecatedAt))
-                       FROM Oee.ShiftSchedule), 0),
-        N'|RC', (SELECT COUNT(*) FROM Oee.DowntimeReasonCode), N':',
+        N'RC', (SELECT COUNT(*) FROM Oee.DowntimeReasonCode), N':',
                ISNULL((SELECT CHECKSUM_AGG(CHECKSUM(Id, IsExcused, DeprecatedAt)) FROM Oee.DowntimeReasonCode), 0),
         N'|DC', (SELECT COUNT(*) FROM Quality.DefectCode), N':',
                ISNULL((SELECT CHECKSUM_AGG(CHECKSUM(Id, ChargeToPartyId, IsNonRejectScrap, DeprecatedAt)) FROM Quality.DefectCode), 0),

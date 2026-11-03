@@ -19,6 +19,13 @@ It lists the steps specific to this feature, in order, and why each is there.
      durations by `ShiftId` (D17). **Numbers on any screen that already shows
      availability will drop where two end-of-shift entries overlapped** -- that is
      the fix, not a regression. Say so in the guide.
+   - `Oee.ufn_ShiftWindowForShift` (new), `Oee.ufn_ShiftAvailability` v2.1,
+     `Oee.ufn_ShiftDowntimeEntries` v1.1, `Oee.ufn_ShiftSummaryConfigFingerprint` v1.1:
+     a recorded shift keeps the window it ran (its `Oee.Shift` row, or an override for
+     that day), so a schedule edited or deprecated after a shift ran no longer
+     rewrites or hides it. **Live screens that show availability for an old shift
+     whose schedule was edited since will now show the window it actually ran** --
+     the fix, not a regression.
    - `Oee.Dashboard_GetUnitSummary` v2.1 (`@ReadLive`) and
      `Oee.Dashboard_GetDowntimeEntries` v1.1 (editor fields) are dashboard-only reads.
 3. **Backfill the mint stamp** on LOTs minted before 0117:

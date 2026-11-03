@@ -12,6 +12,7 @@
 | 0.3.1 | 2026-10-30 | Q5 and Q6 answered: `Lots.Lot.MintedPieceCount` (D21); changed shifts found by change detection (D22, 6.8). |
 | 0.3.2 | 2026-10-30 | Configuration changes are found by a configuration fingerprint instead of edits to ~20 configuration procs (D22, 6.8; accepted with the v0.3 plan). Inventory corrected: `DowntimeEvent_UpdateTimes` does not change `ShiftId`. |
 | 1.0 | 2026-11-03 | Built. Pages `/shop-floor/oee`, `/shop-floor/oee/area/:areaKey`, `/shop-floor/oee/unit/:locationId`, the live Supervisor tile and the `OEE Summary` report (5.1-5.6). Two additive read changes: `Dashboard_GetUnitSummary` v2.1 `@ReadLive` (the unit page reads the anchor shift live at Shift zoom) and `Dashboard_GetDowntimeEntries` v1.1 (the editor's fields). As-built notes in Section 14. |
+| 1.0.1 | 2026-11-03 | A shift schedule change is a line in the sand (Jacques, final-review Important 1). A recorded shift's window is the one it ran: `Oee.Shift.ActualStart` -> `ActualEnd` for a closed shift, unless a per-equipment override for that day says otherwise (new `Oee.ufn_ShiftWindowForShift`; `ufn_ShiftAvailability` v2.1, `ufn_ShiftDowntimeEntries` v1.1). Editing a schedule no longer recomputes past shifts, and deprecating one no longer hides them. `Oee.ShiftSchedule` leaves the configuration fingerprint (`ufn_ShiftSummaryConfigFingerprint` v1.1) and the configuration writer inventory (6.8). |
 
 ---
 
@@ -294,7 +295,7 @@ The inventory below is the contract: each entry gets a test that an edit through
 |---|---|---|
 | `Oee.Shift` | `Shift_Start`, `Shift_End`, `Shift_Reconcile` | which shifts exist / are closed (`Shift_End` triggers the first compute) |
 | `Oee.ShiftOverride` | `ShiftOverride_Create`, `_Update`, `_Deprecate` | planned minutes for one location on one day |
-| `Oee.ShiftSchedule` | `ShiftSchedule_Create`, `_Update`, `_Deprecate` | planned minutes plant-wide |
+| `Oee.ShiftSchedule` | `ShiftSchedule_Create`, `_Update`, `_Deprecate` | **nothing already recorded** (v1.0.1): a closed shift keeps the window it ran, so schedule edits shape future shifts only and are not fingerprinted |
 | `Oee.DowntimeReasonCode` | `DowntimeReasonCode_Create`, `_Update` (`IsExcused`), `_Deprecate`, `_BulkLoadFromSeed` | planned vs unplanned |
 | `Quality.DefectCode` | `DefectCode_Create`, `_Update` (`ChargeToPartyId`, `IsNonRejectScrap`), `_Deprecate` | which area owns scrap |
 | `Location.Location` | `Location_Create`, `_Update`, `_SaveAll`, `_Deprecate`, `_MoveUp`, `_MoveDown` | `IsOeeEnabled`, parentage: which locations are units |

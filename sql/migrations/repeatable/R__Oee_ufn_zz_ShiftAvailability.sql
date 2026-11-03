@@ -3,7 +3,7 @@
 -- Object:      Oee.ufn_ShiftAvailability
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-29
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   THE availability calculation: per OEE unit, for one runtime shift instance
@@ -37,7 +37,7 @@
 --
 --   FILE NAME IS ORDER-SENSITIVE -- 'zz_' is a DEPLOY-ORDER MARKER, not part of
 --   the object name. A FUNCTION gets no deferred name resolution (Msg 4121) and
---   this one calls Oee.ufn_ShiftWindowForLocation, which would sort AFTER
+--   this one calls Oee.ufn_ShiftWindowForShift, which would sort AFTER
 --   'ShiftAvailability'. Same convention as R__Oee_ufn_zz_ShiftIdForInstant.
 --
 -- Parameters:
@@ -54,6 +54,9 @@
 --                      largest cost (plan Task 7 gate).
 --   2026-10-30 - 2.0 - Summed entered durations attributed by ShiftId (spec v0.3.1 D17); the
 --                      clock-overlap minute grid is removed. Unplanned capped at the base.
+--   2026-11-03 - 2.1 - Window from Oee.ufn_ShiftWindowForShift: a closed shift keeps the
+--                      window it ran (ActualStart -> ActualEnd) after its schedule is
+--                      edited or deprecated; an override for the day still wins.
 -- =============================================
 CREATE OR ALTER FUNCTION Oee.ufn_ShiftAvailability
 (
@@ -144,7 +147,7 @@ BEGIN
            CAST(w.EndLocal   AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)),
            w.IsOverridden, w.ShiftOverrideId, w.OverrideReason
     FROM Oee.ufn_ResolveOeeEquipment() e
-    CROSS APPLY Oee.ufn_ShiftWindowForLocation(e.LocationId, @SchedId, @BusinessDate) w;
+    CROSS APPLY Oee.ufn_ShiftWindowForShift(e.LocationId, @ShiftId) w;
 
     -- A unit with a flagged unit beneath it reports the MEAN of those units.
     UPDATE u

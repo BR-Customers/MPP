@@ -3,7 +3,7 @@
 -- Object:      Oee.ufn_ShiftDowntimeEntries
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-30
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   One shift's ENTERED downtime, one row per entry, with its duration and
@@ -15,16 +15,19 @@
 --   (Dashboard_GetDowntimeEntries), so the three always agree.
 --     entries   DowntimeEvent.ShiftId = the shift, not voided
 --     Minutes   Oee.ufn_DowntimeEventMinutes; an open entry runs to
---               min(now, the location's window end)
+--               min(now, the location's window end) -- the window the
+--               shift ran (Oee.ufn_ShiftWindowForShift), not today's schedule
 --     placement Oee.ufn_AreaFamily (the top unit, or the area)
 --     IsPlanned the reason IsExcused; IsNoReason no reason at all (unplanned)
 --
 --   Inline TVF. FILE NAME IS ORDER-SENSITIVE -- 'zzz_' sorts after
---   R__Oee_ufn_zz_AreaFamily, which it calls (ufn_ShiftWindowForLocation and
+--   R__Oee_ufn_zz_AreaFamily, which it calls (ufn_ShiftWindowForShift and
 --   ufn_DowntimeEventMinutes already sort earlier).
 --
 -- Change Log:
 --   2026-10-30 - 1.0 - Initial version.
+--   2026-11-03 - 1.1 - Window from Oee.ufn_ShiftWindowForShift (schedule edits do not
+--                      move a closed shift's window).
 -- =============================================
 CREATE OR ALTER FUNCTION Oee.ufn_ShiftDowntimeEntries (@ShiftId BIGINT)
 RETURNS TABLE
@@ -48,7 +51,7 @@ RETURN
     LEFT  JOIN Oee.DowntimeReasonCode rc ON rc.Id = de.DowntimeReasonCodeId
     CROSS APPLY Oee.ufn_AreaFamily(de.LocationId) af
     OUTER APPLY (SELECT TOP 1 w.EndLocal
-                 FROM Oee.ufn_ShiftWindowForLocation(de.LocationId, s.ShiftScheduleId, CAST(s.ActualStart AS DATE)) w) win
+                 FROM Oee.ufn_ShiftWindowForShift(de.LocationId, s.Id) w) win
     CROSS APPLY (SELECT CASE WHEN win.EndLocal IS NULL THEN SYSUTCDATETIME()
                              ELSE CAST(win.EndLocal AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)) END AS WinEndUtc) we
     CROSS APPLY Oee.ufn_DowntimeEventMinutes(de.IsApproximate, de.DurationMinutes, de.StartedAt, de.EndedAt,

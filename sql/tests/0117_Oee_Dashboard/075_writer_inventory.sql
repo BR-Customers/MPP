@@ -13,7 +13,10 @@
 --                   ProductionEvent, Lots.Lot mint stamp, Oee.Shift,
 --                   ShiftOverride, ToolAssignment
 --                 config     Oee.ufn_ShiftSummaryConfigFingerprint:
---                   DowntimeReasonCode, DefectCode, Location, ShiftSchedule
+--                   DowntimeReasonCode, DefectCode, Location
+--               Oee.ShiftSchedule is deliberately absent (2026-11-03): a
+--               schedule edit is a line in the sand and changes no recorded
+--               shift (0117/085_schedule_history.sql).
 --               Column-level rather than proc-level: four inventory writers
 --               (DowntimeEvent_UpdateReason / _UpdateTimes / _Void,
 --               ShiftOverride_Restamp) have no fixture anywhere, and the rest
@@ -128,8 +131,7 @@ INSERT INTO #Chk (Fp, Name, DoSql, UndoSql) VALUES
  (N'config', N'DefectCode non-reject flag (DefectCode_Update)',        N'UPDATE Quality.DefectCode SET IsNonRejectScrap = 1 WHERE Code = N''ZZ-WI-D1''', N'UPDATE Quality.DefectCode SET IsNonRejectScrap = 0 WHERE Code = N''ZZ-WI-D1'''),
  (N'config', N'Location OEE flag (Location_Update / SaveAll)',         N'UPDATE Location.Location SET IsOeeEnabled = 0 WHERE Code = N''ZZ-DSH-DC-M2''', N'UPDATE Location.Location SET IsOeeEnabled = 1 WHERE Code = N''ZZ-DSH-DC-M2'''),
  (N'config', N'Location parent (Location_Update / MoveUp/Down)',       N'UPDATE Location.Location SET ParentLocationId = (SELECT Id FROM Location.Location WHERE Code = N''ZZ-DSH-TR'') WHERE Code = N''ZZ-DSH-DC-M2''', N'UPDATE Location.Location SET ParentLocationId = (SELECT Id FROM Location.Location WHERE Code = N''ZZ-DSH-DC'') WHERE Code = N''ZZ-DSH-DC-M2'''),
- (N'config', N'Location deprecated (Location_Deprecate)',              N'UPDATE Location.Location SET DeprecatedAt = ''2030-01-01'' WHERE Code = N''ZZ-DSH-DC-M2''', N'UPDATE Location.Location SET DeprecatedAt = NULL WHERE Code = N''ZZ-DSH-DC-M2'''),
- (N'config', N'ShiftSchedule time (ShiftSchedule_Update)',             N'UPDATE Oee.ShiftSchedule SET EndTime = ''15:31'' WHERE Name = N''TEST_WI_Day''', N'UPDATE Oee.ShiftSchedule SET EndTime = ''15:01'' WHERE Name = N''TEST_WI_Day''');
+ (N'config', N'Location deprecated (Location_Deprecate)',              N'UPDATE Location.Location SET DeprecatedAt = ''2030-01-01'' WHERE Code = N''ZZ-DSH-DC-M2''', N'UPDATE Location.Location SET DeprecatedAt = NULL WHERE Code = N''ZZ-DSH-DC-M2''');
 GO
 
 DECLARE @W BIGINT = (SELECT Id FROM Oee.Shift WHERE Remarks = N'TEST_WI_W');
@@ -173,8 +175,7 @@ DECLARE @Missing NVARCHAR(MAX) = (
         (N'Oee.Shift_End'), (N'Oee.Shift_Reconcile'),
         (N'Oee.ShiftOverride_Create'), (N'Oee.ShiftOverride_Update'), (N'Oee.ShiftOverride_Deprecate'),
         (N'Tools.ToolAssignment_Assign'), (N'Tools.ToolAssignment_Release'),
-        (N'Oee.DowntimeReasonCode_Update'), (N'Quality.DefectCode_Update'), (N'Location.Location_Update'),
-        (N'Oee.ShiftSchedule_Update')) p (Name)
+        (N'Oee.DowntimeReasonCode_Update'), (N'Quality.DefectCode_Update'), (N'Location.Location_Update')) p (Name)
     WHERE OBJECT_ID(p.Name, N'P') IS NULL);
 DECLARE @c BIT = CASE WHEN @Missing IS NULL THEN 1 ELSE 0 END;
 DECLARE @d NVARCHAR(1000) = N'Missing: ' + ISNULL(@Missing, N'');
