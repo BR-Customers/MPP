@@ -2,7 +2,7 @@
 -- Procedure:   Oee.Dashboard_GetUnitSummary
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-29
--- Version:     1.0
+-- Version:     2.0
 --
 -- Description:
 --   The OEE dashboard's main read (spec
@@ -25,12 +25,16 @@
 --   dilute its area (anti-goal, sec 2). A unit with no active shift has
 --   HasProduction = 0 and Availability NULL ("No production").
 --
+--   v2.0 (spec v0.3.2 sec 6.7, G7): every figure is POOLED FROM STORED
+--   per-shift rows (Oee.ShiftSummary) -- a read never recomputes history. The
+--   shift in progress, and a closed shift not stored yet, come from the same
+--   calculation live (Oee.ufn_PeriodSummaryRows decides which). Row meanings:
+--   Oee.ufn_ShiftSummaryRows' header.
+--
 --   Downtime MINUTES (DowntimeMinutes / Planned / Unplanned / NoReason) are the
---   entered events summed by duration, matched to the period by
---   DowntimeEvent.ShiftId and placed with Oee.ufn_AreaFamily -- what the
---   operator entered, the same basis as the Pareto. Availability uses the
---   time-merged minutes of Oee.ufn_ShiftAvailability (EffectiveUnplannedMinutes).
---   An event with no reason counts as unplanned.
+--   entered durations placed on the row -- the Pareto's basis. Availability
+--   pools BaseMinutes / EffectiveUnplannedMinutes of the active rows. An entry
+--   with no reason counts as unplanned.
 --
 --   Scrap is charged by defect code (Oee.ufn_ShiftScrap): on a Unit or Group
 --   only when found in its own family; at Area level also the area's
@@ -49,6 +53,8 @@
 --
 -- Change Log:
 --   2026-10-29 - 1.0 - Initial version.
+--   2026-10-30 - 2.0 - Pools stored per-shift rows (Oee.ufn_PeriodSummaryRows) instead of
+--                      recomputing every shift on every read. Columns unchanged.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.Dashboard_GetUnitSummary
     @Zoom          NVARCHAR(5),
@@ -60,85 +66,36 @@ BEGIN
 
     DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 
-    -- ---- 1. The period's shifts ----
-    DECLARE @Sh TABLE (ShiftId BIGINT PRIMARY KEY, IsOpen BIT);
-    INSERT INTO @Sh (ShiftId, IsOpen)
-    SELECT p.ShiftId, CASE WHEN s.ActualEnd IS NULL THEN 1 ELSE 0 END
-    FROM Oee.ufn_ShiftsForPeriod(@Zoom, @AnchorShiftId) p
-    INNER JOIN Oee.Shift s ON s.Id = p.ShiftId;
+    -- ---- 1. The period's per-shift rows (stored, or live for unstored shifts) ----
+    DECLARE @P TABLE (
+        ShiftId BIGINT, LocationId BIGINT, RowKind NVARCHAR(15), AreaFamily NVARCHAR(10),
+        ProductionAreaId BIGINT, ParentUnitLocationId BIGINT,
+        PlannedDowntimeMinutes DECIMAL(12,2), UnplannedDowntimeMinutes DECIMAL(12,2),
+        BaseMinutes INT, EffectiveUnplannedMinutes DECIMAL(12,4),
+        NoReasonCount INT, NoReasonMinutes DECIMAL(12,2),
+        Good BIGINT, Scrap BIGINT, NonRejectScrap BIGINT, FoundDownstreamScrap BIGINT, UnplacedScrap BIGINT,
+        LastToolId BIGINT, IsActive BIT, ShiftActualStart DATETIME2(3), IsOpen BIT);
+    INSERT INTO @P
+    SELECT ShiftId, LocationId, RowKind, AreaFamily, ProductionAreaId, ParentUnitLocationId,
+           PlannedDowntimeMinutes, UnplannedDowntimeMinutes, BaseMinutes, EffectiveUnplannedMinutes,
+           NoReasonCount, NoReasonMinutes, Good, Scrap, NonRejectScrap, FoundDownstreamScrap, UnplacedScrap,
+           LastToolId, IsActive, ShiftActualStart, IsOpen
+    FROM Oee.ufn_PeriodSummaryRows(@Zoom, @AnchorShiftId);
 
-    DECLARE @InProgress BIT = CASE WHEN EXISTS (SELECT 1 FROM @Sh WHERE IsOpen = 1) THEN 1 ELSE 0 END;
+    DECLARE @HasShifts BIT = CASE WHEN EXISTS (SELECT 1 FROM Oee.ufn_ShiftsForPeriod(@Zoom, @AnchorShiftId)) THEN 1 ELSE 0 END;
+    DECLARE @InProgress BIT = CASE WHEN EXISTS (SELECT 1 FROM @P WHERE IsOpen = 1) THEN 1 ELSE 0 END;
 
-    -- ---- 2. Units ----
+    -- ---- 2. Units (names, sort) ----
     DECLARE @U TABLE (
-        LocationId BIGINT PRIMARY KEY, Code NVARCHAR(50), Name NVARCHAR(200), DefinitionCode NVARCHAR(50),
-        SortOrder INT, IsStation BIT, ParentUnitLocationId BIGINT, TopUnitLocationId BIGINT,
+        LocationId BIGINT PRIMARY KEY, Code NVARCHAR(50), Name NVARCHAR(200),
+        SortOrder INT, IsStation BIT, ParentUnitLocationId BIGINT,
         AreaFamily NVARCHAR(10), ProductionAreaId BIGINT, ProductionAreaName NVARCHAR(200), ProductionAreaSortOrder INT);
     INSERT INTO @U
-    SELECT LocationId, Code, Name, DefinitionCode, SortOrder, IsStation, ParentUnitLocationId, TopUnitLocationId,
+    SELECT LocationId, Code, Name, SortOrder, IsStation, ParentUnitLocationId,
            AreaFamily, ProductionAreaId, ProductionAreaName, ProductionAreaSortOrder
     FROM Oee.ufn_OeeUnits();
 
-    -- ---- 3. Per (location, shift) availability ----
-    DECLARE @Av TABLE (
-        ShiftId BIGINT, LocationId BIGINT, BaseMinutes INT, EffUnplanned DECIMAL(19,6),
-        Availability DECIMAL(5,4), DowntimeEventCount INT, PRIMARY KEY (ShiftId, LocationId));
-    INSERT INTO @Av
-    SELECT sh.ShiftId, a.LocationId,
-           CASE WHEN a.Availability IS NULL THEN 0 ELSE a.BaseMinutes END,
-           CASE WHEN a.Availability IS NULL THEN 0
-                WHEN a.IsRollup = 1 THEN a.BaseMinutes * (1 - CAST(a.Availability AS DECIMAL(19,6)))
-                WHEN a.UnplannedDowntimeMinutes > a.BaseMinutes THEN a.BaseMinutes
-                ELSE a.UnplannedDowntimeMinutes END,
-           a.Availability, a.DowntimeEventCount
-    FROM @Sh sh
-    CROSS APPLY Oee.ufn_ShiftAvailability(sh.ShiftId) a;
-
-    -- ---- 4. Good, scrap, downtime events ----
-    DECLARE @G TABLE (ShiftId BIGINT, UnitLocationId BIGINT, PlacementIsArea BIT, AreaFamily NVARCHAR(10),
-                      ToolId BIGINT, LastEventAt DATETIME2(3), Good BIGINT);
-    INSERT INTO @G
-    SELECT sh.ShiftId, g.UnitLocationId, g.PlacementIsArea, g.AreaFamily, g.ToolId, g.LastEventAt, g.Good
-    FROM @Sh sh CROSS APPLY Oee.ufn_ShiftGood(sh.ShiftId) g;
-
-    DECLARE @S TABLE (ShiftId BIGINT, ChargeFamily NVARCHAR(10), UnitLocationId BIGINT, PlacementIsArea BIT,
-                      FoundAtLocationId BIGINT, Quantity BIGINT, IsNonReject BIT, IsFoundDownstream BIT);
-    INSERT INTO @S
-    SELECT sh.ShiftId, s.ChargeFamily, s.UnitLocationId, s.PlacementIsArea, s.FoundAtLocationId,
-           s.Quantity, s.IsNonReject, s.IsFoundDownstream
-    FROM @Sh sh CROSS APPLY Oee.ufn_ShiftScrap(sh.ShiftId) s;
-
-    -- Entered downtime, placed on its top unit (or area), plus the exact
-    -- location for station rows.
-    DECLARE @D TABLE (ShiftId BIGINT, LocationId BIGINT, PlacementLocationId BIGINT, AreaFamily NVARCHAR(10),
-                      Minutes DECIMAL(12,2), IsPlanned BIT, IsNoReason BIT);
-    INSERT INTO @D
-    SELECT de.ShiftId, de.LocationId, af.PlacementLocationId, af.AreaFamily,
-           CAST(DATEDIFF(SECOND, de.StartedAt, ISNULL(de.EndedAt, @Now)) / 60.0 AS DECIMAL(12,2)),
-           CAST(ISNULL(rc.IsExcused, 0) AS BIT),
-           CAST(CASE WHEN de.DowntimeReasonCodeId IS NULL THEN 1 ELSE 0 END AS BIT)
-    FROM @Sh sh
-    INNER JOIN Oee.DowntimeEvent de ON de.ShiftId = sh.ShiftId AND de.VoidedAt IS NULL
-    LEFT  JOIN Oee.DowntimeReasonCode rc ON rc.Id = de.DowntimeReasonCodeId
-    CROSS APPLY Oee.ufn_AreaFamily(de.LocationId) af;
-
-    -- ---- 5. Active (unit, shift) pairs ----
-    DECLARE @Act TABLE (LocationId BIGINT, ShiftId BIGINT, PRIMARY KEY (LocationId, ShiftId));
-    INSERT INTO @Act (LocationId, ShiftId)
-    SELECT DISTINCT u.LocationId, sh.ShiftId
-    FROM @U u CROSS JOIN @Sh sh
-    WHERE u.IsStation = 0
-      AND (   EXISTS (SELECT 1 FROM @G g WHERE g.ShiftId = sh.ShiftId AND g.UnitLocationId = u.LocationId AND g.PlacementIsArea = 0)
-           OR EXISTS (SELECT 1 FROM @S s WHERE s.ShiftId = sh.ShiftId AND s.FoundAtLocationId = u.LocationId)
-           OR EXISTS (SELECT 1 FROM @D d WHERE d.ShiftId = sh.ShiftId AND d.PlacementLocationId = u.LocationId)
-           OR EXISTS (SELECT 1 FROM @Av a INNER JOIN @U st ON st.LocationId = a.LocationId
-                      WHERE a.ShiftId = sh.ShiftId AND st.TopUnitLocationId = u.LocationId AND a.DowntimeEventCount > 0)
-           -- a trim press is active when its shop made or scrapped anything
-           OR (u.AreaFamily = N'trim' AND (
-                  EXISTS (SELECT 1 FROM @G g WHERE g.ShiftId = sh.ShiftId AND g.UnitLocationId = u.ProductionAreaId AND g.PlacementIsArea = 1)
-               OR EXISTS (SELECT 1 FROM @S s WHERE s.ShiftId = sh.ShiftId AND s.FoundAtLocationId = u.ProductionAreaId))));
-
-    -- ---- 6. Rows ----
+    -- ---- 3. Rows ----
     DECLARE @R TABLE (
         RowKind NVARCHAR(10), AreaFamily NVARCHAR(10), ProductionAreaId BIGINT, ProductionAreaName NVARCHAR(200),
         LocationId BIGINT, LocationCode NVARCHAR(50), LocationName NVARCHAR(200), ParentLocationId BIGINT,
@@ -153,201 +110,150 @@ BEGIN
     INSERT INTO @R
     SELECT N'Unit', u.AreaFamily, u.ProductionAreaId, u.ProductionAreaName,
            u.LocationId, u.Code, u.Name, NULL,
-           av.Base, av.Eff,
-           dt.Total, dt.Planned, dt.Unplanned,
-           CASE WHEN av.Base > 0 THEN CAST((av.Base - av.Eff) / av.Base AS DECIMAL(5,4)) END,
-           CASE WHEN u.AreaFamily = N'trim' THEN NULL ELSE ISNULL(gd.Good, 0) END,
-           CASE WHEN u.AreaFamily = N'trim' THEN NULL ELSE ISNULL(sc.Scrap, 0) END,
-           ISNULL(sc.NonReject, 0), NULL, NULL,
-           CASE WHEN u.AreaFamily <> N'trim' AND ISNULL(gd.Good, 0) + ISNULL(sc.Scrap, 0) > 0
-                THEN CAST(CAST(ISNULL(gd.Good, 0) AS DECIMAL(19,6)) / (ISNULL(gd.Good, 0) + ISNULL(sc.Scrap, 0)) AS DECIMAL(5,4)) END,
-           ISNULL(dt.NoReasonCount, 0), ISNULL(dt.NoReasonMinutes, 0),
-           tl.Code,
-           CASE WHEN EXISTS (SELECT 1 FROM @Act a WHERE a.LocationId = u.LocationId) THEN 1 ELSE 0 END,
+           a.Base, a.Eff, a.Planned + a.Unplanned, a.Planned, a.Unplanned,
+           CASE WHEN a.Base > 0 THEN CAST((a.Base - a.Eff) / a.Base AS DECIMAL(5,4)) END,
+           CASE WHEN u.AreaFamily = N'trim' THEN NULL ELSE a.Good END,
+           CASE WHEN u.AreaFamily = N'trim' THEN NULL ELSE a.Scrap END,
+           a.NonReject, NULL, NULL,
+           CASE WHEN u.AreaFamily <> N'trim' AND a.Good + a.Scrap > 0
+                THEN CAST(CAST(a.Good AS DECIMAL(19,6)) / (a.Good + a.Scrap) AS DECIMAL(5,4)) END,
+           a.NoReasonCount, a.NoReasonMinutes, tl.Code, a.Active,
            CASE u.AreaFamily WHEN N'diecast' THEN 1 WHEN N'trim' THEN 2 ELSE 3 END,
            u.ProductionAreaSortOrder, u.SortOrder, 4
     FROM @U u
+    CROSS APPLY (
+        SELECT ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.BaseMinutes END), 0)                AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+               ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
+               ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
+               ISNULL(SUM(p.Good), 0)                     AS Good,
+               ISNULL(SUM(p.Scrap), 0)                    AS Scrap,
+               ISNULL(SUM(p.NonRejectScrap), 0)           AS NonReject,
+               ISNULL(SUM(p.NoReasonCount), 0)            AS NoReasonCount,
+               ISNULL(SUM(p.NoReasonMinutes), 0)          AS NoReasonMinutes,
+               CAST(ISNULL(MAX(CAST(p.IsActive AS INT)), 0) AS BIT) AS Active
+        FROM @P p WHERE p.RowKind = N'Unit' AND p.LocationId = u.LocationId
+    ) a
     OUTER APPLY (
-        SELECT SUM(CAST(a.BaseMinutes AS INT)) AS Base, CAST(SUM(a.EffUnplanned) AS DECIMAL(19,6)) AS Eff
-        FROM @Av a INNER JOIN @Act ac ON ac.LocationId = a.LocationId AND ac.ShiftId = a.ShiftId
-        WHERE a.LocationId = u.LocationId
-    ) av
-    OUTER APPLY (
-        SELECT SUM(d.Minutes) AS Total,
-               SUM(CASE WHEN d.IsPlanned = 1 THEN d.Minutes ELSE 0 END) AS Planned,
-               SUM(CASE WHEN d.IsPlanned = 0 THEN d.Minutes ELSE 0 END) AS Unplanned,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN 1 ELSE 0 END) AS NoReasonCount,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN d.Minutes ELSE 0 END) AS NoReasonMinutes
-        FROM @D d WHERE d.PlacementLocationId = u.LocationId
-    ) dt
-    OUTER APPLY (SELECT SUM(g.Good) AS Good FROM @G g WHERE g.UnitLocationId = u.LocationId AND g.PlacementIsArea = 0) gd
-    OUTER APPLY (
-        SELECT SUM(s.Quantity) AS Scrap FROM @S s
-        WHERE s.IsNonReject = 0 AND s.UnitLocationId = u.LocationId AND s.PlacementIsArea = 0
-    ) scu
-    OUTER APPLY (
-        SELECT SUM(s.Quantity) AS NonReject FROM @S s
-        WHERE s.IsNonReject = 1 AND s.FoundAtLocationId = u.LocationId
-    ) nru
-    CROSS APPLY (SELECT scu.Scrap, nru.NonReject) sc
-    OUTER APPLY (
-        SELECT TOP 1 t.Code FROM @G g INNER JOIN Tools.Tool t ON t.Id = g.ToolId
-        WHERE g.UnitLocationId = u.LocationId ORDER BY g.LastEventAt DESC
+        SELECT TOP 1 t.Code FROM @P p INNER JOIN Tools.Tool t ON t.Id = p.LastToolId
+        WHERE p.RowKind = N'Unit' AND p.LocationId = u.LocationId
+        ORDER BY p.ShiftActualStart DESC
     ) tl
-    WHERE u.IsStation = 0
-      AND EXISTS (SELECT 1 FROM @Sh);
+    WHERE u.IsStation = 0 AND @HasShifts = 1;
 
     -- Station rows: availability over the parent unit's active shifts
     INSERT INTO @R
     SELECT N'Station', u.AreaFamily, u.ProductionAreaId, u.ProductionAreaName,
            u.LocationId, u.Code, u.Name, u.ParentUnitLocationId,
-           av.Base, av.Eff,
-           dt.Total, dt.Planned, dt.Unplanned,
-           CASE WHEN av.Base > 0 THEN CAST((av.Base - av.Eff) / av.Base AS DECIMAL(5,4)) END,
+           a.Base, a.Eff, a.Planned + a.Unplanned, a.Planned, a.Unplanned,
+           CASE WHEN a.Base > 0 THEN CAST((a.Base - a.Eff) / a.Base AS DECIMAL(5,4)) END,
            NULL, NULL, NULL, NULL, NULL, NULL,
-           ISNULL(dt.NoReasonCount, 0), ISNULL(dt.NoReasonMinutes, 0), NULL,
-           CASE WHEN EXISTS (SELECT 1 FROM @Act a WHERE a.LocationId = u.TopUnitLocationId) THEN 1 ELSE 0 END,
+           a.NoReasonCount, a.NoReasonMinutes, NULL, a.Active,
            CASE u.AreaFamily WHEN N'diecast' THEN 1 WHEN N'trim' THEN 2 ELSE 3 END,
            u.ProductionAreaSortOrder, u.SortOrder, 5
     FROM @U u
-    OUTER APPLY (
-        SELECT SUM(a.BaseMinutes) AS Base, CAST(SUM(a.EffUnplanned) AS DECIMAL(19,6)) AS Eff
-        FROM @Av a INNER JOIN @Act ac ON ac.LocationId = u.TopUnitLocationId AND ac.ShiftId = a.ShiftId
-        WHERE a.LocationId = u.LocationId
-    ) av
-    OUTER APPLY (
-        SELECT SUM(d.Minutes) AS Total,
-               SUM(CASE WHEN d.IsPlanned = 1 THEN d.Minutes ELSE 0 END) AS Planned,
-               SUM(CASE WHEN d.IsPlanned = 0 THEN d.Minutes ELSE 0 END) AS Unplanned,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN 1 ELSE 0 END) AS NoReasonCount,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN d.Minutes ELSE 0 END) AS NoReasonMinutes
-        FROM @D d WHERE d.LocationId = u.LocationId
-    ) dt
-    WHERE u.IsStation = 1
-      AND EXISTS (SELECT 1 FROM @Sh);
+    CROSS APPLY (
+        SELECT ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.BaseMinutes END), 0)                AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+               ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
+               ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
+               ISNULL(SUM(p.NoReasonCount), 0)            AS NoReasonCount,
+               ISNULL(SUM(p.NoReasonMinutes), 0)          AS NoReasonMinutes,
+               CAST(ISNULL(MAX(CAST(p.IsActive AS INT)), 0) AS BIT) AS Active
+        FROM @P p WHERE p.RowKind = N'Station' AND p.LocationId = u.LocationId
+    ) a
+    WHERE u.IsStation = 1 AND @HasShifts = 1;
 
-    -- Group rows (per ProductionArea): pooled over its units; good + scrap of
-    -- its units AND anything booked on the area itself (the trim shop).
+    -- Group rows (per ProductionArea): its units' rows + anything booked on the area itself
     INSERT INTO @R
     SELECT N'Group', grp.AreaFamily, grp.ProductionAreaId, grp.ProductionAreaName,
            grp.ProductionAreaId, NULL, grp.ProductionAreaName, NULL,
-           av.Base, av.Eff, dt.Total, dt.Planned, dt.Unplanned,
-           CASE WHEN av.Base > 0 THEN CAST((av.Base - av.Eff) / av.Base AS DECIMAL(5,4)) END,
-           ISNULL(gd.Good, 0), ISNULL(sc.Scrap, 0), ISNULL(sc.NonReject, 0), NULL, NULL,
-           CASE WHEN ISNULL(gd.Good, 0) + ISNULL(sc.Scrap, 0) > 0
-                THEN CAST(CAST(ISNULL(gd.Good, 0) AS DECIMAL(19,6)) / (ISNULL(gd.Good, 0) + ISNULL(sc.Scrap, 0)) AS DECIMAL(5,4)) END,
-           ISNULL(dt.NoReasonCount, 0), ISNULL(dt.NoReasonMinutes, 0), NULL,
-           CASE WHEN EXISTS (SELECT 1 FROM @Act a INNER JOIN @U u ON u.LocationId = a.LocationId
-                             WHERE u.ProductionAreaId = grp.ProductionAreaId) THEN 1 ELSE 0 END,
+           a.Base, a.Eff, a.Planned + a.Unplanned, a.Planned, a.Unplanned,
+           CASE WHEN a.Base > 0 THEN CAST((a.Base - a.Eff) / a.Base AS DECIMAL(5,4)) END,
+           a.Good, a.Scrap, a.NonReject, NULL, NULL,
+           CASE WHEN a.Good + a.Scrap > 0 THEN CAST(CAST(a.Good AS DECIMAL(19,6)) / (a.Good + a.Scrap) AS DECIMAL(5,4)) END,
+           a.NoReasonCount, a.NoReasonMinutes, NULL, a.Active,
            CASE grp.AreaFamily WHEN N'diecast' THEN 1 WHEN N'trim' THEN 2 ELSE 3 END,
            grp.ProductionAreaSortOrder, 0, 3
     FROM (SELECT DISTINCT ProductionAreaId, ProductionAreaName, ProductionAreaSortOrder, AreaFamily
           FROM @U WHERE IsStation = 0 AND ProductionAreaId IS NOT NULL) grp
-    OUTER APPLY (
-        SELECT SUM(a.BaseMinutes) AS Base, CAST(SUM(a.EffUnplanned) AS DECIMAL(19,6)) AS Eff
-        FROM @Av a
-        INNER JOIN @Act ac ON ac.LocationId = a.LocationId AND ac.ShiftId = a.ShiftId
-        INNER JOIN @U u    ON u.LocationId = a.LocationId
-        WHERE u.ProductionAreaId = grp.ProductionAreaId AND u.IsStation = 0
-    ) av
-    OUTER APPLY (
-        SELECT SUM(d.Minutes) AS Total,
-               SUM(CASE WHEN d.IsPlanned = 1 THEN d.Minutes ELSE 0 END) AS Planned,
-               SUM(CASE WHEN d.IsPlanned = 0 THEN d.Minutes ELSE 0 END) AS Unplanned,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN 1 ELSE 0 END) AS NoReasonCount,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN d.Minutes ELSE 0 END) AS NoReasonMinutes
-        FROM @D d
-        WHERE d.PlacementLocationId = grp.ProductionAreaId
-           OR d.PlacementLocationId IN (SELECT u.LocationId FROM @U u WHERE u.ProductionAreaId = grp.ProductionAreaId AND u.IsStation = 0)
-    ) dt
-    OUTER APPLY (
-        SELECT SUM(g.Good) AS Good FROM @G g
-        WHERE (g.PlacementIsArea = 1 AND g.UnitLocationId = grp.ProductionAreaId)
-           OR (g.PlacementIsArea = 0 AND g.UnitLocationId IN (SELECT u.LocationId FROM @U u WHERE u.ProductionAreaId = grp.ProductionAreaId AND u.IsStation = 0))
-    ) gd
-    OUTER APPLY (
-        SELECT SUM(CASE WHEN s.IsNonReject = 0 AND s.UnitLocationId IS NOT NULL THEN s.Quantity ELSE 0 END) AS Scrap,
-               SUM(CASE WHEN s.IsNonReject = 1 THEN s.Quantity ELSE 0 END) AS NonReject
-        FROM @S s
-        WHERE s.UnitLocationId = grp.ProductionAreaId
-           OR s.UnitLocationId IN (SELECT u.LocationId FROM @U u WHERE u.ProductionAreaId = grp.ProductionAreaId AND u.IsStation = 0)
-           OR (s.IsNonReject = 1 AND (s.FoundAtLocationId = grp.ProductionAreaId
-               OR s.FoundAtLocationId IN (SELECT u.LocationId FROM @U u WHERE u.ProductionAreaId = grp.ProductionAreaId AND u.IsStation = 0)))
-    ) sc
-    WHERE EXISTS (SELECT 1 FROM @Sh);
+    CROSS APPLY (
+        SELECT ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.BaseMinutes END), 0) AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+               ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
+               ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
+               ISNULL(SUM(p.Good), 0)                     AS Good,
+               ISNULL(SUM(p.Scrap), 0)                    AS Scrap,
+               ISNULL(SUM(p.NonRejectScrap), 0)           AS NonReject,
+               ISNULL(SUM(p.NoReasonCount), 0)            AS NoReasonCount,
+               ISNULL(SUM(p.NoReasonMinutes), 0)          AS NoReasonMinutes,
+               CAST(ISNULL(MAX(CASE WHEN p.RowKind = N'Unit' THEN CAST(p.IsActive AS INT) END), 0) AS BIT) AS Active
+        FROM @P p
+        WHERE (p.RowKind = N'Unit' AND p.LocationId IN (SELECT u.LocationId FROM @U u WHERE u.ProductionAreaId = grp.ProductionAreaId AND u.IsStation = 0))
+           OR (p.RowKind = N'AreaPlacement' AND p.LocationId = grp.ProductionAreaId)
+    ) a
+    WHERE @HasShifts = 1;
 
-    -- Area rows (per family): everything charged to the family
+    -- Area rows (per family): units + area placements; scrap = everything charged to the family
     INSERT INTO @R
     SELECT N'Area', f.AreaFamily, NULL, NULL, NULL, NULL,
            CASE f.AreaFamily WHEN N'diecast' THEN N'Die Cast' WHEN N'trim' THEN N'Trim' ELSE N'Machining & Assembly' END, NULL,
-           av.Base, av.Eff, dt.Total, dt.Planned, dt.Unplanned,
-           CASE WHEN av.Base > 0 THEN CAST((av.Base - av.Eff) / av.Base AS DECIMAL(5,4)) END,
-           ISNULL(gd.Good, 0), ISNULL(sc.Scrap, 0), ISNULL(sc.NonReject, 0), ISNULL(sc.Downstream, 0), NULL,
-           CASE WHEN ISNULL(gd.Good, 0) + ISNULL(sc.Scrap, 0) > 0
-                THEN CAST(CAST(ISNULL(gd.Good, 0) AS DECIMAL(19,6)) / (ISNULL(gd.Good, 0) + ISNULL(sc.Scrap, 0)) AS DECIMAL(5,4)) END,
-           ISNULL(dt.NoReasonCount, 0), ISNULL(dt.NoReasonMinutes, 0), NULL,
-           CASE WHEN EXISTS (SELECT 1 FROM @Act a INNER JOIN @U u ON u.LocationId = a.LocationId
-                             WHERE u.AreaFamily = f.AreaFamily) THEN 1 ELSE 0 END,
+           a.Base, a.Eff, a.Planned + a.Unplanned, a.Planned, a.Unplanned,
+           CASE WHEN a.Base > 0 THEN CAST((a.Base - a.Eff) / a.Base AS DECIMAL(5,4)) END,
+           a.Good, c.Scrap, c.NonReject, c.Downstream, NULL,
+           CASE WHEN a.Good + c.Scrap > 0 THEN CAST(CAST(a.Good AS DECIMAL(19,6)) / (a.Good + c.Scrap) AS DECIMAL(5,4)) END,
+           a.NoReasonCount, a.NoReasonMinutes, NULL, a.Active,
            f.SortFamily, 0, 0, 2
     FROM (VALUES (N'diecast', 1), (N'trim', 2), (N'ma', 3)) f (AreaFamily, SortFamily)
-    OUTER APPLY (
-        SELECT SUM(a.BaseMinutes) AS Base, CAST(SUM(a.EffUnplanned) AS DECIMAL(19,6)) AS Eff
-        FROM @Av a
-        INNER JOIN @Act ac ON ac.LocationId = a.LocationId AND ac.ShiftId = a.ShiftId
-        INNER JOIN @U u    ON u.LocationId = a.LocationId
-        WHERE u.AreaFamily = f.AreaFamily AND u.IsStation = 0
-    ) av
-    OUTER APPLY (
-        SELECT SUM(d.Minutes) AS Total,
-               SUM(CASE WHEN d.IsPlanned = 1 THEN d.Minutes ELSE 0 END) AS Planned,
-               SUM(CASE WHEN d.IsPlanned = 0 THEN d.Minutes ELSE 0 END) AS Unplanned,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN 1 ELSE 0 END) AS NoReasonCount,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN d.Minutes ELSE 0 END) AS NoReasonMinutes
-        FROM @D d WHERE d.AreaFamily = f.AreaFamily
-    ) dt
-    OUTER APPLY (SELECT SUM(g.Good) AS Good FROM @G g WHERE g.AreaFamily = f.AreaFamily) gd
-    OUTER APPLY (
-        SELECT SUM(CASE WHEN s.IsNonReject = 0 THEN s.Quantity ELSE 0 END) AS Scrap,
-               SUM(CASE WHEN s.IsNonReject = 1 THEN s.Quantity ELSE 0 END) AS NonReject,
-               SUM(CASE WHEN s.IsNonReject = 0 AND s.IsFoundDownstream = 1 THEN s.Quantity ELSE 0 END) AS Downstream
-        FROM @S s WHERE s.ChargeFamily = f.AreaFamily
-    ) sc
-    WHERE EXISTS (SELECT 1 FROM @Sh);
+    CROSS APPLY (
+        SELECT ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.BaseMinutes END), 0) AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+               ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
+               ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
+               ISNULL(SUM(p.Good), 0)                     AS Good,
+               ISNULL(SUM(p.NoReasonCount), 0)            AS NoReasonCount,
+               ISNULL(SUM(p.NoReasonMinutes), 0)          AS NoReasonMinutes,
+               CAST(ISNULL(MAX(CASE WHEN p.RowKind = N'Unit' THEN CAST(p.IsActive AS INT) END), 0) AS BIT) AS Active
+        FROM @P p
+        WHERE p.RowKind IN (N'Unit', N'AreaPlacement') AND p.AreaFamily = f.AreaFamily
+    ) a
+    CROSS APPLY (
+        SELECT ISNULL(SUM(p.Scrap), 0) AS Scrap, ISNULL(SUM(p.NonRejectScrap), 0) AS NonReject,
+               ISNULL(SUM(p.FoundDownstreamScrap), 0) AS Downstream
+        FROM @P p WHERE p.RowKind = N'AreaCharge' AND p.AreaFamily = f.AreaFamily
+    ) c
+    WHERE @HasShifts = 1;
 
     -- Plant row
     INSERT INTO @R
     SELECT N'Plant', NULL, NULL, NULL, NULL, NULL, N'Plant', NULL,
-           av.Base, av.Eff, dt.Total, dt.Planned, dt.Unplanned,
-           CASE WHEN av.Base > 0 THEN CAST((av.Base - av.Eff) / av.Base AS DECIMAL(5,4)) END,
-           ISNULL(gd.Good, 0), ISNULL(sc.Scrap, 0), ISNULL(sc.NonReject, 0), ISNULL(sc.Downstream, 0), ISNULL(sc.Unplaced, 0),
-           CASE WHEN ISNULL(gd.Good, 0) + ISNULL(sc.Scrap, 0) > 0
-                THEN CAST(CAST(ISNULL(gd.Good, 0) AS DECIMAL(19,6)) / (ISNULL(gd.Good, 0) + ISNULL(sc.Scrap, 0)) AS DECIMAL(5,4)) END,
-           ISNULL(dt.NoReasonCount, 0), ISNULL(dt.NoReasonMinutes, 0), NULL,
-           CASE WHEN EXISTS (SELECT 1 FROM @Act) THEN 1 ELSE 0 END,
+           a.Base, a.Eff, a.Planned + a.Unplanned, a.Planned, a.Unplanned,
+           CASE WHEN a.Base > 0 THEN CAST((a.Base - a.Eff) / a.Base AS DECIMAL(5,4)) END,
+           a.Good, c.Scrap, c.NonReject, c.Downstream, c.Unplaced,
+           CASE WHEN a.Good + c.Scrap > 0 THEN CAST(CAST(a.Good AS DECIMAL(19,6)) / (a.Good + c.Scrap) AS DECIMAL(5,4)) END,
+           a.NoReasonCount, a.NoReasonMinutes, NULL, a.Active,
            0, 0, 0, 1
     FROM (SELECT 1 AS One) one
-    OUTER APPLY (
-        SELECT SUM(a.BaseMinutes) AS Base, CAST(SUM(a.EffUnplanned) AS DECIMAL(19,6)) AS Eff
-        FROM @Av a
-        INNER JOIN @Act ac ON ac.LocationId = a.LocationId AND ac.ShiftId = a.ShiftId
-    ) av
-    OUTER APPLY (
-        SELECT SUM(d.Minutes) AS Total,
-               SUM(CASE WHEN d.IsPlanned = 1 THEN d.Minutes ELSE 0 END) AS Planned,
-               SUM(CASE WHEN d.IsPlanned = 0 THEN d.Minutes ELSE 0 END) AS Unplanned,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN 1 ELSE 0 END) AS NoReasonCount,
-               SUM(CASE WHEN d.IsNoReason = 1 THEN d.Minutes ELSE 0 END) AS NoReasonMinutes
-        FROM @D d WHERE d.AreaFamily IS NOT NULL
-    ) dt
-    OUTER APPLY (SELECT SUM(g.Good) AS Good FROM @G g WHERE g.AreaFamily IS NOT NULL) gd
-    OUTER APPLY (
-        SELECT SUM(CASE WHEN s.IsNonReject = 0 AND s.ChargeFamily IS NOT NULL THEN s.Quantity ELSE 0 END) AS Scrap,
-               SUM(CASE WHEN s.IsNonReject = 1 THEN s.Quantity ELSE 0 END) AS NonReject,
-               SUM(CASE WHEN s.IsNonReject = 0 AND s.IsFoundDownstream = 1 THEN s.Quantity ELSE 0 END) AS Downstream,
-               SUM(CASE WHEN s.IsNonReject = 0 AND s.ChargeFamily IS NULL THEN s.Quantity ELSE 0 END) AS Unplaced
-        FROM @S s
-    ) sc
-    WHERE EXISTS (SELECT 1 FROM @Sh);
+    CROSS APPLY (
+        SELECT ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.BaseMinutes END), 0) AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+               ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
+               ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
+               ISNULL(SUM(p.Good), 0)                     AS Good,
+               ISNULL(SUM(p.NoReasonCount), 0)            AS NoReasonCount,
+               ISNULL(SUM(p.NoReasonMinutes), 0)          AS NoReasonMinutes,
+               CAST(ISNULL(MAX(CASE WHEN p.RowKind = N'Unit' THEN CAST(p.IsActive AS INT) END), 0) AS BIT) AS Active
+        FROM @P p
+        WHERE p.RowKind IN (N'Unit', N'AreaPlacement') AND p.AreaFamily IS NOT NULL
+    ) a
+    CROSS APPLY (
+        SELECT ISNULL(SUM(CASE WHEN p.AreaFamily IS NOT NULL THEN p.Scrap END), 0)   AS Scrap,
+               ISNULL(SUM(p.NonRejectScrap), 0)                                       AS NonReject,
+               ISNULL(SUM(p.FoundDownstreamScrap), 0)                                 AS Downstream,
+               ISNULL(SUM(p.UnplacedScrap), 0)                                        AS Unplaced
+        FROM @P p WHERE p.RowKind = N'AreaCharge'
+    ) c
+    WHERE @HasShifts = 1;
 
     -- ---- 7. Result ----
     SELECT

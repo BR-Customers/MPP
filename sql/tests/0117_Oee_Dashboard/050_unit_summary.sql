@@ -29,6 +29,7 @@ EXEC test.BeginTestFile @FileName = N'0117_Oee_Dashboard/050_unit_summary.sql';
 GO
 
 -- ---- cleanup (FK-safe) ----
+DELETE FROM Oee.ShiftSummary WHERE ShiftId IN (SELECT s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId WHERE ss.Name LIKE N'TEST_US_%');
 DELETE FROM Workorder.RejectEvent         WHERE Remarks LIKE N'ZZ-DSH%';
 DELETE FROM Workorder.DieCastContribution WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'ZZ-DSH%');
 DELETE FROM Workorder.ProductionEvent     WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'ZZ-DSH%');
@@ -137,6 +138,13 @@ FROM (VALUES (N'ZZ-DSH-D-DC', 5, @M1, N'ZZ-DSH dc at M1'),
 INNER JOIN Quality.DefectCode dc ON dc.Code = v.Code;
 GO
 
+-- ---- v2.0 (spec v0.3.1 6.7): shift A is STORED; shift B is left unstored, so
+-- every Day/Week assertion below mixes a stored shift with a live one ----
+DECLARE @A BIGINT = (SELECT Id FROM Oee.Shift WHERE Remarks = N'TEST_US_A');
+DECLARE @st TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @st EXEC Oee.ShiftSummary_Compute @ShiftId = @A, @AppUserId = 1;
+GO
+
 -- ---- capture helper: the proc's result shape ----
 IF OBJECT_ID(N'tempdb..#Sum') IS NOT NULL DROP TABLE #Sum;
 CREATE TABLE #Sum (
@@ -232,8 +240,65 @@ DECLARE @n INT = (SELECT COUNT(*) FROM #Sum);
 EXEC test.Assert_RowCount @TestName = N'[Summary] unknown anchor -> 0 rows', @ExpectedCount = 0, @ActualCount = @n;
 GO
 
+-- =============================================
+-- Test 3: stored vs live (v2.0)
+-- =============================================
+DECLARE @A BIGINT = (SELECT Id FROM Oee.Shift WHERE Remarks = N'TEST_US_A');
+DECLARE @B BIGINT = (SELECT Id FROM Oee.Shift WHERE Remarks = N'TEST_US_B');
+DECLARE @v NVARCHAR(50);
+
+-- B has no stored rows: it is computed live
+SET @v = CAST((SELECT COUNT(*) FROM Oee.ShiftSummary WHERE ShiftId = @B) AS NVARCHAR(10));
+TRUNCATE TABLE #Sum;
+INSERT INTO #Sum EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Shift', @AnchorShiftId = @B;
+SET @v = @v + N'/' + ISNULL((SELECT CAST(Good AS NVARCHAR(10)) FROM #Sum WHERE RowKind = N'Unit' AND LocationCode = N'ZZ-DSH-DC-M2'), N'<none>');
+EXEC test.Assert_IsEqual @TestName = N'[Summary] ended shift with no stored rows -> computed live (M2 50 in B)', @Expected = N'0/50', @Actual = @v;
+
+-- a closed, stored shift is READ from Oee.ShiftSummary, not recomputed:
+-- doctor a stored count and the read shows it (then put it back)
+DECLARE @M2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-DSH-DC-M2');
+UPDATE Oee.ShiftSummary SET Good = Good + 1000 WHERE ShiftId = @A AND RowKind = N'Unit' AND LocationId = @M2;
+TRUNCATE TABLE #Sum;
+INSERT INTO #Sum EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Shift', @AnchorShiftId = @A;
+SET @v = (SELECT CAST(Good AS NVARCHAR(10)) FROM #Sum WHERE RowKind = N'Unit' AND LocationCode = N'ZZ-DSH-DC-M2');
+EXEC test.Assert_IsEqual @TestName = N'[Summary] closed stored shift is read from Oee.ShiftSummary (doctored 100 + 1000)', @Expected = N'1100', @Actual = @v;
+UPDATE Oee.ShiftSummary SET Good = Good - 1000 WHERE ShiftId = @A AND RowKind = N'Unit' AND LocationId = @M2;
+
+-- stored and live give identical rows for the same shift
+IF OBJECT_ID(N'tempdb..#Stored') IS NOT NULL DROP TABLE #Stored;
+TRUNCATE TABLE #Sum;
+INSERT INTO #Sum EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Shift', @AnchorShiftId = @A;
+SELECT * INTO #Stored FROM #Sum;
+DELETE FROM Oee.ShiftSummary WHERE ShiftId = @A;
+TRUNCATE TABLE #Sum;
+INSERT INTO #Sum EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Shift', @AnchorShiftId = @A;
+DECLARE @diff INT = (SELECT COUNT(*) FROM (SELECT * FROM #Stored EXCEPT SELECT * FROM #Sum) x)
+                  + (SELECT COUNT(*) FROM (SELECT * FROM #Sum EXCEPT SELECT * FROM #Stored) y);
+DECLARE @rows INT = (SELECT COUNT(*) FROM #Stored);
+SET @v = CAST(@diff AS NVARCHAR(10)) + N'/' + CASE WHEN @rows > 0 THEN N'rows' ELSE N'empty' END;
+EXEC test.Assert_IsEqual @TestName = N'[Summary] stored and live give identical rows for the same shift', @Expected = N'0/rows', @Actual = @v;
+DROP TABLE #Stored;
+
+-- an open shift is read live and flagged
+DECLARE @OwnOpen BIT = 0;
+IF NOT EXISTS (SELECT 1 FROM Oee.Shift WHERE ActualEnd IS NULL)
+BEGIN
+    INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks)
+    SELECT Id, '2030-03-06T07:01:00', NULL, N'TEST_US_C' FROM Oee.ShiftSchedule WHERE Name = N'TEST_US_Day';
+    SET @OwnOpen = 1;
+END
+DECLARE @C BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE ActualEnd IS NULL ORDER BY Id);
+TRUNCATE TABLE #Sum;
+INSERT INTO #Sum EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Shift', @AnchorShiftId = @C;
+SET @v = ISNULL((SELECT CAST(IncludesInProgressShift AS NVARCHAR(1)) FROM #Sum WHERE RowKind = N'Plant'), N'<none>')
+       + N'/' + CAST((SELECT COUNT(*) FROM Oee.ShiftSummary WHERE ShiftId = @C) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Summary] open shift included live, IncludesInProgressShift 1, nothing stored', @Expected = N'1/0', @Actual = @v;
+IF @OwnOpen = 1 DELETE FROM Oee.Shift WHERE Remarks = N'TEST_US_C';
+GO
+
 -- ---- cleanup ----
 DROP TABLE #Sum;
+DELETE FROM Oee.ShiftSummary WHERE ShiftId IN (SELECT s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId WHERE ss.Name LIKE N'TEST_US_%');
 DELETE FROM Workorder.RejectEvent         WHERE Remarks LIKE N'ZZ-DSH%';
 DELETE FROM Workorder.DieCastContribution WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'ZZ-DSH%');
 DELETE FROM Workorder.ProductionEvent     WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'ZZ-DSH%');
