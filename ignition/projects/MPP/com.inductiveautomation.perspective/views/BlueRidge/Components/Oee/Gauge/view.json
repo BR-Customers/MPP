@@ -1,0 +1,173 @@
+{
+  "custom": {},
+  "params": {
+    "value": null,
+    "band": null,
+    "label": "",
+    "decimals": 0
+  },
+  "propConfig": {
+    "params.value": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.band": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.label": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.decimals": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 140,
+      "height": 112
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "center"
+    },
+    "children": [
+      {
+        "type": "ia.shapes.svg",
+        "meta": {
+          "name": "Arc"
+        },
+        "position": {
+          "basis": "76px",
+          "shrink": 0
+        },
+        "props": {
+          "viewBox": "0 0 120 70",
+          "preserveAspectRatio": "xMidYMid meet",
+          "style": {
+            "width": "130px",
+            "height": "76px"
+          },
+          "elements": [
+            {
+              "type": "path",
+              "name": "track",
+              "d": "M10 62 A50 50 0 0 1 110 62",
+              "fill": {
+                "paint": "none"
+              },
+              "stroke": {
+                "paint": "#2C3A55",
+                "width": 12,
+                "linecap": "round"
+              }
+            },
+            {
+              "type": "path",
+              "name": "value",
+              "d": "M10 62 A50 50 0 0 1 110 62",
+              "fill": {
+                "paint": "none"
+              },
+              "stroke": {
+                "paint": "#697A98",
+                "width": 12,
+                "linecap": "round",
+                "dasharray": "0 200"
+              }
+            }
+          ]
+        },
+        "propConfig": {
+          "props.elements[1].stroke.paint": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.band}\u003d\u0027green\u0027,\u0027#50C878\u0027,if({view.params.band}\u003d\u0027amber\u0027,\u0027#F4B343\u0027,if({view.params.band}\u003d\u0027red\u0027,\u0027#DC5050\u0027,\u0027#697A98\u0027)))"
+              }
+            }
+          },
+          "props.elements[1].stroke.dasharray": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.params.value}), \u00270 200\u0027, toStr({view.params.value} * 157.08) + \u0027 200\u0027)"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Value"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "--",
+          "style": {
+            "fontSize": "22px",
+            "fontWeight": "700",
+            "marginTop": "-40px",
+            "textAlign": "center"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.params.value}), \u0027--\u0027, numberFormat({view.params.value} * 100, if({view.params.decimals} \u003d 1, \u00270.0\u0027, \u00270\u0027)) + \u0027%\u0027)"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.band}\u003d\u0027green\u0027,\u0027#50C878\u0027,if({view.params.band}\u003d\u0027amber\u0027,\u0027#F4B343\u0027,if({view.params.band}\u003d\u0027red\u0027,\u0027#DC5050\u0027,\u0027#697A98\u0027)))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Caption"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "textAlign": "center",
+            "marginTop": "2px",
+            "classes": "pf-kpi-label"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.label"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

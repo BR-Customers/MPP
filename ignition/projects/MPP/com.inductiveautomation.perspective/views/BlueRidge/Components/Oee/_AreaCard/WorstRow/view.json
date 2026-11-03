@@ -1,0 +1,147 @@
+{
+  "custom": {},
+  "params": {
+    "locationId": null,
+    "name": "",
+    "value": "",
+    "band": null,
+    "reason": ""
+  },
+  "propConfig": {
+    "params.locationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.name": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.value": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.band": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.reason": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 360,
+      "height": 28
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "gap": "8px",
+        "borderBottom": "1px solid var(--mpp-border-subtle)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Name"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "14px"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.name"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Value"
+        },
+        "position": {
+          "basis": "48px",
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "14px",
+            "fontWeight": "600",
+            "textAlign": "right"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.value"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.band}\u003d\u0027green\u0027,\u0027#50C878\u0027,if({view.params.band}\u003d\u0027amber\u0027,\u0027#F4B343\u0027,if({view.params.band}\u003d\u0027red\u0027,\u0027#DC5050\u0027,\u0027#697A98\u0027)))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Reason"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "color": "var(--mpp-text-tertiary)",
+            "textAlign": "right",
+            "whiteSpace": "nowrap",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.reason"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,553 @@
+{
+  "custom": {
+    "card": {
+      "family": "",
+      "title": "",
+      "subtitle": "",
+      "hasData": false,
+      "availability": null,
+      "availabilityBand": null,
+      "quality": null,
+      "qualityBand": null,
+      "downMinutes": "0 min",
+      "noReasonCount": 0,
+      "noReasonText": "0 no reason",
+      "scrap": 0,
+      "foundDownstreamText": ""
+    }
+  },
+  "params": {
+    "family": "",
+    "zoom": "Shift",
+    "anchorShiftId": null
+  },
+  "propConfig": {
+    "params.family": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.zoom": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.anchorShiftId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.card": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Dashboard.areaCard\", 0, {view.params.zoom}, {view.params.anchorShiftId}, {view.params.family})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 420,
+      "height": 520
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "#14223A",
+        "border": "1px solid var(--mpp-border-subtle)",
+        "borderRadius": "6px",
+        "padding": "12px",
+        "cursor": "pointer",
+        "gap": "4px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Head"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {},
+          "justify": "space-between",
+          "alignItems": "baseline"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.card.title"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Units"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.card.subtitle"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Gauges"
+        },
+        "position": {
+          "basis": "112px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {},
+          "justify": "space-around"
+        },
+        "children": [
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "AvailabilityGauge"
+            },
+            "position": {
+              "basis": "140px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "BlueRidge/Components/Oee/Gauge",
+              "params": {
+                "value": null,
+                "band": null,
+                "label": "Availability",
+                "decimals": 0
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false,
+              "style": {}
+            },
+            "propConfig": {
+              "props.params.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.card.availability"
+                  }
+                }
+              },
+              "props.params.band": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.card.availabilityBand"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "QualityGauge"
+            },
+            "position": {
+              "basis": "140px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "BlueRidge/Components/Oee/Gauge",
+              "params": {
+                "value": null,
+                "band": null,
+                "label": "Quality",
+                "decimals": 1
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false,
+              "style": {}
+            },
+            "propConfig": {
+              "props.params.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.card.quality"
+                  }
+                }
+              },
+              "props.params.band": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.card.qualityBand"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Stats"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "padding": "6px 0",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)"
+          },
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Down"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "14px"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\u0027Down \u0027 + {view.custom.card.downMinutes}"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "NoReason"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "14px"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.card.noReasonText"
+                  }
+                }
+              },
+              "props.style.color": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.card.noReasonCount} \u003e 0, \u0027#F4B343\u0027, \u0027var(--mpp-text-tertiary)\u0027)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Scrap"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "14px"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\u0027Scrap \u0027 + toStr({view.custom.card.scrap})"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "FoundDownstream"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "color": "var(--mpp-text-tertiary)",
+            "textAlign": "right"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.card.foundDownstreamText"
+              }
+            }
+          },
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.card.foundDownstreamText} !\u003d \u0027\u0027"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "WorstTitle"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Lowest availability",
+          "style": {
+            "fontSize": "12px",
+            "textTransform": "uppercase",
+            "letterSpacing": "0.08em",
+            "color": "var(--mpp-text-tertiary)",
+            "fontWeight": "600",
+            "margin": "8px 0 4px 0"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "NoProduction"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "No production in this period",
+          "style": {
+            "fontSize": "13px",
+            "color": "var(--mpp-text-tertiary)"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!{view.custom.card.hasData}"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Worst"
+        },
+        "position": {
+          "basis": "86px",
+          "shrink": 0
+        },
+        "props": {
+          "path": "BlueRidge/Components/Oee/_AreaCard/WorstRow",
+          "instances": [],
+          "direction": "column",
+          "alignItems": "stretch",
+          "useDefaultViewWidth": false,
+          "useDefaultViewHeight": false,
+          "elementPosition": {
+            "basis": "28px",
+            "shrink": 0
+          },
+          "style": {}
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Oee.Dashboard.worstUnits\", 0, {view.params.zoom}, {view.params.anchorShiftId}, {view.params.family})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "TrendTitle"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Availability \u00b7 last 7 days",
+          "style": {
+            "fontSize": "12px",
+            "textTransform": "uppercase",
+            "letterSpacing": "0.08em",
+            "color": "var(--mpp-text-tertiary)",
+            "fontWeight": "600",
+            "margin": "8px 0 4px 0"
+          }
+        }
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "Trend"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
+        "props": {
+          "path": "BlueRidge/Components/Oee/TrendBars",
+          "params": {
+            "anchorShiftId": null,
+            "family": null,
+            "locationId": null,
+            "refreshToken": 0
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false,
+          "style": {}
+        },
+        "propConfig": {
+          "props.params.anchorShiftId": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.anchorShiftId"
+              }
+            }
+          },
+          "props.params.family": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.family"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Open"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "14px",
+            "color": "var(--mpp-accent-60)",
+            "textAlign": "right",
+            "marginTop": "8px"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\u0027Open \u0027 + {view.custom.card.title} + \u0027 \u0027 + \u0027\u203a\u0027"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.navigate(\u0027/shop-floor/oee/area/\u0027 + self.view.params.family)"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,302 @@
+{
+  "custom": {
+    "period": {
+      "AnchorShiftId": null,
+      "Zoom": "",
+      "PeriodLabel": "",
+      "IsInProgress": false,
+      "HasNext": false,
+      "IsRecentlyClosed": false
+    }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.period": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Dashboard.period\", 0, {session.custom.oeePeriod.zoom}, {session.custom.oeePeriod.anchorShiftId}, 0)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280,
+      "height": 760
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "padding": "16px",
+        "gap": "14px",
+        "overflowY": "auto"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "52px",
+          "shrink": 0
+        },
+        "props": {
+          "path": "BlueRidge/Components/Oee/PeriodHeader",
+          "params": {
+            "title": "Madison Plant OEE",
+            "crumb1Label": "",
+            "crumb1Path": "",
+            "crumb2Label": "",
+            "crumb2Path": ""
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false,
+          "style": {}
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Kpis"
+        },
+        "position": {
+          "basis": "108px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "KpiCards"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 3
+            },
+            "props": {
+              "path": "BlueRidge/Components/Oee/KpiCard",
+              "instances": [],
+              "direction": "row",
+              "alignItems": "stretch",
+              "useDefaultViewWidth": false,
+              "useDefaultViewHeight": false,
+              "elementPosition": {
+                "basis": "0",
+                "grow": 1
+              },
+              "style": {
+                "gap": "10px"
+              },
+              "elementStyle": {
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Oee.Dashboard.kpiInstances\", 0, {view.custom.period.Zoom}, {view.custom.period.AnchorShiftId})"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "Performance"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "path": "BlueRidge/Components/Oee/FutureCard",
+              "params": {
+                "title": "Performance"
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false,
+              "style": {
+                "overflow": "hidden"
+              }
+            }
+          },
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "Oee"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "path": "BlueRidge/Components/Oee/FutureCard",
+              "params": {
+                "title": "OEE"
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false,
+              "style": {
+                "overflow": "hidden"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Areas"
+        },
+        "position": {
+          "basis": "520px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "DieCast"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "path": "BlueRidge/Components/Oee/AreaCard",
+              "params": {
+                "family": "diecast",
+                "zoom": "Shift",
+                "anchorShiftId": null
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false,
+              "style": {}
+            },
+            "propConfig": {
+              "props.params.zoom": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.period.Zoom"
+                  }
+                }
+              },
+              "props.params.anchorShiftId": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.period.AnchorShiftId"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "Trim"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "path": "BlueRidge/Components/Oee/AreaCard",
+              "params": {
+                "family": "trim",
+                "zoom": "Shift",
+                "anchorShiftId": null
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false,
+              "style": {}
+            },
+            "propConfig": {
+              "props.params.zoom": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.period.Zoom"
+                  }
+                }
+              },
+              "props.params.anchorShiftId": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.period.AnchorShiftId"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "MA"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "path": "BlueRidge/Components/Oee/AreaCard",
+              "params": {
+                "family": "ma",
+                "zoom": "Shift",
+                "anchorShiftId": null
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false,
+              "style": {}
+            },
+            "propConfig": {
+              "props.params.zoom": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.period.Zoom"
+                  }
+                }
+              },
+              "props.params.anchorShiftId": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.period.AnchorShiftId"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

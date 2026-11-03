@@ -238,6 +238,10 @@
       "title": "Machining OUT - Split",
       "viewPath": "BlueRidge/Views/ShopFloor/MachiningOutSplit"
     },
+    "/shop-floor/oee": {
+      "title": "OEE Dashboard",
+      "viewPath": "BlueRidge/Views/ShopFloor/Oee/Site"
+    },
     "/shop-floor/receiving": {
       "title": "Receiving",
       "viewPath": "BlueRidge/Views/ShopFloor/ReceivingDock"

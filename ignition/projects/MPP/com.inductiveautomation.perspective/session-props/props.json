@@ -54,6 +54,10 @@
     "elevatedUntil": null,
     "elevationProfile": "",
     "lotTrail": [],
+    "oeePeriod": {
+      "anchorShiftId": null,
+      "zoom": "Shift"
+    },
     "pendingElevatedAction": null,
     "plcDevices": [],
     "policy": {

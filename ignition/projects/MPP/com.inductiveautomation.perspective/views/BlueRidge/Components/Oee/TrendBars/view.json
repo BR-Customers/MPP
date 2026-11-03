@@ -1,0 +1,79 @@
+{
+  "custom": {},
+  "params": {
+    "anchorShiftId": null,
+    "family": null,
+    "locationId": null,
+    "refreshToken": 0
+  },
+  "propConfig": {
+    "params.anchorShiftId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.family": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.locationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.refreshToken": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 300,
+      "height": 60
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "children": [
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Bars"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "path": "BlueRidge/Components/Oee/_TrendBars/Bar",
+          "instances": [],
+          "direction": "row",
+          "alignItems": "stretch",
+          "useDefaultViewWidth": false,
+          "useDefaultViewHeight": false,
+          "elementPosition": {
+            "basis": "0",
+            "grow": 1
+          },
+          "style": {
+            "gap": "4px"
+          }
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Oee.Dashboard.trendInstances\", 0, {view.params.anchorShiftId}, {view.params.family}, {view.params.locationId}, {view.params.refreshToken})"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

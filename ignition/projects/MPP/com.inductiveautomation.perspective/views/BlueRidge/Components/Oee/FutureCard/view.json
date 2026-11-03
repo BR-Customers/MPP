@@ -1,0 +1,99 @@
+{
+  "custom": {},
+  "params": {
+    "title": ""
+  },
+  "propConfig": {
+    "params.title": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 220,
+      "height": 96
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "#0B1322",
+        "border": "1px dashed var(--mpp-border-subtle)",
+        "borderRadius": "6px",
+        "padding": "10px 12px",
+        "gap": "2px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Title"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "14px",
+            "textTransform": "uppercase",
+            "letterSpacing": "0.06em",
+            "color": "#4B5D78",
+            "fontWeight": "500"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.title"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Value"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "--",
+          "style": {
+            "fontSize": "28px",
+            "fontWeight": "700",
+            "color": "#34445E",
+            "lineHeight": "1.2"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Sub"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Coming in a future deployment",
+          "style": {
+            "fontSize": "14px",
+            "color": "#4B5D78"
+          }
+        }
+      }
+    ]
+  }
+}

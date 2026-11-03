@@ -1,0 +1,147 @@
+{
+  "custom": {},
+  "params": {
+    "label": "",
+    "heightPct": 0,
+    "band": null,
+    "isLast": false,
+    "tooltip": ""
+  },
+  "propConfig": {
+    "params.label": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.heightPct": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.band": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.isLast": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.tooltip": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 40,
+      "height": 60
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Track"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {},
+          "justify": "flex-end"
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Fill"
+            },
+            "position": {
+              "basis": "0%",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "borderRadius": "2px 2px 0 0",
+                "minHeight": "0"
+              }
+            },
+            "propConfig": {
+              "position.basis": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "toStr({view.params.heightPct}) + \u0027%\u0027"
+                  }
+                }
+              },
+              "props.style.background": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.isLast}, \u0027var(--mpp-accent-60)\u0027, \u0027var(--mpp-accent-40)\u0027)"
+                  }
+                }
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Day"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "11px",
+            "color": "var(--mpp-text-tertiary)",
+            "textAlign": "center"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.label"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "propConfig": {
+      "meta.tooltip.text": {
+        "binding": {
+          "type": "property",
+          "config": {
+            "path": "view.params.tooltip"
+          }
+        }
+      },
+      "meta.tooltip.enabled": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "{view.params.tooltip} !\u003d \u0027\u0027"
+          }
+        }
+      }
+    }
+  }
+}

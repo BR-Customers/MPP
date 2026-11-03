@@ -1,0 +1,141 @@
+{
+  "custom": {},
+  "params": {
+    "title": "",
+    "value": "--",
+    "sub": "",
+    "band": null,
+    "tone": ""
+  },
+  "propConfig": {
+    "params.title": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.value": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.sub": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.band": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.tone": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 220,
+      "height": 96
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-raised)",
+        "border": "1px solid var(--mpp-border-subtle)",
+        "borderRadius": "6px",
+        "padding": "10px 12px",
+        "gap": "2px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Title"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "classes": "pf-kpi-label"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.title"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Value"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "--",
+          "style": {
+            "fontSize": "28px",
+            "fontWeight": "700",
+            "lineHeight": "1.2"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.value"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(!isNull({view.params.band}) \u0026\u0026 {view.params.band} !\u003d \u0027\u0027, if({view.params.band}\u003d\u0027green\u0027,\u0027#50C878\u0027,if({view.params.band}\u003d\u0027amber\u0027,\u0027#F4B343\u0027,if({view.params.band}\u003d\u0027red\u0027,\u0027#DC5050\u0027,\u0027#697A98\u0027))), if({view.params.tone} \u003d \u0027warn\u0027, \u0027#F4B343\u0027, \u0027var(--mpp-text-primary)\u0027))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Sub"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.sub"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

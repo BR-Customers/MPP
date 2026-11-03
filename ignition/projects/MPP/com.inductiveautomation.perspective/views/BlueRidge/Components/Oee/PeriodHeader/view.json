@@ -1,0 +1,531 @@
+{
+  "custom": {
+    "period": {
+      "AnchorShiftId": null,
+      "Zoom": "",
+      "PeriodLabel": "",
+      "IsInProgress": false,
+      "HasNext": false,
+      "IsRecentlyClosed": false
+    }
+  },
+  "params": {
+    "title": "",
+    "crumb1Label": "",
+    "crumb1Path": "",
+    "crumb2Label": "",
+    "crumb2Path": ""
+  },
+  "propConfig": {
+    "params.title": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.crumb1Label": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.crumb1Path": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.crumb2Label": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.crumb2Path": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.period": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Dashboard.period\", 0, {session.custom.oeePeriod.zoom}, {session.custom.oeePeriod.anchorShiftId}, 0)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1200,
+      "height": 52
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "wrap": "wrap",
+      "style": {
+        "gap": "14px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Crumbs"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "4px"
+          },
+          "alignItems": "center"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Crumb1"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "15px",
+                "classes": "pf-crumb-link"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.crumb1Label"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.crumb1Label} !\u003d \u0027\u0027"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(self.view.params.crumb1Path)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Sep1"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "\u203a",
+              "style": {
+                "color": "var(--mpp-text-tertiary)"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.crumb1Label} !\u003d \u0027\u0027"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Crumb2"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "15px",
+                "classes": "pf-crumb-link"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.crumb2Label"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.crumb2Label} !\u003d \u0027\u0027"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(self.view.params.crumb2Path)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Sep2"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "\u203a",
+              "style": {
+                "color": "var(--mpp-text-tertiary)"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.crumb2Label} !\u003d \u0027\u0027"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "22px",
+                "fontWeight": "700",
+                "marginRight": "10px"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.title"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ZoomGroup"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "4px"
+          },
+          "alignItems": "center"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ZoomShift"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Shift",
+              "style": {
+                "minHeight": "34px",
+                "padding": "0 14px",
+                "cursor": "pointer"
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\u0027pf-toggle-btn\u0027 + if({view.custom.period.Zoom} \u003d \u0027Shift\u0027, \u0027 pf-toggle-btn-selected\u0027, \u0027\u0027)"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Oee.Dashboard.go(self.session, \"Shift\", self.view.custom.period.AnchorShiftId, 0)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ZoomDay"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Day",
+              "style": {
+                "minHeight": "34px",
+                "padding": "0 14px",
+                "cursor": "pointer"
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\u0027pf-toggle-btn\u0027 + if({view.custom.period.Zoom} \u003d \u0027Day\u0027, \u0027 pf-toggle-btn-selected\u0027, \u0027\u0027)"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Oee.Dashboard.go(self.session, \"Day\", self.view.custom.period.AnchorShiftId, 0)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ZoomWeek"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Week",
+              "style": {
+                "minHeight": "34px",
+                "padding": "0 14px",
+                "cursor": "pointer"
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\u0027pf-toggle-btn\u0027 + if({view.custom.period.Zoom} \u003d \u0027Week\u0027, \u0027 pf-toggle-btn-selected\u0027, \u0027\u0027)"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Oee.Dashboard.go(self.session, \"Week\", self.view.custom.period.AnchorShiftId, 0)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Stepper"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "4px"
+          },
+          "alignItems": "center"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Prev"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "\u2039",
+              "style": {
+                "minHeight": "34px",
+                "padding": "0 12px",
+                "cursor": "pointer",
+                "fontSize": "18px",
+                "classes": "pf-toggle-btn"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Oee.Dashboard.go(self.session, self.view.custom.period.Zoom, self.view.custom.period.AnchorShiftId, -1)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PeriodLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "minHeight": "34px",
+                "padding": "0 14px",
+                "fontSize": "15px",
+                "classes": "pf-toggle-btn pf-toggle-btn-selected"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.period.PeriodLabel} \u003d \u0027\u0027, \u0027No shifts recorded\u0027, {view.custom.period.PeriodLabel})"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Next"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "\u203a",
+              "style": {
+                "minHeight": "34px",
+                "padding": "0 12px",
+                "cursor": "pointer",
+                "fontSize": "18px",
+                "classes": "pf-toggle-btn"
+              }
+            },
+            "propConfig": {
+              "props.style.opacity": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.period.HasNext}, 1, 0.35)"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tif self.view.custom.period.HasNext:\n\t\tBlueRidge.Oee.Dashboard.go(self.session, self.view.custom.period.Zoom, self.view.custom.period.AnchorShiftId, 1)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Note"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "color": "#F4B343",
+            "marginLeft": "auto"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Oee.Dashboard.periodNote\", 0, {view.custom.period.IsInProgress}, {view.custom.period.IsRecentlyClosed})"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
