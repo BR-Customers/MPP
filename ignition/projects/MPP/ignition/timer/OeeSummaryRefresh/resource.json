@@ -7,7 +7,7 @@
   "attributes": {
     "delay": 900000,
     "fixedDelay": true,
-    "sharedThread": true,
+    "sharedThread": false,
     "enabled": false,
     "lastModification": {
       "actor": "claude",

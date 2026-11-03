@@ -233,7 +233,7 @@ def tickShiftBoundary(nowLocal=None):
         sysUser = BlueRidge.Common.Util.systemAppUserId()
         result = reconcile(nowLocal, appUserId=sysUser)
         if (result or {}).get("ShiftsClosed"):
-            BlueRidge.Oee.Summary.refreshChanged(sysUser)
+            BlueRidge.Oee.Summary.refreshChanged(sysUser, maxShifts=2)
         return result
     except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("tickShiftBoundary error: %s" % e, level="error")

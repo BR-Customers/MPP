@@ -32,6 +32,23 @@ def refreshChanged(appUserId=None, maxShifts=60):
         return _fail("refreshChanged", e)
 
 
+def compute(shiftId, appUserId=None):
+    """Recompute one closed shift now (Oee.ShiftSummary_Compute). The unit
+       drill-down calls it after an Edit, so the stored figures behind Day /
+       Week, the site and area pages and the report follow the edit at once --
+       the refresher only re-checks the last 7 days. An open or unknown shift
+       is refused by the proc (Status 0), which is fine: it is read live.
+       Returns {Status, Message}."""
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
+    try:
+        return BlueRidge.Common.Db.execMutation("oee/ShiftSummary_Compute", {
+            "shiftId":   BlueRidge.Common.Util.extractQualifiedValues(shiftId),
+            "appUserId": appUserId,
+        })
+    except (Exception, java.lang.Exception) as e:
+        return _fail("compute", e)
+
+
 def recomputeRange(fromUtc, toUtc, appUserId=None):
     """Recompute every closed shift that starts in [fromUtc, toUtc).
        Returns {Status, Message, ShiftsComputed}."""

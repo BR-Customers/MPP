@@ -1284,7 +1284,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tBlueRidge.Oee.Summary.compute(self.view.custom.period.AnchorShiftId, BlueRidge.Common.Session.currentAppUserId(self.session))\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "messageType": "dtEditRequested",
