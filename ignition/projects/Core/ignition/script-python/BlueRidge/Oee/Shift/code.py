@@ -224,10 +224,17 @@ def tickShiftBoundary(nowLocal=None):
        Oee.Shift_Reconcile via reconcile(), attributed to the SYS user (no
        session in gateway scope -- Common.Util.systemAppUserId). Guarded: a gateway timer must never
        throw uncaught (must catch Java Throwables too, not just Python).
+       When the reconcile closed a shift, the shift's OEE figures are computed
+       straight away (BlueRidge.Oee.Summary.refreshChanged; OEE dashboard spec
+       6.8) -- never-throw, so a refresh failure cannot stop the ticker.
        Returns the reconcile status dict, or an error dict on failure."""
     BlueRidge.Common.Util.log("tick nowLocal=%s" % nowLocal, level="debug")
     try:
-        return reconcile(nowLocal, appUserId=BlueRidge.Common.Util.systemAppUserId())
+        sysUser = BlueRidge.Common.Util.systemAppUserId()
+        result = reconcile(nowLocal, appUserId=sysUser)
+        if (result or {}).get("ShiftsClosed"):
+            BlueRidge.Oee.Summary.refreshChanged(sysUser)
+        return result
     except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("tickShiftBoundary error: %s" % e, level="error")
         return {"Status": 0, "Message": "reconcile error: %s" % e}
