@@ -1,7 +1,7 @@
 # OEE Dashboard -- Availability and Quality, Site to Unit
 
 **Date:** 2026-10-27
-**Status:** Draft v0.3.1 -- Q5 and Q6 answered 2026-10-30; needs Jacques's re-approval (v0.2 was approved 2026-10-29; the build stopped at the benchmark gate and this revision changes how the numbers are computed and stored)
+**Status:** v0.3.2 -- v0.3.1 approved 2026-10-30; v0.3.2 is the configuration-fingerprint change Jacques accepted with the v0.3 plan (6.8, D22). Being built.
 **Mockups:** `docs/superpowers/specs/2026-10-27-oee-dashboard-mockups/` (open in a browser; the dark-navy frames are the screens, the text around them is commentary)
 
 | Version | Date | Change |
@@ -10,6 +10,7 @@
 | 0.2 | 2026-10-29 | Jacques answered the four open questions (Section 11). Scrap is charged by defect code at area level (6.4); production day runs 3rd -> 1st -> 2nd (6.6); FG-only M&A good confirmed; no change order -- everything ships. |
 | 0.3 | 2026-10-30 | Rework after the benchmark gate missed (Section 13). Availability is computed from entered DURATIONS, not clock overlap (6.1, D17). Per-shift figures are stored in a summary table, computed when a shift closes and refreshed within 30 minutes of any later edit, with a nightly safety net (6.7, 6.8, D16, D19). Finished-good LOTs carry the shift they were minted in (7.4, D18). INSP + Offsite lines sit under M&A (D20). Writer inventory added (6.8). |
 | 0.3.1 | 2026-10-30 | Q5 and Q6 answered: `Lots.Lot.MintedPieceCount` (D21); changed shifts found by change detection (D22, 6.8). |
+| 0.3.2 | 2026-10-30 | Configuration changes are found by a configuration fingerprint instead of edits to ~20 configuration procs (D22, 6.8; accepted with the v0.3 plan). Inventory corrected: `DowntimeEvent_UpdateTimes` does not change `ShiftId`. |
 
 ---
 
@@ -82,7 +83,7 @@ This feature puts what the plant already records in front of supervisors and man
 | D19 | **Refresh:** a shift is computed when it closes and recomputed within 30 minutes of any later edit; a nightly sweep rebuilds the last 7 days as a safety net (6.8). The writer inventory has to be complete (6.8). |
 | D20 | Inspection (INSP) and Offsite (OS-PROD) OEE lines are units under **M&A**, each in its own ProductionArea group (Jacques, 2026-10-30). |
 | D21 | **Minted quantity is stored:** a new column `Lots.Lot.MintedPieceCount`, written by the mint alongside `ShiftId` and never changed afterwards. Good = its sum (6.4, 7.4). Not reconstructed from consumption records (Jacques, 2026-10-30). |
-| D22 | **Changed shifts are found by change detection:** every 15 minutes the refresher fingerprints each shift of the last 7 days and recomputes those whose fingerprint differs. Fact writers are not edited; configuration procs call `RecomputeRange` (6.8) (Jacques, 2026-10-30). |
+| D22 | **Changed shifts are found by change detection:** every 15 minutes the refresher fingerprints each shift of the last 7 days and recomputes those whose fingerprint differs. Fact writers are not edited. Configuration is fingerprinted the same way (`Oee.ufn_ShiftSummaryConfigFingerprint`): when it changes, every stored shift is recomputed newest first, a bounded number per run; no configuration proc is edited (6.8) (Jacques, 2026-10-30). |
 
 ## 5. The screens
 
@@ -262,13 +263,15 @@ The production day runs **3rd -> 1st -> 2nd**: the 3rd shift that starts Monday 
 1. **At shift close.** The `ShiftBoundaryTicker` already ends shifts; the shift is computed then.
 2. **Within 30 minutes of any later edit.** A gateway timer runs every 15 minutes and recomputes every shift whose inputs changed since it was computed (below).
 3. **Nightly safety net.** A full rebuild of the last 7 days catches anything the change detection missed.
-4. **On request.** `Oee.ShiftSummary_RecomputeRange(@FromUtc, @ToUtc)` for configuration changes, data repairs and deployments.
+4. **On request.** `Oee.ShiftSummary_RecomputeRange(@FromUtc, @ToUtc, @AppUserId)` for data repairs and deployments.
 
 The dashboard labels a shift that closed less than an hour ago "entries may still be arriving" (my call).
 
 **How a changed shift is found: change detection (D22).**
 
-Every 15 minutes the refresher computes a cheap fingerprint per shift for the last 7 days over the fact tables below (row count, quantity sums, a checksum of the columns the calculation reads) and recomputes the shifts whose fingerprint differs from the stored `InputFingerprint`. No fact writer changes, and a writer added next year is covered automatically. An edit that moves a row to another shift (`_UpdateTimes`, the restamps) changes both shifts' fingerprints, so both are recomputed. Configuration changes do not alter fact rows, so the configuration procs (second table) call `RecomputeRange`; the nightly sweep backs them up.
+Every 15 minutes the refresher computes a cheap fingerprint per shift for the last 7 days over the fact tables below (row count, quantity sums, a checksum of the columns the calculation reads) and recomputes the shifts whose fingerprint differs from the stored `InputFingerprint`. No fact writer changes, and a writer added next year is covered automatically. An edit that moves a row to another shift (the restamps) changes both shifts' fingerprints, so both are recomputed.
+
+**Configuration changes** do not alter fact rows, so they are fingerprinted separately: `Oee.ufn_ShiftSummaryConfigFingerprint` hashes the configuration tables below (schedules, reason codes' `IsExcused`, defect codes' charge party and non-reject flag, locations' OEE flag / parent / type, type-definition codes). When it differs from the stored one (`Oee.ShiftSummaryConfig`), every stored shift computed before the change is stale and `Oee.ShiftSummary_RefreshChanged` recomputes them newest first, `@MaxShifts` per run (default 60). A configuration change such as flipping `IsExcused` affects all history, which is too much to recompute inside the configuration proc's transaction. No configuration proc is edited, and a configuration writer added later is covered. Shift overrides and tool assignments affect only their own day or press, so they are in the per-shift fingerprint instead.
 
 *Not chosen:* every writer calling a mark-stale proc inside its transaction -- exact, but every current and future writer has to remember.
 
@@ -278,13 +281,13 @@ The inventory below is the contract: each entry gets a test that an edit through
 
 | Input | Writers |
 |---|---|
-| `Oee.DowntimeEvent` | `DowntimeEvent_Start`, `_End`, `_RecordApproximate`, `_RecordHistorical`, `_UpdateReason`, `_UpdateTimes` (can move an entry to another shift: both shifts), `_Void`; `EndOfShiftEntry_Submit`; `DowntimeReasonCode_Assign`; `ShiftOverride_Restamp` (moves `ShiftId`) |
+| `Oee.DowntimeEvent` | `DowntimeEvent_Start`, `_End`, `_RecordApproximate`, `_RecordHistorical`, `_UpdateReason`, `_UpdateTimes` (changes duration, never `ShiftId`), `_Void`; `EndOfShiftEntry_Submit`; `DowntimeReasonCode_Assign`; `ShiftOverride_Restamp` (moves `ShiftId`) |
 | `Workorder.RejectEvent` | `RejectEvent_Record`, `RejectEvent_RecordByPartFifo`, `DieCastScrap_Write`, `TrimOut_Record`, `TrimPartial_Record`, `MachiningOut_Mint`, `Lots.ContainerRework_Scrap`, `Quality.ControlledRunResult_Record`, `DieCastEntry_Restamp` (moves shift) |
 | `Workorder.DieCastContribution` | `DieCastCredit_Write`, `DieCastEntry_Restamp`, `ShiftOverride_Restamp` (`DieCastShiftReconciliation_Save` writes through these) |
 | `Workorder.ProductionEvent` (trim checkpoints) | `TrimOut_Record`, `TrimPartial_Record` (also written by `ProductionEvent_Record`, `MachiningIn_RecordPick`, `MachiningOut_Mint`, which the trim credit filters out by operation type) |
 | `Lots.Lot` (finished-good mints) | `Assembly_CompleteTray` -- the only writer that stamps `ShiftId` (7.4). The other ~34 `Lots.Lot` writers (moves, holds, splits, merges, status, scrap decrements, rework) cannot change good, because good is the stamped minted quantity. |
 
-**Writer inventory -- configuration** (change how existing rows are read; call `RecomputeRange` for the affected window):
+**Writer inventory -- configuration** (change how existing rows are read; caught by the configuration fingerprint, except overrides and tool assignments, which are in the per-shift fingerprint):
 
 | Input | Writers | What it changes |
 |---|---|---|
@@ -297,7 +300,7 @@ The inventory below is the contract: each entry gets a test that an edit through
 | `Location.LocationTypeDefinition` | `LocationTypeDefinition_SaveAll`, `_Deprecate` | area family of a unit type |
 | `Tools.ToolAssignment` | `ToolAssignment_Assign`, `_Release` | the die shown on a press tile |
 
-Versioned migrations that repair data (e.g. `0077`) are one-offs; their deployment runbook calls `RecomputeRange`. Gateway Python writes no raw SQL to any of these tables (checked: no `runUpdateQuery` / `runPrepUpdate` in project scripts); named queries call the procs above.
+Versioned migrations that repair data (e.g. `0077`) are one-offs; their deployment runbook calls `RecomputeRange`. The inventory is a test: `sql/tests/0117_Oee_Dashboard/075_writer_inventory.sql` changes every column these writers can change that the calculation reads, and asserts the fingerprint moves. Gateway Python writes no raw SQL to any of these tables (checked: no `runUpdateQuery` / `runPrepUpdate` in project scripts); named queries call the procs above.
 
 ## 7. Writer fixes (G6)
 
