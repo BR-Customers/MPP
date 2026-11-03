@@ -1,5 +1,10 @@
 {
   "custom": {
+    "availabilityTile": {
+      "band": null,
+      "sub": "",
+      "value": "--"
+    },
     "flaggedCount": 0,
     "flaggedShifts": [],
     "openReturnCount": 0,
@@ -12,6 +17,14 @@
   },
   "params": {},
   "propConfig": {
+    "custom.availabilityTile": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Dashboard.plantAvailabilityTile\", 300000)"
+        },
+        "type": "expr"
+      }
+    },
     "custom.flaggedCount": {
       "binding": {
         "config": {
@@ -294,11 +307,29 @@
                 "meta": {
                   "name": "V"
                 },
+                "propConfig": {
+                  "props.style.color": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.custom.availabilityTile.band} \u003d \u0027green\u0027, \u0027#50C878\u0027, if({view.custom.availabilityTile.band} \u003d \u0027amber\u0027, \u0027#F4B343\u0027, if({view.custom.availabilityTile.band} \u003d \u0027red\u0027, \u0027#DC5050\u0027, \u0027var(--mpp-text-primary)\u0027)))"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.availabilityTile.value"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "pf-kpi-value"
                   },
-                  "text": "—"
+                  "text": "--"
                 },
                 "type": "ia.display.label"
               },
@@ -306,15 +337,36 @@
                 "meta": {
                   "name": "S"
                 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.availabilityTile.sub"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "derived metric pending"
+                  "text": ""
                 },
                 "type": "ia.display.label"
               }
             ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tBlueRidge.Oee.Dashboard.reset(self.session)\n\tsystem.perspective.navigate(\u0027/shop-floor/oee\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "TileAvailability"
             },
@@ -326,8 +378,8 @@
               "direction": "column",
               "style": {
                 "classes": "pf-panel",
+                "cursor": "pointer",
                 "gap": "6px",
-                "opacity": "0.6",
                 "padding": "16px"
               }
             },

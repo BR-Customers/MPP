@@ -86,6 +86,17 @@ def registry():
          "available": True, "project": "MPP", "reportPath": "Super-lot",
          "params": [{"id": "ControlledRunId", "label": "Super-lot",
                      "kind": "controlledRun", "required": True}]},
+
+        # ---- OEE dashboard (spec 2026-10-27 sec 5.6) ----
+        # The area screens' tables in print form for a shift, day or week.
+        # "choice" = a fixed-option dropdown (choiceOptions); ShiftId anchors the
+        # period and defaults to the last completed shift.
+        {"key": "oee_summary", "title": "OEE Summary",
+         "desc": "Availability, downtime and quality by area and unit for a shift, day or week.",
+         "project": "MPP", "reportPath": "OEE Summary", "available": True,
+         "params": [{"id": "ShiftId", "label": "Shift", "kind": "shift", "required": True},
+                    {"id": "Zoom", "label": "Period", "kind": "choice",
+                     "options": ["Shift", "Day", "Week"], "required": True}]},
     ]
 
 
@@ -94,6 +105,19 @@ def _find(key):
         if r["key"] == key:
             return r
     raise ValueError("unknown report '%s'" % key)
+
+
+def choiceOptions(selectedKey):
+    """Dropdown options for the selected report's "choice" parameter (registry
+    `options`); [] when it has none, which hides the dropdown. Safe [] on error."""
+    try:
+        for p in _find(selectedKey).get("params", []):
+            if p.get("kind") == "choice":
+                return [{"label": o, "value": o} for o in p.get("options", [])]
+        return []
+    except (Exception, _JavaThrowable) as e:
+        logger.warn("choiceOptions failed for '%s': %s" % (selectedKey, str(e)))
+        return []
 
 
 def reportOptions():
@@ -227,7 +251,7 @@ def _resolveLotId(lotId):
         return 0
 
 
-def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None, controlledRunId=None):
+def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None, controlledRunId=None, choice=None):
     """Build the report-parameter dict for the Report Viewer from the landing page's
     inputs, keyed by which report is selected. Bound (runScript) to view.custom.reportParams.
     NEVER returns an empty dict (the Report Viewer rejects a report given empty params)."""
@@ -244,6 +268,12 @@ def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None, controll
             return {"ControlledRunId": _resolveControlledRunId(controlledRunId)}
         if selectedKey == "line_perf":
             return {"WeeksBack": 8}
+        if selectedKey == "oee_summary":
+            # No shift picked -> the last completed shift (the dashboard's default).
+            sid = shiftId
+            if sid in (None, ""):
+                sid = BlueRidge.Oee.Dashboard.period("Shift", None, 0).get("AnchorShiftId")
+            return {"ShiftId": sid if sid is not None else 0, "Zoom": choice or "Shift"}
         # The date-ranged aggregate reports. These MUST be listed explicitly:
         # the fallback below hands back a ShiftId, which none of them declares.
         if selectedKey in ("rejects_detail", "rejects_summary", "rejects_matrix",

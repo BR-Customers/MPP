@@ -627,3 +627,17 @@ def editEntry(session, editorParams):
         return
     system.perspective.openPopup(id="mpp-downtime-editor", view="BlueRidge/Components/Popups/DowntimeEditor",
                                  modal=True, showCloseIcon=False, params=p)
+
+
+# ---- Supervisor Dashboard tile ----------------------------------------------
+
+def plantAvailabilityTile(_refreshToken=None):
+    """The Supervisor Dashboard's "Shift Availability" tile: plant availability of the
+    last completed shift, its band, and which shift that was."""
+    p = period("Shift", None, 0)
+    row = _scopeRow(unitSummary("Shift", p.get("AnchorShiftId"), None), None)
+    return {
+        "value": pct(row.get("Availability"), 0),
+        "band": row.get("AvailabilityBand"),
+        "sub": (p.get("PeriodLabel") or "no completed shift") + _DOT + "tap for the OEE dashboard",
+    }

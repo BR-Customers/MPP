@@ -1,10 +1,12 @@
 {
   "custom": {
+    "choiceOpts": [],
     "controlledRunOpts": [],
     "lotOpts": [],
     "rangeEnd": null,
     "rangeStart": null,
     "reportSource": "Downtime Report",
+    "selectedChoice": "Shift",
     "selectedControlledRun": null,
     "selectedDesc": "Loss analysis for one shift, by machine and reason.",
     "selectedKey": "downtime_shift",
@@ -14,6 +16,14 @@
   },
   "params": {},
   "propConfig": {
+    "custom.choiceOpts": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Reports.choiceOptions\", 0, {view.custom.selectedKey})"
+        },
+        "type": "expr"
+      }
+    },
     "custom.controlledRunOpts": {
       "binding": {
         "config": {
@@ -33,7 +43,7 @@
     "custom.reportParams": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Reports.composeParams\", 0, {view.custom.selectedKey}, {view.custom.selectedShift}, {view.custom.rangeStart}, {view.custom.rangeEnd}, {view.custom.selectedLot}, {view.custom.selectedControlledRun})"
+          "expression": "runScript(\"BlueRidge.Reports.composeParams\", 0, {view.custom.selectedKey}, {view.custom.selectedShift}, {view.custom.rangeStart}, {view.custom.rangeEnd}, {view.custom.selectedLot}, {view.custom.selectedControlledRun}, {view.custom.selectedChoice})"
         },
         "type": "expr"
       }
@@ -890,6 +900,74 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "OEE Summary"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Availability, downtime and quality by area and unit for a shift, day or week."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"oee_summary\", \"OEE Summary\", \"Availability, downtime and quality by area and unit for a shift, day or week.\", \"OEE Summary\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileOeeSummary"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} \u003d \"oee_summary\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
           }
         ],
         "meta": {
@@ -980,7 +1058,7 @@
                   "meta.visible": {
                     "binding": {
                       "config": {
-                        "expression": "{view.custom.selectedKey} \u003d \"downtime_shift\""
+                        "expression": "{view.custom.selectedKey} \u003d \"downtime_shift\" || {view.custom.selectedKey} \u003d \"oee_summary\""
                       },
                       "type": "expr"
                     }
@@ -1005,6 +1083,49 @@
                 },
                 "props": {
                   "placeholder": "Select shift",
+                  "style": {
+                    "classes": "pf-field-select"
+                  }
+                },
+                "type": "ia.input.dropdown"
+              },
+              {
+                "meta": {
+                  "name": "ChoiceDropdown"
+                },
+                "position": {
+                  "basis": "180px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "meta.visible": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.choiceOpts}) \u003e 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.choiceOpts"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selectedChoice"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select period",
                   "style": {
                     "classes": "pf-field-select"
                   }
@@ -1303,7 +1424,7 @@
         {
           "name": "printPdf",
           "params": [],
-          "script": "\timport java.lang\n\ttry:\n\t\tsrc \u003d self.view.custom.reportSource\n\t\tsel \u003d self.view.custom.selectedKey\n\t\t# view.custom.reportParams reads back as a live property wrapper, which\n\t\t# extractQualifiedValues passes through untouched and executeReport refuses\n\t\t# (cannot coerce into PyDictionary). Copy it key by key into a plain dict;\n\t\t# a JSON round-trip would turn the date-range params into strings.\n\t\traw \u003d self.view.custom.reportParams\n\t\tparams \u003d dict((k, BlueRidge.Common.Util.extractQualifiedValues(raw[k])) for k in raw.keys()) if raw else {}\n\t\tif sel \u003d\u003d \"downtime_shift\" and not params.get(\"ShiftId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a shift\", \"Select a shift before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel in (\"downtime_range\", \"rejects_detail\", \"rejects_summary\", \"rejects_matrix\", \"shipping_history\") and not params.get(\"StartDate\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick dates\", \"Select a date range before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel \u003d\u003d \"super_lot\" and not params.get(\"ControlledRunId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a super-lot\", \"Select or scan a super-lot before printing.\", \"warning\")\n\t\t\treturn\n\t\tif not src:\n\t\t\tBlueRidge.Common.Notify.toast(\"No report\", \"Select a report first.\", \"warn\")\n\t\t\treturn\n\t\tdata \u003d system.report.executeReport(src, \"MPP\", params, \"pdf\")\n\t\tsystem.perspective.download(src + \".pdf\", data)\n\texcept (Exception, java.lang.Throwable) as e:\n\t\tBlueRidge.Common.Notify.toast(\"Print failed\", str(e), \"error\")"
+          "script": "\timport java.lang\n\ttry:\n\t\tsrc \u003d self.view.custom.reportSource\n\t\tsel \u003d self.view.custom.selectedKey\n\t\t# view.custom.reportParams reads back as a live property wrapper, which\n\t\t# extractQualifiedValues passes through untouched and executeReport refuses\n\t\t# (cannot coerce into PyDictionary). Copy it key by key into a plain dict;\n\t\t# a JSON round-trip would turn the date-range params into strings.\n\t\traw \u003d self.view.custom.reportParams\n\t\tparams \u003d dict((k, BlueRidge.Common.Util.extractQualifiedValues(raw[k])) for k in raw.keys()) if raw else {}\n\t\tif sel in (\"downtime_shift\", \"oee_summary\") and not params.get(\"ShiftId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a shift\", \"Select a shift before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel in (\"downtime_range\", \"rejects_detail\", \"rejects_summary\", \"rejects_matrix\", \"shipping_history\") and not params.get(\"StartDate\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick dates\", \"Select a date range before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel \u003d\u003d \"super_lot\" and not params.get(\"ControlledRunId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a super-lot\", \"Select or scan a super-lot before printing.\", \"warning\")\n\t\t\treturn\n\t\tif not src:\n\t\t\tBlueRidge.Common.Notify.toast(\"No report\", \"Select a report first.\", \"warn\")\n\t\t\treturn\n\t\tdata \u003d system.report.executeReport(src, \"MPP\", params, \"pdf\")\n\t\tsystem.perspective.download(src + \".pdf\", data)\n\texcept (Exception, java.lang.Throwable) as e:\n\t\tBlueRidge.Common.Notify.toast(\"Print failed\", str(e), \"error\")"
         }
       ],
       "extensionFunctions": null,
