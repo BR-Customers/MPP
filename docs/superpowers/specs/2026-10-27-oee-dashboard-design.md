@@ -1,7 +1,7 @@
 # OEE Dashboard -- Availability and Quality, Site to Unit
 
 **Date:** 2026-10-27
-**Status:** v0.3.2 -- v0.3.1 approved 2026-10-30; v0.3.2 is the configuration-fingerprint change Jacques accepted with the v0.3 plan (6.8, D22). Being built.
+**Status:** v1.0 -- built 2026-11-03 on `jacques/working` (plan `docs/superpowers/plans/2026-10-30-oee-dashboard-v03.md`, Tasks 1-16). Not yet released to prod; release steps in `notes/2026-10-30_oee-dashboard-release-steps.md`. Section 14 lists where the build differs from the text above.
 **Mockups:** `docs/superpowers/specs/2026-10-27-oee-dashboard-mockups/` (open in a browser; the dark-navy frames are the screens, the text around them is commentary)
 
 | Version | Date | Change |
@@ -11,6 +11,7 @@
 | 0.3 | 2026-10-30 | Rework after the benchmark gate missed (Section 13). Availability is computed from entered DURATIONS, not clock overlap (6.1, D17). Per-shift figures are stored in a summary table, computed when a shift closes and refreshed within 30 minutes of any later edit, with a nightly safety net (6.7, 6.8, D16, D19). Finished-good LOTs carry the shift they were minted in (7.4, D18). INSP + Offsite lines sit under M&A (D20). Writer inventory added (6.8). |
 | 0.3.1 | 2026-10-30 | Q5 and Q6 answered: `Lots.Lot.MintedPieceCount` (D21); changed shifts found by change detection (D22, 6.8). |
 | 0.3.2 | 2026-10-30 | Configuration changes are found by a configuration fingerprint instead of edits to ~20 configuration procs (D22, 6.8; accepted with the v0.3 plan). Inventory corrected: `DowntimeEvent_UpdateTimes` does not change `ShiftId`. |
+| 1.0 | 2026-11-03 | Built. Pages `/shop-floor/oee`, `/shop-floor/oee/area/:areaKey`, `/shop-floor/oee/unit/:locationId`, the live Supervisor tile and the `OEE Summary` report (5.1-5.6). Two additive read changes: `Dashboard_GetUnitSummary` v2.1 `@ReadLive` (the unit page reads the anchor shift live at Shift zoom) and `Dashboard_GetDowntimeEntries` v1.1 (the editor's fields). As-built notes in Section 14. |
 
 ---
 
@@ -412,3 +413,15 @@ Stepped timing of one Week read: re-resolving each finished-good LOT's shift 9.3
 **Carried forward from the build:** the scrap writer fixes (Task 1); the classification functions; production day and periods; the scrap placement function; the test fixture (`sql/tests/helpers/0117_fixture_oee_dashboard.sql`) and the classification, production-day and scrap tests.
 
 **Replaced:** the minute-grid availability function and `Shift_GetAvailability` v3.0 (by the summed-duration rule); the finished-good branch of the good count (by the mint stamp); `Dashboard_GetUnitSummary`'s per-shift recomputation (by reads from `Oee.ShiftSummary`).
+
+## 14. As built (v1.0, 2026-11-03)
+
+Where the build differs from, or settles, the text above. Each is a ruling in the build ledger.
+
+- **The period lives in the session** (`session.custom.oeePeriod`: zoom + anchor shift), so Site -> Area -> Unit keep it. The Supervisor tile resets it to the last completed shift (5.1); opening `/shop-floor/oee` by URL later in the same session shows the period last viewed.
+- **Unit page at Shift zoom reads the anchor shift live** (`Dashboard_GetUnitSummary @ReadLive = 1`), so an edit made from the page shows at once; Day and Week read stored rows, which catch up within one refresh (6.8).
+- **Edit** opens `Popups/DowntimeEditor` through the Downtime Manager's existing supervisor gate (`DowntimeEdit`); the editor's save refreshes the page.
+- **Area pages**: tiles four to a row; the trim shop's "shop scrap by part" table sits in its group; M&A's right panel is scrap by line only, so M&A scrap found downstream counts in the area KPI with no row of its own. The trim press's "Shop level" card opens the Trim page at the top.
+- **Pareto "type" view** re-groups the reason rows by reason type on the page; no extra read.
+- **Report** `OEE Summary`: page 1 is one table of every area, group, unit and station; page 2 is downtime by reason per area. Parameters ShiftId (defaults to the last completed shift) and Zoom, picked on the Reports page through a new `choice` parameter kind.
+- The dashboard does not auto-poll; the Supervisor tile re-reads every 5 minutes.

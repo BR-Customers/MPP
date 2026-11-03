@@ -1,11 +1,16 @@
 # Handoff -- OEE dashboard (availability + quality), 2026-10-28
 
+> **CLOSED 2026-11-03.** The dashboard is built (plan Tasks 1-16, spec v1.0). Nothing here is
+> pending. What ships and in what order: `notes/2026-10-30_oee-dashboard-release-steps.md`.
+> Where the build differs from the spec: spec Section 14. Schema: `MPP_MES_DATA_MODEL.md`
+> v3.11. The sections below are history.
+
 **Read this first, then the spec.** Everything needed to continue is in the repo. The
 conversation it came from (2026-10-27) is not needed.
 
 | Artifact | Path |
 |---|---|
-| Design spec (draft 0.1, NOT approved) | `docs/superpowers/specs/2026-10-27-oee-dashboard-design.md` |
+| Design spec (v1.0, built) | `docs/superpowers/specs/2026-10-27-oee-dashboard-design.md` |
 | Approved mockups (open in a browser) | `docs/superpowers/specs/2026-10-27-oee-dashboard-mockups/` -- `1-site-overview.html`, `2-area-pages.html`, `3-unit-drilldown.html` |
 | This note | `notes/2026-10-28_handoff-oee-dashboard.md` |
 

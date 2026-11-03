@@ -1,6 +1,6 @@
 # MPP MES — Data Model Reference
 
-**Version:** v3.9 (rev 2026-10-21 -- merged with `jacques/working` (Assembly Out scale station = 3.8 / 3.9); 3.7: super-lot piece 6, visibility: `Audit.LogEventType` gains `RepeatsLotTimeline` / `LotTimelineKind` and six `ControlledRunLot*` codes (migration `0114`); the LOT History read now includes the LOT's audit stream. The full per-revision narrative is in the Revision History below.)
+**Version:** v3.11 (rev 2026-11-03 -- OEE dashboard: `Oee.ShiftSummary`, `Oee.ShiftSummaryConfig`, `Lots.Lot.ShiftId` / `MintedPieceCount`, migration `0117`; previously v3.9 rev 2026-10-21 -- merged with `jacques/working` (Assembly Out scale station = 3.8 / 3.9); 3.7: super-lot piece 6, visibility: `Audit.LogEventType` gains `RepeatsLotTimeline` / `LotTimelineKind` and six `ControlledRunLot*` codes (migration `0114`); the LOT History read now includes the LOT's audit stream. The full per-revision narrative is in the Revision History below.)
 **Schemas:** 8 | **Tables:** ~75
 **Target:** Microsoft SQL Server 2022 Standard Edition
 
@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 3.11 | 2026-11-03 | Blue Ridge Automation | **OEE dashboard -- availability and quality, site to unit (migration `0117_oee_shift_summary`; spec `docs/superpowers/specs/2026-10-27-oee-dashboard-design.md` v1.0; plan `docs/superpowers/plans/2026-10-30-oee-dashboard-v03.md`).** `Lots.Lot` += `ShiftId` (FK `Oee.Shift`) and `MintedPieceCount`, stamped only by the consume-mints (`Workorder.Assembly_CompleteTray` / `Workorder.MachiningOut_Mint`), filtered index `IX_Lot_ShiftId`; one-time backfill `Lots.Lot_BackfillMintStamp @Commit`. New tables `Oee.ShiftSummary` (stored per-shift minutes and counts, one row per unit / station / area placement / area charge) and `Oee.ShiftSummaryConfig` (single row: the configuration fingerprint). Availability is now computed from entered DURATIONS (`Oee.ufn_DowntimeEventMinutes`, `Oee.ufn_ShiftAvailability`, `Oee.Shift_GetAvailability` v4.0). Compute / refresh procs `Oee.ShiftSummary_Compute`, `_ComputeCore`, `_RecomputeRange`, `_RefreshChanged`; dashboard reads `Oee.Dashboard_GetPeriod`, `_GetUnitSummary` (v2.1 `@ReadLive`), `_GetTrend`, `_GetBreakdown`, `_GetDowntimeByReason`, `_GetScrap`, `_GetDowntimeEntries` (v1.1). Rules in Section 6 "OEE dashboard". |
 | 3.10 | 2026-10-29 | Blue Ridge Automation | **AIM failures in the Failure Log (migration `0116_failurelog_location_lot`; spec `docs/superpowers/specs/2026-10-29-aim-failure-log-design.md`; MPP request 2026-09-16).** `Audit.FailureLog` += `LocationId` / `LotId` (nullable FKs, partition-aligned filtered indexes `IX_FailureLog_Location_AttemptedAt` / `IX_FailureLog_Lot_AttemptedAt`). `Audit.LogEventType` gains `AimPostFailed` and `AimSerialFetchFailed`. New status-row procs `Audit.FailureLog_Record` (the Ignition-side writer: refuses an unknown entity/event code, truncates the reason to 500, drops a context id that names no row) and `Audit.InterfaceLog_Record` (returns the new InterfaceLog Id); `Audit.Audit_LogFailure` v1.1 (+ `@LocationId` / `@LotId`, still silent); `Audit.FailureLog_List` v3.1 (+ `@LocationId` / `@LotNameLike`, trailing `LocationId, LocationName, LotId, LotName`); `Audit.FailureLog_GetByEntity` v2.1 (same trailing columns); `Lots.AimShipperIdPool_GetForPost` v1.3 (+ `LocationId` = container cell, `LotId` = the LOT named by the frozen `LotNumber`). Every failed AIM attempt made while posting is switched on writes one row; posting switched off writes none. |
 | 3.9 | 2026-10-20 | Blue Ridge Automation | **Assembly Out scale station (migration `0113_interfacelog_context`).** `Audit.InterfaceLog` += `LocationId` / `ItemId` / `LotId` (nullable FKs, partition-aligned index `IX_InterfaceLog_Location_LoggedAt`): every integration row can now be tied to a terminal, a part and the LOT it produced; shift derives from `LocationId` + `LoggedAt`. The EPrint watcher writes them on every press with a JSON `RequestPayload` (`v`=1). New terminal attribute `ScaleRunningItemId` (LTD 7, the per-terminal running-part override) and `Audit.LogEventType` `ScaleRunningPartChanged`. New procs: `Workorder.ufn_ScaleStationEligibleParts` (eligible = set up at the line, By Weight pack-out, at least one cast line and 60% of other BOM lines covered for one tray), `Workorder.ScaleStation_GetRunningPart` / `_ListEligibleParts` / `_GetPressLog` / `_GetShiftTally` / `_GetRecentBoxes`, `Location.Terminal_SetScaleRunningPart`; `Audit.Audit_LogInterfaceCall` v1.1. Spec: `docs/superpowers/specs/2026-10-19-assembly-out-scale-station-design.md`. *(Merged 2026-10-21 with the super-lot branch: numbered 3.4 on `jacques/working`; renumbered so the super-lot revisions 3.3-3.7 keep the numbers their specs and status entries cite.)* |
 | 3.8 | 2026-10-19 | Blue Ridge Automation | **IND570 option C: scale flags are a logged second opinion.** No schema change. `Parts.ContainerConfig_JudgeWeight` v1.1 takes optional `@ScaleUnder` / `@ScaleOver` / `@ScaleOk` (the UNDER / OVER / OK flags a Template 3 head prints) and returns three more columns: `ScaleVerdict` (`Ok` / `Under` / `Over` / `NoTarget` when all three are 0 / `Invalid` / NULL), `FlagsAgree` (BIT, only when both sides are Ok/Under/Over) and `FlagsMessage`. `Verdict` is unchanged by them. The EPrint watcher logs flags + agreement in every `Audit.InterfaceLog.RequestPayload` and writes a `Scale flags warning` row whenever `FlagsMessage` is set (`ErrorCondition` documented on InterfaceLog). Also documents `Parts.ContainerConfig.ToleranceWeight` (migration `0068`), which this doc had missed. Spec: `docs/superpowers/specs/2026-08-31-ind570-eprint-demand-output-design.md` § 5.4. *(Merged 2026-10-21 with the super-lot branch: numbered 3.3 on `jacques/working`; renumbered so the super-lot revisions 3.3-3.7 keep the numbers their specs and status entries cite.)* |
@@ -632,6 +633,8 @@ The central tracking entity.
 | CrtActive | BIT | NOT NULL, DEFAULT 0 | Added v1.9q (FDS-10-012). Controlled Run Tag flag. When 1, downstream operations require 200% inspection (every part, captured via `Quality.QualitySample`) until cleared by a supervisor-elevated release. Missed CRT inspections (`MissedCrtInspect`) are detected against the per-operation inspection record. Set / cleared by the Arc 2 CRT workflow; MVP-ratified 2026-06-08. |
 | CreatedByUserId | BIGINT | FK → AppUser.Id, NOT NULL | |
 | CreatedAtTerminalId | BIGINT | FK → Location.Id (Terminal), NULL | |
+| ShiftId | BIGINT | FK → Oee.Shift.Id, NULL | Added v3.11 (migration `0117`, OEE dashboard D18). The shift a LOT was **minted** in, stamped ONLY by the consume-mints (`Workorder.Assembly_CompleteTray` for finished goods, `Workorder.MachiningOut_Mint` for SubAssemblies) from `Oee.ufn_ShiftIdForInstant`; the dashboard counts FinishedGood LOTs only. Split, merge and rework children never carry it, so they never count as new production. Filtered index `IX_Lot_ShiftId` (`WHERE ShiftId IS NOT NULL`). Historic LOTs: `Lots.Lot_BackfillMintStamp`. |
+| MintedPieceCount | INT | NULL | Added v3.11 (migration `0117`, D21). The piece count **at mint**, written with `ShiftId` and never changed after. The dashboard's M&A good = `SUM(MintedPieceCount)` of the line's FG LOTs in the shift, so a later scrap (which lowers `PieceCount`) is counted once, as scrap, not also as less good. |
 | CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT GETDATE() | |
 | UpdatedAt | DATETIME2(3) | NULL | |
 | UpdatedByUserId | BIGINT | FK → AppUser.Id, NULL | |
@@ -1850,6 +1853,98 @@ Materialized OEE per machine per shift. Derivative, not system of record.
 | TotalCount | INT | NOT NULL | |
 | RejectCount | INT | NOT NULL | |
 | CalculatedAt | DATETIME2(3) | NOT NULL | |
+
+> `OeeSnapshot` stays FUTURE and unused. The OEE dashboard (below) stores minutes and counts in `ShiftSummary`
+> instead of percentages, because every zoom pools from the same stored facts.
+
+### ShiftSummary
+
+Added v3.11 (migration `0117`). **Derived, not system of record**: one closed shift's OEE minutes and counts,
+written by `Oee.ShiftSummary_ComputeCore` from `Oee.ufn_ShiftSummaryRows` (the same function the dashboard reads
+live for the shift in progress, so stored and live cannot disagree). Minutes and counts only, never a percentage.
+Recomputable at any time; compute and refresh write no audit rows.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK, IDENTITY | |
+| ShiftId | BIGINT | FK → Oee.Shift.Id, NOT NULL | |
+| LocationId | BIGINT | FK → Location.Id, NULL | The unit / station / area placement; NULL on the unplaced `AreaCharge` row |
+| RowKind | NVARCHAR(15) | NOT NULL, CHECK | `Unit` (press, trim press, line), `Station` (OEE station under a line), `AreaPlacement` (a ProductionArea booked on directly -- the trim shop), `AreaCharge` (all scrap charged to a family by defect code, plus one NULL-family row for Non-Specific rejects with no cell) |
+| AreaFamily | NVARCHAR(10) | NULL | `diecast` / `trim` / `ma` (`Oee.ufn_AreaFamily`) |
+| ProductionAreaId | BIGINT | FK → Location.Id, NULL | The unit's ProductionArea group |
+| ParentUnitLocationId | BIGINT | FK → Location.Id, NULL | A station's line |
+| PlannedMinutes | INT | NOT NULL, DEFAULT 0 | Scheduled window minutes |
+| PlannedDowntimeMinutes | DECIMAL(12,2) | NOT NULL, DEFAULT 0 | Entered durations with an excused reason |
+| UnplannedDowntimeMinutes | DECIMAL(12,2) | NOT NULL, DEFAULT 0 | Entered durations without (no-reason counts as unplanned) |
+| BaseMinutes | INT | NOT NULL, DEFAULT 0 | Planned - planned downtime; 0 = no availability |
+| EffectiveUnplannedMinutes | DECIMAL(12,4) | NOT NULL, DEFAULT 0 | The capped unplanned minutes; a roll-up line's is `Base * (1 - station mean)` |
+| DowntimeEventCount | INT | NOT NULL, DEFAULT 0 | |
+| NoReasonCount / NoReasonMinutes | INT / DECIMAL(12,2) | NOT NULL, DEFAULT 0 | Entries saved without a reason |
+| Good | BIGINT | NOT NULL, DEFAULT 0 | Die cast credits / trim checkpoint credits / FG `MintedPieceCount` (6.4 of the spec) |
+| Scrap | BIGINT | NOT NULL, DEFAULT 0 | Rejects charged here by defect code, excluding non-reject scrap |
+| NonRejectScrap | BIGINT | NOT NULL, DEFAULT 0 | Counted, excluded from quality |
+| FoundDownstreamScrap | BIGINT | NOT NULL, DEFAULT 0 | (`AreaCharge`) charged to the family but found elsewhere or with no cell |
+| UnplacedScrap | BIGINT | NOT NULL, DEFAULT 0 | (NULL-family `AreaCharge`) Non-Specific rejects with no cell |
+| LastToolId | BIGINT | FK → Tools.Tool.Id, NULL | A press's latest die in the shift |
+| IsActive | BIT | NOT NULL | Good, scrap or a downtime entry this shift (only active pairs pool) |
+| ComputedAt | DATETIME2(3) | NOT NULL | UTC |
+| InputFingerprint | VARBINARY(32) | NOT NULL | `Oee.ufn_ShiftInputFingerprint` at compute time |
+
+Unique index `UX_ShiftSummary_Key (ShiftId, RowKind, AreaFamily, LocationId)`.
+
+### ShiftSummaryConfig
+
+Added v3.11 (migration `0117`). Single row (`CHECK Id = 1`). `ConfigFingerprint VARBINARY(32) NULL` =
+`Oee.ufn_ShiftSummaryConfigFingerprint` (a hash over the configuration that changes how existing rows are read:
+shift schedules, reason-code `IsExcused`, defect-code charge party and non-reject flag, location `IsOeeEnabled` /
+parent / type, type-definition codes); `ConfigChangedAt DATETIME2(3) NULL` = when it last
+changed (every stored shift computed before it is stale); `CheckedAt DATETIME2(3) NULL`.
+
+### OEE dashboard -- objects and rules (v3.11)
+
+Pages `/shop-floor/oee`, `/shop-floor/oee/area/:areaKey`, `/shop-floor/oee/unit/:locationId` (MPP project), Core
+module `BlueRidge.Oee.Dashboard`, report `OEE Summary`. Availability and quality only; Performance and OEE are shown
+as "future deployment" cards.
+
+**Counting rules**
+
+- **Availability** per unit-shift = `(Base - EffectiveUnplanned) / Base` from **entered durations**
+  (`Oee.ufn_DowntimeEventMinutes`: the entered `DurationMinutes` for an approximate entry, else `EndedAt - StartedAt`, an
+  open entry running to `min(now, window end)`). Unplanned is capped at the base. `Oee.Shift_GetAvailability` v4.0 is a
+  SELECT from `Oee.ufn_ShiftAvailability`, so the shift-end summary and the dashboard agree.
+- **Pooled, never averaged**: any set of (unit, shift) pairs gives `SUM(Base - Unplanned) / SUM(Base)` and
+  `SUM(Good) / SUM(Good + Scrap)`. Only active pairs pool; a unit with none shows "No production".
+- **Good**: die cast = `Workorder.DieCastContribution.PieceDelta` on the press; trim = per-shift checkpoint credit on
+  the trim shop; M&A = `Lot.MintedPieceCount` of FG LOTs stamped with the shift, on the line above the creating terminal.
+- **Scrap is charged by defect code** (`Oee.ufn_RejectChargeFamily`): DieCast / DieMaintenance -> Die Cast, TrimShop ->
+  Trim, MachineShop -> M&A, Non-Specific -> where found. Found in another family = "found downstream": counted in the
+  charge family's area and plant quality, on no unit. Non-reject scrap is listed but excluded.
+- **Production day** = the Eastern date a shift's scheduled window ends (`Oee.ufn_ProductionDay`): the day runs
+  3rd -> 1st -> 2nd; a week is Monday-Sunday production days. `BusinessDate` is unchanged.
+- **Bands** (`Oee.ufn_OeeBand`, placeholder): green >= 0.85, amber >= 0.70, red below.
+
+**Stored vs live (`Oee.ufn_PeriodSummaryRows`)**: a closed shift with stored rows is read from `Oee.ShiftSummary`; the
+shift in progress, and a closed shift not stored yet, are computed live. `Dashboard_GetUnitSummary @ReadLive = 1` (the
+unit drill-down at Shift zoom) computes the anchor shift live even when stored, so an edit shows at once.
+
+**Refresh (`Oee.ShiftSummary_RefreshChanged`)**, every 15 minutes (MPP timer `OeeSummaryRefresh`) and right after the
+shift ticker closes a shift: (1) configuration fingerprint changed -> every stored shift is stale; (2) a closed shift
+with no rows, a shift of the last 7 days whose `ufn_ShiftInputFingerprint` moved (a late edit), or one stored before
+the configuration change, is recomputed newest-first, `@MaxShifts` per run. A nightly timer (`OeeSummaryNightly`)
+recomputes the last 7 days. `Oee.ShiftSummary_RecomputeRange` fills history at deployment. Both timers ship disabled;
+enabling them is a release step.
+
+**Functions** (repeatable files sort by name; a function calling another `Oee.ufn_*` sorts after it):
+`ufn_DowntimeEventMinutes`, `ufn_OeeUnits`, `ufn_OeeBand`, `ufn_ProductionDay`, `ufn_ShiftsForPeriod`,
+`ufn_RejectChargeFamily`, `ufn_ShiftSummaryConfigFingerprint`, `ufn_AreaFamily` (zz), `ufn_ShiftAvailability` (zz),
+`ufn_ShiftDowntimeEntries` / `ufn_ShiftGood` / `ufn_ShiftScrap` (zzz), `ufn_ShiftInputFingerprint` /
+`ufn_ShiftSummaryRows` (zzzz), `ufn_PeriodSummaryRows` (zzzzz), `ufn_ScopeMeasures` (zzzzzz).
+
+**Read procs** (one result set each, Core NQs under `oee/`): `Dashboard_GetPeriod` (anchor, label, `HasNext`,
+`IsInProgress`, `IsRecentlyClosed`), `Dashboard_GetUnitSummary` (Unit / Station / Group / Area / Plant rows),
+`Dashboard_GetTrend` (7 production days), `Dashboard_GetBreakdown` (Day -> shifts, Week -> days),
+`Dashboard_GetDowntimeByReason` (Pareto), `Dashboard_GetScrap` (by defect / part / line), `Dashboard_GetDowntimeEntries`
+(one shift's entries at a unit and its stations, with the editor's fields).
 
 ---
 

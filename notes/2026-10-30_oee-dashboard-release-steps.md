@@ -1,4 +1,4 @@
-# OEE dashboard -- what the prod release must contain (2026-10-30)
+# OEE dashboard -- what the prod release must contain (2026-10-30, updated 2026-11-03 for the views)
 
 Input for the release runbook of the OEE dashboard (spec
 `docs/superpowers/specs/2026-10-27-oee-dashboard-design.md` v0.3.2, plan
@@ -19,6 +19,8 @@ It lists the steps specific to this feature, in order, and why each is there.
      durations by `ShiftId` (D17). **Numbers on any screen that already shows
      availability will drop where two end-of-shift entries overlapped** -- that is
      the fix, not a regression. Say so in the guide.
+   - `Oee.Dashboard_GetUnitSummary` v2.1 (`@ReadLive`) and
+     `Oee.Dashboard_GetDowntimeEntries` v1.1 (editor fields) are dashboard-only reads.
 3. **Backfill the mint stamp** on LOTs minted before 0117:
    - `EXEC Lots.Lot_BackfillMintStamp @Commit = 0, @AppUserId = <SYS>;`
      run standalone it performs the UPDATE and rolls back. Read the report:
@@ -37,13 +39,23 @@ It lists the steps specific to this feature, in order, and why each is there.
 ## Ignition, in this order
 
 1. **Core** (import first): named queries `oee/ShiftSummary_RefreshChanged`,
-   `oee/ShiftSummary_RecomputeRange`, `oee/Dashboard_*` (7); script modules
-   `BlueRidge.Oee.Summary`, `BlueRidge.Oee.Dashboard`; the modified
-   `BlueRidge.Oee.Shift` (`tickShiftBoundary` now refreshes the summary when it
-   closes a shift).
-2. **MPP**: the OEE views and page routes, the Supervisor Dashboard tile, the
-   report, and the two timers `OeeSummaryRefresh` (15 min) and `OeeSummaryNightly`
-   (daily). **The timers are committed disabled. Enable both after steps SQL 1-5.**
+   `oee/ShiftSummary_RecomputeRange`, `oee/Dashboard_*` (7; `Dashboard_GetUnitSummary`
+   carries the `readLive` parameter); script modules `BlueRidge.Oee.Summary`,
+   `BlueRidge.Oee.Dashboard`; the modified `BlueRidge.Oee.Shift` (`tickShiftBoundary`
+   now refreshes the summary when it closes a shift) and `BlueRidge.Reports`
+   (registry entry `oee_summary`, `choiceOptions`, `composeParams` `choice` arg).
+2. **MPP**:
+   - views `BlueRidge/Components/Oee/*` (incl. the `_AreaCard`, `_ParetoBars`,
+     `_StationStrip`, `_TrendBars`, `_UnitTile` sub-view folders) and
+     `BlueRidge/Views/ShopFloor/Oee/{Site,Area,Unit}`;
+   - `page-config` (routes `/shop-floor/oee`, `/shop-floor/oee/area/:areaKey`,
+     `/shop-floor/oee/unit/:locationId`) and `session-props` (`custom.oeePeriod`);
+   - the modified `Views/Reports` (OEE Summary tile + Period dropdown) and
+     `Views/ShopFloor/SupervisorDashboard` (live Shift Availability tile);
+   - report `OEE Summary` (`com.inductiveautomation.reporting/reports/OEE Summary`,
+     built by `tools/reports/build_oee_summary_report.py`);
+   - the two timers `OeeSummaryRefresh` (15 min) and `OeeSummaryNightly` (daily).
+     **The timers are committed disabled. Enable both after steps SQL 1-5.**
 
 ## Verification after the window
 
