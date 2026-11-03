@@ -122,8 +122,8 @@ BEGIN
            u.ProductionAreaSortOrder, u.SortOrder, 4
     FROM @U u
     CROSS APPLY (
-        SELECT ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.BaseMinutes END), 0)                AS Base,
-               CAST(ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+        SELECT ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.BaseMinutes ELSE 0 END), 0)                AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.EffectiveUnplannedMinutes ELSE 0 END), 0) AS DECIMAL(19,6)) AS Eff,
                ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
                ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
                ISNULL(SUM(p.Good), 0)                     AS Good,
@@ -153,8 +153,8 @@ BEGIN
            u.ProductionAreaSortOrder, u.SortOrder, 5
     FROM @U u
     CROSS APPLY (
-        SELECT ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.BaseMinutes END), 0)                AS Base,
-               CAST(ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+        SELECT ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.BaseMinutes ELSE 0 END), 0)                AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.IsActive = 1 THEN p.EffectiveUnplannedMinutes ELSE 0 END), 0) AS DECIMAL(19,6)) AS Eff,
                ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
                ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
                ISNULL(SUM(p.NoReasonCount), 0)            AS NoReasonCount,
@@ -178,8 +178,8 @@ BEGIN
     FROM (SELECT DISTINCT ProductionAreaId, ProductionAreaName, ProductionAreaSortOrder, AreaFamily
           FROM @U WHERE IsStation = 0 AND ProductionAreaId IS NOT NULL) grp
     CROSS APPLY (
-        SELECT ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.BaseMinutes END), 0) AS Base,
-               CAST(ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+        SELECT ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.BaseMinutes ELSE 0 END), 0) AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.EffectiveUnplannedMinutes ELSE 0 END), 0) AS DECIMAL(19,6)) AS Eff,
                ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
                ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
                ISNULL(SUM(p.Good), 0)                     AS Good,
@@ -187,7 +187,7 @@ BEGIN
                ISNULL(SUM(p.NonRejectScrap), 0)           AS NonReject,
                ISNULL(SUM(p.NoReasonCount), 0)            AS NoReasonCount,
                ISNULL(SUM(p.NoReasonMinutes), 0)          AS NoReasonMinutes,
-               CAST(ISNULL(MAX(CASE WHEN p.RowKind = N'Unit' THEN CAST(p.IsActive AS INT) END), 0) AS BIT) AS Active
+               CAST(ISNULL(MAX(CASE WHEN p.RowKind = N'Unit' THEN CAST(p.IsActive AS INT) ELSE 0 END), 0) AS BIT) AS Active
         FROM @P p
         WHERE (p.RowKind = N'Unit' AND p.LocationId IN (SELECT u.LocationId FROM @U u WHERE u.ProductionAreaId = grp.ProductionAreaId AND u.IsStation = 0))
            OR (p.RowKind = N'AreaPlacement' AND p.LocationId = grp.ProductionAreaId)
@@ -206,14 +206,14 @@ BEGIN
            f.SortFamily, 0, 0, 2
     FROM (VALUES (N'diecast', 1), (N'trim', 2), (N'ma', 3)) f (AreaFamily, SortFamily)
     CROSS APPLY (
-        SELECT ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.BaseMinutes END), 0) AS Base,
-               CAST(ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+        SELECT ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.BaseMinutes ELSE 0 END), 0) AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.EffectiveUnplannedMinutes ELSE 0 END), 0) AS DECIMAL(19,6)) AS Eff,
                ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
                ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
                ISNULL(SUM(p.Good), 0)                     AS Good,
                ISNULL(SUM(p.NoReasonCount), 0)            AS NoReasonCount,
                ISNULL(SUM(p.NoReasonMinutes), 0)          AS NoReasonMinutes,
-               CAST(ISNULL(MAX(CASE WHEN p.RowKind = N'Unit' THEN CAST(p.IsActive AS INT) END), 0) AS BIT) AS Active
+               CAST(ISNULL(MAX(CASE WHEN p.RowKind = N'Unit' THEN CAST(p.IsActive AS INT) ELSE 0 END), 0) AS BIT) AS Active
         FROM @P p
         WHERE p.RowKind IN (N'Unit', N'AreaPlacement') AND p.AreaFamily = f.AreaFamily
     ) a
@@ -235,19 +235,19 @@ BEGIN
            0, 0, 0, 1
     FROM (SELECT 1 AS One) one
     CROSS APPLY (
-        SELECT ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.BaseMinutes END), 0) AS Base,
-               CAST(ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.EffectiveUnplannedMinutes END), 0) AS DECIMAL(19,6)) AS Eff,
+        SELECT ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.BaseMinutes ELSE 0 END), 0) AS Base,
+               CAST(ISNULL(SUM(CASE WHEN p.RowKind = N'Unit' AND p.IsActive = 1 THEN p.EffectiveUnplannedMinutes ELSE 0 END), 0) AS DECIMAL(19,6)) AS Eff,
                ISNULL(SUM(p.PlannedDowntimeMinutes), 0)   AS Planned,
                ISNULL(SUM(p.UnplannedDowntimeMinutes), 0) AS Unplanned,
                ISNULL(SUM(p.Good), 0)                     AS Good,
                ISNULL(SUM(p.NoReasonCount), 0)            AS NoReasonCount,
                ISNULL(SUM(p.NoReasonMinutes), 0)          AS NoReasonMinutes,
-               CAST(ISNULL(MAX(CASE WHEN p.RowKind = N'Unit' THEN CAST(p.IsActive AS INT) END), 0) AS BIT) AS Active
+               CAST(ISNULL(MAX(CASE WHEN p.RowKind = N'Unit' THEN CAST(p.IsActive AS INT) ELSE 0 END), 0) AS BIT) AS Active
         FROM @P p
         WHERE p.RowKind IN (N'Unit', N'AreaPlacement') AND p.AreaFamily IS NOT NULL
     ) a
     CROSS APPLY (
-        SELECT ISNULL(SUM(CASE WHEN p.AreaFamily IS NOT NULL THEN p.Scrap END), 0)   AS Scrap,
+        SELECT ISNULL(SUM(CASE WHEN p.AreaFamily IS NOT NULL THEN p.Scrap ELSE 0 END), 0)   AS Scrap,
                ISNULL(SUM(p.NonRejectScrap), 0)                                       AS NonReject,
                ISNULL(SUM(p.FoundDownstreamScrap), 0)                                 AS Downstream,
                ISNULL(SUM(p.UnplacedScrap), 0)                                        AS Unplaced

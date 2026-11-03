@@ -17,7 +17,10 @@
 --                per OEE line per shift: 4 Manufactured FG LOTs + 2 rejects
 --              then times Day and Week (cold + warm) for the whole plant.
 --
--- Run:  sqlcmd -S localhost -E -C -i sql/scratch/2026-10-29_oee_dashboard_benchmark.sql
+-- Run:  sqlcmd -S localhost -E -C -I -i sql/scratch/2026-10-29_oee_dashboard_benchmark.sql
+-- v0.3 (2026-10-30): the reads pool Oee.ShiftSummary; the script fills it with a
+--              month-long RecomputeRange first and times one Compute. Gates:
+--              every read < 2 s warm, one Compute < 1 s (spec 6.1).
 -- =============================================
 USE MPP_MES_Test;
 SET NOCOUNT ON;
@@ -30,6 +33,7 @@ BEGIN
 END
 
 -- ---- cleanup of a previous run ----
+DELETE FROM Oee.ShiftSummary WHERE ShiftId IN (SELECT Id FROM Oee.Shift WHERE Remarks = N'BENCH');
 DELETE FROM Workorder.RejectEvent         WHERE Remarks = N'BENCH';
 DELETE FROM Workorder.DieCastContribution WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'BENCH-%');
 DELETE FROM Oee.DowntimeEvent             WHERE Remarks = N'BENCH';
@@ -103,9 +107,10 @@ CROSS JOIN (VALUES (0),(1),(2),(3)) k (n)
 WHERE u.DefinitionCode = N'DieCastMachine';
 
 -- ---- FG LOTs: 4 per OEE line per shift ----
-INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt, CreatedAtTerminalId)
+-- v0.3: stamped with the shift + minted quantity, as Assembly_CompleteTray v1.6 writes them
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt, CreatedAtTerminalId, ShiftId, MintedPieceCount)
 SELECT N'BENCH-FG-' + CAST(u.LocationId AS NVARCHAR(20)) + N'-' + CAST(sh.ShiftId AS NVARCHAR(20)) + N'-' + CAST(k.n AS NVARCHAR(2)),
-       @Fg, @Mfg, @Good, 24, 24, u.LocationId, 1, DATEADD(MINUTE, 90 + k.n * 90, sh.StartUtc), u.LocationId
+       @Fg, @Mfg, @Good, 24, 24, u.LocationId, 1, DATEADD(MINUTE, 90 + k.n * 90, sh.StartUtc), u.LocationId, sh.ShiftId, 24
 FROM Oee.ufn_OeeUnits() u
 CROSS JOIN @Shifts sh
 CROSS JOIN (VALUES (0),(1),(2),(3)) k (n)
@@ -142,6 +147,17 @@ DECLARE @R TABLE (
 DECLARE @t DATETIME2(7);
 DECLARE @ms TABLE (Run NVARCHAR(30), Ms INT, RowsOut INT);
 
+-- v0.3: fill the summary for the whole month (the deployment's first fill),
+-- one shift's compute, then the reads -- which now pool stored rows.
+DECLARE @rr TABLE (Status BIT, Message NVARCHAR(500), ShiftsComputed INT);
+SET @t = SYSDATETIME();
+INSERT INTO @rr EXEC Oee.ShiftSummary_RecomputeRange @FromUtc = '2030-08-31T00:00:00', @ToUtc = '2030-10-02T00:00:00', @AppUserId = 1;
+INSERT INTO @ms SELECT N'Fill month (RecomputeRange)', DATEDIFF(MILLISECOND, @t, SYSDATETIME()), (SELECT ShiftsComputed FROM @rr);
+DECLARE @st TABLE (Status BIT, Message NVARCHAR(500));
+SET @t = SYSDATETIME();
+INSERT INTO @st EXEC Oee.ShiftSummary_Compute @ShiftId = @Anchor, @AppUserId = 1;
+INSERT INTO @ms SELECT N'Compute one shift', DATEDIFF(MILLISECOND, @t, SYSDATETIME()), (SELECT COUNT(*) FROM Oee.ShiftSummary WHERE ShiftId = @Anchor);
+
 DBCC DROPCLEANBUFFERS WITH NO_INFOMSGS;
 SET @t = SYSDATETIME();
 INSERT INTO @R EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Week', @AnchorShiftId = @Anchor;
@@ -162,4 +178,8 @@ SET @t = SYSDATETIME();
 INSERT INTO @R EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Shift', @AnchorShiftId = @Anchor;
 INSERT INTO @ms SELECT N'Shift warm', DATEDIFF(MILLISECOND, @t, SYSDATETIME()), (SELECT COUNT(*) FROM @R);
 
-SELECT Run, Ms, RowsOut, CASE WHEN Run = N'Week warm' AND Ms >= 2000 THEN N'GATE MISSED' ELSE N'' END AS Gate FROM @ms;
+SELECT Run, Ms, RowsOut,
+       CASE WHEN Run LIKE N'% warm' AND Ms >= 2000 THEN N'GATE MISSED (read < 2 s)'
+            WHEN Run = N'Compute one shift' AND Ms >= 1000 THEN N'GATE MISSED (< 1 s)'
+            ELSE N'' END AS Gate
+FROM @ms;

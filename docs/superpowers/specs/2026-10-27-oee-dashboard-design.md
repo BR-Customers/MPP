@@ -399,11 +399,13 @@ Not built. Recorded so the cards have a destination:
 
 v0.2 was approved on 2026-10-29 and built as plan Tasks 1-6 on `jacques/working` (`b1326ab3`..`970de47d`, SQL only, tests green). The Task 7 benchmark -- a month of synthetic data on `MPP_MES_Test`: 58 units, 90 shifts, 31k downtime entries, 12.6k finished-good LOTs, 10k rejects -- missed the 2 s target badly:
 
-| Zoom | Measured (whole plant) |
-|---|---|
-| Shift | 1.1-1.2 s |
-| Day | 2.2-3.8 s |
-| Week | 12.6-24.8 s |
+| Zoom | v0.2 measured (whole plant) | v0.3 measured, 2026-10-30 (same data, stored rows) |
+|---|---|---|
+| Shift | 1.1-1.2 s | 16 ms warm |
+| Day | 2.2-3.8 s | 15 ms warm |
+| Week | 12.6-24.8 s | 42 ms warm, 200 ms cold |
+| One shift's compute (whole plant) | -- | 106-609 ms |
+| Fill a month (90 shifts, `RecomputeRange`) | -- | 9.1 s |
 
 Stepped timing of one Week read: re-resolving each finished-good LOT's shift 9.3 s, the minute-grid availability 2.8 s, everything else under 0.5 s. The data volume was never the problem; recomputing every shift on every read, and re-deriving facts that should have been recorded, was. Reviewing that with Jacques also surfaced the duration-stacking flaw (6.1) and the split/merge double-count (6.4).
 
