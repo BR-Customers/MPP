@@ -18,6 +18,26 @@ Jacques answered the four questions and **approved spec v0.2**. The answers are 
 
 Note: the highest versioned migration is now `0116` (AIM FailureLog). The plan needs none; re-check before adding one.
 
+## Update 2026-11-03 -- v0.3 plan Tasks 1-12 built (SQL + gateway); views next
+
+Plan: `docs/superpowers/plans/2026-10-30-oee-dashboard-v03.md` (spec v0.3.2). Ledger with every
+ruling: `.superpowers/sdd/2026-10-30-oee-dashboard-v03/progress.md` (git-ignored). Commits
+`bbb6284` .. `4d97abb` on `jacques/working`.
+
+- Built: migration `0117` (ShiftSummary, ShiftSummaryConfig, Lot.ShiftId/MintedPieceCount);
+  mint stamps; `Lots.Lot_BackfillMintStamp`; availability v4.0 (summed durations);
+  ShiftSummary compute / fingerprints / refresh; every dashboard read proc; Core NQs,
+  `BlueRidge.Oee.Summary` / `.Dashboard`, two MPP timers (committed DISABLED), shift-close hook.
+- **Benchmark gate met**: whole-plant Week 40 ms warm (was 24.8 s), one shift's compute
+  ~100 ms, a month's fill ~9 s. Full SQL suite 5601/5601.
+- `MPP_MES_Dev` now has `0117` and the OEE repeatables (applied 2026-11-03), and some
+  `Oee.ShiftSummary` rows. Scan done.
+- Release specifics: `notes/2026-10-30_oee-dashboard-release-steps.md`.
+- **Next: plan Tasks 13-15** (Site / Area / Unit views, components, Supervisor tile, report),
+  then Task 16 (Data Model doc, PROJECT_STATUS, spec v1.0), then the final whole-branch review
+  (executing-plans). The read API the views call is `BlueRidge.Oee.Dashboard`
+  (period, unitSummary, trend, breakdown, downtimeByReason, scrap, downtimeEntries).
+
 ## Update 2026-10-30 (later) -- spec v0.3 written, awaiting re-approval
 
 After the gate miss, Jacques reviewed the design: the whole-plant Week read was 12.6-24.8 s
