@@ -1,0 +1,167 @@
+{
+  "custom": {},
+  "params": {
+    "label": "",
+    "minutes": "",
+    "kind": "unplanned",
+    "widthPct": 0
+  },
+  "propConfig": {
+    "params.label": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.minutes": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.kind": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.widthPct": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 380,
+      "height": 26
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "gap": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Label"
+        },
+        "position": {
+          "basis": "42%",
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "whiteSpace": "nowrap",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.label"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.kind} \u003d \u0027noreason\u0027, \u0027#F4B343\u0027, \u0027var(--mpp-text-primary)\u0027)"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Track"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "background": "var(--mpp-surface-card)",
+            "borderRadius": "2px",
+            "height": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Fill"
+            },
+            "position": {
+              "basis": "0%",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "borderRadius": "2px"
+              }
+            },
+            "propConfig": {
+              "position.basis": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "toStr({view.params.widthPct}) + \u0027%\u0027"
+                  }
+                }
+              },
+              "props.style.background": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.kind} \u003d \u0027noreason\u0027, \u0027#F4B343\u0027, if({view.params.kind} \u003d \u0027planned\u0027, \u0027#697A98\u0027, \u0027#DC5050\u0027))"
+                  }
+                }
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Minutes"
+        },
+        "position": {
+          "basis": "52px",
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "textAlign": "right"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.minutes"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

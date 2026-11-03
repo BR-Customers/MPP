@@ -1,0 +1,1299 @@
+{
+  "custom": {
+    "period": {
+      "AnchorShiftId": null,
+      "Zoom": "",
+      "PeriodLabel": "",
+      "IsInProgress": false,
+      "HasNext": false,
+      "IsRecentlyClosed": false
+    },
+    "unit": {
+      "locationId": null,
+      "found": false,
+      "name": "",
+      "family": "",
+      "familyTitle": "",
+      "groupId": null,
+      "groupName": "",
+      "isTrim": false,
+      "isDieCast": false,
+      "hasStations": false,
+      "hasProduction": false,
+      "availability": null,
+      "availabilityBand": null,
+      "quality": null,
+      "qualityBand": null,
+      "downText": "0 min",
+      "downSub": "",
+      "shopLinkText": "",
+      "foundDownstreamNote": "",
+      "unplacedNote": ""
+    },
+    "refreshToken": 0,
+    "entries": []
+  },
+  "params": {
+    "locationId": ""
+  },
+  "propConfig": {
+    "params.locationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.period": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Dashboard.period\", 0, {session.custom.oeePeriod.zoom}, {session.custom.oeePeriod.anchorShiftId}, 0)"
+        }
+      }
+    },
+    "custom.unit": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Dashboard.unitHeader\", 0, {view.custom.period.Zoom}, {view.custom.period.AnchorShiftId}, {view.params.locationId}, {view.custom.refreshToken})"
+        }
+      }
+    },
+    "custom.entries": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Dashboard.entryInstances\", 0, {view.custom.period.AnchorShiftId}, {view.params.locationId}, {view.custom.refreshToken})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280,
+      "height": 900
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "padding": "16px",
+        "gap": "12px",
+        "overflowY": "auto"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "52px",
+          "shrink": 0
+        },
+        "props": {
+          "path": "BlueRidge/Components/Oee/PeriodHeader",
+          "params": {
+            "title": "",
+            "crumb1Label": "Plant",
+            "crumb1Path": "/shop-floor/oee",
+            "crumb2Label": "",
+            "crumb2Path": ""
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false,
+          "style": {}
+        },
+        "propConfig": {
+          "props.params.title": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.custom.unit.found}, {view.custom.unit.name}, \u0027Unknown unit\u0027)"
+              }
+            }
+          },
+          "props.params.crumb2Label": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.unit.familyTitle"
+              }
+            }
+          },
+          "props.params.crumb2Path": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\u0027/shop-floor/oee/area/\u0027 + {view.custom.unit.family}"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Unknown"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "10px",
+            "padding": "24px"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!{view.custom.unit.found}"
+              }
+            }
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Msg"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "16px"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\u0027Location \u0027 + {view.params.locationId} + \u0027 is not an OEE unit, or has no OEE rows.\u0027"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Back"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "\u2039 Back to the plant overview",
+              "style": {
+                "fontSize": "15px",
+                "classes": "pf-crumb-link"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\u0027/shop-floor/oee\u0027)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "auto",
+          "grow": 1,
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.unit.found"
+              }
+            }
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Kpis"
+            },
+            "position": {
+              "basis": "136px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "AvailabilityCard"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "background": "var(--mpp-surface-raised)",
+                    "border": "1px solid var(--mpp-border-subtle)",
+                    "borderRadius": "6px",
+                    "padding": "10px 12px",
+                    "alignItems": "center"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "Gauge"
+                    },
+                    "position": {
+                      "basis": "112px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Oee/Gauge",
+                      "params": {
+                        "value": null,
+                        "band": null,
+                        "label": "Availability",
+                        "decimals": 0
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "style": {
+                        "width": "140px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.unit.availability"
+                          }
+                        }
+                      },
+                      "props.params.band": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.unit.availabilityBand"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "QualityCard"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "background": "var(--mpp-surface-raised)",
+                    "border": "1px solid var(--mpp-border-subtle)",
+                    "borderRadius": "6px",
+                    "padding": "10px 12px",
+                    "alignItems": "center"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!{view.custom.unit.isTrim}"
+                      }
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "Gauge"
+                    },
+                    "position": {
+                      "basis": "112px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Oee/Gauge",
+                      "params": {
+                        "value": null,
+                        "band": null,
+                        "label": "Quality",
+                        "decimals": 1
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "style": {
+                        "width": "140px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.unit.quality"
+                          }
+                        }
+                      },
+                      "props.params.band": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.unit.qualityBand"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ShopCard"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "background": "var(--mpp-surface-raised)",
+                    "border": "1px solid var(--mpp-border-subtle)",
+                    "borderRadius": "6px",
+                    "padding": "10px 12px",
+                    "cursor": "pointer",
+                    "overflow": "hidden"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.unit.isTrim"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tsystem.perspective.navigate(\u0027/shop-floor/oee/area/trim\u0027)"
+                      }
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Title"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Quality",
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Link"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "fontSize": "15px",
+                        "color": "var(--mpp-accent-60)",
+                        "marginTop": "4px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.unit.shopLinkText"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Sub"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Trim scrap is recorded by shop and part, not by press.",
+                      "style": {
+                        "marginTop": "6px",
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "Downtime"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "path": "BlueRidge/Components/Oee/KpiCard",
+                  "params": {
+                    "title": "Downtime",
+                    "value": "",
+                    "sub": "",
+                    "band": null,
+                    "tone": ""
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false,
+                  "style": {
+                    "overflow": "hidden"
+                  }
+                },
+                "propConfig": {
+                  "props.params.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.unit.downText"
+                      }
+                    }
+                  },
+                  "props.params.sub": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.unit.downSub"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "Performance"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "path": "BlueRidge/Components/Oee/FutureCard",
+                  "params": {
+                    "title": "Performance"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false,
+                  "style": {
+                    "overflow": "hidden"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "Oee"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "path": "BlueRidge/Components/Oee/FutureCard",
+                  "params": {
+                    "title": "OEE"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false,
+                  "style": {
+                    "overflow": "hidden"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "Stations"
+            },
+            "position": {
+              "basis": "88px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "BlueRidge/Components/Oee/StationStrip",
+              "params": {
+                "zoom": "Shift",
+                "anchorShiftId": null,
+                "locationId": null,
+                "refreshToken": 0
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false,
+              "style": {}
+            },
+            "propConfig": {
+              "props.params.zoom": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.period.Zoom"
+                  }
+                }
+              },
+              "props.params.anchorShiftId": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.period.AnchorShiftId"
+                  }
+                }
+              },
+              "props.params.locationId": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.unit.locationId"
+                  }
+                }
+              },
+              "props.params.refreshToken": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.refreshToken"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.unit.hasStations"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "BreakdownPanel"
+            },
+            "position": {
+              "basis": "330px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-subtle)",
+                "borderRadius": "6px",
+                "padding": "10px 12px"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.period.Zoom} !\u003d \u0027Shift\u0027"
+                  }
+                }
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Title"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "fontSize": "12px",
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.08em",
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontWeight": "600",
+                    "margin": "8px 0 4px 0"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.period.Zoom} \u003d \u0027Week\u0027, \u0027Breakdown - days in this week (tap a row to zoom in)\u0027, \u0027Breakdown - shifts in this day (tap a row to zoom in)\u0027)"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.table",
+                "meta": {
+                  "name": "Table"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "data": [],
+                  "columns": [],
+                  "pager": {
+                    "bottom": false,
+                    "top": false
+                  },
+                  "selection": {
+                    "mode": "single"
+                  },
+                  "style": {
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.columns": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Oee.Dashboard.tableColumns\", 0, \u0027Breakdown\u0027)"
+                      }
+                    }
+                  },
+                  "props.data": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Oee.Dashboard.breakdownRows\", 0, {view.custom.period.Zoom}, {view.custom.period.AnchorShiftId}, {view.custom.unit.locationId}, {view.custom.refreshToken})"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onSelectionChange": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tBlueRidge.Oee.Dashboard.zoomInto(self.session, self.props.selection.data)"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "Panels"
+            },
+            "position": {
+              "basis": "340px",
+              "grow": 1,
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "gap": "12px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ParetoPanel"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "background": "var(--mpp-surface-raised)",
+                    "border": "1px solid var(--mpp-border-subtle)",
+                    "borderRadius": "6px",
+                    "padding": "10px 12px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Title"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Downtime by reason",
+                      "style": {
+                        "fontSize": "12px",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.08em",
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontWeight": "600",
+                        "margin": "8px 0 4px 0"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "Pareto"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Oee/ParetoBars",
+                      "params": {
+                        "zoom": "Shift",
+                        "anchorShiftId": null,
+                        "family": null,
+                        "locationId": null,
+                        "refreshToken": 0,
+                        "showToggle": true
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "style": {}
+                    },
+                    "propConfig": {
+                      "props.params.zoom": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.period.Zoom"
+                          }
+                        }
+                      },
+                      "props.params.anchorShiftId": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.period.AnchorShiftId"
+                          }
+                        }
+                      },
+                      "props.params.locationId": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.unit.locationId"
+                          }
+                        }
+                      },
+                      "props.params.refreshToken": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.refreshToken"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ScrapPanel"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "background": "var(--mpp-surface-raised)",
+                    "border": "1px solid var(--mpp-border-subtle)",
+                    "borderRadius": "6px",
+                    "padding": "10px 12px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Title"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Scrap by defect",
+                      "style": {
+                        "fontSize": "12px",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.08em",
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontWeight": "600",
+                        "margin": "8px 0 4px 0"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "Scrap"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Oee/ScrapTable",
+                      "params": {
+                        "zoom": "Shift",
+                        "anchorShiftId": null,
+                        "family": null,
+                        "locationId": null,
+                        "groupBy": "Defect",
+                        "unitView": true,
+                        "refreshToken": 0
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "style": {}
+                    },
+                    "propConfig": {
+                      "props.params.zoom": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.period.Zoom"
+                          }
+                        }
+                      },
+                      "props.params.anchorShiftId": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.period.AnchorShiftId"
+                          }
+                        }
+                      },
+                      "props.params.locationId": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.unit.locationId"
+                          }
+                        }
+                      },
+                      "props.params.refreshToken": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.refreshToken"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "EntriesPanel"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1.3
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "background": "var(--mpp-surface-raised)",
+                    "border": "1px solid var(--mpp-border-subtle)",
+                    "borderRadius": "6px",
+                    "padding": "10px 12px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Title"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "fontSize": "12px",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.08em",
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontWeight": "600",
+                        "margin": "8px 0 4px 0"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.period.Zoom} \u003d \u0027Shift\u0027, \u0027Downtime entries\u0027, \u0027Downtime entries - last shift of the period\u0027)"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "Head"
+                    },
+                    "position": {
+                      "basis": "22px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "H0"
+                        },
+                        "position": {
+                          "basis": "70px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Min",
+                          "style": {
+                            "fontSize": "13px",
+                            "color": "var(--mpp-text-tertiary)",
+                            "fontWeight": "600"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "H1"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Reason",
+                          "style": {
+                            "fontSize": "13px",
+                            "color": "var(--mpp-text-tertiary)",
+                            "fontWeight": "600"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "H2"
+                        },
+                        "position": {
+                          "basis": "90px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Type",
+                          "style": {
+                            "fontSize": "13px",
+                            "color": "var(--mpp-text-tertiary)",
+                            "fontWeight": "600"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "H3"
+                        },
+                        "position": {
+                          "basis": "40px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "By",
+                          "style": {
+                            "fontSize": "13px",
+                            "color": "var(--mpp-text-tertiary)",
+                            "fontWeight": "600"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "H4"
+                        },
+                        "position": {
+                          "basis": "64px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "fontSize": "13px",
+                            "color": "var(--mpp-text-tertiary)",
+                            "fontWeight": "600"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Empty"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "No downtime entered",
+                      "style": {
+                        "fontSize": "13px",
+                        "color": "var(--mpp-text-tertiary)"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.entries}) \u003d 0"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "Entries"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Oee/DowntimeEntryRow",
+                      "instances": [],
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "justify": "flex-start",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": {
+                        "basis": "34px",
+                        "shrink": 0,
+                        "grow": 0
+                      },
+                      "style": {
+                        "overflowY": "auto"
+                      }
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Oee.Dashboard.entryInstances\", 0, {view.custom.period.AnchorShiftId}, {view.custom.unit.locationId}, {view.custom.refreshToken})"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "FoundDownstreamNote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.unit.foundDownstreamNote"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.unit.foundDownstreamNote} !\u003d \u0027\u0027"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "UnplacedNote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.unit.unplacedNote"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.unit.unplacedNote} !\u003d \u0027\u0027"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "downtimeManagerRefresh",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+        },
+        {
+          "messageType": "dtEditRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tif p.get(\"oeeEditor\"):\n\t\tBlueRidge.Oee.Dashboard.editEntry(self.session, p[\"oeeEditor\"])"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,237 @@
+{
+  "custom": {
+    "mode": "reason",
+    "bars": []
+  },
+  "params": {
+    "zoom": "Shift",
+    "anchorShiftId": null,
+    "family": null,
+    "locationId": null,
+    "refreshToken": 0,
+    "showToggle": false
+  },
+  "propConfig": {
+    "params.zoom": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.anchorShiftId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.family": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.locationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.refreshToken": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.showToggle": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.bars": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Dashboard.paretoInstances\", 0, {view.params.zoom}, {view.params.anchorShiftId}, {view.params.family}, {view.params.locationId}, {view.custom.mode}, {view.params.refreshToken})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 400,
+      "height": 260
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "6px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Toggle"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "4px"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.showToggle"
+              }
+            }
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ModeReason"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Reason",
+              "style": {
+                "minHeight": "26px",
+                "padding": "0 10px",
+                "fontSize": "12px",
+                "cursor": "pointer"
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\u0027pf-toggle-btn\u0027 + if({view.custom.mode} \u003d \u0027reason\u0027, \u0027 pf-toggle-btn-selected\u0027, \u0027\u0027)"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.custom.mode \u003d \u0027reason\u0027"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ModeType"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Type",
+              "style": {
+                "minHeight": "26px",
+                "padding": "0 10px",
+                "fontSize": "12px",
+                "cursor": "pointer"
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\u0027pf-toggle-btn\u0027 + if({view.custom.mode} \u003d \u0027type\u0027, \u0027 pf-toggle-btn-selected\u0027, \u0027\u0027)"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.custom.mode \u003d \u0027type\u0027"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Empty"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "No downtime entered in this period",
+          "style": {
+            "fontSize": "13px",
+            "color": "var(--mpp-text-tertiary)"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.bars}) \u003d 0"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Bars"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "path": "BlueRidge/Components/Oee/_ParetoBars/Bar",
+          "instances": [],
+          "direction": "column",
+          "alignItems": "stretch",
+          "justify": "flex-start",
+          "useDefaultViewWidth": false,
+          "useDefaultViewHeight": false,
+          "elementPosition": {
+            "basis": "26px",
+            "shrink": 0,
+            "grow": 0
+          },
+          "style": {
+            "overflowY": "auto",
+            "gap": "2px"
+          }
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Oee.Dashboard.paretoInstances\", 0, {view.params.zoom}, {view.params.anchorShiftId}, {view.params.family}, {view.params.locationId}, {view.custom.mode}, {view.params.refreshToken})"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

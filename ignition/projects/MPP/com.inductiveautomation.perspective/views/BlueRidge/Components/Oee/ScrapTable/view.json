@@ -1,0 +1,145 @@
+{
+  "custom": {
+    "rows": []
+  },
+  "params": {
+    "zoom": "Shift",
+    "anchorShiftId": null,
+    "family": null,
+    "locationId": null,
+    "groupBy": "Defect",
+    "unitView": false,
+    "refreshToken": 0
+  },
+  "propConfig": {
+    "params.zoom": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.anchorShiftId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.family": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.locationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.groupBy": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.unitView": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.refreshToken": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.rows": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Dashboard.scrapRows\", 0, {view.params.zoom}, {view.params.anchorShiftId}, {view.params.family}, {view.params.locationId}, {view.params.groupBy}, {view.params.unitView}, {view.params.refreshToken})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 400,
+      "height": 240
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Empty"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "No scrap in this period",
+          "style": {
+            "fontSize": "13px",
+            "color": "var(--mpp-text-tertiary)"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.rows}) \u003d 0"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.table",
+        "meta": {
+          "name": "Table"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "data": [],
+          "columns": [],
+          "pager": {
+            "bottom": false,
+            "top": false
+          },
+          "selection": {
+            "mode": "single"
+          },
+          "style": {
+            "width": "100%"
+          }
+        },
+        "propConfig": {
+          "props.columns": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Oee.Dashboard.tableColumns\", 0, {view.params.groupBy})"
+              }
+            }
+          },
+          "props.data": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.rows"
+              }
+            }
+          },
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.rows}) \u003e 0"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

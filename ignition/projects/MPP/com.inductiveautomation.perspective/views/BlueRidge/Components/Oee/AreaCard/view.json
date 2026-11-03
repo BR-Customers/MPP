@@ -430,11 +430,13 @@
           "instances": [],
           "direction": "column",
           "alignItems": "stretch",
+          "justify": "flex-start",
           "useDefaultViewWidth": false,
           "useDefaultViewHeight": false,
           "elementPosition": {
             "basis": "28px",
-            "shrink": 0
+            "shrink": 0,
+            "grow": 0
           },
           "style": {}
         },

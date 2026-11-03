@@ -2,7 +2,7 @@
 -- Procedure:   Oee.Dashboard_GetUnitSummary
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-29
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   The OEE dashboard's main read (spec
@@ -50,16 +50,23 @@
 --   @Zoom          NVARCHAR(5)  - Shift | Day | Week
 --   @AnchorShiftId BIGINT       - a shift in the period
 --   @AreaFamily    NVARCHAR(10) - NULL = all; else diecast | trim | ma
+--   @ReadLive      BIT          - 1 = at Shift zoom, compute the anchor shift
+--                                 live even when it is stored (the unit
+--                                 drill-down after an Edit: stored rows lag
+--                                 a late edit by up to one refresh). Ignored
+--                                 at Day / Week.
 --
 -- Change Log:
 --   2026-10-29 - 1.0 - Initial version.
 --   2026-10-30 - 2.0 - Pools stored per-shift rows (Oee.ufn_PeriodSummaryRows) instead of
 --                      recomputing every shift on every read. Columns unchanged.
+--   2026-11-03 - 2.1 - @ReadLive (unit drill-down at Shift zoom). Columns unchanged.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.Dashboard_GetUnitSummary
     @Zoom          NVARCHAR(5),
     @AnchorShiftId BIGINT,
-    @AreaFamily    NVARCHAR(10) = NULL
+    @AreaFamily    NVARCHAR(10) = NULL,
+    @ReadLive      BIT          = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -80,7 +87,19 @@ BEGIN
            PlannedDowntimeMinutes, UnplannedDowntimeMinutes, BaseMinutes, EffectiveUnplannedMinutes,
            NoReasonCount, NoReasonMinutes, Good, Scrap, NonRejectScrap, FoundDownstreamScrap, UnplacedScrap,
            LastToolId, IsActive, ShiftActualStart, IsOpen
-    FROM Oee.ufn_PeriodSummaryRows(@Zoom, @AnchorShiftId);
+    FROM Oee.ufn_PeriodSummaryRows(@Zoom, @AnchorShiftId)
+    WHERE NOT (@ReadLive = 1 AND @Zoom = N'Shift');
+
+    IF @ReadLive = 1 AND @Zoom = N'Shift'
+        INSERT INTO @P
+        SELECT r.ShiftId, r.LocationId, r.RowKind, r.AreaFamily, r.ProductionAreaId, r.ParentUnitLocationId,
+               r.PlannedDowntimeMinutes, r.UnplannedDowntimeMinutes, r.BaseMinutes, r.EffectiveUnplannedMinutes,
+               r.NoReasonCount, r.NoReasonMinutes, r.Good, r.Scrap, r.NonRejectScrap, r.FoundDownstreamScrap, r.UnplacedScrap,
+               r.LastToolId, r.IsActive, s.ActualStart,
+               CAST(CASE WHEN s.ActualEnd IS NULL THEN 1 ELSE 0 END AS BIT)
+        FROM Oee.Shift s
+        CROSS APPLY Oee.ufn_ShiftSummaryRows(s.Id) r
+        WHERE s.Id = @AnchorShiftId;
 
     DECLARE @HasShifts BIT = CASE WHEN EXISTS (SELECT 1 FROM Oee.ufn_ShiftsForPeriod(@Zoom, @AnchorShiftId)) THEN 1 ELSE 0 END;
     DECLARE @InProgress BIT = CASE WHEN EXISTS (SELECT 1 FROM @P WHERE IsOpen = 1) THEN 1 ELSE 0 END;

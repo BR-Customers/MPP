@@ -44,6 +44,11 @@
         "type": "Parameter",
         "identifier": "areaFamily",
         "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "readLive",
+        "sqlType": 6
       }
     ]
   }

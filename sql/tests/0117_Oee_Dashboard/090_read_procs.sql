@@ -255,7 +255,8 @@ DECLARE @A BIGINT = (SELECT Id FROM Oee.Shift WHERE Remarks = N'TEST_RP_A');
 DECLARE @P BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-DSH-MA-P');
 DECLARE @L BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-DSH-MA-L');
 DECLARE @E TABLE (DowntimeEventId BIGINT, LocationId BIGINT, LocationName NVARCHAR(200), IsStation BIT, Minutes DECIMAL(12,2),
-                  IsApproximate BIT, ReasonCode NVARCHAR(50), ReasonTypeName NVARCHAR(100), IsPlanned BIT, ByInitials NVARCHAR(10), StartedAtEt DATETIME2(3));
+                  IsApproximate BIT, ReasonCode NVARCHAR(50), ReasonTypeName NVARCHAR(100), IsPlanned BIT, ByInitials NVARCHAR(10), StartedAtEt DATETIME2(3),
+                  ReasonCodeId BIGINT, ReasonDescription NVARCHAR(500), EndedAtEt DATETIME2(3), Remarks NVARCHAR(500));
 DECLARE @v NVARCHAR(200);
 INSERT INTO @E EXEC Oee.Dashboard_GetDowntimeEntries @AnchorShiftId = @A, @LocationId = @P;
 SET @v = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) + N'|' + CAST(MIN(CAST(IsApproximate AS INT)) AS NVARCHAR(1)) + N'|' + CAST(SUM(Minutes) AS NVARCHAR(20)) FROM @E);
@@ -264,6 +265,16 @@ DELETE FROM @E;
 INSERT INTO @E EXEC Oee.Dashboard_GetDowntimeEntries @AnchorShiftId = @A, @LocationId = @L;
 SET @v = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) + N'|' + CAST(MAX(CAST(IsStation AS INT)) AS NVARCHAR(1)) FROM @E);
 EXEC test.Assert_IsEqual @TestName = N'[Entries] a line lists its stations'' entries, flagged IsStation', @Expected = N'1|1', @Actual = @v;
+DELETE FROM @E;
+DECLARE @M1 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-DSH-DC-M1');
+DECLARE @Pln BIGINT = (SELECT Id FROM Oee.DowntimeReasonCode WHERE Code = N'ZZ-DSH-PLN');
+INSERT INTO @E EXEC Oee.Dashboard_GetDowntimeEntries @AnchorShiftId = @A, @LocationId = @M1;
+SET @v = (SELECT TOP 1 CAST(CASE WHEN ReasonCodeId = @Pln THEN 1 ELSE 0 END AS NVARCHAR(1)) + N'|' + ISNULL(ReasonDescription, N'-')
+                 + N'|' + ISNULL(Remarks, N'-') + N'|' + CAST(DATEDIFF(MINUTE, StartedAtEt, EndedAtEt) AS NVARCHAR(10))
+          FROM @E ORDER BY StartedAtEt);
+EXEC test.Assert_IsEqual @TestName = N'[Entries] carries reason id, description, end time and remarks for the editor', @Expected = N'1|DSH planned|ZZ-DSH planned|360', @Actual = @v;
+SET @v = (SELECT TOP 1 ISNULL(CAST(ReasonCodeId AS NVARCHAR(20)), N'null') + N'|' + ISNULL(ReasonDescription, N'null') FROM @E ORDER BY StartedAtEt DESC);
+EXEC test.Assert_IsEqual @TestName = N'[Entries] a no-reason entry has no reason id', @Expected = N'null|null', @Actual = @v;
 GO
 
 -- ---- cleanup ----

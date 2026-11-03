@@ -53,6 +53,7 @@
           "instances": [],
           "direction": "row",
           "alignItems": "stretch",
+          "justify": "flex-start",
           "useDefaultViewWidth": false,
           "useDefaultViewHeight": false,
           "elementPosition": {

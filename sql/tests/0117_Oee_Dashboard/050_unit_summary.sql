@@ -262,6 +262,15 @@ TRUNCATE TABLE #Sum;
 INSERT INTO #Sum EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Shift', @AnchorShiftId = @A;
 SET @v = (SELECT CAST(Good AS NVARCHAR(10)) FROM #Sum WHERE RowKind = N'Unit' AND LocationCode = N'ZZ-DSH-DC-M2');
 EXEC test.Assert_IsEqual @TestName = N'[Summary] closed stored shift is read from Oee.ShiftSummary (doctored 100 + 1000)', @Expected = N'1100', @Actual = @v;
+-- @ReadLive = 1 (the unit drill-down at Shift zoom) recomputes the stored shift
+TRUNCATE TABLE #Sum;
+INSERT INTO #Sum EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Shift', @AnchorShiftId = @A, @AreaFamily = NULL, @ReadLive = 1;
+SET @v = (SELECT CAST(Good AS NVARCHAR(10)) FROM #Sum WHERE RowKind = N'Unit' AND LocationCode = N'ZZ-DSH-DC-M2');
+EXEC test.Assert_IsEqual @TestName = N'[Summary] @ReadLive = 1 at Shift zoom ignores the stored row (100, not the doctored 1100)', @Expected = N'100', @Actual = @v;
+TRUNCATE TABLE #Sum;
+INSERT INTO #Sum EXEC Oee.Dashboard_GetUnitSummary @Zoom = N'Day', @AnchorShiftId = @A, @AreaFamily = NULL, @ReadLive = 1;
+SET @v = (SELECT CAST(Good AS NVARCHAR(10)) FROM #Sum WHERE RowKind = N'Unit' AND LocationCode = N'ZZ-DSH-DC-M2');
+EXEC test.Assert_IsEqual @TestName = N'[Summary] @ReadLive is ignored above Shift zoom (Day still reads the stored 1100)', @Expected = N'1100', @Actual = @v;
 UPDATE Oee.ShiftSummary SET Good = Good - 1000 WHERE ShiftId = @A AND RowKind = N'Unit' AND LocationId = @M2;
 
 -- stored and live give identical rows for the same shift

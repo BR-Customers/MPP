@@ -242,6 +242,14 @@
       "title": "OEE Dashboard",
       "viewPath": "BlueRidge/Views/ShopFloor/Oee/Site"
     },
+    "/shop-floor/oee/area/:areaKey": {
+      "title": "OEE Dashboard",
+      "viewPath": "BlueRidge/Views/ShopFloor/Oee/Area"
+    },
+    "/shop-floor/oee/unit/:locationId": {
+      "title": "OEE Dashboard",
+      "viewPath": "BlueRidge/Views/ShopFloor/Oee/Unit"
+    },
     "/shop-floor/receiving": {
       "title": "Receiving",
       "viewPath": "BlueRidge/Views/ShopFloor/ReceivingDock"

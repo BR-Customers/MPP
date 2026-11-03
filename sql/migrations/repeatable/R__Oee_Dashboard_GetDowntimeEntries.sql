@@ -2,7 +2,7 @@
 -- Procedure:   Oee.Dashboard_GetDowntimeEntries
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-30
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   The unit drill-down's downtime entry list for one shift (OEE dashboard
@@ -16,10 +16,14 @@
 --
 -- Result set: DowntimeEventId, LocationId, LocationName, IsStation, Minutes,
 --   IsApproximate, ReasonCode NULL, ReasonTypeName NULL, IsPlanned,
---   ByInitials, StartedAtEt. Oldest first.
+--   ByInitials, StartedAtEt, ReasonCodeId NULL, ReasonDescription NULL,
+--   EndedAtEt NULL, Remarks NULL. Oldest first. The last four are what
+--   Popups/DowntimeEditor needs to open an entry in update mode.
 --
 -- Change Log:
 --   2026-10-30 - 1.0 - Initial version.
+--   2026-11-03 - 1.1 - ReasonCodeId, ReasonDescription, EndedAtEt, Remarks
+--                      for the unit drill-down's Edit link.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.Dashboard_GetDowntimeEntries
     @AnchorShiftId BIGINT,
@@ -38,8 +42,13 @@ BEGIN
            rt.Name                                                        AS ReasonTypeName,
            e.IsPlanned,
            u.Initials                                                     AS ByInitials,
-           CAST(e.StartedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS StartedAtEt
+           CAST(e.StartedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS StartedAtEt,
+           e.DowntimeReasonCodeId                                         AS ReasonCodeId,
+           rc.Description                                                 AS ReasonDescription,
+           CAST(de.EndedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS EndedAtEt,
+           de.Remarks
     FROM Oee.ufn_ShiftDowntimeEntries(@AnchorShiftId) e
+    INNER JOIN Oee.DowntimeEvent de ON de.Id = e.DowntimeEventId
     INNER JOIN Location.Location l ON l.Id = e.LocationId
     LEFT JOIN Oee.DowntimeReasonCode rc ON rc.Id = e.DowntimeReasonCodeId
     LEFT JOIN Oee.DowntimeReasonType rt ON rt.Id = rc.DowntimeReasonTypeId

@@ -1,0 +1,85 @@
+{
+  "custom": {},
+  "params": {
+    "zoom": "Shift",
+    "anchorShiftId": null,
+    "locationId": null,
+    "refreshToken": 0
+  },
+  "propConfig": {
+    "params.zoom": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.anchorShiftId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.locationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.refreshToken": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1000,
+      "height": 80
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "children": [
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Stations"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "path": "BlueRidge/Components/Oee/_StationStrip/Station",
+          "instances": [],
+          "direction": "row",
+          "alignItems": "stretch",
+          "justify": "flex-start",
+          "useDefaultViewWidth": false,
+          "useDefaultViewHeight": false,
+          "elementPosition": {
+            "basis": "180px",
+            "shrink": 0,
+            "grow": 0
+          },
+          "style": {
+            "gap": "10px",
+            "overflowX": "auto"
+          },
+          "elementStyle": {
+            "overflow": "hidden"
+          }
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Oee.Dashboard.stationInstances\", 0, {view.params.zoom}, {view.params.anchorShiftId}, {view.params.locationId}, {view.params.refreshToken})"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

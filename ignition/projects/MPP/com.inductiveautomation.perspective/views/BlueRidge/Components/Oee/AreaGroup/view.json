@@ -1,0 +1,261 @@
+{
+  "custom": {},
+  "params": {
+    "groupId": null,
+    "name": "",
+    "family": "",
+    "zoom": "Shift",
+    "anchorShiftId": null,
+    "summary": "",
+    "tilesJson": "[]"
+  },
+  "propConfig": {
+    "params.groupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.name": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.family": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.zoom": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.anchorShiftId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.summary": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.tilesJson": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 800,
+      "height": 300
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "6px",
+        "paddingBottom": "10px",
+        "borderBottom": "1px solid var(--mpp-border-subtle)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Head"
+        },
+        "position": {
+          "basis": "30px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "style": {},
+          "justify": "space-between",
+          "alignItems": "baseline"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Name"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "16px",
+                "fontWeight": "700"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.name"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Summary"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-tertiary)"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.summary"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Tiles"
+        },
+        "position": {
+          "shrink": 0,
+          "basis": "auto"
+        },
+        "props": {
+          "path": "BlueRidge/Components/Oee/UnitTile",
+          "instances": [],
+          "direction": "row",
+          "alignItems": "flex-start",
+          "justify": "flex-start",
+          "useDefaultViewWidth": false,
+          "useDefaultViewHeight": false,
+          "elementPosition": {
+            "basis": "23%",
+            "shrink": 0,
+            "grow": 0
+          },
+          "style": {
+            "gap": "10px 2%"
+          },
+          "wrap": "wrap"
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Oee.Dashboard.tileInstances\", 0, {view.params.tilesJson})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ShopScrapTitle"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Shop scrap by part",
+          "style": {
+            "fontSize": "12px",
+            "textTransform": "uppercase",
+            "letterSpacing": "0.08em",
+            "color": "var(--mpp-text-tertiary)",
+            "fontWeight": "600",
+            "margin": "8px 0 4px 0"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.family} \u003d \u0027trim\u0027"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "ShopScrap"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "path": "BlueRidge/Components/Oee/ScrapTable",
+          "params": {
+            "zoom": "Shift",
+            "anchorShiftId": null,
+            "family": null,
+            "locationId": null,
+            "groupBy": "Part",
+            "unitView": false,
+            "refreshToken": 0
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false,
+          "style": {}
+        },
+        "propConfig": {
+          "props.params.zoom": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.zoom"
+              }
+            }
+          },
+          "props.params.anchorShiftId": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.anchorShiftId"
+              }
+            }
+          },
+          "props.params.locationId": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.groupId"
+              }
+            }
+          },
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.family} \u003d \u0027trim\u0027"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

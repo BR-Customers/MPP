@@ -1,0 +1,221 @@
+{
+  "custom": {},
+  "params": {
+    "minutes": "",
+    "reason": "",
+    "noReason": false,
+    "type": "",
+    "by": "",
+    "station": "",
+    "editor": {
+      "mode": "update",
+      "editId": null,
+      "scopeLocationId": null,
+      "reasonCodeId": null,
+      "startedAtEtStr": null,
+      "endedAtEtStr": null,
+      "remarks": null,
+      "shiftId": null
+    }
+  },
+  "propConfig": {
+    "params.minutes": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.reason": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.noReason": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.type": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.by": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.station": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.editor": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 520,
+      "height": 34
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "gap": "8px",
+        "borderBottom": "1px solid var(--mpp-border-subtle)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Minutes"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "whiteSpace": "nowrap"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.minutes"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Reason"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "whiteSpace": "nowrap",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.station} !\u003d \u0027\u0027, {view.params.station} + \u0027 - \u0027, \u0027\u0027) + {view.params.reason}"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.noReason}, \u0027#F4B343\u0027, \u0027var(--mpp-text-primary)\u0027)"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Type"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "color": "var(--mpp-text-tertiary)",
+            "whiteSpace": "nowrap"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.type"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "By"
+        },
+        "position": {
+          "basis": "40px",
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.by"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "Edit"
+        },
+        "position": {
+          "basis": "64px",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Edit",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "minHeight": "28px",
+            "padding": "0 10px",
+            "fontSize": "13px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tBlueRidge.Oee.Dashboard.editEntry(self.session, self.view.params.editor)"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
