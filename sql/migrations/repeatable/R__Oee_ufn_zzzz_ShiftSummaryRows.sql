@@ -45,7 +45,7 @@
 --                   NonRejectScrap for Non-Specific rejects with no cell.
 --   Shift membership of entries / scrap / good is the existing functions'
 --   (ufn_ShiftAvailability, ufn_ShiftGood, ufn_ShiftScrap); entered downtime
---   is DowntimeEvent.ShiftId, duration by Oee.ufn_DowntimeEventMinutes.
+--   is Oee.ufn_ShiftDowntimeEntries (by ShiftId, duration per D17).
 --
 --   Multi-statement TVF (readers cannot INSERT-EXEC a proc inside a test that
 --   is itself an INSERT-EXEC). Unknown shift -> no rows.
@@ -55,7 +55,8 @@
 --   ufn_ShiftGood, ufn_ShiftScrap).
 --
 -- Change Log:
---   2026-10-30 - 1.0 - Initial version (logic moved out of Dashboard_GetUnitSummary v1.0).
+--   2026-10-30 - 1.0 - Initial version (logic moved out of Dashboard_GetUnitSummary v1.0); entered
+--                      downtime read through Oee.ufn_ShiftDowntimeEntries.
 -- =============================================
 CREATE OR ALTER FUNCTION Oee.ufn_ShiftSummaryRows (@ShiftId BIGINT)
 RETURNS @Out TABLE (
@@ -88,7 +89,6 @@ BEGIN
     FROM Oee.Shift s WHERE s.Id = @ShiftId;
     IF @SchedId IS NULL RETURN;
 
-    DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 
     -- ---- units ----
     DECLARE @U TABLE (LocationId BIGINT PRIMARY KEY, IsStation BIT, ParentUnitLocationId BIGINT,
@@ -125,20 +125,8 @@ BEGIN
     DECLARE @D TABLE (LocationId BIGINT, PlacementLocationId BIGINT, PlacementIsArea BIT, AreaFamily NVARCHAR(10),
                       Minutes DECIMAL(12,4), IsPlanned BIT, IsNoReason BIT);
     INSERT INTO @D
-    SELECT de.LocationId, af.PlacementLocationId, af.PlacementIsArea, af.AreaFamily, m.Minutes,
-           CAST(ISNULL(rc.IsExcused, 0) AS BIT),
-           CAST(CASE WHEN de.DowntimeReasonCodeId IS NULL THEN 1 ELSE 0 END AS BIT)
-    FROM Oee.DowntimeEvent de
-    LEFT  JOIN Oee.DowntimeReasonCode rc ON rc.Id = de.DowntimeReasonCodeId
-    CROSS APPLY Oee.ufn_AreaFamily(de.LocationId) af
-    OUTER APPLY (SELECT TOP 1 w.EndLocal FROM Oee.ufn_ShiftWindowForLocation(de.LocationId, @SchedId, @BusinessDate) w) win
-    CROSS APPLY Oee.ufn_DowntimeEventMinutes(de.IsApproximate, de.DurationMinutes, de.StartedAt, de.EndedAt,
-        CASE WHEN win.EndLocal IS NULL THEN @Now
-             WHEN CAST(win.EndLocal AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)) < @Now
-                 THEN CAST(win.EndLocal AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3))
-             ELSE @Now END) m
-    WHERE de.ShiftId = @ShiftId
-      AND de.VoidedAt IS NULL;
+    SELECT e.LocationId, e.PlacementLocationId, e.PlacementIsArea, e.AreaFamily, e.Minutes, e.IsPlanned, e.IsNoReason
+    FROM Oee.ufn_ShiftDowntimeEntries(@ShiftId) e;
 
     -- ---- active units (6.3) ----
     DECLARE @Act TABLE (LocationId BIGINT PRIMARY KEY);
