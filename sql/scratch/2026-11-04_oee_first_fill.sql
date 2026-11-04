@@ -24,12 +24,18 @@
 --        @Commit = 0: over the 3 most recent closed shifts only, inside a
 --          transaction that is rolled back -- proves the compute runs on THIS
 --          database's rows without holding history-wide locks in a live plant.
+--          (The 12-hour margin can pull in a 4th or 5th shift; that is fine.)
 --        @Commit = 1: over all history, from the earliest Oee.Shift. It commits
 --          shift by shift (one short transaction each); a failure keeps what it
 --          finished and the script can be re-run -- it recomputes, never doubles.
---   3. Oee.ShiftSummary_RefreshChanged once. Its FIRST run only records the
---      configuration fingerprint, so the first OeeSummaryRefresh timer tick does
---      not see "everything changed" and recompute all history a second time.
+--   3. Oee.ShiftSummary_RefreshChanged once (@Commit = 1 only). Its FIRST run only
+--      records the configuration fingerprint, so the first OeeSummaryRefresh timer
+--      tick does not see "everything changed" and recompute all history again.
+--      Expect "0 shift(s) recomputed; 0 still stale".
+--
+-- Measured 2026-11-04 on a copy of MPP_MES_Dev with its OEE history stripped
+-- (141 closed shifts, 118,577 LOTs): rehearsal 9 s; armed 18 s (RecomputeRange
+-- 16.9 s); a second armed run changes nothing (0 new stamps, same 141 shifts).
 --
 -- Attribution: AppUser 1 (SYS), the gateway system user the OEE timers use.
 --
@@ -84,6 +90,7 @@ IF @Commit = 1
 BEGIN
     -- ActualStart is local wall-clock (OI-38); a day's margin covers the offset.
     SET @FromUtc = (SELECT DATEADD(DAY, -1, MIN(ActualStart)) FROM Oee.Shift);
+    IF @FromUtc IS NULL SET @FromUtc = DATEADD(DAY, -1, SYSUTCDATETIME());   -- no shifts yet: an empty range
     PRINT CONCAT(N'== 2. Oee.ShiftSummary_RecomputeRange ', CONVERT(NVARCHAR(16), @FromUtc, 120),
                  N' -> ', CONVERT(NVARCHAR(16), @ToUtc, 120), N' (all history, committed shift by shift)');
     INSERT INTO @R EXEC Oee.ShiftSummary_RecomputeRange @FromUtc = @FromUtc, @ToUtc = @ToUtc, @AppUserId = @AppUserId;
@@ -113,9 +120,11 @@ BEGIN
         PRINT CONCAT(N'   Status ', @St, N' -- ', @Msg, N' -- ', DATEDIFF(MILLISECOND, @T0, SYSUTCDATETIME()) / 1000.0, N' s');
         DECLARE @Rows INT = (SELECT COUNT(*) FROM Oee.ShiftSummary);
         PRINT CONCAT(N'   Stored rows written (before rollback): ', @Rows);
-        INSERT INTO @F EXEC Oee.ShiftSummary_RefreshChanged @AppUserId = @AppUserId;
-        SELECT @St = Status, @Msg = Message FROM @F;
-        PRINT CONCAT(N'== 3. (rehearsal) RefreshChanged Status ', @St, N' -- ', @Msg);
+        -- Step 3 is NOT rehearsed: with history unfilled, RefreshChanged would treat every
+        -- recent shift as missing and recompute up to 60 of them -- work the real run (after
+        -- step 2 has filled everything) never does. Its only job there is to record the
+        -- fingerprint; the armed run prints its result.
+        PRINT N'== 3. (rehearsal) RefreshChanged not rehearsed -- see the script header.';
         ROLLBACK TRANSACTION;
         PRINT N'   Rolled back.';
     END TRY
