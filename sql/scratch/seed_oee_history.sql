@@ -33,9 +33,12 @@
 --   Lots.Lot (+ LotStatusHistory, LotGenealogyClosure self-row, LotMovement)
 --                         DIRECT INSERT, historical timestamps, status Closed.
 --                         Named 'OEESEED-...': one die-cast basket per press per
---                         production day, two FG trays per M&A line per shift
---                         stamped ShiftId + MintedPieceCount the way
---                         Assembly_CompleteTray v1.6 stamps them.
+--                         production day, and one FG tray every 5 minutes on
+--                         every running M&A line (none during that line's
+--                         downtime; qty = ContainerConfig.PartsPerTray), stamped
+--                         ShiftId + MintedPieceCount the way
+--                         Assembly_CompleteTray v1.6 stamps them. ~119k LOTs
+--                         (~82 trays per line-shift).
 --   Workorder.DieCastContribution  DIRECT INSERT, one per press per shift.
 --   Workorder.ProductionEvent      DIRECT INSERT, TrimOut checkpoints with a
 --                         cumulative ShotCount per basket (trim good = delta).
@@ -557,10 +560,16 @@ CROSS APPLY (SELECT TOP 1 d.DefectCodeId FROM #Def d
 WHERE t.Scrap > 0;
 PRINT CONCAT(N'Trim rejects: ', @@ROWCOUNT);
 
--- ---- 4c. Machining & Assembly: two FG trays per running line per shift ----
+-- ---- 4c. Machining & Assembly: a tray minted every 5 minutes on every running line ----
+-- A slot is the 5-minute window ending at the tray's mint; no tray in a window that overlaps
+-- a seeded downtime entry on the line or one of its stations, and ~6% of the rest skipped as
+-- micro-stops. Tray quantity = the part's ContainerConfig.PartsPerTray (12 when none).
 IF OBJECT_ID('tempdb..#LineFg') IS NOT NULL DROP TABLE #LineFg;
 SELECT u.LocationId,
        x.ItemId,
+       COALESCE((SELECT TOP 1 cc.PartsPerTray FROM Parts.ContainerConfig cc
+                  WHERE cc.ItemId = x.ItemId AND cc.DeprecatedAt IS NULL AND cc.PartsPerTray > 0
+                  ORDER BY cc.Id), 12) AS TrayQty,
        COALESCE((SELECT TOP 1 t.Id FROM Location.Location t
                   WHERE t.ParentLocationId = u.LocationId AND t.DeprecatedAt IS NULL
                     AND (t.Code LIKE N'%AOUT%' OR t.Code LIKE N'%ASER%')
@@ -576,38 +585,63 @@ CROSS APPLY (SELECT TOP 1 f.ItemId FROM (
     WHERE f.Rn = 1 + u.LocationId % f.N) x
 WHERE u.Family = N'ma' AND u.ParentUnitId IS NULL;
 
+-- seeded downtime on each line (its own and its stations'), as recorded
+IF OBJECT_ID('tempdb..#LineDt') IS NOT NULL DROP TABLE #LineDt;
+SELECT COALESCE(u.ParentUnitId, u.LocationId) AS LineId, de.ShiftId, de.StartedAt, de.EndedAt
+INTO #LineDt
+FROM Oee.DowntimeEvent de
+INNER JOIN #U u ON u.LocationId = de.LocationId AND u.Family = N'ma'
+WHERE de.Remarks LIKE N'OEESEED%';
+CREATE CLUSTERED INDEX IX_LineDt ON #LineDt (LineId, ShiftId);
+
+IF OBJECT_ID('tempdb..#MaSlot') IS NOT NULL DROP TABLE #MaSlot;
+;WITH Tally AS (SELECT TOP 200 ROW_NUMBER() OVER (ORDER BY (SELECT 1)) - 1 AS K FROM sys.all_objects)
+SELECT p.ShiftId, p.LocationId, p.Code, lf.ItemId, lf.MintTerminalId, lf.TrayQty, t.K,
+       DATEADD(MINUTE, 5 * (t.K + 1), p.StartUtc) AS MintUtc
+INTO #MaSlot
+FROM #P p
+INNER JOIN #LineFg lf ON lf.LocationId = p.LocationId
+INNER JOIN Tally t ON t.K < DATEDIFF(MINUTE, p.StartUtc, p.EndUtc) / 5
+WHERE p.Family = N'ma'
+  AND NOT EXISTS (SELECT 1 FROM #LineDt d
+                  WHERE d.LineId = p.LocationId AND d.ShiftId = p.ShiftId
+                    AND d.StartedAt < DATEADD(MINUTE, 5 * (t.K + 1), p.StartUtc)
+                    AND d.EndedAt   > DATEADD(MINUTE, 5 * t.K, p.StartUtc))
+  AND CAST(SUBSTRING(HASHBYTES('SHA2_256', CONCAT(N'tray|', p.LocationId, N'|', p.ShiftId, N'|', t.K)), 1, 4) AS BIGINT) % 100 >= 6;
+
 IF OBJECT_ID('tempdb..#MaGood') IS NOT NULL DROP TABLE #MaGood;
 SELECT p.ShiftId, p.LocationId, p.Code, p.StartUtc, p.EndUtc, p.BadKind, p.r3, p.r4,
        lf.ItemId, lf.MintTerminalId,
-       CAST(ROUND(p.Rate * p.RunFrac * (0.90 + p.r1 * 0.10), 0) AS INT) AS Good,
-       CAST(ROUND(p.Rate * p.RunFrac * (0.90 + p.r1 * 0.10)
+       ISNULL(g.Good, 0) AS Good,
+       CAST(ROUND(ISNULL(g.Good, 0)
                   * (0.004 + (1 - p.Health) * 0.05 + CASE WHEN p.BadKind = 1 THEN 0.015 ELSE 0 END)
                   * (0.5 + p.r2), 0) AS INT) AS Scrap,
-       CAST(CASE WHEN p.r4 < 0.35 THEN ROUND(p.Rate * p.RunFrac * 0.006 * (0.5 + p.r3), 0) ELSE 0 END AS INT) AS DcFound
+       CAST(CASE WHEN p.r4 < 0.35 THEN ROUND(ISNULL(g.Good, 0) * 0.006 * (0.5 + p.r3), 0) ELSE 0 END AS INT) AS DcFound,
+       g.FirstK
 INTO #MaGood
 FROM #P p
 INNER JOIN #LineFg lf ON lf.LocationId = p.LocationId
-WHERE p.Family = N'ma';
+OUTER APPLY (SELECT SUM(m.TrayQty) AS Good, MIN(m.K) AS FirstK FROM #MaSlot m
+             WHERE m.ShiftId = p.ShiftId AND m.LocationId = p.LocationId) g
+WHERE p.Family = N'ma' AND g.Good > 0;
 
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId,
                       TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt,
                       ShiftId, MintedPieceCount)
-SELECT N'OEESEED-' + g.Code + N'-' + CAST(g.ShiftId AS NVARCHAR(20)) + N'-' + CAST(t.N AS NVARCHAR(1)),
-       g.ItemId, c.ManufacturedId, c.ClosedId, q.Qty, g.LocationId,
-       0, 0, c.SysUserId, g.MintTerminalId, DATEADD(MINUTE, 200 * t.N, g.StartUtc),
-       g.ShiftId, q.Qty
-FROM #MaGood g CROSS JOIN #Cfg c
-CROSS JOIN (VALUES (1), (2)) t (N)
-CROSS APPLY (SELECT CASE WHEN t.N = 1 THEN g.Good - g.Good * 45 / 100 ELSE g.Good * 45 / 100 END AS Qty) q
-WHERE q.Qty > 0;
+SELECT N'OEESEED-' + m.Code + N'-' + CAST(m.ShiftId AS NVARCHAR(20)) + N'-' + RIGHT(N'00' + CAST(m.K AS NVARCHAR(3)), 3),
+       m.ItemId, c.ManufacturedId, c.ClosedId, m.TrayQty, m.LocationId,
+       0, 0, c.SysUserId, m.MintTerminalId, m.MintUtc,
+       m.ShiftId, m.TrayQty
+FROM #MaSlot m CROSS JOIN #Cfg c;
 PRINT CONCAT(N'FG tray LOTs: ', @@ROWCOUNT);
 
+-- rejects hang off the shift's first tray
 INSERT INTO Workorder.RejectEvent (LotId, DefectCodeId, Quantity, Remarks, AppUserId, RecordedAt,
                                    ItemId, ShiftId, CellLocationId)
 SELECT l.Id, df.DefectCodeId, q.Qty, N'OEESEED: historical reject', c.SysUserId,
        DATEADD(MINUTE, -25 - k.N * 60, g.EndUtc), g.ItemId, g.ShiftId, g.LocationId
 FROM #MaGood g CROSS JOIN #Cfg c
-INNER JOIN Lots.Lot l ON l.LotName = N'OEESEED-' + g.Code + N'-' + CAST(g.ShiftId AS NVARCHAR(20)) + N'-1'
+INNER JOIN Lots.Lot l ON l.LotName = N'OEESEED-' + g.Code + N'-' + CAST(g.ShiftId AS NVARCHAR(20)) + N'-' + RIGHT(N'00' + CAST(g.FirstK AS NVARCHAR(3)), 3)
 CROSS JOIN (VALUES (0, N'ma'), (1, N'ma-dc')) k (N, Kind)
 CROSS APPLY (SELECT CASE WHEN k.N = 0 THEN g.Scrap ELSE g.DcFound END AS Qty) q
 CROSS APPLY (SELECT TOP 1 d.DefectCodeId FROM #Def d

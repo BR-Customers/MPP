@@ -34,8 +34,10 @@ DECLARE @Commit BIT = 0;   -- 0 = rehearse and roll back; 1 = delete (working tr
 IF OBJECT_ID('tempdb..#L') IS NOT NULL DROP TABLE #L;
 IF OBJECT_ID('tempdb..#D') IS NOT NULL DROP TABLE #D;
 IF OBJECT_ID('tempdb..#Sh') IS NOT NULL DROP TABLE #Sh;
-SELECT Id INTO #L FROM Lots.Lot WHERE LotName LIKE N'OEESEED-%';
-SELECT Id, ShiftId INTO #D FROM Oee.DowntimeEvent WHERE Remarks LIKE N'OEESEED%';
+CREATE TABLE #L (Id BIGINT NOT NULL PRIMARY KEY);
+INSERT INTO #L (Id) SELECT Id FROM Lots.Lot WHERE LotName LIKE N'OEESEED-%';
+CREATE TABLE #D (Id BIGINT NOT NULL PRIMARY KEY, ShiftId BIGINT NULL);
+INSERT INTO #D (Id, ShiftId) SELECT Id, ShiftId FROM Oee.DowntimeEvent WHERE Remarks LIKE N'OEESEED%';
 SELECT Id INTO #Sh FROM Oee.Shift WHERE Remarks LIKE N'OEESEED%';
 
 -- Shifts whose summary must be recomputed afterwards
