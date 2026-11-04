@@ -743,6 +743,9 @@ if (& $has "0117_oee_shift_summary") {
 # producing LOT). Count the containers that ship today and will be refused tomorrow.
 $shipIsV11 = S "SELECT CASE WHEN OBJECT_DEFINITION(OBJECT_ID(N'Lots.Container_Ship')) LIKE N'%@HeldLotName%' THEN 1 ELSE 0 END"
 if ((@($toApply | ForEach-Object { $_.File }) -contains "R__Lots_Container_Ship.sql") -and ($shipIsV11 -ne 1)) {
+    # ContainerSerial.RemovedAt arrives with this same release (0111); before it, no serial is removed.
+    $removedFilter = ""
+    if ((S "SELECT CASE WHEN COL_LENGTH(N'Lots.ContainerSerial', N'RemovedAt') IS NULL THEN 0 ELSE 1 END") -eq 1) { $removedFilter = "AND cs.RemovedAt IS NULL" }
     $heldShip = Q @"
 SELECT c.Id AS ContainerId, MIN(l.LotName) AS HeldLot
 FROM Lots.Container c
@@ -751,7 +754,7 @@ JOIN Lots.Lot l ON l.Id IN (SELECT ct.FinishedGoodLotId FROM Lots.ContainerTray 
                             UNION
                             SELECT sp.ProducingLotId FROM Lots.ContainerSerial cs
                             JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId
-                            WHERE cs.ContainerId = c.Id AND cs.RemovedAt IS NULL)
+                            WHERE cs.ContainerId = c.Id $removedFilter)
 WHERE c.ContainerStatusCodeId = 2
   AND NOT EXISTS (SELECT 1 FROM Quality.HoldEvent hc WHERE hc.ContainerId = c.Id AND hc.ReleasedAt IS NULL)
   AND EXISTS (SELECT 1 FROM Quality.HoldEvent h WHERE h.LotId = l.Id AND h.ReleasedAt IS NULL)
