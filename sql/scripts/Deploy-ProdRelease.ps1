@@ -716,6 +716,57 @@ if (& $has "0114_super_lot_visibility") {
     Finding "INFO" "0114" "adds two Audit.LogEventType columns + six codes, and two indexes on Lots.ContainerSerialHistory ($csh existing row(s))."
 }
 
+if (& $has "0115_terminal_default_machines") {
+    # Same hard-coded definition id as 0113: DefaultMachines goes on LocationTypeDefinition 7.
+    $ltd7b = S "SELECT ISNULL((SELECT Code FROM Location.LocationTypeDefinition WHERE Id = 7), N'(missing)')"
+    if ($ltd7b -ne "Terminal") { Finding "BLOCK" "0115" "Location.LocationTypeDefinition id 7 is '$ltd7b', not 'Terminal'. 0115 adds the DefaultMachines attribute to definition 7; fix the migration to look the Terminal definition up by code first." }
+}
+
+if (& $has "0116_failurelog_location_lot") {
+    $flog = S "SELECT COUNT_BIG(*) FROM Audit.FailureLog"
+    Finding "INFO" "0116" "adds 2 nullable FK columns to Audit.FailureLog (metadata-only) and two partition-aligned filtered indexes that scan its $flog existing row(s) once inside the release transaction; both start empty."
+}
+
+if (& $has "0117_oee_shift_summary") {
+    # 0117 adds two NULLABLE columns to Lots.Lot (metadata-only) and a filtered index that
+    # scans the table once inside the transaction (every row has ShiftId NULL, so it starts
+    # empty). The stamp itself is NOT written here: Lots.Lot_BackfillMintStamp runs after
+    # the commit, then Oee.ShiftSummary_RecomputeRange fills the summary (runbook step 4).
+    $lots = S "SELECT COUNT_BIG(*) FROM Lots.Lot"
+    $shifts = S "SELECT COUNT_BIG(*) FROM Oee.Shift WHERE ActualEnd IS NOT NULL"
+    $first = S "SELECT ISNULL(CONVERT(NVARCHAR(16), MIN(ActualStart), 120), N'(none)') FROM Oee.Shift"
+    Finding "INFO" "0117" "adds Lots.Lot.ShiftId / MintedPieceCount (nullable, metadata-only) and a filtered index that scans its $lots existing LOT(s) once inside the release transaction. After the commit, the first fill recomputes $shifts closed shift(s), the earliest starting $first ET."
+}
+
+# Lots.Container_Ship v1.1 is a repeatable, so this keys off the apply list. It newly
+# refuses a container holding a LOT that is on hold (tray LOT, or a packed serial's
+# producing LOT). Count the containers that ship today and will be refused tomorrow.
+$shipIsV11 = S "SELECT CASE WHEN OBJECT_DEFINITION(OBJECT_ID(N'Lots.Container_Ship')) LIKE N'%@HeldLotName%' THEN 1 ELSE 0 END"
+if ((@($toApply | ForEach-Object { $_.File }) -contains "R__Lots_Container_Ship.sql") -and ($shipIsV11 -ne 1)) {
+    $heldShip = Q @"
+SELECT c.Id AS ContainerId, MIN(l.LotName) AS HeldLot
+FROM Lots.Container c
+JOIN Lots.Lot l ON l.Id IN (SELECT ct.FinishedGoodLotId FROM Lots.ContainerTray ct
+                            WHERE ct.ContainerId = c.Id AND ct.FinishedGoodLotId IS NOT NULL
+                            UNION
+                            SELECT sp.ProducingLotId FROM Lots.ContainerSerial cs
+                            JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId
+                            WHERE cs.ContainerId = c.Id AND cs.RemovedAt IS NULL)
+WHERE c.ContainerStatusCodeId = 2
+  AND NOT EXISTS (SELECT 1 FROM Quality.HoldEvent hc WHERE hc.ContainerId = c.Id AND hc.ReleasedAt IS NULL)
+  AND EXISTS (SELECT 1 FROM Quality.HoldEvent h WHERE h.LotId = l.Id AND h.ReleasedAt IS NULL)
+GROUP BY c.Id
+ORDER BY c.Id
+"@
+    $nHeld = @($heldShip).Count
+    if ($nHeld -gt 0) {
+        Finding "WARN" "Container_Ship" "$nHeld complete container(s) hold a LOT that is on hold and will be REFUSED at the Shipping Dock after this release (they ship today). Release the LOT hold or pull the tray before the truck. Listed below."
+        Table $heldShip @("ContainerId", "HeldLot")
+    } else {
+        Finding "INFO" "Container_Ship" "Container_Ship v1.1 refuses a container holding a held LOT; no complete container is in that state now."
+    }
+}
+
 if (@($Findings | Where-Object { $_.Gate -match '^0\d\d\d$' }).Count -eq 0 -and $pending.Count -gt 0) { Log "  No gates fired." "Green" }
 
 # ---------- [6] live activity + backups ----------
