@@ -50,3 +50,9 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Lots.Lot'
         INCLUDE (LotStatusId, CurrentLocationId)
         WHERE LotStatusId <> 4;
 GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0118_lot_open_lot_indexes')
+    INSERT INTO dbo.SchemaVersion (MigrationId, Description)
+    VALUES (N'0118_lot_open_lot_indexes',
+            N'Lots.Lot += IX_Lot_NotClosed_Location / IX_Lot_NotClosed_Item (filtered LotStatusId <> 4) for the plant-floor queue reads (prod incident 2026-11-10). Apply with Lot_GetWipQueueByLocation v3.3 + Lot_GetTrimStorageQueueForLine v2.1.');
+GO
