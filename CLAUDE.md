@@ -272,7 +272,7 @@ The `mpp` icon library lives at `ignition/icons/mpp/` and is referenced from vie
 
 ### Ignition file-edit boundary
 
-Edits to **existing** `view.json` files default to Designer, not file edits. File-based edits to existing views are unreliable because (a) Designer's GSON serialization writes `=` / `'` / `<` / `>` as 6-char unicode escapes (`=` etc.) that fight literal-string matching in editing tools, and (b) Designer's in-memory model can conflict with on-disk changes — and its "Files vs Gateway" conflict dialog has confusing semantics that can overwrite disk with Designer's cached state. File-edits are safe for **new** views (no Designer cache yet), stylesheets, named queries, Python scripts, and SQL. See `feedback_ignition_view_edit_boundary.md` and `feedback_ignition_designer_unicode_escapes.md` memories for the specifics.
+Edits to **existing** `view.json` files default to file edits. File-based edits require caution because (a) Designer's GSON serialization writes `=` / `'` / `<` / `>` as 6-char unicode escapes (`=` etc.) that fight literal-string matching in editing tools, and (b) Designer's in-memory model can conflict with on-disk changes — and its "Files vs Gateway" conflict dialog has confusing semantics that can overwrite disk with Designer's cached state. File-edits are safe so long as that view is not open in any Designers, stylesheets, named queries, Python scripts, and SQL. See `feedback_ignition_view_edit_boundary.md` and `feedback_ignition_designer_unicode_escapes.md` memories for the specifics.
 
 ### Editor close-confirmation pattern
 
