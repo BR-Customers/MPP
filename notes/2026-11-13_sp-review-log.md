@@ -27,7 +27,7 @@ Flagged does not mean broken, and it does not mean decided. A flagged proc stays
 
 Two cautions: a "no changes" mark is a reviewer's judgment from reading the code, not a test, so a reviewer could miss something; and a flagged finding is only a claim until it is verified (the note says "VERIFIED" when it has been).
 
-## Progress at 2026-11-13 16:11 local
+## Progress at 2026-11-13 16:18 local
 
 | | Procs |
 |---|---|
@@ -190,7 +190,7 @@ Two cautions: a "no changes" mark is a reviewer's judgment from reading the code
 - [ ] Lots.Lot_Create (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: steps 6/6b SUM open LOTs via LotStatusCode join (code-table shape) for Received origin only; B6 sequence row held to commit by design
 - [ ] Lots.Lot_Get (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: catch-all OR over l.Id / l.LotName; plan unknown
 - [x] Lots.Lot_GetAttributeHistory (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.Lot_GetCellLineQuantity (flagged) - FLAGGED CANDIDATE (risk L) by agent read, unverified: sc.Code <> N'Closed' code-table join cannot use IX_Lot_NotClosed_Location; SUM seeks every LOT ever at the location
+- [ ] Lots.Lot_GetCellLineQuantity (flagged) - VERIFIED and MEASURED by me, not fixed: SUM(PieceCount) at (location, item) filters open LOTs only through the LotStatusCode join; on the throwaway DB it read 2,340 Lots.Lot pages (2 scans) to sum 2,000 pieces and took about 30 ms warm (13-95). Fix = add the literal l.LotStatusId <> 4 (same pattern as PRs 9 and 14); callers not traced. Not started
 - [x] Lots.Lot_GetChildren (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_GetComponentsAtCell (edited) - PR https://github.com/BR-Customers/MPP/pull/7 (v1.1 -> v1.2, measured)
 - [x] Lots.Lot_GetGenealogyEdgeTree (no changes) - agent static read, not independently verified; nothing to change
@@ -199,7 +199,7 @@ Two cautions: a "no changes" mark is a reviewer's judgment from reading the code
 - [x] Lots.Lot_GetLatestForToolCavity (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_GetLifecycle (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_GetLineInventoryByPart (edited) - PR https://github.com/BR-Customers/MPP/pull/11 (v1.3 -> v1.4, measured; requires 0118, slower without it)
-- [ ] Lots.Lot_GetLineInventorySummary (flagged) - FLAGGED CANDIDATE (risk M) by agent read, unverified: polled every 30 s x3 bindings per sidebar; OnHand reads Lots.Lot by location via a code-table join that cannot use the 0118 filtered index
+- [ ] Lots.Lot_GetLineInventorySummary (flagged) - VERIFIED and MEASURED by me, not fixed: its on-hand step filters by location and status only through the LotStatusCode join and read the whole Lots.Lot heap (2,281 of 2,282 pages) on every call, even for a line with no stock (cell 46 returned 0 rows), about 28 ms warm (12-137). The agent says it is polled every 30 s by three bindings per sidebar (not verified by me). Fix = same literal-predicate pattern; not started
 - [x] Lots.Lot_GetLinkedContainer (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Lots.Lot_GetOpenByTool (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: IX_Lot_ToolId seek then heap lookup for every LOT ever cast on the tool, status via code join
 - [x] Lots.Lot_GetParents (no changes) - agent static read, not independently verified; nothing to change
