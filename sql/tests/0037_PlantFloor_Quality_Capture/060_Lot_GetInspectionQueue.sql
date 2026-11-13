@@ -90,5 +90,120 @@ DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id=m.LotId WHERE l.L
 DELETE FROM Lots.Lot WHERE LotName LIKE N'INSPQ-%';
 GO
 
+-- =============================================
+-- v1.1 (2026-11-13, SP review): behaviour the per-LOT-seek rewrite must preserve.
+--   * latest inspection = greatest SampledAt, TIES broken by greatest Id (the v1.0
+--     ROW_NUMBER ... ORDER BY SampledAt DESC, Id DESC rule)
+--   * ReceivedOffsite origin is included; Closed is excluded; Open status is INCLUDED
+--   * @IncludeDescendants: 0 = exact, 1 = location + descendants, NULL = nothing
+--   * ArrivedAt = LATEST movement, ET; LatestSampledAt ET; order = arrival ASC (a LOT with
+--     no movement has a NULL arrival and sorts first), ties by Id
+-- =============================================
+
+-- ---- cleanup ----
+DELETE qs FROM Quality.QualitySample qs INNER JOIN Lots.Lot l ON l.Id=qs.LotId WHERE l.LotName LIKE N'INSPQ2-%';
+DELETE FROM Quality.QualitySpecVersion WHERE QualitySpecId IN (SELECT Id FROM Quality.QualitySpec WHERE Name=N'INSPQ2-TEST-SPEC');
+DELETE FROM Quality.QualitySpec WHERE Name=N'INSPQ2-TEST-SPEC';
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id=m.LotId WHERE l.LotName LIKE N'INSPQ2-%';
+DELETE FROM Lots.Lot WHERE LotName LIKE N'INSPQ2-%';
+GO
+
+-- ---- fixture ----
+DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber=N'P-INSP-TP') INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId) VALUES (3, N'P-INSP-TP', N'Third-party pass-through part', 1, @Now, 1);
+DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber=N'P-INSP-TP');
+DECLARE @Station BIGINT = (SELECT Id FROM Location.Location WHERE Code=N'INSP-SORT-T1');
+DECLARE @Parent  BIGINT = (SELECT ParentLocationId FROM Location.Location WHERE Id=@Station);
+DECLARE @Recv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code=N'Received');
+DECLARE @Offs BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code=N'ReceivedOffsite');
+DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
+DECLARE @Closed BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed');
+DECLARE @OpenSt BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Open');
+
+INSERT INTO Quality.QualitySpec (Name, CreatedAt) VALUES (N'INSPQ2-TEST-SPEC', @Now);
+DECLARE @Spec BIGINT = SCOPE_IDENTITY();
+INSERT INTO Quality.QualitySpecVersion (QualitySpecId, VersionNumber, EffectiveFrom, CreatedByUserId, CreatedAt) VALUES (@Spec, 1, @Now, 1, @Now);
+DECLARE @SpecVer BIGINT = SCOPE_IDENTITY();
+
+-- TIE: two samples at the SAME instant (Pass inserted first, Fail second = higher Id -> Fail wins);
+--      movements 14:00 and 15:30 UTC (latest wins -> 10:30 ET)
+-- OFFS: ReceivedOffsite origin, one movement 12:00 UTC
+-- CLSD: Closed -> excluded;  OPN: Open status, no movement -> included, NULL arrival sorts first
+-- PAR : at the station's PARENT -> only in the parent scope
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, VendorLotNumber, CreatedByUserId, CreatedAt) VALUES
+ (N'INSPQ2-TIE',  @Item, @Recv, @Good,   10, 10, @Station, N'V2-TIE',  1, @Now),
+ (N'INSPQ2-OFFS', @Item, @Offs, @Good,   10, 10, @Station, N'V2-OFFS', 1, @Now),
+ (N'INSPQ2-CLSD', @Item, @Recv, @Closed, 10,  0, @Station, N'V2-CLSD', 1, @Now),
+ (N'INSPQ2-OPN',  @Item, @Recv, @OpenSt, 10, 10, @Station, N'V2-OPN',  1, @Now),
+ (N'INSPQ2-PAR',  @Item, @Recv, @Good,   10, 10, @Parent,  N'V2-PAR',  1, @Now);
+
+INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
+SELECT l.Id, NULL, @Station, 1, NULL, '2026-01-15 14:00:00.000' FROM Lots.Lot l WHERE l.LotName=N'INSPQ2-TIE'
+UNION ALL SELECT l.Id, NULL, @Station, 1, NULL, '2026-01-15 15:30:00.000' FROM Lots.Lot l WHERE l.LotName=N'INSPQ2-TIE'
+UNION ALL SELECT l.Id, NULL, @Station, 1, NULL, '2026-01-15 12:00:00.000' FROM Lots.Lot l WHERE l.LotName=N'INSPQ2-OFFS';
+
+DECLARE @TieLot BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName=N'INSPQ2-TIE');
+INSERT INTO Quality.QualitySample (LotId, QualitySpecVersionId, LocationId, SampleTriggerCodeId, InspectionResultCodeId, SampledByUserId, SampledAt) VALUES (@TieLot, @SpecVer, @Station, 9, 1, 1, '2026-01-15 15:00:00.000');
+INSERT INTO Quality.QualitySample (LotId, QualitySpecVersionId, LocationId, SampleTriggerCodeId, InspectionResultCodeId, SampledByUserId, SampledAt) VALUES (@TieLot, @SpecVer, @Station, 9, 2, 1, '2026-01-15 15:00:00.000');
+GO
+
+DECLARE @Station BIGINT = (SELECT Id FROM Location.Location WHERE Code=N'INSP-SORT-T1');
+DECLARE @Parent  BIGINT = (SELECT ParentLocationId FROM Location.Location WHERE Id=@Station);
+DECLARE @Q TABLE (RowNo INT IDENTITY(1,1), Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
+    PieceCount INT, VendorLotNumber NVARCHAR(50), LotStatusId BIGINT, LotStatusCode NVARCHAR(20),
+    LatestInspectionResult NVARCHAR(20), LatestSampledAt DATETIME2(3), ArrivedAt DATETIME2(3));
+DECLARE @N NVARCHAR(10), @S NVARCHAR(200);
+
+-- station, exact
+INSERT INTO @Q (Id, LotName, ItemId, ItemPartNumber, ItemDescription, PieceCount, VendorLotNumber, LotStatusId, LotStatusCode, LatestInspectionResult, LatestSampledAt, ArrivedAt)
+EXEC Lots.Lot_GetInspectionQueueByLocation @LocationId=@Station, @IncludeDescendants=0;
+
+SET @S = ISNULL((SELECT LatestInspectionResult FROM @Q WHERE LotName=N'INSPQ2-TIE'), N'<null>');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] samples tied on SampledAt: the greatest Id wins (Fail)', @Expected=N'Fail', @Actual=@S;
+SET @S = ISNULL((SELECT CONVERT(NVARCHAR(30), LatestSampledAt, 121) FROM @Q WHERE LotName=N'INSPQ2-TIE'), N'<null>');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] LatestSampledAt converted UTC to Eastern', @Expected=N'2026-01-15 10:00:00.000', @Actual=@S;
+SET @S = ISNULL((SELECT CONVERT(NVARCHAR(30), ArrivedAt, 121) FROM @Q WHERE LotName=N'INSPQ2-TIE'), N'<null>');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] ArrivedAt is the LATEST movement, converted UTC to Eastern', @Expected=N'2026-01-15 10:30:00.000', @Actual=@S;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q WHERE LotName=N'INSPQ2-OFFS');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] ReceivedOffsite-origin LOT is included', @Expected=N'1', @Actual=@N;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q WHERE LotName=N'INSPQ2-CLSD');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] Closed LOT is excluded', @Expected=N'0', @Actual=@N;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q WHERE LotName=N'INSPQ2-OPN');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] Open-status LOT is INCLUDED (only Closed is excluded)', @Expected=N'1', @Actual=@N;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q WHERE LotName=N'INSPQ2-PAR');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] exact scope excludes a LOT at the parent location', @Expected=N'0', @Actual=@N;
+SET @S = ISNULL((SELECT STRING_AGG(LotName, N',') WITHIN GROUP (ORDER BY RowNo) FROM @Q WHERE LotName LIKE N'INSPQ2-%'), N'<none>');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] arrival order: no-movement (NULL) first, then earliest arrival', @Expected=N'INSPQ2-OPN,INSPQ2-OFFS,INSPQ2-TIE', @Actual=@S;
+
+-- parent + descendants: the station's LOTs and the parent's own
+DELETE FROM @Q;
+INSERT INTO @Q (Id, LotName, ItemId, ItemPartNumber, ItemDescription, PieceCount, VendorLotNumber, LotStatusId, LotStatusCode, LatestInspectionResult, LatestSampledAt, ArrivedAt)
+EXEC Lots.Lot_GetInspectionQueueByLocation @LocationId=@Parent, @IncludeDescendants=1;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q WHERE LotName LIKE N'INSPQ2-%');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] parent + descendants returns TIE, OFFS, OPN and PAR (not Closed)', @Expected=N'4', @Actual=@N;
+
+-- parent, exact: only the parent's own LOT
+DELETE FROM @Q;
+INSERT INTO @Q (Id, LotName, ItemId, ItemPartNumber, ItemDescription, PieceCount, VendorLotNumber, LotStatusId, LotStatusCode, LatestInspectionResult, LatestSampledAt, ArrivedAt)
+EXEC Lots.Lot_GetInspectionQueueByLocation @LocationId=@Parent, @IncludeDescendants=0;
+SET @S = ISNULL((SELECT STRING_AGG(LotName, N',') WITHIN GROUP (ORDER BY RowNo) FROM @Q WHERE LotName LIKE N'INSPQ2-%'), N'<none>');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] parent exact returns only the parent''s own LOT', @Expected=N'INSPQ2-PAR', @Actual=@S;
+
+-- NULL @IncludeDescendants matches neither arm
+DELETE FROM @Q;
+INSERT INTO @Q (Id, LotName, ItemId, ItemPartNumber, ItemDescription, PieceCount, VendorLotNumber, LotStatusId, LotStatusCode, LatestInspectionResult, LatestSampledAt, ArrivedAt)
+EXEC Lots.Lot_GetInspectionQueueByLocation @LocationId=@Station, @IncludeDescendants=NULL;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q WHERE LotName LIKE N'INSPQ2-%');
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] NULL @IncludeDescendants returns nothing', @Expected=N'0', @Actual=@N;
+GO
+
+-- ---- cleanup ----
+DELETE qs FROM Quality.QualitySample qs INNER JOIN Lots.Lot l ON l.Id=qs.LotId WHERE l.LotName LIKE N'INSPQ2-%';
+DELETE FROM Quality.QualitySpecVersion WHERE QualitySpecId IN (SELECT Id FROM Quality.QualitySpec WHERE Name=N'INSPQ2-TEST-SPEC');
+DELETE FROM Quality.QualitySpec WHERE Name=N'INSPQ2-TEST-SPEC';
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id=m.LotId WHERE l.LotName LIKE N'INSPQ2-%';
+DELETE FROM Lots.Lot WHERE LotName LIKE N'INSPQ2-%';
+GO
+
 EXEC test.EndTestFile;
 GO
