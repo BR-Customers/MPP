@@ -10,15 +10,109 @@ Kept per CLAUDE.md, section "Stored-procedure review", rule 3: findings with no 
 - **flagged** = a reviewer found something specific; it is only a claim until a line says "VERIFIED". Flagged procs have no PR yet.
 - Write paths (Assembly_CompleteTray, MachiningOut_Mint, RejectEvent_RecordByPartFifo, TrimOut_Record, Lot_Move*, Lot_Merge, Lot_UpdateStatus, Container_Complete, DieCastLot_*, controlled-run mutations) are NOT rewritten without Jacques's decision; findings on them are recorded here only.
 
-## Progress at 2026-11-13 13:50 local
+## Progress at 2026-11-13 14:47 local
 
 | | Procs |
 |---|---|
-| Checked, no change | 212 |
-| Checked and edited (PR open) | 5 |
-| Flagged, not yet decided | 49 |
-| Not yet reviewed | 289 |
+| Checked, no change | 484 |
+| Checked and edited (PR open) | 6 |
+| Flagged, not yet decided | 65 |
+| Not yet reviewed | 0 |
 | **Total stored procedures** | **555** |
+
+## Audit
+
+- Audit.Audit_LogConfigChange -- no change -- agent static read, not independently verified; nothing to change
+- Audit.Audit_LogFailure -- no change -- agent static read, not independently verified; nothing to change
+- Audit.Audit_LogInterfaceCall -- no change -- agent static read, not independently verified; nothing to change
+- Audit.Audit_LogOperation -- no change -- agent static read, not independently verified; nothing to change
+- Audit.ConfigLog_GetByEntity -- no change -- agent static read, not independently verified; nothing to change
+- Audit.ConfigLog_List -- no change -- agent static read, not independently verified; nothing to change
+- Audit.FailureLog_DistinctProcedures -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: whole-log DISTINCT, no date bound, on a log that is never purged
+- Audit.FailureLog_GetByEntity -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: no (LogEntityTypeId, EntityId) index on FailureLog; no date bound; no UI caller found
+- Audit.FailureLog_GetTopProcs -- no change -- agent static read, not independently verified; nothing to change
+- Audit.FailureLog_GetTopReasons -- no change -- agent static read, not independently verified; nothing to change
+- Audit.FailureLog_List -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: the one Audit reader that can join the Lots.Lot heap on a leading-wildcard LotName LIKE
+- Audit.FailureLog_Record -- no change -- agent static read, not independently verified; nothing to change
+- Audit.InterfaceLog_Record -- no change -- agent static read, not independently verified; nothing to change
+- Audit.LogEntityType_List -- no change -- agent static read, not independently verified; nothing to change
+- Audit.LogEventType_List -- no change -- agent static read, not independently verified; nothing to change
+- Audit.LogSeverity_List -- no change -- agent static read, not independently verified; nothing to change
+- Audit.OperatorChange_Log -- no change -- agent static read, not independently verified; nothing to change
+- Audit.Partition_MaintainWindow -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: global SPLIT/MERGE of pf_MonthlyUtc takes Sch-M on every table on ps_MonthlyUtc
+
+## Location
+
+- Location.AppUser_AuthenticateAd -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_Create -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_Get -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_GetActiveByAdAccount -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_GetActiveByInitials -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_GetActiveByPin -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_GetByAdAccount -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_GetByInitials -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_GetByPin -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_GetRoles -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_List -- no change -- agent static read, not independently verified; nothing to change
+- Location.AppUser_Update -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_Create -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_Get -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_GetAncestors -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_GetDescendantsOfType -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_GetStockDestination -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_GetTree -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_List -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_ListByTier -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_ListCellsForArea -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_ListCutoverDestinationsForLine -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_ListCutoverSources -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_ListDieCastMachinesForItem -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_ListForEligibilityPicker -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_ListMachiningDestinations -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_ListProductionLines -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_MoveDown -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_MoveUp -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_SaveAll -- no change -- agent static read, not independently verified; nothing to change
+- Location.Location_Update -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttribute_Clear -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttribute_GetByLocation -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttribute_Set -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttributeDefinition_Create -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttributeDefinition_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttributeDefinition_Get -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttributeDefinition_ListByDefinition -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttributeDefinition_MoveDown -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttributeDefinition_MoveUp -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationAttributeDefinition_Update -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationType_Get -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationType_List -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationTypeDefinition_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationTypeDefinition_Get -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationTypeDefinition_GetOeeEligibility -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationTypeDefinition_List -- no change -- agent static read, not independently verified; nothing to change
+- Location.LocationTypeDefinition_SaveAll -- no change -- agent static read, not independently verified; nothing to change
+- Location.PlcDeviceType_List -- no change -- agent static read, not independently verified; nothing to change
+- Location.Printer_GetById -- no change -- agent static read, not independently verified; nothing to change
+- Location.PrinterFgAssignment_ListForStation -- no change -- agent static read, not independently verified; nothing to change
+- Location.PrinterFgAssignment_SaveAll -- no change -- agent static read, not independently verified; nothing to change
+- Location.SessionPolicy_Get -- no change -- agent static read, not independently verified; nothing to change
+- Location.SessionPolicy_Update -- no change -- agent static read, not independently verified; nothing to change
+- Location.Terminal_GetByIpAddress -- no change -- agent static read, not independently verified; nothing to change
+- Location.Terminal_GetClosureContext -- no change -- agent static read, not independently verified; nothing to change
+- Location.Terminal_GetPrinter -- no change -- agent static read, not independently verified; nothing to change
+- Location.Terminal_List -- no change -- agent static read, not independently verified; nothing to change
+- Location.Terminal_ListByLineOf -- no change -- agent static read, not independently verified; nothing to change
+- Location.Terminal_ListContextCells -- no change -- agent static read, not independently verified; nothing to change
+- Location.Terminal_ListDefaultMachines -- no change -- agent static read, not independently verified; nothing to change
+- Location.Terminal_SetClosureMethod -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: unlocked pre-txn read of an open Lots.Container, then unconditional status UPDATE (see below)
+- Location.Terminal_SetCrtEnabled -- no change -- agent static read, not independently verified; nothing to change
+- Location.Terminal_SetScaleRunningPart -- no change -- agent static read, not independently verified; nothing to change
+- Location.TerminalPlcDevice_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Location.TerminalPlcDevice_GetByInstancePath -- no change -- agent static read, not independently verified; nothing to change
+- Location.TerminalPlcDevice_GetByTerminal -- no change -- agent static read, not independently verified; nothing to change
+- Location.TerminalPlcDevice_Save -- no change -- agent static read, not independently verified; nothing to change
 
 ## Lots
 
@@ -43,7 +137,7 @@ Kept per CLAUDE.md, section "Stored-procedure review", rule 3: findings with no 
 - Lots.Container_Ship -- no change -- agent static read, not independently verified; nothing to change
 - Lots.Container_ValidateCrt -- no change -- agent static read, not independently verified; nothing to change
 - Lots.ContainerRework_Get -- no change -- agent static read, not independently verified; nothing to change
-- Lots.ContainerRework_ListAtLocation -- flagged, no PR yet -- FLAGGED CANDIDATE (risk M) by agent read, unverified: polled every 15 s per terminal; filters Lots.Container on status 7 with no index that can serve it
+- Lots.ContainerRework_ListAtLocation -- EDITED -- PR https://github.com/BR-Customers/MPP/pull/13 (index-only migration 0121, proc unchanged; measured)
 - Lots.ContainerRework_ListSerials -- no change -- agent static read, not independently verified; nothing to change
 - Lots.ContainerRework_ListTargets -- no change -- agent static read, not independently verified; nothing to change
 - Lots.ContainerRework_ListTrays -- no change -- agent static read, not independently verified; nothing to change
@@ -152,6 +246,158 @@ Kept per CLAUDE.md, section "Stored-procedure review", rule 3: findings with no 
 - Lots.VendorReturn_ListOpen -- no change -- agent static read, not independently verified; nothing to change
 - Lots.VendorReturn_Mark -- no change -- agent static read, not independently verified; nothing to change
 
+## Oee
+
+- Oee.Dashboard_GetBreakdown -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Dashboard_GetDowntimeByReason -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Dashboard_GetDowntimeEntries -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Dashboard_GetPeriod -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Dashboard_GetScrap -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: always computes live per shift (never the stored summary); ufn_ShiftGood scans ProductionEvent (no ShiftId index) once per shift, up to 21x at Week zoom
+- Oee.Dashboard_GetTrend -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Dashboard_GetUnitSummary -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: open shift (and any unstored shift) is computed live through two multi-statement TVFs; each dashboard proc repeats it per page load
+- Oee.DowntimeEvent_End -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeEvent_GetByScope -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: polled every 30 s per terminal; catch-all OR on ShiftId / open-event with a variable
+- Oee.DowntimeEvent_GetOpenByLocation -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeEvent_GetOpenSummary -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeEvent_RecordApproximate -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeEvent_RecordHistorical -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeEvent_RequiresReasonGate -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeEvent_Start -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeEvent_UpdateReason -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeEvent_UpdateTimes -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeEvent_Void -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeReasonCode_Assign -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeReasonCode_BulkLoadFromSeed -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeReasonCode_Create -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeReasonCode_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeReasonCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeReasonCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeReasonCode_Update -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeReasonType_List -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeScope_ListForTerminal -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeSourceCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Oee.DowntimeSourceCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Oee.EndOfShiftEntry_Submit -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: check-then-insert ('already submitted') with no lock and no unique key; a double tap can insert the break events twice
+- Oee.Lot_GetInProcessByLocation -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: LOTs found via sc.Code IN (...) code-table join (cannot use IX_Lot_Active/IX_Lot_NotClosed_Location); plus v_LotDerivedQuantities aggregates ConsumptionEvent
+- Oee.Shift_End -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Shift_GetActive -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Shift_GetAvailability -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Shift_GetForInstant -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Shift_GetOpen -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Shift_List -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Shift_Reconcile -- no change -- agent static read, not independently verified; nothing to change
+- Oee.Shift_Start -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftHandover_Acknowledge -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftOverride_Apply -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftOverride_Create -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftOverride_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftOverride_Get -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftOverride_List -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftOverride_ListEquipment -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftOverride_Restamp -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftOverride_Update -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftSchedule_Create -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftSchedule_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftSchedule_Get -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftSchedule_List -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftSchedule_Update -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftSummary_Compute -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftSummary_ComputeCore -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: DELETE of the shift's stored rows is issued BEFORE the expensive INSERT ... SELECT inside one txn, so X locks sit on that shift's ShiftSummary rows for the whole recom...
+- Oee.ShiftSummary_RecomputeRange -- no change -- agent static read, not independently verified; nothing to change
+- Oee.ShiftSummary_RefreshChanged -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: per shift in last 7 days evaluates ufn_ShiftInputFingerprint, which scans ProductionEvent (no ShiftId index) and RejectEvent (OR predicate); runs after every shift clo...
+
+## Parts
+
+- Parts.Bom_Create -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Bom_CreateNewVersion -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Bom_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Bom_DiscardDraft -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Bom_Get -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Bom_GetActiveForItem -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Bom_ListByParentItem -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Bom_Publish -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Bom_SaveDraft -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Bom_WhereUsedByChildItem -- no change -- agent static read, not independently verified; nothing to change
+- Parts.BomLine_Add -- no change -- agent static read, not independently verified; nothing to change
+- Parts.BomLine_ListByBom -- no change -- agent static read, not independently verified; nothing to change
+- Parts.BomLine_MoveDown -- no change -- agent static read, not independently verified; nothing to change
+- Parts.BomLine_MoveUp -- no change -- agent static read, not independently verified; nothing to change
+- Parts.BomLine_Remove -- no change -- agent static read, not independently verified; nothing to change
+- Parts.BomLine_Update -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ContainerConfig_Create -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ContainerConfig_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ContainerConfig_GetByItem -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ContainerConfig_GetByItemAndMethod -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ContainerConfig_JudgeWeight -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ContainerConfig_ListHistory -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ContainerConfig_Update -- no change -- agent static read, not independently verified; nothing to change
+- Parts.DataCollectionField_Create -- no change -- agent static read, not independently verified; nothing to change
+- Parts.DataCollectionField_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Parts.DataCollectionField_Get -- no change -- agent static read, not independently verified; nothing to change
+- Parts.DataCollectionField_List -- no change -- agent static read, not independently verified; nothing to change
+- Parts.DataCollectionField_Update -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_Create -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_Get -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_GetByPartNumber -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_GetMaxParts -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_GetPlcId -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_List -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_ListAvailableForBom -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_ListEligibleFinishedGoodsRanked -- flagged, no PR yet -- FLAGGED CANDIDATE (risk M) by agent read, unverified: correlated subqueries on the Lots.Lot heap filtered via JOIN LotStatusCode ... sc.Code <> N'Closed', so IX_Lot_NotClosed_* cannot be used; runs per Assembly OUT view l...
+- Parts.Item_ListEligibleForLocation -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_ListForCutoverLocation -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_SetPlcId -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Item_Update -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemLocation_Add -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemLocation_CheckEligibility -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemLocation_ListByItem -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemLocation_ListByLocation -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemLocation_ListConsumptionForLine -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: reads Lots.Lot by CurrentLocationId IN (@LineLocs) with the open-LOT filter expressed through a code-table join, so it cannot match IX_Lot_NotClosed_Location (same sha...
+- Parts.ItemLocation_Remove -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemLocation_SaveAllForItem -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemLocation_SetConsumptionMetadata -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemLocation_SetMaxQuantity -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemType_Create -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemType_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemType_Get -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemType_List -- no change -- agent static read, not independently verified; nothing to change
+- Parts.ItemType_Update -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplate_Create -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplate_CreateNewVersion -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplate_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplate_DiscardDraft -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplate_Get -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplate_List -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplate_Publish -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplate_Update -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplateField_Add -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplateField_ListByTemplate -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplateField_Remove -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplateField_SaveAll -- no change -- agent static read, not independently verified; nothing to change
+- Parts.OperationTemplateField_SetRequired -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteStep_Add -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteStep_GetSequenceForItemRole -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteStep_ListByRoute -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteStep_MoveDown -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteStep_MoveUp -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteStep_Remove -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteStep_Update -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteTemplate_Create -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteTemplate_CreateNewVersion -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteTemplate_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteTemplate_DiscardDraft -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteTemplate_Get -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteTemplate_GetActiveForItem -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteTemplate_ListByItem -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteTemplate_Publish -- no change -- agent static read, not independently verified; nothing to change
+- Parts.RouteTemplate_SaveAll -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Uom_Create -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Uom_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Uom_Get -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Uom_List -- no change -- agent static read, not independently verified; nothing to change
+- Parts.Uom_Update -- no change -- agent static read, not independently verified; nothing to change
+
 ## Quality
 
 - Quality.ControlledRun_AddMembers -- no change -- agent static read, not independently verified; nothing to change
@@ -243,6 +489,64 @@ Kept per CLAUDE.md, section "Stored-procedure review", rule 3: findings with no 
 - Quality.SampleTriggerCode_Get -- no change -- agent static read, not independently verified; nothing to change
 - Quality.SampleTriggerCode_List -- no change -- agent static read, not independently verified; nothing to change
 - Quality.SignatureMeaning_Get -- no change -- agent static read, not independently verified; nothing to change
+
+## Tools
+
+- Tools.DieRank_Create -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRank_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRank_Get -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRank_GetByCode -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRank_List -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRank_MoveDown -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRank_MoveUp -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRank_Update -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRankCompatibility_GetPair -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRankCompatibility_List -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRankCompatibility_Remove -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRankCompatibility_SaveAll -- no change -- agent static read, not independently verified; nothing to change
+- Tools.DieRankCompatibility_Upsert -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_CorrectShotCount -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_Create -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_Duplicate -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_Get -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_GetByCode -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_GetShotStatusForCell -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_List -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_ListCompatibleCells -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_ListEligibleForCell -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_ListForItem -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_ListMountableForCell -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_Update -- no change -- agent static read, not independently verified; nothing to change
+- Tools.Tool_UpdateStatus -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAssignment_Assign -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAssignment_GetCellContext -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: OpenBasketCount subquery reads Lots.Lot heap per die (see below); on-demand popup, not polled
+- Tools.ToolAssignment_History -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAssignment_ListActiveByCell -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAssignment_ListByTool -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAssignment_Release -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: open-basket guard reads Lots.Lot heap per die (same predicate as GetCellContext); rare supervisor action
+- Tools.ToolAttribute_ListByTool -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttribute_Remove -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttribute_SaveAll -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttribute_Upsert -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttributeDefinition_Create -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttributeDefinition_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttributeDefinition_Get -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttributeDefinition_ListByType -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttributeDefinition_MoveDown -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttributeDefinition_MoveUp -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolAttributeDefinition_Update -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolCavity_Create -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolCavity_Deprecate -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: open-basket check filters Lots.Lot on ToolCavityId, which has no index (heap scan); rare admin action
+- Tools.ToolCavity_ListActiveByTool -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolCavity_ListByTool -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolCavity_ListForItemTool -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolCavity_SaveAll -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolCavity_UpdateStatus -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolCavityStatusCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolStatusCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolType_Get -- no change -- agent static read, not independently verified; nothing to change
+- Tools.ToolType_List -- no change -- agent static read, not independently verified; nothing to change
 
 ## Workorder
 
