@@ -10,13 +10,13 @@ Kept per CLAUDE.md, section "Stored-procedure review", rule 3: findings with no 
 - **flagged** = a reviewer found something specific; it is only a claim until a line says "VERIFIED". Flagged procs have no PR yet.
 - Write paths (Assembly_CompleteTray, MachiningOut_Mint, RejectEvent_RecordByPartFifo, TrimOut_Record, Lot_Move*, Lot_Merge, Lot_UpdateStatus, Container_Complete, DieCastLot_*, controlled-run mutations) are NOT rewritten without Jacques's decision; findings on them are recorded here only.
 
-## Progress at 2026-11-13 14:47 local
+## Progress at 2026-11-13 16:02 local
 
 | | Procs |
 |---|---|
 | Checked, no change | 484 |
-| Checked and edited (PR open) | 6 |
-| Flagged, not yet decided | 65 |
+| Checked and edited (PR open) | 7 |
+| Flagged, not yet decided | 64 |
 | Not yet reviewed | 0 |
 | **Total stored procedures** | **555** |
 
@@ -344,7 +344,7 @@ Kept per CLAUDE.md, section "Stored-procedure review", rule 3: findings with no 
 - Parts.Item_GetPlcId -- no change -- agent static read, not independently verified; nothing to change
 - Parts.Item_List -- no change -- agent static read, not independently verified; nothing to change
 - Parts.Item_ListAvailableForBom -- no change -- agent static read, not independently verified; nothing to change
-- Parts.Item_ListEligibleFinishedGoodsRanked -- flagged, no PR yet -- FLAGGED CANDIDATE (risk M) by agent read, unverified: correlated subqueries on the Lots.Lot heap filtered via JOIN LotStatusCode ... sc.Code <> N'Closed', so IX_Lot_NotClosed_* cannot be used; runs per Assembly OUT view l...
+- Parts.Item_ListEligibleFinishedGoodsRanked -- EDITED -- PR https://github.com/BR-Customers/MPP/pull/14 (v1.1 -> v1.2, measured; benefits from 0118, harmless without it)
 - Parts.Item_ListEligibleForLocation -- no change -- agent static read, not independently verified; nothing to change
 - Parts.Item_ListForCutoverLocation -- no change -- agent static read, not independently verified; nothing to change
 - Parts.Item_SetPlcId -- no change -- agent static read, not independently verified; nothing to change
