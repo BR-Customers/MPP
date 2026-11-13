@@ -342,6 +342,42 @@ A one-off remediation against live data follows the same shape at smaller scale:
 - Running the window / rollback      → `08_the_live_window.md`
 - One-off data remediation           → `09_one_off_remediation.md`
 
+### Stored-procedure review -- one branch + one PR per proc revision (2026-11-13, MANDATORY)
+
+A stored-procedure review is under way (performance, optimisation, and
+collision/concurrency -- deadlocks, lock escalation, heap scans, races), prompted by
+the 2026-11-10 prod incident (`notes/2026-11-10_prod-incident-assembly-out-deadlock.md`,
+fixed by migration `0118` + `Lot_GetWipQueueByLocation` v3.3). Any agent doing this
+review, or revising any stored procedure for any reason, **SHALL** follow these rules.
+They override any default to work on a shared branch.
+
+1. **Never commit to `main` or `jacques/working`, and never push to them.** Start
+   every revision from an up-to-date `origin/main`:
+   `git fetch origin && git switch -c sp/<schema>-<ProcName> origin/main`
+   (e.g. `sp/lots-Lot_GetWipQueueByLocation`).
+2. **One proc revision = one branch = one pull request** into `main`
+   (`gh pr create --base main`). Do not batch several procs into one PR. The only
+   exception is a change that cannot land separately (a proc plus the index migration
+   it depends on, as `0118` did); say so in the PR body.
+3. **Findings with no code change are not commits.** Record them in the review log
+   (`notes/<date>_sp-review-log.md`, on its own `sp/review-log` branch + PR) -- one
+   line per proc: what was checked, what was found, PR link if one was opened.
+4. **Every PR body states:** the problem observed (with evidence -- plan, row counts,
+   lock trace, not a guess); what changed; that the result set (columns, order, rows)
+   is unchanged, or exactly how it changed and which callers (named queries, views,
+   other procs) that touches; the proc version bump in its header; and the
+   `sql/tests/Run-Tests.ps1` assertion count before and after (exit code alone is not
+   proof -- see memory note on exit 1 with 0 failures).
+5. **Follow the existing conventions**: edit the `R__*.sql` repeatable file (never
+   `ALTER` live), new indexes go in a new numbered `versioned/` migration, add or
+   extend a test under `sql/tests/`, keep the FDS-11-011 JDBC rules and the
+   `_TEMPLATE_stored_procedure.sql` error pattern.
+6. **Never run anything against a production database**, and never merge your own PR.
+   Jacques reviews and merges; production rollout follows "Production deployments"
+   above.
+7. If a proc looks badly wrong, describe it in the PR or review log and ask (see
+   "Working Style") -- do not rewrite its behaviour on a theory.
+
 ### Git commits
 
 Omit `Co-Authored-By: Claude` trailer.
