@@ -164,6 +164,32 @@ DECLARE @Reason NVARCHAR(200) = (
 EXEC test.Assert_IsEqual @TestName = N'[TraysLeft] Low Inventory downtime reason is seeded', @Expected = N'Low Inventory/MachiningAssembly/System/0', @Actual = @Reason;
 GO
 
+-- =============================================
+-- Test 8 (v1.1, SP review 2026-11-13): stock that must NOT count. PT1 already has 80 at the
+--         cell (4 trays). Add 1,000 CLOSED, 2,000 in Open status (a basket still being
+--         filled) and 4,000 at ANOTHER location: Available must stay 80 / 4 trays.
+--         Pins the status + exact-location filtering that the LotStatusId <> 4 index
+--         predicate sits beside.
+-- =============================================
+DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+DECLARE @Fg  BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-TRL-FG');
+DECLARE @Pt1 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-TRL-PT1');
+DECLARE @Cell  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+DECLARE @Other BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'WHSE');
+DECLARE @ClosedSt BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
+DECLARE @OpenSt   BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Open');
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES
+    (N'STG-101X-CLOSED', @Pt1, 2, @ClosedSt, 1000, 1000, @Cell,  1, @Now),
+    (N'STG-101X-OPEN',   @Pt1, 2, @OpenSt,   2000, 2000, @Cell,  1, @Now),
+    (N'STG-101X-ELSE',   @Pt1, 2, 1,         4000, 4000, @Other, 1, @Now);
+DECLARE @R TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), BoxQuantity INT, PiecesPerTray INT, Available INT, TraysLeft INT, IsShort BIT, ThresholdTrays INT);
+INSERT INTO @R EXEC Workorder.Assembly_GetTraysRemaining @CellLocationId = @Cell, @FinishedGoodItemId = @Fg, @ClosureMethod = N'ByCount';
+DECLARE @Avail NVARCHAR(10) = ISNULL((SELECT CAST(Available AS NVARCHAR(10)) FROM @R WHERE PartNumber = N'P6-TRL-PT1'), N'<null>');
+EXEC test.Assert_IsEqual @TestName = N'[TraysLeft v1.1] Closed, Open-status and other-location stock is not counted (Available)', @Expected = N'80', @Actual = @Avail;
+DECLARE @Left NVARCHAR(10) = ISNULL((SELECT CAST(TraysLeft AS NVARCHAR(10)) FROM @R WHERE PartNumber = N'P6-TRL-PT1'), N'<null>');
+EXEC test.Assert_IsEqual @TestName = N'[TraysLeft v1.1] ... and TraysLeft is still 4', @Expected = N'4', @Actual = @Left;
+GO
+
 -- ---- cleanup ----
 DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId WHERE l.LotName LIKE N'STG-101%';
 DELETE FROM Lots.Lot WHERE LotName LIKE N'STG-101%';
