@@ -27,7 +27,7 @@ Flagged does not mean broken, and it does not mean decided. A flagged proc stays
 
 Two cautions: a "no changes" mark is a reviewer's judgment from reading the code, not a test, so a reviewer could miss something; and a flagged finding is only a claim until it is verified (the note says "VERIFIED" when it has been).
 
-## Progress at 2026-11-13 16:07 local
+## Progress at 2026-11-13 16:11 local
 
 | | Procs |
 |---|---|
@@ -208,7 +208,7 @@ Two cautions: a "no changes" mark is a reviewer's judgment from reading the code
 - [x] Lots.Lot_GetScrapSummary (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Lots.Lot_GetShiftCavityTally (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: polled every 20 s per die-cast terminal (x several bindings); per-tool LOT read has no covering index, so heap lookups for every LOT ever made on the die
 - [x] Lots.Lot_GetShippedContainers (no changes) - agent static read, not independently verified; nothing to change
-- [x] Lots.Lot_GetTerminalRecentCreations (edited) - BRANCH sp/lots-Lot_GetTerminalRecentCreations pushed (commit 8478acc4): index-only migration 0122, proc unchanged; measured (2,281 -> 17 reads, 47.6 -> 1.6 ms warm), 11 tests pass; PR opens when the full suite finishes (PR link to be added)
+- [x] Lots.Lot_GetTerminalRecentCreations (edited) - PR https://github.com/BR-Customers/MPP/pull/15 (index-only migration 0122, proc unchanged; measured: 2,281 -> 17 reads, 47.6 -> 1.6 ms warm)
 - [x] Lots.Lot_GetTrimStorageQueueForLine (no changes) - already fixed on main (v2.1 + migration 0118); read, no further change
 - [x] Lots.Lot_GetWipQueueByLocation (no changes) - already fixed on main (v3.3 + migration 0118); read, no further change
 - [x] Lots.Lot_List (no changes) - agent static read, not independently verified; nothing to change
