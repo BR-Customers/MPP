@@ -2,7 +2,8 @@
 -- Repeatable:  R__Workorder_Assembly_GetTraysRemaining.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-06
--- Version:     1.0
+-- Modified:    2026-11-13
+-- Version:     1.1
 -- Description: How many more trays of a finished good the line can close before a
 --              PURCHASED part runs out -- the read behind the Assembly OUT
 --              low-inventory lock
@@ -39,6 +40,17 @@
 --
 -- Change Log:
 --   2026-10-06 - 1.0 - Initial version.
+--   2026-11-13 - 1.1 - Stored-procedure review (same query SHAPE as the 2026-11-10 prod
+--                      incident reads, notes/2026-11-10_prod-incident-assembly-out-
+--                      deadlock.md; no deadlock has been observed on THIS proc). The
+--                      stock sum filtered open LOTs only through the LotStatusCode join
+--                      (sc.Code NOT IN ('Closed','Open')), which cannot use the filtered
+--                      indexes of migration 0118, so every poll read the whole Lots.Lot
+--                      heap (1,424 pages at prod volume, polled every 30 s by two views).
+--                      Added the literal l.LotStatusId <> 4 (Closed), which repeats
+--                      IX_Lot_NotClosed_Location / IX_Lot_NotClosed_Item's filter so the
+--                      optimiser can seek them; the code-table join still decides.
+--                      Same rows, same order, same values.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.Assembly_GetTraysRemaining
     @CellLocationId     BIGINT,
@@ -106,6 +118,9 @@ BEGIN
         INNER JOIN Lots.LotOriginType o  ON o.Id  = l.LotOriginTypeId
         WHERE l.ItemId = n.ItemId
           AND l.CurrentLocationId = @CellLocationId
+          -- 'LotStatusId <> 4' (Closed) repeats the 0118 filtered-index predicate so the
+          -- optimiser can seek IX_Lot_NotClosed_*; the code-table test below decides.
+          AND l.LotStatusId <> 4
           AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0
           AND (n.ReceivedOnly = 0 OR o.Code IN (N'Received', N'ReceivedOffsite'))
     ) s
