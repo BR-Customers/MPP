@@ -1,0 +1,297 @@
+# Stored-procedure review log
+
+Kept per CLAUDE.md, section "Stored-procedure review", rule 3: findings with no code change are recorded here, one line per proc (what was checked, what was found, PR link if one was opened). Started 2026-11-13. This file is a living log; later commits add procs as they are reviewed.
+
+## How to read this
+
+- **Scope:** performance and collision / concurrency (heap scans, whole-table aggregates, polled reads without an index, check-then-write races, lock order). Not behaviour changes.
+- **no change** = the proc was read in full and nothing worth changing was found. **Unless the line says "measured", this is a reviewer's static read of the SQL, NOT a query-plan test and not independently re-checked.** A reviewer can miss something.
+- **edited** = changed in a pull request (linked). Those were measured on a throwaway database and tested on the old and new version.
+- **flagged** = a reviewer found something specific; it is only a claim until a line says "VERIFIED". Flagged procs have no PR yet.
+- Write paths (Assembly_CompleteTray, MachiningOut_Mint, RejectEvent_RecordByPartFifo, TrimOut_Record, Lot_Move*, Lot_Merge, Lot_UpdateStatus, Container_Complete, DieCastLot_*, controlled-run mutations) are NOT rewritten without Jacques's decision; findings on them are recorded here only.
+
+## Progress at 2026-11-13 13:50 local
+
+| | Procs |
+|---|---|
+| Checked, no change | 212 |
+| Checked and edited (PR open) | 5 |
+| Flagged, not yet decided | 49 |
+| Not yet reviewed | 289 |
+| **Total stored procedures** | **555** |
+
+## Lots
+
+- Lots.AimPoolConfig_Get -- no change -- agent static read, not independently verified; nothing to change
+- Lots.AimPoolConfig_Update -- no change -- agent static read, not independently verified; nothing to change
+- Lots.AimShipperIdPool_Claim -- no change -- agent static read, not independently verified; nothing to change
+- Lots.AimShipperIdPool_GetDepth -- no change -- agent static read, not independently verified; nothing to change
+- Lots.AimShipperIdPool_GetForPost -- no change -- agent static read, not independently verified; nothing to change
+- Lots.AimShipperIdPool_ListUnposted -- no change -- agent static read, not independently verified; nothing to change
+- Lots.AimShipperIdPool_ListVoided -- no change -- agent static read, not independently verified; nothing to change
+- Lots.AimShipperIdPool_MarkPosted -- no change -- agent static read, not independently verified; nothing to change
+- Lots.AimShipperIdPool_RecordPostResult -- no change -- agent static read, not independently verified; nothing to change
+- Lots.AimShipperIdPool_Topup -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Container_Complete -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: final UPDATE Lots.Container has no AND ContainerStatusCodeId = 1; status is checked only before the transaction
+- Lots.Container_GetLabelData -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Container_GetOpenByCell -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Container_GetTraceDetail -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Container_ListPendingValidation -- flagged, no PR yet -- FLAGGED CANDIDATE (risk M) by agent read, unverified: OR across location and status 3 drives a scan of every completed container (they never leave the line), then a Lot seek per tray
+- Lots.Container_ListSerials -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Container_ListShipped -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: reporting read, dates default NULL (unbounded), no index on CompletedAt, ~8 correlated seeks per container
+- Lots.Container_Open -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Container_Ship -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Container_ValidateCrt -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_Get -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_ListAtLocation -- flagged, no PR yet -- FLAGGED CANDIDATE (risk M) by agent read, unverified: polled every 15 s per terminal; filters Lots.Container on status 7 with no index that can serve it
+- Lots.ContainerRework_ListSerials -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_ListTargets -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_ListTrays -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_MovePieces -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_Open -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_Resume -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_Scrap -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_SetStage -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerRework_Void -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerSerial_Add -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerSerial_Get -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerStatusCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerStatusCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ContainerTray_Close -- no change -- agent static read, not independently verified; nothing to change
+- Lots.DieCastLot_Mint -- no change -- agent static read, not independently verified; nothing to change
+- Lots.DieCastLot_Open -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: one-open-basket-per-(tool,cavity) is a lock-free check-then-insert
+- Lots.DieCastLot_Release -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: Open-status check and watermark-derived delta are computed before the transaction; nothing in the write path re-checks status
+- Lots.DieCastLot_ReleaseMove -- no change -- agent static read, not independently verified; nothing to change
+- Lots.DieCastLot_ResolveLtt -- no change -- agent static read, not independently verified; nothing to change
+- Lots.DieCastLot_Void -- no change -- agent static read, not independently verified; nothing to change
+- Lots.GenealogyRelationshipType_Get -- no change -- agent static read, not independently verified; nothing to change
+- Lots.GenealogyRelationshipType_List -- no change -- agent static read, not independently verified; nothing to change
+- Lots.GlobalTrace_Resolve -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: ShippingLabel.AimShipperId = @Search has no index (scan); unbounded LIKE prefix expands before TOP 50
+- Lots.IdentifierSequence_Next -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LabelTemplate_GetActiveByTypeCode -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LabelTypeCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LabelTypeCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_ApplyPieceCountCorrection -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_AssertNotBlocked -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_BackfillMintStamp -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_ClearCrt -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_CloseInline -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: unlocked status read then UPDATE with no status guard (check-then-write)
+- Lots.Lot_Create -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: steps 6/6b SUM open LOTs via LotStatusCode join (code-table shape) for Received origin only; B6 sequence row held to commit by design
+- Lots.Lot_Get -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: catch-all OR over l.Id / l.LotName; plan unknown
+- Lots.Lot_GetAttributeHistory -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetCellLineQuantity -- flagged, no PR yet -- FLAGGED CANDIDATE (risk L) by agent read, unverified: sc.Code <> N'Closed' code-table join cannot use IX_Lot_NotClosed_Location; SUM seeks every LOT ever at the location
+- Lots.Lot_GetChildren -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetComponentsAtCell -- EDITED -- PR https://github.com/BR-Customers/MPP/pull/7 (v1.1 -> v1.2, measured)
+- Lots.Lot_GetGenealogyEdgeTree -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetGenealogyTree -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetInspectionQueueByLocation -- EDITED -- PR https://github.com/BR-Customers/MPP/pull/8 (v1.0 -> v1.1, measured)
+- Lots.Lot_GetLatestForToolCavity -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetLifecycle -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetLineInventoryByPart -- EDITED -- PR https://github.com/BR-Customers/MPP/pull/11 (v1.3 -> v1.4, measured; requires 0118, slower without it)
+- Lots.Lot_GetLineInventorySummary -- flagged, no PR yet -- FLAGGED CANDIDATE (risk M) by agent read, unverified: polled every 30 s x3 bindings per sidebar; OnHand reads Lots.Lot by location via a code-table join that cannot use the 0118 filtered index
+- Lots.Lot_GetLinkedContainer -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetOpenByTool -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: IX_Lot_ToolId seek then heap lookup for every LOT ever cast on the tool, status via code join
+- Lots.Lot_GetParents -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetScrapEvents -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetScrappablePartsByLocation -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: sc.Code = N'Good' via code-table join cannot use the 0118 filtered index, so seek on IX_Lot_CurrentLocationId also walks every closed LOT at the cell
+- Lots.Lot_GetScrapSummary -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetShiftCavityTally -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: polled every 20 s per die-cast terminal (x several bindings); per-tool LOT read has no covering index, so heap lookups for every LOT ever made on the die
+- Lots.Lot_GetShippedContainers -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_GetTerminalRecentCreations -- flagged, no PR yet -- VERIFIED by me: WHERE CreatedAtTerminalId = @T AND ToolId IS NOT NULL ORDER BY CreatedAt DESC TOP N, and no index exists on CreatedAtTerminalId (heap scan + sort); the DieCastBody view re-reads it on a 20 s tick (per its own comment). Fix = index (CreatedAtTerminalId, CreatedAt DESC) filtered ToolId NOT NULL, migration after 0120. Not started
+- Lots.Lot_GetTrimStorageQueueForLine -- no change -- already fixed on main (v2.1 + migration 0118); read, no further change
+- Lots.Lot_GetWipQueueByLocation -- no change -- already fixed on main (v3.3 + migration 0118); read, no further change
+- Lots.Lot_List -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_ListByVendorLot -- flagged, no PR yet -- VERIFIED by me: exact match on Lots.Lot.VendorLotNumber and no index on that column in any migration, so each call scans the heap. Runs per operator check-in (not polled), so LOW priority. Fix = small filtered index (VendorLotNumber IS NOT NULL), migration after 0120. Not started
+- Lots.Lot_Merge -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: pre-txn status/piece-count read never re-checked; source-close UPDATE has no status predicate or rowcount check; no caller outside tests
+- Lots.Lot_MoveTo -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: check-then-write: pre-txn read of status/location, UPDATE unguarded, stale FromLocationId can be written to LotMovement
+- Lots.Lot_MoveToValidated -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: same unguarded UPDATE as MoveTo, plus MaxParts SUM via code-table join and check-then-write cap race
+- Lots.Lot_RectifyPieceCount -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_Search -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: catch-all OR + LIKE '%q%' + COUNT(*) OVER() + per-row OUTER APPLY into ProductionEvent over the whole heap; user-initiated only
+- Lots.Lot_SearchAdvanced -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: 12-way catch-all OR (incl. recursive CTE + EXISTS arms) with no OPTION(RECOMPILE); heap scan shape; user-initiated (LotSearch screen)
+- Lots.Lot_SetCrt -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_Split -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_Update -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_UpdateAttribute -- no change -- agent static read, not independently verified; nothing to change
+- Lots.Lot_UpdateStatus -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: check-then-write: UPDATE has no LotStatusId = @CurrentStatusId guard, so a hold placed in the gap is overwritten Hold->Closed
+- Lots.LotGenealogy_RecordConsumption -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotLabel_Print -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotLabel_RecordDispatch -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotLabel_Reprint -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotNote_Add -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotNote_ListByLot -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotOriginType_Get -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotOriginType_List -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotPause_GetByLocation -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotPause_GetByLot -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotPause_GetCountsByLocation -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotPause_Place -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotPause_Resume -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotStatusCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Lots.LotStatusCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Lots.PrintReasonCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Lots.PrintReasonCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Lots.SerializedPart_GetBySerial -- no change -- agent static read, not independently verified; nothing to change
+- Lots.SerializedPart_GetTraceDetail -- no change -- agent static read, not independently verified; nothing to change
+- Lots.SerializedPart_Mint -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_AckBanner -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_GetById -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_GetContainerId -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_GetForBanner -- EDITED -- PR https://github.com/BR-Customers/MPP/pull/10 (index-only migration 0120, proc unchanged; measured)
+- Lots.ShippingLabel_GetLastForTerminal -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_GetStranded -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_ListRecentByCell -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_MarkDispatch -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_RecordDispatch -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_Reprint -- no change -- agent static read, not independently verified; nothing to change
+- Lots.ShippingLabel_Void -- no change -- agent static read, not independently verified; nothing to change
+- Lots.SortCage_MigrateSerial -- no change -- agent static read, not independently verified; nothing to change
+- Lots.VendorReturn_Cancel -- no change -- agent static read, not independently verified; nothing to change
+- Lots.VendorReturn_Confirm -- no change -- agent static read, not independently verified; nothing to change
+- Lots.VendorReturn_GetEligibility -- no change -- agent static read, not independently verified; nothing to change
+- Lots.VendorReturn_ListByLot -- no change -- agent static read, not independently verified; nothing to change
+- Lots.VendorReturn_ListOpen -- no change -- agent static read, not independently verified; nothing to change
+- Lots.VendorReturn_Mark -- no change -- agent static read, not independently verified; nothing to change
+
+## Quality
+
+- Quality.ControlledRun_AddMembers -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ApplyMembersInternal -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: UPDATE Lots.Lot driven by l.Id IN (...) OR l.Id IN (...) on a heap, no seek guaranteed; audit cursors run while X locks are held
+- Quality.ControlledRun_Cancel -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_Close -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_Get -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_GetByNumber -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_GetOpenByMember -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_GetOpenSummary -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_List -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ListByLot -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ListHistory -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ListMarkers -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: per-node CROSS APPLY ufn_ControlledRunMembershipsForLot has no index for ended memberships, so each node scans ControlledRunMember
+- Quality.ControlledRun_ListMemberOrigin -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ListMemberResults -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ListMemberRework -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ListMembers -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ListSignatures -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_LogMemberLotEventsInternal -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_Open -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: window-conflict check-then-insert outside the transaction, no unique index backs it
+- Quality.ControlledRun_PreviewSelection -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: item+time scan of every LOT ever made of the part (non-covering IX_Lot_ItemId, RID lookups); calls ufn_ControlledRunResolveMembers with an OR-shaped open-member probe
+- Quality.ControlledRun_Release -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: same OR-of-IN UPDATE on Lots.Lot as ApplyMembersInternal; X locks on up to hundreds of Lots.Lot rows held across per-LOT audit cursors
+- Quality.ControlledRun_RemoveMember -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ReportMembers -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_ReportOutcomes -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_SetAutoJoin -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: window-conflict check-then-update outside the transaction (same as Open)
+- Quality.ControlledRun_SyncAutoJoin -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRun_SyncInternal -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: 60 s timer (ships disabled): per open run reads every LOT of the item via IX_Lot_ItemId + RID lookups, with an OR on location; runs forever for any run whose window wa...
+- Quality.ControlledRunDeviation_ListByRun -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRunDeviation_Raise -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRunLabel_Print -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRunResult_ListByRun -- no change -- agent static read, not independently verified; nothing to change
+- Quality.ControlledRunResult_Record -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: Lots.Lot X-lock then ControlledRunResult insert: opposite order to Release (Result range lock then Lots.Lot); cursor locks LOTs in entry order
+- Quality.ControlledRunResult_Void -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: member-ended / release state checked before BEGIN TRAN, UPDATE does not re-assert it (integrity race with Release, not a perf issue)
+- Quality.Crt_FlagMissedInspection -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Crt_GetRequiredInspections -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: location-scoped read of Lots.Lot via IX_Lot_CurrentLocationId + status code-table join (shape (c) of the incident); no view calls it today
+- Quality.DefectCode_Create -- no change -- agent static read, not independently verified; nothing to change
+- Quality.DefectCode_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Quality.DefectCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Quality.DefectCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Quality.DefectCode_ListRankedForLocation -- no change -- agent static read, not independently verified; nothing to change
+- Quality.DefectCode_Update -- no change -- agent static read, not independently verified; nothing to change
+- Quality.DispositionCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Quality.DispositionCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Hold_GetOpenByContainer -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Hold_GetOpenByLot -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Hold_ListAssociatedContainers -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Hold_ListByContainer -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Hold_ListOpen -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Hold_ListOpenForReport -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Hold_Place -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: LOT status read unlocked before txn, written as OldStatusId into history; later used by Hold_Release to restore
+- Quality.Hold_Release -- no change -- agent static read, not independently verified; nothing to change
+- Quality.HoldTypeCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Quality.HoldTypeCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Quality.InspectionResultCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Quality.InspectionResultCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualityAttachment_Add -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualityAttachment_ListBySample -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualityResult_ListBySample -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySample_ListByLot -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySample_Record -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpec_Create -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpec_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpec_Get -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpec_List -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpec_Update -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecAttribute_Add -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecAttribute_ListByVersion -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecAttribute_MoveDown -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecAttribute_MoveUp -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecAttribute_Remove -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecAttribute_Update -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecVersion_Create -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecVersion_CreateNewVersion -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecVersion_Deprecate -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecVersion_DiscardDraft -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecVersion_Get -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecVersion_GetActiveForSpec -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecVersion_ListBySpec -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecVersion_Publish -- no change -- agent static read, not independently verified; nothing to change
+- Quality.QualitySpecVersion_SaveDraft -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Reject_GetNonRejectScrap -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Reject_GetPartMatrix -- no change -- agent static read, not independently verified; nothing to change
+- Quality.Reject_GetPartMatrixByParty -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: child query run once per part: no RejectEvent(ItemId) index, so each call scans the RejectEvent window
+- Quality.Reject_GetPartMatrixDefects -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: child query run once per part: same missing RejectEvent(ItemId) index
+- Quality.Reject_GetPlantSummary -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: @MachAsmGood scans the whole Lots.Lot heap filtered on CreatedAt (no index)
+- Quality.Reject_SearchDetail -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: COUNT(*) OVER() + TOP forces the whole window; OUTER APPLY per row; dates default NULL (all history)
+- Quality.SampleTriggerCode_Get -- no change -- agent static read, not independently verified; nothing to change
+- Quality.SampleTriggerCode_List -- no change -- agent static read, not independently verified; nothing to change
+- Quality.SignatureMeaning_Get -- no change -- agent static read, not independently verified; nothing to change
+
+## Workorder
+
+- Workorder.Assembly_CompleteTray -- flagged, no PR yet -- FLAGGED CANDIDATE (risk H) by agent read, unverified: Open-LOT reads via code-table join (4 sites incl. FIFO pick loop) cannot use filtered indexes; source-LOT FIFO pick is unlocked read-then-write; global Lot sequence lo...
+- Workorder.Assembly_GetTraysRemaining -- EDITED -- PR https://github.com/BR-Customers/MPP/pull/9 (v1.0 -> v1.1, measured; requires 0118)
+- Workorder.Assembly_ScanIn -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.ConsumptionEvent_RecordWithBomCheck -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCast_GetCounterContext -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCast_GetReleasePreview -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCast_GetShiftOutputBreakdown -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: Relevant CTE walks every LOT ever made on the die (IX_Lot_ToolId) with an OR EXISTS, plus ~7 scalar UDF calls per output row
+- Workorder.DieCastCounterAnchor_Record -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastCounterAnchorReason_List -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastCredit_Write -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastEntry_Restamp -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastReconciliationReason_List -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastScrap_Write -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: die-wide path does OUTER APPLY ... FROM Lots.Lot ... WHERE l.ToolCavityId = tc.Id per cavity inside the txn; no index on ToolCavityId (heap scan per cavity)
+- Workorder.DieCastShift_ListUnreconciled -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastShiftOutput_Record -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: die watermark read pre-txn with no lock then used to bump Tools.Tool.ShotCount (stale-delta race on concurrent submits)
+- Workorder.DieCastShiftReconciliation_GetHeader -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastShiftReconciliation_ListCavities -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastShiftReconciliation_ListEntries -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastShiftReconciliation_ListLots -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastShiftReconciliation_ListMoveTargets -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastShiftReconciliation_ListRejects -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastShiftReconciliation_ListShifts -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastShiftReconciliation_Save -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastSupervisor_GetShiftContext -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.DieCastSupervisor_GetShiftTotals -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.FinishedGoods_GetProducedSummary -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.MachiningIn_RecordPick -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.MachiningOut_Mint -- flagged, no PR yet -- FLAGGED CANDIDATE (risk H) by agent read, unverified: In-txn GROUP BY LotId over ALL Lots.LotMovement (line 293); unfiltered-index status predicates; scrap UPDATE locks the scanned LOT out of FIFO order before the walk
+- Workorder.OperationStatus_Get -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.OperationStatus_List -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.ProductionEvent_ListByLot -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.ProductionEvent_Record -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.RejectEvent_Record -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.RejectEvent_RecordByPartFifo -- flagged, no PR yet -- FLAGGED CANDIDATE (risk H) by agent read, unverified: Lots.Lot WITH (UPDLOCK, HOLDLOCK) range-scan on item/location (includes closed history) plus an in-txn full-LotMovement aggregate: long, wide lock footprint on the sam...
+- Workorder.ScaleStation_GetPressLog -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.ScaleStation_GetRecentBoxes -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: scans Lots.Container for StationLocationId + CompletedAt (only open-row filtered indexes exist); grows with every box
+- Workorder.ScaleStation_GetRunningPart -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: runs ufn_ScaleStationEligibleParts (Lot reads through code-table join, per FG x BOM line) on every press / tray
+- Workorder.ScaleStation_GetShiftTally -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: 60 s poll; scans Lots.Container twice (no StationLocationId index) then seeks trays for every historical box at the station
+- Workorder.ScaleStation_ListEligibleParts -- flagged, no PR yet -- FLAGGED WATCH (risk L) by agent read, unverified: same ufn_ScaleStationEligibleParts stock reads as GetRunningPart; UI picker, less frequent
+- Workorder.ScrapSource_Get -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.ScrapSource_List -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.TrimCheckpoint_GetLatestForLot -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.TrimOut_Record -- flagged, no PR yet -- FLAGGED WATCH (risk M) by agent read, unverified: guards (location, already-trimmed, piece count) are unlocked pre-txn reads; the Lot UPDATE is unconditional, so a double submit double-decrements scrap and double-moves
+- Workorder.TrimPartial_Record -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.WorkOrderStatus_Get -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.WorkOrderStatus_List -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.WorkOrderType_Get -- no change -- agent static read, not independently verified; nothing to change
+- Workorder.WorkOrderType_List -- no change -- agent static read, not independently verified; nothing to change
+
