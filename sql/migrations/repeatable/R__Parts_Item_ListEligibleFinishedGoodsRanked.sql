@@ -1,6 +1,18 @@
 -- ============================================================
 -- Repeatable:  R__Parts_Item_ListEligibleFinishedGoodsRanked.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.2 (2026-11-13, stored-procedure review) - same query SHAPE as the
+--              2026-11-10 prod incident reads (notes/2026-11-10_prod-incident-
+--              assembly-out-deadlock.md); no deadlock has been observed on THIS proc.
+--              The four stock subqueries over Lots.Lot (Avail and EarliestReady, in
+--              both the BOM arm and the repack arm) filtered open LOTs only through
+--              the LotStatusCode join, so they could not use the filtered indexes of
+--              migration 0118 and read every LOT of the part ever at the line,
+--              closed history included. Each now also carries the literal
+--              l.LotStatusId <> 4 (Closed), which repeats IX_Lot_NotClosed_Location /
+--              IX_Lot_NotClosed_Item's filter so the optimiser can seek them; the
+--              code-table tests beside it still decide. Same rows, same order, same
+--              values.
 -- Version:     1.1 (2026-10-06) - a finished good with NO published BOM is now
 --              listed too (pass-through repack; Assembly_CompleteTray v1.5). It
 --              counts as satisfied (LinesSatisfied = 1) when received-origin stock
@@ -36,10 +48,10 @@ BEGIN
     LineSat AS (
         SELECT ab.ItemId, bl.ChildItemId, bl.QtyPer,
                ISNULL((SELECT SUM(l.InventoryAvailable) FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
-                       WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @LocationId AND sc.Code <> N'Closed'), 0) AS Avail,
+                       WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @LocationId AND l.LotStatusId <> 4 AND sc.Code <> N'Closed'), 0) AS Avail,
                (SELECT MIN(m.MovedAt) FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                        JOIN Lots.LotMovement m ON m.LotId = l.Id
-                       WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @LocationId AND sc.Code <> N'Closed' AND l.InventoryAvailable > 0) AS EarliestReady
+                       WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @LocationId AND l.LotStatusId <> 4 AND sc.Code <> N'Closed' AND l.InventoryAvailable > 0) AS EarliestReady
         FROM ActiveBom ab JOIN Parts.BomLine bl ON bl.BomId = ab.BomId
         UNION ALL
         -- v1.1 repack: no published BOM -> one pseudo-line, the part itself 1:1, fed
@@ -49,12 +61,14 @@ BEGIN
                        JOIN Lots.LotOriginType o ON o.Id = l.LotOriginTypeId
                        WHERE l.ItemId = ab.ItemId AND l.CurrentLocationId = @LocationId
                          AND o.Code IN (N'Received', N'ReceivedOffsite')
+                         AND l.LotStatusId <> 4
                          AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0), 0),
                (SELECT MIN(m.MovedAt) FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                        JOIN Lots.LotOriginType o ON o.Id = l.LotOriginTypeId
                        JOIN Lots.LotMovement m ON m.LotId = l.Id
                        WHERE l.ItemId = ab.ItemId AND l.CurrentLocationId = @LocationId
                          AND o.Code IN (N'Received', N'ReceivedOffsite')
+                         AND l.LotStatusId <> 4
                          AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0 AND l.InventoryAvailable > 0)
         FROM ActiveBom ab WHERE ab.BomId IS NULL
     ),
