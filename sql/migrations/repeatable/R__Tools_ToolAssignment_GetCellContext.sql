@@ -2,8 +2,15 @@
 -- Procedure:   Tools.ToolAssignment_GetCellContext
 -- Author:      Blue Ridge Automation
 -- Created:     2026-06-16
--- Version:     1.1
--- Changelog:   1.1 (2026-09-14) APPENDED LAST: OpenBasketCount INT. Lets the
+-- Version:     1.2
+-- Changelog:   1.2 (2026-11-16) Performance only (stored-procedure review).
+--              OpenBasketCount gains the literal `l.LotStatusId <> 4` so it
+--              reads IX_Lot_Tool_NotClosed (0128, covering) instead of
+--              scanning the whole Lots.Lot heap. Closed is never Open, so the
+--              count is IDENTICAL to Tools.ToolAssignment_Release's guard --
+--              the predicate below is that guard plus one redundant term.
+--              Result set unchanged.
+--              1.1 (2026-09-14) APPENDED LAST: OpenBasketCount INT. Lets the
 --              plant-floor Die Mount popup disable Release and state the
 --              reason inline instead of firing a mutation to be told no.
 --              It uses Tools.ToolAssignment_Release's v1.1 guard predicate
@@ -77,6 +84,7 @@ BEGIN
                 INNER JOIN Tools.ToolCavity   tc ON tc.Id = l.ToolCavityId
                 WHERE l.ToolId = ta.ToolId
                   AND sc.Code = N'Open'
+                  AND l.LotStatusId <> 4   -- v1.2: redundant (Closed is never Open); lets IX_Lot_Tool_NotClosed serve
                   AND tc.ToolId = ta.ToolId
                   AND tc.DeprecatedAt IS NULL), 0)
                             AS OpenBasketCount
