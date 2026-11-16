@@ -29,6 +29,9 @@
 --              IX_QualitySample_LotId_SampledAt). "Latest" is unchanged: greatest
 --              SampledAt, ties broken by greatest Id. A NULL @IncludeDescendants still
 --              returns nothing (both v1.0 predicate arms were NULL).
+--              (2026-11-16, review fix) @Lots.VendorLotNumber is NVARCHAR(100) to match
+--              Lots.Lot.VendorLotNumber; at 50 a longer vendor lot raised Msg 2628 and
+--              blanked the whole queue.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.Lot_GetInspectionQueueByLocation
     @LocationId         BIGINT,
@@ -64,7 +67,7 @@ BEGIN
     --    The last movement is a per-LOT seek on CIX_LotMovement_LotMovedAt.
     DECLARE @Lots TABLE (LotId BIGINT NOT NULL PRIMARY KEY, LotName NVARCHAR(50) NOT NULL, ItemId BIGINT NOT NULL,
                          ItemPartNumber NVARCHAR(50) NOT NULL, ItemDescription NVARCHAR(500) NULL,
-                         PieceCount INT NOT NULL, VendorLotNumber NVARCHAR(50) NULL,
+                         PieceCount INT NOT NULL, VendorLotNumber NVARCHAR(100) NULL,
                          LotStatusId BIGINT NOT NULL, LotStatusCode NVARCHAR(20) NOT NULL,
                          LatestInspectionResult NVARCHAR(20) NULL, LatestSampledAtUtc DATETIME2(3) NULL,
                          ArrivedAtUtc DATETIME2(3) NULL);

@@ -197,6 +197,30 @@ SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q WHERE LotName LIKE N'INS
 EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] NULL @IncludeDescendants returns nothing', @Expected=N'0', @Actual=@N;
 GO
 
+-- Vendor lot number at the full column width (NVARCHAR(100)): the queue must still return,
+-- with the value intact. Guards the @Lots table-variable width (review fix 2026-11-16).
+DECLARE @Station BIGINT = (SELECT Id FROM Location.Location WHERE Code=N'INSP-SORT-T1');
+DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber=N'P-INSP-TP');
+DECLARE @Recv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code=N'Received');
+DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
+DECLARE @Vln NVARCHAR(100) = REPLICATE(N'V', 100);
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, VendorLotNumber, CreatedByUserId, CreatedAt)
+VALUES (N'INSPQ2-LONGVLN', @Item, @Recv, @Good, 10, 10, @Station, @Vln, 1, SYSUTCDATETIME());
+DECLARE @Q TABLE (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
+    PieceCount INT, VendorLotNumber NVARCHAR(100), LotStatusId BIGINT, LotStatusCode NVARCHAR(20),
+    LatestInspectionResult NVARCHAR(20), LatestSampledAt DATETIME2(3), ArrivedAt DATETIME2(3));
+DECLARE @Err NVARCHAR(10) = N'none';
+BEGIN TRY
+    INSERT INTO @Q EXEC Lots.Lot_GetInspectionQueueByLocation @LocationId=@Station, @IncludeDescendants=0;
+END TRY
+BEGIN CATCH
+    SET @Err = CAST(ERROR_NUMBER() AS NVARCHAR(10));
+END CATCH
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] a 100-character vendor lot number raises no error', @Expected=N'none', @Actual=@Err;
+DECLARE @S NVARCHAR(10) = CAST(ISNULL((SELECT LEN(VendorLotNumber) FROM @Q WHERE LotName=N'INSPQ2-LONGVLN'), -1) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName=N'[InspQueue v1.1] a 100-character vendor lot number is returned intact (no truncation error)', @Expected=N'100', @Actual=@S;
+GO
+
 -- ---- cleanup ----
 DELETE qs FROM Quality.QualitySample qs INNER JOIN Lots.Lot l ON l.Id=qs.LotId WHERE l.LotName LIKE N'INSPQ2-%';
 DELETE FROM Quality.QualitySpecVersion WHERE QualitySpecId IN (SELECT Id FROM Quality.QualitySpec WHERE Name=N'INSPQ2-TEST-SPEC');
