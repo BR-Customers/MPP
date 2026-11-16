@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetScrappablePartsByLocation.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-06
--- Version:     1.0
+-- Modified:    2026-11-16
+-- Version:     1.1
 -- Description: The part list for the Scrap Entry popup (Assembly + Machining
 --              terminals). One row per part that has scrappable stock at
 --              @LocationId: the part, the total pieces that can be scrapped,
@@ -26,6 +26,13 @@
 --
 --              Ordered Description ASC, PartNumber ASC -- the same grouping
 --              order as Lots.Lot_GetLineInventoryByPart.
+--
+--              v1.1 (2026-11-16, SP review): adds the literal
+--              `AND l.LotStatusId <> 4` beside the Good test. A status
+--              reached only through the code-table join cannot match the
+--              filtered index IX_Lot_NotClosed_* (0118), so v1.0 scanned the
+--              whole Lots.Lot heap on every call. Redundant by meaning (Good
+--              is never Closed, Id 4 is asserted by 0118); result unchanged.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.Lot_GetScrappablePartsByLocation
     @LocationId BIGINT
@@ -48,6 +55,7 @@ BEGIN
     INNER JOIN Parts.Item i          ON i.Id  = l.ItemId
     WHERE l.CurrentLocationId = @LocationId
       AND sc.Code = N'Good'
+      AND l.LotStatusId <> 4      -- literal: reaches the 0118 filtered index (Closed = 4)
       AND l.PieceCount > 0
       AND l.InventoryAvailable > 0
     GROUP BY l.ItemId, i.PartNumber, i.Description
