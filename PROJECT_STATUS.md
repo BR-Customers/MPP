@@ -18,7 +18,7 @@
 >
 > **Re-bench (year scale, `MPP_MES_Bench_Core` = copy of `Bench_After` turned into main + core: heap, `0118` indexes):** WIP queue 2 ms, trim queue 6 ms -- main's versions are as fast as the branch's. Still slow on main: components-at-cell **6.4 s**, `Lot_List` at line 486 ms, line inventory by part 58 ms. The branch's versions of those on main's indexes: 352 ms, **913 ms (worse)**, 3 ms -- so components-at-cell and `Lot_List` need retuning against the not-closed indexes, line inventory carries over. FG produced summary 109 ms (14 ms with the clustered index): its old-shape branch reads tray LOTs by `CreatedAt`, a set that stops growing at `0119`.
 >
-> **Still to do after merge:** the three Designer view items (LOT Detail "Container #n (k trays)", search "Search older" / "100+" -- with search v2, AssemblyNonSerialized CRT notice) and a full prod release with the open-tray-LOT-container pre-flight WARN (spec section 9).
+> **Views done 2026-11-16 (file edits, not yet rendered on a gateway):** LOT Detail tray row for a container LOT, AssemblyNonSerialized CRT notice once per LOT + tray toast (#16); LOT Search "Search older than 90 days" + "N+" (#18). **Still to do after merge:** a full prod release with the open-tray-LOT-container pre-flight WARN (spec section 9).
 
 > ## ✅ DONE (2026-10-29) — Sales-kit module 4, Quality & containment (super-lots)
 >
