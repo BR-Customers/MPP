@@ -2,6 +2,7 @@
 -- Repeatable:  R__Lots_Lot_SearchAdvanced.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-06
+-- Version:     2.0 (2026-11-04; landed alone 2026-11-16) - see the v2.0 note below
 -- Version:     1.3
 -- Description: FDS-12-004 LOT Search. Filtered browse: free text, item, Eastern
 --              created-day range, die, cavity, location (always incl.
@@ -56,6 +57,14 @@
 --              Callers using a fixed-shape INSERT-EXEC capture must widen
 --              to 20 columns.
 -- =============================================
+--              v2.0 (2026-11-04, container-as-LOT spec 8.2): year-scale volume.
+--              An exact LOT name is found at any age; every other match (part
+--              of a name, part number / description through Parts.Item, vendor
+--              LOT) looks in the created-day range when one is given, else the
+--              last 90 days unless + @IncludeOlder BIT = 0 (LAST param) is 1.
+--              COUNT(*) OVER() is gone: TotalCount = rows returned, + HasMore
+--              (LAST column). Fixed-shape INSERT-EXEC captures widen to 21.
+-- =============================================
 CREATE OR ALTER PROCEDURE Lots.Lot_SearchAdvanced
     @Query             NVARCHAR(100) = NULL,
     @ItemId            BIGINT        = NULL,
@@ -69,7 +78,8 @@ CREATE OR ALTER PROCEDURE Lots.Lot_SearchAdvanced
     @LotStatusId       BIGINT        = NULL,
     @LotOriginTypeId   BIGINT        = NULL,
     @LimitRows         INT           = 100,
-    @ExcludeFinishedGoods BIT        = 0
+    @ExcludeFinishedGoods BIT        = 0,
+    @IncludeOlder      BIT           = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -90,12 +100,111 @@ BEGIN
         SET @ToUtc = CAST(CAST(DATEADD(DAY, 1, @CreatedToEt) AS DATETIME2(3))
             AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
 
+    -- v2.0 (container-as-LOT spec 8.2): an exact LOT name is found at any age; every
+    -- other match looks inside the window -- the explicit created-day range when given,
+    -- else the last 90 days unless @IncludeOlder = 1. Candidates first (newest, the limit
+    -- + 1, so HasMore is known without counting every match), then the joins / applies
+    -- for the returned rows only.
+    DECLARE @Raw NVARCHAR(100) = NULLIF(LTRIM(RTRIM(@Query)), N'');
+    -- A shift is an explicit time scope too: it replaces the window like a day range.
+    DECLARE @WinFrom DATETIME2(3) = CASE WHEN ISNULL(@IncludeOlder, 0) = 1 OR @FromUtc IS NOT NULL OR @ToUtc IS NOT NULL
+                                              OR @ShiftId IS NOT NULL
+                                         THEN NULL ELSE DATEADD(DAY, -90, SYSUTCDATETIME()) END;
+    DECLARE @Items TABLE (Id BIGINT NOT NULL PRIMARY KEY);
+    IF @Q IS NOT NULL
+        INSERT INTO @Items (Id) SELECT i.Id FROM Parts.Item i WHERE i.PartNumber LIKE @Q OR i.Description LIKE @Q;
+    DECLARE @Cand TABLE (Id BIGINT NOT NULL PRIMARY KEY);
+
+    -- 1. exact LOT name, any age (same filters)
+    IF @Raw IS NOT NULL
+    BEGIN
     ;WITH Descendants AS (
         SELECT Id FROM Location.Location WHERE Id = @LocationId
         UNION ALL
         SELECT c.Id FROM Location.Location c
         INNER JOIN Descendants d ON c.ParentLocationId = d.Id
     )
+        INSERT INTO @Cand (Id)
+        SELECT l.Id
+        FROM Lots.Lot l
+        INNER JOIN Parts.Item i ON i.Id = l.ItemId
+        WHERE l.LotName = @Raw
+      AND (@ItemId          IS NULL OR l.ItemId          = @ItemId)
+      AND (@FromUtc         IS NULL OR l.CreatedAt      >= @FromUtc)
+      AND (@ToUtc           IS NULL OR l.CreatedAt       < @ToUtc)
+      AND (@ToolId          IS NULL OR l.ToolId          = @ToolId)
+      AND (@ToolCavityId    IS NULL OR l.ToolCavityId    = @ToolCavityId)
+      AND (@LotStatusId     IS NULL OR l.LotStatusId     = @LotStatusId)
+      AND (@LotOriginTypeId IS NULL OR l.LotOriginTypeId = @LotOriginTypeId)
+      AND (@ExcludeFinishedGoods = 0
+           OR i.ItemTypeId <> (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood'))
+      AND (@LocationId      IS NULL OR l.CurrentLocationId IN (SELECT Id FROM Descendants))
+      -- Origin machine has TWO recorded sources, and a LOT has at most one of
+      -- them. A normally-produced LOT accumulates DieCastContribution rows at
+      -- the press. A CUTOVER LOT has none -- it is migrated stock whose machine
+      -- was read off the paper tag into Lot.ProducedAtLocationId (0082).
+      -- Both are RECORDED values; neither is the live LotMovement re-derivation
+      -- this proc's header rejects.
+      AND (@MachineLocationId IS NULL
+           OR l.ProducedAtLocationId = @MachineLocationId
+           OR EXISTS (
+              SELECT 1 FROM Workorder.DieCastContribution dm
+              WHERE dm.LotId = l.Id AND dm.CellLocationId = @MachineLocationId))
+      AND (@ShiftId IS NULL OR l.Id IN (
+              SELECT ds.LotId FROM Workorder.DieCastContribution ds
+              WHERE ds.ShiftId = @ShiftId))
+        OPTION (MAXRECURSION 100, RECOMPILE);
+    END
+
+    -- 2. every other match, newest first, inside the window. An exact LOT name answers
+    --    alone: the operator scanned or typed a whole LOT number, so this scan is skipped.
+    IF NOT EXISTS (SELECT 1 FROM @Cand)
+    BEGIN
+    ;WITH Descendants AS (
+        SELECT Id FROM Location.Location WHERE Id = @LocationId
+        UNION ALL
+        SELECT c.Id FROM Location.Location c
+        INNER JOIN Descendants d ON c.ParentLocationId = d.Id
+    )
+    INSERT INTO @Cand (Id)
+    SELECT TOP (@LimitRows + 1) l.Id
+    FROM Lots.Lot l
+    INNER JOIN Parts.Item i ON i.Id = l.ItemId
+    WHERE (@WinFrom IS NULL OR l.CreatedAt >= @WinFrom)
+      AND (@Q IS NULL OR l.LotName LIKE @Q OR l.VendorLotNumber LIKE @Q OR l.ItemId IN (SELECT Id FROM @Items))
+      AND NOT EXISTS (SELECT 1 FROM @Cand x WHERE x.Id = l.Id)
+      AND (@ItemId          IS NULL OR l.ItemId          = @ItemId)
+      AND (@FromUtc         IS NULL OR l.CreatedAt      >= @FromUtc)
+      AND (@ToUtc           IS NULL OR l.CreatedAt       < @ToUtc)
+      AND (@ToolId          IS NULL OR l.ToolId          = @ToolId)
+      AND (@ToolCavityId    IS NULL OR l.ToolCavityId    = @ToolCavityId)
+      AND (@LotStatusId     IS NULL OR l.LotStatusId     = @LotStatusId)
+      AND (@LotOriginTypeId IS NULL OR l.LotOriginTypeId = @LotOriginTypeId)
+      AND (@ExcludeFinishedGoods = 0
+           OR i.ItemTypeId <> (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood'))
+      AND (@LocationId      IS NULL OR l.CurrentLocationId IN (SELECT Id FROM Descendants))
+      -- Origin machine has TWO recorded sources, and a LOT has at most one of
+      -- them. A normally-produced LOT accumulates DieCastContribution rows at
+      -- the press. A CUTOVER LOT has none -- it is migrated stock whose machine
+      -- was read off the paper tag into Lot.ProducedAtLocationId (0082).
+      -- Both are RECORDED values; neither is the live LotMovement re-derivation
+      -- this proc's header rejects.
+      AND (@MachineLocationId IS NULL
+           OR l.ProducedAtLocationId = @MachineLocationId
+           OR EXISTS (
+              SELECT 1 FROM Workorder.DieCastContribution dm
+              WHERE dm.LotId = l.Id AND dm.CellLocationId = @MachineLocationId))
+      AND (@ShiftId IS NULL OR l.Id IN (
+              SELECT ds.LotId FROM Workorder.DieCastContribution ds
+              WHERE ds.ShiftId = @ShiftId))
+    ORDER BY l.CreatedAt DESC, l.Id DESC
+    OPTION (MAXRECURSION 100, RECOMPILE);
+    END
+
+    DECLARE @Found INT = (SELECT COUNT(*) FROM @Cand);
+    DECLARE @HasMore BIT = CASE WHEN @Found > @LimitRows THEN 1 ELSE 0 END;
+    DECLARE @Returned INT = CASE WHEN @Found > @LimitRows THEN @LimitRows ELSE @Found END;
+
     SELECT TOP (@LimitRows)
         l.Id, l.LotName, l.ItemId, l.LotOriginTypeId, l.LotStatusId, l.PieceCount,
         l.VendorLotNumber, l.CurrentLocationId,
@@ -110,8 +219,10 @@ BEGIN
         t.Name               AS ToolName,
         tc.CavityCode        AS CavityCode,
         COALESCE(press.MachineName, pal.Name) AS OriginMachineName,
-        COUNT(*) OVER()      AS TotalCount
-    FROM Lots.Lot l
+        @Returned            AS TotalCount,
+        @HasMore             AS HasMore
+    FROM @Cand cd
+    INNER JOIN Lots.Lot           l   ON l.Id   = cd.Id
     INNER JOIN Parts.Item         i   ON i.Id   = l.ItemId
     INNER JOIN Lots.LotStatusCode sc  ON sc.Id  = l.LotStatusId
     INNER JOIN Lots.LotOriginType ot  ON ot.Id  = l.LotOriginTypeId
@@ -134,33 +245,6 @@ BEGIN
         WHERE dcc.LotId = l.Id AND dcc.CellLocationId IS NOT NULL
         ORDER BY dcc.EventAt ASC, dcc.Id ASC
     ) press
-    WHERE (@Q IS NULL OR l.LotName LIKE @Q OR l.VendorLotNumber LIKE @Q OR i.PartNumber LIKE @Q
-           OR i.Description LIKE @Q)
-      AND (@ItemId          IS NULL OR l.ItemId          = @ItemId)
-      AND (@FromUtc         IS NULL OR l.CreatedAt      >= @FromUtc)
-      AND (@ToUtc           IS NULL OR l.CreatedAt       < @ToUtc)
-      AND (@ToolId          IS NULL OR l.ToolId          = @ToolId)
-      AND (@ToolCavityId    IS NULL OR l.ToolCavityId    = @ToolCavityId)
-      AND (@LotStatusId     IS NULL OR l.LotStatusId     = @LotStatusId)
-      AND (@LotOriginTypeId IS NULL OR l.LotOriginTypeId = @LotOriginTypeId)
-      AND (@ExcludeFinishedGoods = 0
-           OR i.ItemTypeId <> (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood'))
-      AND (@LocationId      IS NULL OR l.CurrentLocationId IN (SELECT Id FROM Descendants))
-      -- Origin machine has TWO recorded sources, and a LOT has at most one of
-      -- them. A normally-produced LOT accumulates DieCastContribution rows at
-      -- the press. A CUTOVER LOT has none -- it is migrated stock whose machine
-      -- was read off the paper tag into Lot.ProducedAtLocationId (0082).
-      -- Both are RECORDED values; neither is the live LotMovement re-derivation
-      -- this proc's header rejects.
-      AND (@MachineLocationId IS NULL
-           OR l.ProducedAtLocationId = @MachineLocationId
-           OR EXISTS (
-              SELECT 1 FROM Workorder.DieCastContribution dm
-              WHERE dm.LotId = l.Id AND dm.CellLocationId = @MachineLocationId))
-      AND (@ShiftId IS NULL OR EXISTS (
-              SELECT 1 FROM Workorder.DieCastContribution ds
-              WHERE ds.LotId = l.Id AND ds.ShiftId = @ShiftId))
-    ORDER BY l.CreatedAt DESC, l.Id DESC
-    OPTION (MAXRECURSION 100);
+    ORDER BY l.CreatedAt DESC, l.Id DESC;
 END
 GO

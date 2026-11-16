@@ -27,12 +27,12 @@ INSERT INTO @Expected (Name) VALUES
     (N'@Query'), (N'@ItemId'), (N'@CreatedFromEt'), (N'@CreatedToEt'),
     (N'@ToolId'), (N'@ToolCavityId'), (N'@LocationId'), (N'@MachineLocationId'),
     (N'@ShiftId'), (N'@LotStatusId'), (N'@LotOriginTypeId'), (N'@LimitRows'),
-    (N'@ExcludeFinishedGoods');
+    (N'@ExcludeFinishedGoods'), (N'@IncludeOlder');   -- + @IncludeOlder (v2.0)
 
 SELECT @n = COUNT(*) FROM sys.parameters
 WHERE object_id = OBJECT_ID(N'Lots.Lot_SearchAdvanced');
-EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] proc exposes exactly 13 parameters',
-    @Expected = N'13', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] proc exposes exactly 14 parameters',
+    @Expected = N'14', @Actual = @n;
 
 SELECT @n = COUNT(*) FROM sys.parameters p
 WHERE p.object_id = OBJECT_ID(N'Lots.Lot_SearchAdvanced')
@@ -57,8 +57,8 @@ WHERE p.object_id = OBJECT_ID(N'Lots.Lot_SearchAdvanced')
 EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] both date bounds are DATE typed',
     @Expected = N'2', @Actual = @n;
 
--- Lot_Search stays frozen.
+-- Lot_Search: frozen at 4 until v2.0 added @IncludeOlder LAST.
 SELECT @n = COUNT(*) FROM sys.parameters WHERE object_id = OBJECT_ID(N'Lots.Lot_Search');
-EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] Lot_Search still has exactly 4 parameters (frozen)',
-    @Expected = N'4', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] Lot_Search has exactly 5 parameters (+ @IncludeOlder)',
+    @Expected = N'5', @Actual = @n;
 GO

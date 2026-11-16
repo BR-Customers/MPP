@@ -11,4 +11,5 @@ EXEC Lots.Lot_SearchAdvanced
     @LotStatusId       = :lotStatusId,
     @LotOriginTypeId   = :lotOriginTypeId,
     @LimitRows         = :limitRows,
-    @ExcludeFinishedGoods = :excludeFinishedGoods
+    @ExcludeFinishedGoods = :excludeFinishedGoods,
+    @IncludeOlder      = :includeOlder
