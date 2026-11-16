@@ -2,8 +2,15 @@
 -- Repeatable:  R__Lots_Lot_GetOpenByTool.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-07-29
--- Version:     2.1
--- Changelog:   2.1 (2026-09-10) Cavity alpha code (0076): CavityNumber ->
+-- Version:     2.2
+-- Changelog:   2.2 (2026-11-16) Performance only (stored-procedure review).
+--              The open-basket subquery gains the literal
+--              `l2.LotStatusId <> 4` beside its code-table test so it seeks
+--              IX_Lot_Tool_NotClosed (0128) -- the die's tens of not-Closed
+--              LOTs -- instead of scanning the whole Lots.Lot heap. Closed is
+--              never Open, so the literal changes no row. Result set
+--              (columns, rows, order) unchanged.
+--              2.1 (2026-09-10) Cavity alpha code (0076): CavityNumber ->
 --              CavityCode NVARCHAR(4), and the ordering gains the part key.
 --              A 12-cavity family die cutting four parts would otherwise
 --              render a,a,a,a,b,b,b,b -- four unrelated parts interleaved.
@@ -77,6 +84,7 @@ BEGIN
         FROM Lots.Lot l2
         INNER JOIN Lots.LotStatusCode sc2 ON sc2.Id = l2.LotStatusId AND sc2.Code = N'Open'
         WHERE l2.ToolId = @ToolId
+          AND l2.LotStatusId <> 4   -- v2.2: redundant (Closed is never Open); lets IX_Lot_Tool_NotClosed serve
     ) l ON l.ToolCavityId = tc.Id
     LEFT  JOIN Parts.Item ci ON ci.Id = tc.ItemId
     WHERE tc.ToolId = @ToolId

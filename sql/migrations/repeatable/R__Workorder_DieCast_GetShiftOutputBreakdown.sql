@@ -1,9 +1,22 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCast_GetShiftOutputBreakdown.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-10-08
--- Version:     3.2
--- Changelog:   3.2 (2026-10-08) "ALREADY RELEASED THIS SHIFT" becomes its own
+-- Modified:    2026-11-16
+-- Version:     3.3
+-- Changelog:   3.3 (2026-11-16) Performance only (stored-procedure review).
+--              The Relevant CTE read every LOT the die had ever cast
+--              (IX_Lot_ToolId seek + a heap lookup each, then a
+--              DieCastContribution probe each for the OR EXISTS): about 9,000
+--              lookups + 9,000 probes per Compute for a die with a year of
+--              history. The set is now resolved first, into a one-column
+--              table variable, as the UNION of "Open on this tool"
+--              (IX_Lot_Tool_NotClosed, 0128, via the redundant literal
+--              LotStatusId <> 4) and "credited this shift on this tool"
+--              (IX_DieCastContribution_Shift) -- the same set. A separate
+--              statement because the main SELECT hits the optimizer's
+--              timeout and scans the heap otherwise. Result set (columns,
+--              rows, order) unchanged.
+--              3.2 (2026-10-08) "ALREADY RELEASED THIS SHIFT" becomes its own
 --              term. A basket released by typing the pieces, with no counter
 --              reading, never moved the cavity watermark -- so the open basket
 --              was proposed the whole reading again (prod, Machine 11,
@@ -203,15 +216,40 @@ BEGIN
     -- Lots that matter this shift: currently Open, or closed but credited in
     -- this shift (those stay visible so their scrap can still be entered at
     -- shift end -- scrap is recorded once, at the end, on a paper form).
+    --
+    -- v3.3: the same set, "on this tool AND (Open OR credited this shift)",
+    -- resolved FIRST, in its own small statement, as the UNION of its two
+    -- halves so each half has an index:
+    --   * Open on the tool: IX_Lot_Tool_NotClosed (0128) via the redundant
+    --     literal LotStatusId <> 4 (Closed is never Open) -- tens of rows,
+    --     not every LOT the die has ever cast;
+    --   * credited this shift: IX_DieCastContribution_Shift (ShiftId, LotId),
+    --     then the LOT by PK, kept only when it is on this tool.
+    -- UNION de-duplicates, so each LOT still yields one row exactly as the
+    -- single-pass OR did. It is a separate statement on purpose: inside the
+    -- big SELECT below the optimizer times out (StatementOptmEarlyAbortReason
+    -- = TimeOut, measured) and falls back to scanning the Lots.Lot heap.
+    DECLARE @Relevant TABLE (LotId BIGINT NOT NULL PRIMARY KEY);
+    INSERT INTO @Relevant (LotId)
+    SELECT l.Id
+    FROM Lots.Lot l
+    INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
+    WHERE l.ToolId = @ToolId
+      AND sc.Code = N'Open'
+      AND l.LotStatusId <> 4
+    UNION
+    SELECT l.Id
+    FROM Workorder.DieCastContribution c
+    INNER JOIN Lots.Lot l ON l.Id = c.LotId
+    WHERE c.ShiftId = @ShiftId
+      AND l.ToolId = @ToolId;
+
     ;WITH Relevant AS (
         SELECT l.Id AS LotId, l.LotName, l.ToolCavityId, l.ItemId, l.PieceCount, l.MaxPieceCount,
                CASE WHEN sc.Code = N'Open' THEN 1 ELSE 0 END AS IsOpen
-        FROM Lots.Lot l
+        FROM @Relevant r
+        INNER JOIN Lots.Lot l            ON l.Id = r.LotId
         INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
-        WHERE l.ToolId = @ToolId
-          AND ( sc.Code = N'Open'
-                OR EXISTS (SELECT 1 FROM Workorder.DieCastContribution c
-                           WHERE c.LotId = l.Id AND c.ShiftId = @ShiftId) )
     ),
     Prior AS (   -- good already credited to each lot IN THIS SHIFT
         SELECT c.LotId, SUM(c.PieceDelta) AS PriorGood
