@@ -6,6 +6,7 @@
       "createdFromEt": null,
       "createdToEt": null,
       "excludeFinishedGoods": true,
+      "includeOlder": false,
       "itemId": null,
       "limitRows": 200,
       "locationId": null,
@@ -17,6 +18,7 @@
       "toolCavityId": null,
       "toolId": null
     },
+    "hasMore": false,
     "locationOptions": [],
     "machineOptions": [],
     "originOptions": [
@@ -514,6 +516,48 @@
                 "height": "40px"
               },
               "text": "Hide finished goods"
+            },
+            "type": "ia.input.checkbox"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.search()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SearchOlderCheckbox",
+              "tooltip": {
+                "enabled": true,
+                "text": "Partial matches look at the last 90 days. An exact LOT name, a created-date range or a shift is found at any age."
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.selected": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.filters.includeOlder"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label",
+                "height": "40px"
+              },
+              "text": "Search older than 90 days"
             },
             "type": "ia.input.checkbox"
           },
@@ -1269,7 +1313,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "toStr(len({view.custom.results})) + \" results \u00b7 sorted by recency\""
+                        "expression": "toStr(len({view.custom.results})) + if({view.custom.hasMore}, \"+\", \"\") + \" results \u00b7 sorted by recency\""
                       },
                       "type": "expr"
                     }
@@ -2520,7 +2564,7 @@
         {
           "name": "search",
           "params": [],
-          "script": "\tself.view.custom.results = BlueRidge.Lots.Lot.searchAdvanced(self.view.custom.filters)"
+          "script": "\trows = BlueRidge.Lots.Lot.searchAdvanced(self.view.custom.filters) or []\n\tself.view.custom.results = rows\n\t# Lot_SearchAdvanced v2.0: every row carries HasMore = more matches than the limit.\n\tself.view.custom.hasMore = bool(rows and rows[0].get(\"HasMore\"))"
         },
         {
           "name": "reloadCavities",
