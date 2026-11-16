@@ -1,6 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Quality_Hold_ListAssociatedContainers.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: reads the container's finished-good LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers.
 -- Version:     1.1
 -- Description: FAT-QH-170 (FDS-08-007, SHOULD). Advisory read: returns the DISTINCT
 --              containers associated with a LOT, so the Hold Management view can
@@ -28,10 +29,10 @@ BEGIN
     SET NOCOUNT ON;
 
     ;WITH assoc AS (
-        -- Path A: finished-good tray whose LOT is this LOT
-        SELECT ct.ContainerId AS ContainerId, 1 AS ViaTray, 0 AS ViaSerial
-        FROM Lots.ContainerTray ct
-        WHERE ct.FinishedGoodLotId = @LotId
+        -- Path A: the container this finished-good LOT is packed in -- a tray's LOT
+        -- (before migration 0119) or the container's own LOT (after); both shapes.
+        SELECT lc.ContainerId AS ContainerId, 1 AS ViaTray, 0 AS ViaSerial
+        FROM Lots.ufn_LotContainers(@LotId) lc
         UNION ALL
         -- Path B: serialized parts produced by this LOT, placed into containers
         SELECT cs.ContainerId, 0, 1

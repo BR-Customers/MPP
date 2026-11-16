@@ -2,6 +2,7 @@
 -- Repeatable:  R__Lots_Container_GetTraceDetail.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: reads the container's finished-good LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers.
 -- Version:     1.1
 -- Description: FDS-12-003 Container Search payload, rendered as a detail panel
 --              on Global Trace. One result set (FDS-11-011); empty set means
@@ -67,9 +68,8 @@ BEGIN
     ) ser
     OUTER APPLY (
         SELECT COUNT(*) AS SourceLotCount FROM (
-            SELECT ct.FinishedGoodLotId AS LotId
-            FROM Lots.ContainerTray ct
-            WHERE ct.ContainerId = c.Id AND ct.FinishedGoodLotId IS NOT NULL
+            SELECT cl.LotId                                   -- 0119: both shapes
+            FROM Lots.ufn_ContainerLots(c.Id) cl
             UNION
             SELECT sp.ProducingLotId
             FROM Lots.ContainerSerial cs

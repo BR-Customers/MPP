@@ -1,6 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Container_Complete.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.3 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: the container's finished-good LOT(s) are read in BOTH shapes through Lots.ufn_ContainerLots (tray LOTs before migration 0119, the container LOT after, both for a mixed container).
 -- Version:     1.2
 -- Description: Atomic container close (Arc 2 Phase 6; FDS-06-014/06-028/07-010a).
 --              v1.2 (2026-09-11, Migration 0079): when @TerminalLocationId carries
@@ -165,11 +166,12 @@ BEGIN
             DECLARE @PostQty  INT = (SELECT ISNULL(SUM(t.PartsClosedCount), 0)
                                      FROM Lots.ContainerTray t
                                      WHERE t.ContainerId = @ContainerId AND t.ClosedAt IS NOT NULL);
+            -- container-as-LOT (0119): the representative LOT in every shape -- first tray's
+            -- LOT for an old / mixed container, the container's own LOT for a new one.
             DECLARE @PostLot  NVARCHAR(50) = (SELECT TOP 1 l.LotName
-                                              FROM Lots.ContainerTray t
-                                              INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
-                                              WHERE t.ContainerId = @ContainerId
-                                              ORDER BY t.TrayPosition);
+                                              FROM Lots.ufn_ContainerLots(@ContainerId) cl
+                                              INNER JOIN Lots.Lot l ON l.Id = cl.LotId
+                                              ORDER BY cl.SortKey);
             -- 2026-08-04: AIM customer part is derived from Item.PartNumber (dash-strip),
             -- not a stored per-item column (Migration 0054; Parts.ufn_AimCustomerPartNumber
             -- header has the evidence). PartNumber is NOT NULL, so this can never be NULL
@@ -221,13 +223,14 @@ BEGIN
         -- Trays with NULL FinishedGoodLotId (pre-0034 / ContainerTray_Close flows) have
         -- no LOT and are skipped by the join; Hold/Scrap FG LOTs are skipped by the
         -- helper's Good-only guard.
+        -- container-as-LOT (0119): every LOT of the container in either shape (tray LOTs,
+        -- the container LOT, or both for a mixed container). A held container LOT is
+        -- left open (Good-only, D10); Hold_Release closes it once the container is done.
         DECLARE fg_cur CURSOR LOCAL FAST_FORWARD FOR
             SELECT l.Id
-            FROM Lots.ContainerTray t
-            INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
-            WHERE t.ContainerId = @ContainerId
-              AND t.FinishedGoodLotId IS NOT NULL
-              AND l.LotStatusId = 1;   -- Good
+            FROM Lots.ufn_ContainerLots(@ContainerId) cl
+            INNER JOIN Lots.Lot l ON l.Id = cl.LotId
+            WHERE l.LotStatusId = 1;   -- Good
         OPEN fg_cur;
         FETCH NEXT FROM fg_cur INTO @FgLotId;
         WHILE @@FETCH_STATUS = 0

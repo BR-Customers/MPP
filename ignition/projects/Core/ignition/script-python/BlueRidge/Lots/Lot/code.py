@@ -369,7 +369,8 @@ def getLinkedContainerOrEmpty(lotId):
     return {"IsLinked": False, "ContainerId": None, "ContainerTrayId": None, "TrayPosition": None,
             "ClosureMethod": None, "TrayClosedAt": None, "ItemId": None, "ItemPartNumber": None,
             "ContainerStatusCode": None, "ContainerStatusName": None, "CurrentLocationId": None,
-            "CurrentLocationName": None, "OpenedAt": None, "CompletedAt": None, "AimShipperId": None}
+            "CurrentLocationName": None, "OpenedAt": None, "CompletedAt": None, "AimShipperId": None,
+            "TrayCount": None}
 
 
 def getGenealogyTree(lotId, direction="Both"):

@@ -291,16 +291,19 @@ DECLARE @SeqBefore BIGINT = (SELECT LastValue FROM Lots.IdentifierSequence WHERE
 DELETE FROM @o;
 INSERT INTO @o EXEC Lots.ContainerRework_MovePieces @FromContainerTrayId = @TrayB1, @ToContainerId = @ConA, @Quantity = 3, @AppUserId = @App, @TerminalLocationId = @Term;
 DECLARE @NewTray BIGINT = (SELECT NewId FROM @o);
-DECLARE @NewLot BIGINT = (SELECT FinishedGoodLotId FROM Lots.ContainerTray WHERE Id = @NewTray);
+-- container-as-LOT (0119, D6): the receiver here is an OLD-shape container (tray LOTs,
+-- no Container.LotId), so the move mints the receiver's CONTAINER LOT -- it becomes a
+-- mixed container -- and the new tray itself carries no LOT.
+DECLARE @NewLot BIGINT = (SELECT LotId FROM Lots.Container WHERE Id = @ConA);
 SET @n = (SELECT ISNULL(CAST(ShiftId AS NVARCHAR(20)), N'NULL') + N'/' + ISNULL(CAST(MintedPieceCount AS NVARCHAR(10)), N'NULL') FROM Lots.Lot WHERE Id = @NewLot);
 EXEC test.Assert_IsEqual @TestName = N'[Stamp] rework child carries no ShiftId / MintedPieceCount', @Expected = N'NULL/NULL', @Actual = @n;
 SET @n = (SELECT CAST(Status AS NVARCHAR(1)) + N'|' + CASE WHEN Message LIKE N'3 moved into container %; it now holds ' + CAST(@Full AS NVARCHAR(10)) + N' of ' + CAST(@Full AS NVARCHAR(10)) + N'.' THEN N'full' ELSE Message END FROM @o);
 EXEC test.Assert_IsEqual @TestName = N'[Move] Status 1; the receiver is full again', @Expected = N'1|full', @Actual = @n;
 SET @n = (SELECT CAST(t.ContainerId AS NVARCHAR(20)) + N'|' + CAST(t.PartsClosedCount AS NVARCHAR(5)) + N'|' + CAST(l.PieceCount AS NVARCHAR(5)) + N'|' + CAST(l.LotStatusId AS NVARCHAR(5))
                + N'|' + CAST(l.LotOriginTypeId AS NVARCHAR(5)) + N'|' + CAST(l.ItemId AS NVARCHAR(20)) + N'|' + CAST(l.InventoryAvailable AS NVARCHAR(5))
-          FROM Lots.ContainerTray t JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId WHERE t.Id = @NewTray);
+          FROM Lots.ContainerTray t JOIN Lots.Lot l ON l.Id = @NewLot WHERE t.Id = @NewTray AND t.FinishedGoodLotId IS NULL);
 SET @e = CAST(@ConA AS NVARCHAR(20)) + N'|3|3|4|1|' + CAST(@Item AS NVARCHAR(20)) + N'|0';
-EXEC test.Assert_IsEqual @TestName = N'[Move] a NEW tray LOT in the receiver: 3 pieces, Closed (4), Manufactured (1), same part, nothing available',
+EXEC test.Assert_IsEqual @TestName = N'[Move] a NEW container LOT on the receiver: 3 pieces, Closed (4), Manufactured (1), same part, nothing available',
     @Expected = @e, @Actual = @n;
 SET @n = (SELECT CAST(l.PieceCount AS NVARCHAR(5)) + N'|' + CAST(t.PartsClosedCount AS NVARCHAR(5)) FROM Lots.Lot l JOIN Lots.ContainerTray t ON t.FinishedGoodLotId = l.Id WHERE t.Id = @TrayB1);
 SET @e = CAST(@PPT - 3 AS NVARCHAR(5)) + N'|' + CAST(@PPT - 3 AS NVARCHAR(5));
@@ -317,7 +320,8 @@ SET @n = (SELECT CAST(d.CrtActive AS NVARCHAR(1)) + N'|' + CAST(n.CrtActive AS N
 EXEC test.Assert_IsEqual @TestName = N'[Move] the new LOT inherits the donor LOT''s Controlled Run Tag', @Expected = N'1|1', @Actual = @n;
 SET @n = (SELECT CAST((SELECT LastValue FROM Lots.IdentifierSequence WHERE Code = N'Lot') - @SeqBefore AS NVARCHAR(5)));
 EXEC test.Assert_IsEqual @TestName = N'[Move] exactly one LOT number used (the refusals burned none)', @Expected = N'1', @Actual = @n;
-SET @n = (SELECT CAST(SUM(t.PartsClosedCount) AS NVARCHAR(10)) + N'|' + CAST(SUM(l.PieceCount) AS NVARCHAR(10)) FROM Lots.ContainerTray t JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId WHERE t.ContainerId = @ConA);
+SET @n = (SELECT CAST(SUM(t.PartsClosedCount) AS NVARCHAR(10)) FROM Lots.ContainerTray t WHERE t.ContainerId = @ConA)
+        + N'|' + (SELECT CAST(SUM(l.PieceCount) AS NVARCHAR(10)) FROM Lots.ufn_ContainerLots(@ConA) cl JOIN Lots.Lot l ON l.Id = cl.LotId);
 SET @e = CAST(@Full AS NVARCHAR(10)) + N'|' + CAST(@Full AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[Move] receiver: trays and tray LOTs agree at the full count', @Expected = @e, @Actual = @n;
 
