@@ -94,6 +94,11 @@
         "type": "Parameter",
         "identifier": "excludeFinishedGoods",
         "sqlType": 6
+      },
+      {
+        "type": "Parameter",
+        "identifier": "includeOlder",
+        "sqlType": 6
       }
     ]
   }

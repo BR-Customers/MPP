@@ -377,9 +377,13 @@ def getGenealogyTree(lotId, direction="Both"):
     return BlueRidge.Common.Db.execList("lots/Lot_GetGenealogyTree", {"lotId": lotId, "direction": direction})
 
 
-def search(query=None, lotStatusId=None, lotOriginTypeId=None, limitRows=100):
-    BlueRidge.Common.Util.log("query=%s statusId=%s originId=%s limit=%s" % (query, lotStatusId, lotOriginTypeId, limitRows))
-    params = {"query": query, "lotStatusId": lotStatusId, "lotOriginTypeId": lotOriginTypeId, "limitRows": limitRows}
+def search(query=None, lotStatusId=None, lotOriginTypeId=None, limitRows=100, includeOlder=False):
+    # includeOlder is LAST and keyword-defaulted (Lot_Search v2.0, from the container-as-LOT bench):
+    # positional callers are unchanged. False = partial matches look at the last 90
+    # days; an exact LOT name is found at any age either way.
+    BlueRidge.Common.Util.log("query=%s statusId=%s originId=%s limit=%s older=%s" % (query, lotStatusId, lotOriginTypeId, limitRows, includeOlder))
+    params = {"query": query, "lotStatusId": lotStatusId, "lotOriginTypeId": lotOriginTypeId, "limitRows": limitRows,
+              "includeOlder": bool(includeOlder)}
     return BlueRidge.Common.Db.execList("lots/Lot_Search", params)
 
 
@@ -1420,6 +1424,9 @@ _EMPTY_FILTERS = {
     "lotOriginTypeId": None, "limitRows": 100,
     # Finished-good tray LOTs are hidden unless the operator asks for them.
     "excludeFinishedGoods": True,
+    # Lot_SearchAdvanced v2.0 (from the container-as-LOT bench): partial matches look at the
+    # last 90 days unless this is True or a created-day range is given.
+    "includeOlder": False,
 }
 
 
@@ -1473,6 +1480,7 @@ def searchAdvanced(filters=None):
     if params["excludeFinishedGoods"] is None:
         params["excludeFinishedGoods"] = _EMPTY_FILTERS["excludeFinishedGoods"]
     params["excludeFinishedGoods"] = bool(params["excludeFinishedGoods"])
+    params["includeOlder"] = bool(params["includeOlder"])
     BlueRidge.Common.Util.log("searchAdvanced params=%s" % params)
     return BlueRidge.Common.Db.execList("lots/Lot_SearchAdvanced", params)
 

@@ -26,7 +26,8 @@ CREATE TABLE #LS (
     LotStatusCode NVARCHAR(50), LotOriginTypeCode NVARCHAR(50),
     CurrentLocationName NVARCHAR(200), LastOperationName NVARCHAR(100),
     ToolCode NVARCHAR(50), ToolName NVARCHAR(100), CavityCode NVARCHAR(4), OriginMachineName NVARCHAR(200),
-    TotalCount INT
+    TotalCount INT,
+    HasMore BIT   -- Lot_SearchAdvanced v2.0
 );
 GO
 
@@ -84,14 +85,15 @@ EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] location filter includes LOTs
     @Expected = N'2', @Actual = @n;
 DELETE FROM #LS;
 
--- 4. @LimitRows caps the page while TotalCount still reports the full match.
+-- 4. @LimitRows caps the page; v2.0 (container-as-LOT spec 8.2) no longer counts every
+--    match: TotalCount = the rows returned and HasMore says there were more.
 INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @Query = N'VND-ADV', @LimitRows = 1;
 SELECT @n = COUNT(*) FROM #LS;
 EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] @LimitRows = 1 returns exactly one row',
     @Expected = N'1', @Actual = @n;
-SELECT @n = MAX(TotalCount) FROM #LS;
-EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] TotalCount reports the full match, not the page',
-    @Expected = N'2', @Actual = @n;
+DECLARE @pg NVARCHAR(20) = (SELECT CAST(MAX(TotalCount) AS NVARCHAR(10)) + N'|' + CAST(MAX(CAST(HasMore AS INT)) AS NVARCHAR(1)) FROM #LS);
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] TotalCount = rows returned (1), HasMore = 1 (2 matched)',
+    @Expected = N'1|1', @Actual = @pg;
 DELETE FROM #LS;
 
 -- 5. Unmatched free text returns nothing.
