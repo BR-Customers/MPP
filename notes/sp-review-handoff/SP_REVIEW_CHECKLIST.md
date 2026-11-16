@@ -2,7 +2,7 @@
 
 Project: MPP MES. Scope: the performance and collision/concurrency review described in CLAUDE.md (section "Stored-procedure review"). One proc revision = one branch = one PR; Jacques reviews and merges. Every stored procedure is listed below. The review log (notes/2026-11-13_sp-review-log.md, PR 12) uses the same labels and counts and lists only the checked and flagged procs.
 
-Last updated: 2026-11-13 16:25 local time
+Last updated: 2026-11-16 15:56 local time
 
 ## Labels (the same in the checklist and in the review log)
 
@@ -26,19 +26,19 @@ Flagged does not mean broken, and it does not mean decided. A flagged proc stays
 
 Two cautions: a "no changes" mark is a reviewer's judgment from reading the code, not a test, so a reviewer could miss something; and a flagged finding is only a claim until it is verified (the note says "VERIFIED" when it has been).
 
-## Progress at 2026-11-13 16:25 local
+## Progress at 2026-11-16 15:56 local
 
 | | Procs |
 |---|---|
-| Checked, no changes | 484 |
-| Checked and edited | 8 |
-| Not yet checked | 63 |
-| &nbsp;&nbsp;of which flagged by a reviewer, awaiting verification | 63 |
+| Checked, no changes | 494 |
+| Checked and edited | 31 |
+| Not yet checked | 30 |
+| &nbsp;&nbsp;of which flagged by a reviewer, awaiting verification | 30 |
 | **Total stored procedures** | **555** |
 
 Functions (57 files) are not on this list; they are reviewed only where a proc depends on them.
 
-## Audit (14 of 18 checked)
+## Audit (17 of 18 checked)
 
 - [x] Audit.Audit_LogConfigChange (no changes) - agent static read, not independently verified; nothing to change
 - [x] Audit.Audit_LogFailure (no changes) - agent static read, not independently verified; nothing to change
@@ -46,11 +46,11 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Audit.Audit_LogOperation (no changes) - agent static read, not independently verified; nothing to change
 - [x] Audit.ConfigLog_GetByEntity (no changes) - agent static read, not independently verified; nothing to change
 - [x] Audit.ConfigLog_List (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Audit.FailureLog_DistinctProcedures (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: whole-log DISTINCT, no date bound, on a log that is never purged
-- [ ] Audit.FailureLog_GetByEntity (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: no (LogEntityTypeId, EntityId) index on FailureLog; no date bound; no UI caller found
+- [x] Audit.FailureLog_DistinctProcedures (no changes) - measured 2026-11-16: no change warranted. Note: Audit.FailureLog is not in Audit.PartitionRetention, so it grows forever - Jacques to decide
+- [x] Audit.FailureLog_GetByEntity (no changes) - measured 2026-11-16: no change warranted (see the FailureLog retention note)
 - [x] Audit.FailureLog_GetTopProcs (no changes) - agent static read, not independently verified; nothing to change
 - [x] Audit.FailureLog_GetTopReasons (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Audit.FailureLog_List (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: the one Audit reader that can join the Lots.Lot heap on a leading-wildcard LotName LIKE
+- [x] Audit.FailureLog_List (edited) - https://github.com/BR-Customers/MPP/pull/33 (v3.1 -> v3.2, key-only filter/count/page then wide columns for 1,000 rows; measured: 600-day window 1.3 s -> 0.34 s, 3.0 -> 0.58 s CPU). LotName LIKE claim was mild
 - [x] Audit.FailureLog_Record (no changes) - agent static read, not independently verified; nothing to change
 - [x] Audit.InterfaceLog_Record (no changes) - agent static read, not independently verified; nothing to change
 - [x] Audit.LogEntityType_List (no changes) - agent static read, not independently verified; nothing to change
@@ -132,7 +132,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Location.TerminalPlcDevice_GetByTerminal (no changes) - agent static read, not independently verified; nothing to change
 - [x] Location.TerminalPlcDevice_Save (no changes) - agent static read, not independently verified; nothing to change
 
-## Lots (108 of 129 checked)
+## Lots (120 of 129 checked)
 
 - [x] Lots.AimPoolConfig_Get (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.AimPoolConfig_Update (no changes) - agent static read, not independently verified; nothing to change
@@ -148,9 +148,9 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Lots.Container_GetLabelData (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Container_GetOpenByCell (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Container_GetTraceDetail (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.Container_ListPendingValidation (flagged) - FLAGGED CANDIDATE (risk M) by agent read, unverified: OR across location and status 3 drives a scan of every completed container (they never leave the line), then a Lot seek per tray
+- [x] Lots.Container_ListPendingValidation (no changes) - VERIFIED 2026-11-16: real cost is a full Lots.Lot heap scan; PR 16 (container-as-LOT) already rewrites it (v1.3 + IX_Lot_CrtActive). No change on main; fixed when PR 16 merges
 - [x] Lots.Container_ListSerials (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.Container_ListShipped (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: reporting read, dates default NULL (unbounded), no index on CompletedAt, ~8 correlated seeks per container
+- [x] Lots.Container_ListShipped (no changes) - measured 2026-11-16: PR 16 fixes it. No change on main; fixed when PR 16 merges
 - [x] Lots.Container_Open (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Container_Ship (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Container_ValidateCrt (no changes) - agent static read, not independently verified; nothing to change
@@ -171,14 +171,14 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Lots.ContainerStatusCode_List (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.ContainerTray_Close (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.DieCastLot_Mint (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.DieCastLot_Open (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: one-open-basket-per-(tool,cavity) is a lock-free check-then-insert
+- [ ] Lots.DieCastLot_Open (flagged) - FLAGGED WATCH (risk L): one-open-basket-per-(tool,cavity) is a lock-free check-then-insert (race NOT addressed; write path - Jacques to decide). Performance part done: https://github.com/BR-Customers/MPP/pull/30 (index-only 0130) took the guard from 3,723 to 3 Lot reads on every basket open
 - [ ] Lots.DieCastLot_Release (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: Open-status check and watermark-derived delta are computed before the transaction; nothing in the write path re-checks status
 - [x] Lots.DieCastLot_ReleaseMove (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.DieCastLot_ResolveLtt (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.DieCastLot_Void (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.GenealogyRelationshipType_Get (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.GenealogyRelationshipType_List (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.GlobalTrace_Resolve (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: ShippingLabel.AimShipperId = @Search has no index (scan); unbounded LIKE prefix expands before TOP 50
+- [x] Lots.GlobalTrace_Resolve (edited) - https://github.com/BR-Customers/MPP/pull/31 (index-only migration 0133 IX_ShippingLabel_AimShipperId; measured: 948 -> 3 label reads per search). The LIKE-prefix half of the claim did not hold. Noticed, not changed: a reprinted shipper id lists each LOT twice
 - [x] Lots.IdentifierSequence_Next (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.LabelTemplate_GetActiveByTypeCode (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.LabelTypeCode_Get (no changes) - agent static read, not independently verified; nothing to change
@@ -189,37 +189,37 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Lots.Lot_ClearCrt (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Lots.Lot_CloseInline (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: unlocked status read then UPDATE with no status guard (check-then-write)
 - [ ] Lots.Lot_Create (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: steps 6/6b SUM open LOTs via LotStatusCode join (code-table shape) for Received origin only; B6 sequence row held to commit by design
-- [ ] Lots.Lot_Get (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: catch-all OR over l.Id / l.LotName; plan unknown
+- [x] Lots.Lot_Get (no changes) - measured 2026-11-16 on 41k LOTs: seeks in every case (by Id, by LotName, both NULL); plan stable across first-compile parameters
 - [x] Lots.Lot_GetAttributeHistory (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.Lot_GetCellLineQuantity (flagged) - VERIFIED and MEASURED by me, not fixed: SUM(PieceCount) at (location, item) filters open LOTs only through the LotStatusCode join; on the throwaway DB it read 2,340 Lots.Lot pages (2 scans) to sum 2,000 pieces and took about 30 ms warm (13-95). Fix = add the literal l.LotStatusId <> 4 (same pattern as PRs 9 and 14); callers not traced. Not started
+- [x] Lots.Lot_GetCellLineQuantity (edited) - https://github.com/BR-Customers/MPP/pull/20 (v1.0 -> v1.1, literal LotStatusId <> 4; measured: 2,347 -> 607 Lot reads)
 - [x] Lots.Lot_GetChildren (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_GetComponentsAtCell (edited) - PR https://github.com/BR-Customers/MPP/pull/7 (v1.1 -> v1.2, measured)
 - [x] Lots.Lot_GetGenealogyEdgeTree (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_GetGenealogyTree (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_GetInspectionQueueByLocation (edited) - PR https://github.com/BR-Customers/MPP/pull/8 (v1.0 -> v1.1, measured)
-- [x] Lots.Lot_GetLatestForToolCavity (no changes) - agent static read, not independently verified; nothing to change
+- [x] Lots.Lot_GetLatestForToolCavity (edited) - https://github.com/BR-Customers/MPP/pull/30 (index-only 0130; measured: 3,724 -> 21 reads). No UI caller found
 - [x] Lots.Lot_GetLifecycle (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_GetLineInventoryByPart (edited) - PR https://github.com/BR-Customers/MPP/pull/11 (v1.3 -> v1.4, measured; requires 0118, slower without it)
-- [ ] Lots.Lot_GetLineInventorySummary (flagged) - VERIFIED and MEASURED by me, not fixed: its on-hand step filters by location and status only through the LotStatusCode join and read the whole Lots.Lot heap (2,281 of 2,282 pages) on every call, even for a line with no stock (cell 46 returned 0 rows), about 28 ms warm (12-137). The agent says it is polled every 30 s by three bindings per sidebar (not verified by me). Fix = same literal-predicate pattern; not started
+- [x] Lots.Lot_GetLineInventorySummary (edited) - https://github.com/BR-Customers/MPP/pull/22 (v2.0 -> v2.1, literal LotStatusId <> 4; poll verified: 3 bindings per 30 s per docked terminal; whole-heap scan -> 0118 seek)
 - [x] Lots.Lot_GetLinkedContainer (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.Lot_GetOpenByTool (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: IX_Lot_ToolId seek then heap lookup for every LOT ever cast on the tool, status via code join
+- [x] Lots.Lot_GetOpenByTool (edited) - https://github.com/BR-Customers/MPP/pull/26 (v2.1 -> v2.2 + migration 0128 IX_Lot_Tool_NotClosed; measured: 3,730-9,032 -> tens of Lot reads)
 - [x] Lots.Lot_GetParents (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_GetScrapEvents (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.Lot_GetScrappablePartsByLocation (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: sc.Code = N'Good' via code-table join cannot use the 0118 filtered index, so seek on IX_Lot_CurrentLocationId also walks every closed LOT at the cell
+- [x] Lots.Lot_GetScrappablePartsByLocation (edited) - https://github.com/BR-Customers/MPP/pull/25 (v1.0 -> v1.1, literal LotStatusId <> 4; whole-heap scan -> 0118 seek)
 - [x] Lots.Lot_GetScrapSummary (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.Lot_GetShiftCavityTally (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: polled every 20 s per die-cast terminal (x several bindings); per-tool LOT read has no covering index, so heap lookups for every LOT ever made on the die
+- [x] Lots.Lot_GetShiftCavityTally (no changes) - VERIFIED 2026-11-16: NO CALLERS (view binding removed 2026-07-29), so the 20 s poll claim is wrong. Heap scan ~12 ms if called; 0130 makes it 19 -> 29 ms. Deletion candidate - Jacques to decide
 - [x] Lots.Lot_GetShippedContainers (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_GetTerminalRecentCreations (edited) - PR https://github.com/BR-Customers/MPP/pull/15 (index-only migration 0122, proc unchanged; measured: 2,281 -> 17 reads, 47.6 -> 1.6 ms warm)
 - [x] Lots.Lot_GetTrimStorageQueueForLine (no changes) - already fixed on main (v2.1 + migration 0118); read, no further change
 - [x] Lots.Lot_GetWipQueueByLocation (no changes) - already fixed on main (v3.3 + migration 0118); read, no further change
 - [x] Lots.Lot_List (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.Lot_ListByVendorLot (flagged) - VERIFIED by me: exact match on Lots.Lot.VendorLotNumber and no index on that column in any migration, so each call scans the heap. Runs per operator check-in (not polled), so LOW priority. Fix = small filtered index (VendorLotNumber IS NOT NULL), migration after 0120. Not started
+- [x] Lots.Lot_ListByVendorLot (edited) - https://github.com/BR-Customers/MPP/pull/19 (index-only migration 0123 IX_Lot_VendorLotNumber, proc unchanged; measured: 3,177 -> 2-5 Lot reads per check-in)
 - [ ] Lots.Lot_Merge (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: pre-txn status/piece-count read never re-checked; source-close UPDATE has no status predicate or rowcount check; no caller outside tests
 - [ ] Lots.Lot_MoveTo (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: check-then-write: pre-txn read of status/location, UPDATE unguarded, stale FromLocationId can be written to LotMovement
 - [ ] Lots.Lot_MoveToValidated (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: same unguarded UPDATE as MoveTo, plus MaxParts SUM via code-table join and check-then-write cap race
 - [x] Lots.Lot_RectifyPieceCount (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Lots.Lot_Search (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: catch-all OR + LIKE '%q%' + COUNT(*) OVER() + per-row OUTER APPLY into ProductionEvent over the whole heap; user-initiated only
-- [ ] Lots.Lot_SearchAdvanced (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: 12-way catch-all OR (incl. recursive CTE + EXISTS arms) with no OPTION(RECOMPILE); heap scan shape; user-initiated (LotSearch screen)
+- [x] Lots.Lot_Search (edited) - https://github.com/BR-Customers/MPP/pull/18 (v2.0: exact name at any age, 90-day window, HasMore; behaviour change approved by Jacques)
+- [x] Lots.Lot_SearchAdvanced (edited) - https://github.com/BR-Customers/MPP/pull/18 (v2.0, same as Lot_Search)
 - [x] Lots.Lot_SetCrt (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_Split (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.Lot_Update (no changes) - agent static read, not independently verified; nothing to change
@@ -264,7 +264,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Lots.VendorReturn_ListOpen (no changes) - agent static read, not independently verified; nothing to change
 - [x] Lots.VendorReturn_Mark (no changes) - agent static read, not independently verified; nothing to change
 
-## Oee (50 of 57 checked)
+## Oee (52 of 57 checked)
 
 - [x] Oee.Dashboard_GetBreakdown (no changes) - agent static read, not independently verified; nothing to change
 - [x] Oee.Dashboard_GetDowntimeByReason (no changes) - agent static read, not independently verified; nothing to change
@@ -274,7 +274,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Oee.Dashboard_GetTrend (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Oee.Dashboard_GetUnitSummary (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: open shift (and any unstored shift) is computed live through two multi-statement TVFs; each dashboard proc repeats it per page load
 - [x] Oee.DowntimeEvent_End (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Oee.DowntimeEvent_GetByScope (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: polled every 30 s per terminal; catch-all OR on ShiftId / open-event with a variable
+- [x] Oee.DowntimeEvent_GetByScope (edited) - https://github.com/BR-Customers/MPP/pull/23 (v1.1 -> v1.2 IF/ELSE split + migration 0127 IX_DowntimeEvent_Location_Shift; measured: header poll 3,710 -> 149 reads, 32 -> 1.3 ms)
 - [x] Oee.DowntimeEvent_GetOpenByLocation (no changes) - agent static read, not independently verified; nothing to change
 - [x] Oee.DowntimeEvent_GetOpenSummary (no changes) - agent static read, not independently verified; nothing to change
 - [x] Oee.DowntimeEvent_RecordApproximate (no changes) - agent static read, not independently verified; nothing to change
@@ -296,7 +296,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Oee.DowntimeSourceCode_Get (no changes) - agent static read, not independently verified; nothing to change
 - [x] Oee.DowntimeSourceCode_List (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Oee.EndOfShiftEntry_Submit (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: check-then-insert ('already submitted') with no lock and no unique key; a double tap can insert the break events twice
-- [ ] Oee.Lot_GetInProcessByLocation (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: LOTs found via sc.Code IN (...) code-table join (cannot use IX_Lot_Active/IX_Lot_NotClosed_Location); plus v_LotDerivedQuantities aggregates ConsumptionEvent
+- [x] Oee.Lot_GetInProcessByLocation (edited) - https://github.com/BR-Customers/MPP/pull/28 (v1.0 -> v1.1, per-LOT consumption sums instead of v_LotDerivedQuantities + literal; measured: 102,560 -> 2,549 reads, 110 -> 7 ms; caller Shift-End Summary, poll 0)
 - [x] Oee.Shift_End (no changes) - agent static read, not independently verified; nothing to change
 - [x] Oee.Shift_GetActive (no changes) - agent static read, not independently verified; nothing to change
 - [x] Oee.Shift_GetAvailability (no changes) - agent static read, not independently verified; nothing to change
@@ -322,9 +322,9 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Oee.ShiftSummary_Compute (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Oee.ShiftSummary_ComputeCore (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: DELETE of the shift's stored rows is issued BEFORE the expensive INSERT ... SELECT inside one txn, so X locks sit on that shift's ShiftSummary rows for the whole recom...
 - [x] Oee.ShiftSummary_RecomputeRange (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Oee.ShiftSummary_RefreshChanged (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: per shift in last 7 days evaluates ufn_ShiftInputFingerprint, which scans ProductionEvent (no ShiftId index) and RejectEvent (OR predicate); runs after every shift clo...
+- [ ] Oee.ShiftSummary_RefreshChanged (flagged) - FLAGGED WATCH (risk M): fix is in PR 17 (open, Jacques's own)
 
-## Parts (88 of 89 checked)
+## Parts (89 of 89 checked)
 
 - [x] Parts.Bom_Create (no changes) - agent static read, not independently verified; nothing to change
 - [x] Parts.Bom_CreateNewVersion (no changes) - agent static read, not independently verified; nothing to change
@@ -371,7 +371,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Parts.ItemLocation_CheckEligibility (no changes) - agent static read, not independently verified; nothing to change
 - [x] Parts.ItemLocation_ListByItem (no changes) - agent static read, not independently verified; nothing to change
 - [x] Parts.ItemLocation_ListByLocation (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Parts.ItemLocation_ListConsumptionForLine (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: reads Lots.Lot by CurrentLocationId IN (@LineLocs) with the open-LOT filter expressed through a code-table join, so it cannot match IX_Lot_NotClosed_Location (same sha...
+- [x] Parts.ItemLocation_ListConsumptionForLine (edited) - https://github.com/BR-Customers/MPP/pull/21 (v1.1 -> v1.2, literal LotStatusId <> 4; agent claim VERIFIED; measured: 1,144 -> 262 reads)
 - [x] Parts.ItemLocation_Remove (no changes) - agent static read, not independently verified; nothing to change
 - [x] Parts.ItemLocation_SaveAllForItem (no changes) - agent static read, not independently verified; nothing to change
 - [x] Parts.ItemLocation_SetConsumptionMetadata (no changes) - agent static read, not independently verified; nothing to change
@@ -416,7 +416,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Parts.Uom_List (no changes) - agent static read, not independently verified; nothing to change
 - [x] Parts.Uom_Update (no changes) - agent static read, not independently verified; nothing to change
 
-## Quality (74 of 89 checked)
+## Quality (81 of 89 checked)
 
 - [x] Quality.ControlledRun_AddMembers (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Quality.ControlledRun_ApplyMembersInternal (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: UPDATE Lots.Lot driven by l.Id IN (...) OR l.Id IN (...) on a heap, no seek guaranteed; audit cursors run while X locks are held
@@ -429,7 +429,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Quality.ControlledRun_List (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.ControlledRun_ListByLot (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.ControlledRun_ListHistory (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Quality.ControlledRun_ListMarkers (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: per-node CROSS APPLY ufn_ControlledRunMembershipsForLot has no index for ended memberships, so each node scans ControlledRunMember
+- [x] Quality.ControlledRun_ListMarkers (no changes) - checked 2026-11-16: PR 16 changes it or its cost; measured gain on main negligible. No change
 - [x] Quality.ControlledRun_ListMemberOrigin (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.ControlledRun_ListMemberResults (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.ControlledRun_ListMemberRework (no changes) - agent static read, not independently verified; nothing to change
@@ -437,7 +437,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Quality.ControlledRun_ListSignatures (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.ControlledRun_LogMemberLotEventsInternal (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Quality.ControlledRun_Open (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: window-conflict check-then-insert outside the transaction, no unique index backs it
-- [ ] Quality.ControlledRun_PreviewSelection (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: item+time scan of every LOT ever made of the part (non-covering IX_Lot_ItemId, RID lookups); calls ufn_ControlledRunResolveMembers with an OR-shaped open-member probe
+- [x] Quality.ControlledRun_PreviewSelection (no changes) - checked 2026-11-16: PR 16 changes it or its cost; measured gain on main negligible. No change
 - [ ] Quality.ControlledRun_Release (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: same OR-of-IN UPDATE on Lots.Lot as ApplyMembersInternal; X locks on up to hundreds of Lots.Lot rows held across per-LOT audit cursors
 - [x] Quality.ControlledRun_RemoveMember (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.ControlledRun_ReportMembers (no changes) - agent static read, not independently verified; nothing to change
@@ -452,7 +452,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [ ] Quality.ControlledRunResult_Record (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: Lots.Lot X-lock then ControlledRunResult insert: opposite order to Release (Result range lock then Lots.Lot); cursor locks LOTs in entry order
 - [ ] Quality.ControlledRunResult_Void (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: member-ended / release state checked before BEGIN TRAN, UPDATE does not re-assert it (integrity race with Release, not a perf issue)
 - [x] Quality.Crt_FlagMissedInspection (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Quality.Crt_GetRequiredInspections (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: location-scoped read of Lots.Lot via IX_Lot_CurrentLocationId + status code-table join (shape (c) of the incident); no view calls it today
+- [x] Quality.Crt_GetRequiredInspections (no changes) - VERIFIED 2026-11-16: NO CALLERS. Deletion candidate - Jacques to decide
 - [x] Quality.DefectCode_Create (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.DefectCode_Deprecate (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.DefectCode_Get (no changes) - agent static read, not independently verified; nothing to change
@@ -500,15 +500,15 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Quality.QualitySpecVersion_SaveDraft (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.Reject_GetNonRejectScrap (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.Reject_GetPartMatrix (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Quality.Reject_GetPartMatrixByParty (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: child query run once per part: no RejectEvent(ItemId) index, so each call scans the RejectEvent window
-- [ ] Quality.Reject_GetPartMatrixDefects (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: child query run once per part: same missing RejectEvent(ItemId) index
-- [ ] Quality.Reject_GetPlantSummary (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: @MachAsmGood scans the whole Lots.Lot heap filtered on CreatedAt (no index)
-- [ ] Quality.Reject_SearchDetail (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: COUNT(*) OVER() + TOP forces the whole window; OUTER APPLY per row; dates default NULL (all history)
+- [x] Quality.Reject_GetPartMatrixByParty (edited) - https://github.com/BR-Customers/MPP/pull/29 (index-only migration 0129 IX_RejectEvent_ItemRecordedAt, partition-ALIGNED, TRUNCATE proven; measured: 723k -> 18k reads per 120-part report run)
+- [x] Quality.Reject_GetPartMatrixDefects (edited) - https://github.com/BR-Customers/MPP/pull/29 (same 0129 index; measured: 747k -> 77k reads per report run). Note: the root Reject_GetPartMatrix goes serial, 20 -> 60 ms; report overall ~2.4x faster
+- [x] Quality.Reject_GetPlantSummary (no changes) - measured 2026-11-16: the @MachAsmGood heap read is real but the gain is too small to justify an index on the heap's CreatedAt. No change
+- [x] Quality.Reject_SearchDetail (edited) - https://github.com/BR-Customers/MPP/pull/32 (v1.1 -> v1.2, LOT join + shift apply moved after the TOP page; measured 3-9x faster, 1 month 540 -> 141 ms). COUNT(*) OVER() measured and not the cost
 - [x] Quality.SampleTriggerCode_Get (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.SampleTriggerCode_List (no changes) - agent static read, not independently verified; nothing to change
 - [x] Quality.SignatureMeaning_Get (no changes) - agent static read, not independently verified; nothing to change
 
-## Tools (52 of 55 checked)
+## Tools (54 of 55 checked)
 
 - [x] Tools.DieRank_Create (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.DieRank_Deprecate (no changes) - agent static read, not independently verified; nothing to change
@@ -538,11 +538,11 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Tools.Tool_Update (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.Tool_UpdateStatus (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolAssignment_Assign (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Tools.ToolAssignment_GetCellContext (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: OpenBasketCount subquery reads Lots.Lot heap per die (see below); on-demand popup, not polled
+- [x] Tools.ToolAssignment_GetCellContext (edited) - https://github.com/BR-Customers/MPP/pull/26 (v1.1 -> v1.2, literal LotStatusId <> 4 so 0128 serves OpenBasketCount)
 - [x] Tools.ToolAssignment_History (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolAssignment_ListActiveByCell (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolAssignment_ListByTool (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Tools.ToolAssignment_Release (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: open-basket guard reads Lots.Lot heap per die (same predicate as GetCellContext); rare supervisor action
+- [ ] Tools.ToolAssignment_Release (flagged) - FLAGGED WATCH, VERIFIED 2026-11-16 (PR 26 session): open-basket guard reads the heap per die. Write path, left unchanged: adding the literal LotStatusId <> 4 would let 0128 serve it - Jacques to decide
 - [x] Tools.ToolAttribute_ListByTool (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolAttribute_Remove (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolAttribute_SaveAll (no changes) - agent static read, not independently verified; nothing to change
@@ -555,7 +555,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Tools.ToolAttributeDefinition_MoveUp (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolAttributeDefinition_Update (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolCavity_Create (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Tools.ToolCavity_Deprecate (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: open-basket check filters Lots.Lot on ToolCavityId, which has no index (heap scan); rare admin action
+- [x] Tools.ToolCavity_Deprecate (edited) - https://github.com/BR-Customers/MPP/pull/30 (index-only 0130; write path UNCHANGED; measured: 3,723 -> 3 reads)
 - [x] Tools.ToolCavity_ListActiveByTool (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolCavity_ListByTool (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolCavity_ListForItemTool (no changes) - agent static read, not independently verified; nothing to change
@@ -566,7 +566,7 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Tools.ToolType_Get (no changes) - agent static read, not independently verified; nothing to change
 - [x] Tools.ToolType_List (no changes) - agent static read, not independently verified; nothing to change
 
-## Workorder (37 of 48 checked)
+## Workorder (43 of 48 checked)
 
 - [ ] Workorder.Assembly_CompleteTray (flagged) - FLAGGED CANDIDATE (risk H) by agent read, unverified: Open-LOT reads via code-table join (4 sites incl. FIFO pick loop) cannot use filtered indexes; source-LOT FIFO pick is unlocked read-then-write; global Lot sequence lo...
 - [x] Workorder.Assembly_GetTraysRemaining (edited) - PR https://github.com/BR-Customers/MPP/pull/9 (v1.0 -> v1.1, measured; requires 0118)
@@ -574,13 +574,13 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Workorder.ConsumptionEvent_RecordWithBomCheck (no changes) - agent static read, not independently verified; nothing to change
 - [x] Workorder.DieCast_GetCounterContext (no changes) - agent static read, not independently verified; nothing to change
 - [x] Workorder.DieCast_GetReleasePreview (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Workorder.DieCast_GetShiftOutputBreakdown (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: Relevant CTE walks every LOT ever made on the die (IX_Lot_ToolId) with an OR EXISTS, plus ~7 scalar UDF calls per output row
+- [x] Workorder.DieCast_GetShiftOutputBreakdown (edited) - https://github.com/BR-Customers/MPP/pull/26 (v3.2 -> v3.3, relevant-LOT set resolved first via 0128 + the DieCastContribution shift index; same rows)
 - [x] Workorder.DieCastCounterAnchor_Record (no changes) - agent static read, not independently verified; nothing to change
 - [x] Workorder.DieCastCounterAnchorReason_List (no changes) - agent static read, not independently verified; nothing to change
 - [x] Workorder.DieCastCredit_Write (no changes) - agent static read, not independently verified; nothing to change
 - [x] Workorder.DieCastEntry_Restamp (no changes) - agent static read, not independently verified; nothing to change
 - [x] Workorder.DieCastReconciliationReason_List (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Workorder.DieCastScrap_Write (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: die-wide path does OUTER APPLY ... FROM Lots.Lot ... WHERE l.ToolCavityId = tc.Id per cavity inside the txn; no index on ToolCavityId (heap scan per cavity)
+- [x] Workorder.DieCastScrap_Write (edited) - https://github.com/BR-Customers/MPP/pull/30 (index-only 0130; write path UNCHANGED; measured: die-wide path 29,800 -> 40 reads, ~300 -> 0.4 ms inside DieCastShiftOutput_Record's transaction)
 - [x] Workorder.DieCastShift_ListUnreconciled (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Workorder.DieCastShiftOutput_Record (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: die watermark read pre-txn with no lock then used to bump Tools.Tool.ShotCount (stale-delta race on concurrent submits)
 - [x] Workorder.DieCastShiftReconciliation_GetHeader (no changes) - agent static read, not independently verified; nothing to change
@@ -603,10 +603,10 @@ Functions (57 files) are not on this list; they are reviewed only where a proc d
 - [x] Workorder.RejectEvent_Record (no changes) - agent static read, not independently verified; nothing to change
 - [ ] Workorder.RejectEvent_RecordByPartFifo (flagged) - FLAGGED CANDIDATE (risk H) by agent read, unverified: Lots.Lot WITH (UPDLOCK, HOLDLOCK) range-scan on item/location (includes closed history) plus an in-txn full-LotMovement aggregate: long, wide lock footprint on the sam...
 - [x] Workorder.ScaleStation_GetPressLog (no changes) - agent static read, not independently verified; nothing to change
-- [ ] Workorder.ScaleStation_GetRecentBoxes (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: scans Lots.Container for StationLocationId + CompletedAt (only open-row filtered indexes exist); grows with every box
-- [ ] Workorder.ScaleStation_GetRunningPart (flagged) - FLAGGED WATCH (risk M) by agent read, unverified: runs ufn_ScaleStationEligibleParts (Lot reads through code-table join, per FG x BOM line) on every press / tray
-- [ ] Workorder.ScaleStation_GetShiftTally (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: 60 s poll; scans Lots.Container twice (no StationLocationId index) then seeks trays for every historical box at the station
-- [ ] Workorder.ScaleStation_ListEligibleParts (flagged) - FLAGGED WATCH (risk L) by agent read, unverified: same ufn_ScaleStationEligibleParts stock reads as GetRunningPart; UI picker, less frequent
+- [x] Workorder.ScaleStation_GetRecentBoxes (no changes) - measured 2026-11-16: PR 16's IX_Container_Station fixes it. No change on main; fixed when PR 16 merges
+- [x] Workorder.ScaleStation_GetRunningPart (edited) - https://github.com/BR-Customers/MPP/pull/24 (fix is in ufn_ScaleStationEligibleParts v1.2, literal LotStatusId <> 4; measured: 14,176 -> 94 Lot reads, 75 -> 8 ms per press)
+- [x] Workorder.ScaleStation_GetShiftTally (edited) - https://github.com/BR-Customers/MPP/pull/27 (v1.1 -> v1.2 OPTIMIZE FOR a one-shift window + migration 0124 IX_ContainerTray_ClosedAt; measured: 4,719 -> 3-4 tray reads, CPU 73 -> 7.4 ms)
+- [x] Workorder.ScaleStation_ListEligibleParts (edited) - https://github.com/BR-Customers/MPP/pull/24 (same function fix as GetRunningPart; proc itself unchanged)
 - [x] Workorder.ScrapSource_Get (no changes) - agent static read, not independently verified; nothing to change
 - [x] Workorder.ScrapSource_List (no changes) - agent static read, not independently verified; nothing to change
 - [x] Workorder.TrimCheckpoint_GetLatestForLot (no changes) - agent static read, not independently verified; nothing to change

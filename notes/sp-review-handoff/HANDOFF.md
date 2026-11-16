@@ -2,6 +2,30 @@
 
 Written 2026-11-13 (about 16:30 local) so someone else can continue the work. Everything the work depends on is in this folder or in the PRs.
 
+## 0. Update 2026-11-16 (read this first; sections 2, 7 and 8 below are Malaki's 2026-11-13 state)
+
+**The read-side review is finished.** Counts: **494 checked, no changes / 31 edited / 30 not yet checked (all flagged)**, out of 555.
+
+- **Merged into `main` on 2026-11-16:** PRs 7-15 (Malaki; PR 8 got a one-line fix first: its table variable declared `VendorLotNumber NVARCHAR(50)`, the column is 100, and a longer vendor lot raised Msg 2628 and blanked the whole inspection queue), Jacques's PR 18 (`Lot_Search` v2.0), and PRs 19-33 from the review sessions. Each was reviewed against the original proc and the full suite was run with the batch merged onto `main` before approval. Full suite on `main` after all merges: **5,813 passed / 0 failed**.
+- **Migrations on `main`:** 0118, 0120-0124, 0127-0130, 0133. `0119` stays reserved for container-as-LOT (PR 16, open). `0125`, `0126`, `0131`, `0132` were reserved for sessions that ended up not needing an index and are unused; the runner tolerates gaps. **Next free number: `0134`.**
+- **Fixed by PR 16, no change on `main`:** `Container_ListPendingValidation`, `ScaleStation_GetRecentBoxes`, `Container_ListShipped`, and the costs of `ControlledRun_ListMarkers` / `_PreviewSelection`. They stay slow on `main` until PR 16 merges.
+- **No callers found** (deletion candidates, Jacques to decide): `Lots.Lot_GetShiftCavityTally`, `Quality.Crt_GetRequiredInspections`, `Lots.Lot_GetLatestForToolCavity`.
+
+**What is left (all 30 need a decision before anyone builds):**
+
+- **Write paths (26):** `Assembly_CompleteTray`, `MachiningOut_Mint`, `RejectEvent_RecordByPartFifo`, `TrimOut_Record`, `DieCastShiftOutput_Record`, `DieCastLot_Open` (its race; PR 30 already fixed its read cost), `Lot_Create`, `Lot_CloseInline`, `Lot_Merge`, `Lot_MoveTo`, `Lot_MoveToValidated`, `Lot_UpdateStatus`, `Container_Complete`, `DieCastLot_Release`, `Hold_Place`, the controlled-run mutations (`ApplyMembersInternal`, `Open`, `Release`, `SetAutoJoin`, `SyncInternal`, `ControlledRunResult_Record` / `_Void`), `EndOfShiftEntry_Submit`, `ShiftSummary_ComputeCore`, `Terminal_SetClosureMethod`, `ToolAssignment_Release`. Mostly check-then-write races whose fix changes behaviour; the three risk-H ones are the deadlock candidates.
+- **OEE:** `Dashboard_GetScrap` / `Dashboard_GetUnitSummary` need a `ShiftId` index on `Workorder.ProductionEvent` (partitioned: must be aligned); `ShiftSummary_RefreshChanged` is in PR 17 (open).
+- **`Audit.Partition_MaintainWindow`:** global SPLIT/MERGE takes Sch-M on every partitioned table.
+- **Also raised, not changed:** `Audit.FailureLog` and `Workorder.RejectEvent` are not in `Audit.PartitionRetention`, so both grow forever (and `FailureLog_List` has no window cap); Global Trace lists each LOT twice for a reprinted shipper id; `ToolAssignment_Release` could take the literal `LotStatusId <> 4` to use 0128.
+
+**Lessons from running five review sessions in parallel** (add to section 6):
+
+- Give every session its own database names (`MPP_MES_Test_<TAG>`, `MPP_MES_Perf_<TAG>`); they share one SQL Server.
+- Many reviewer-agent claims did not hold (no callers, already seeking, already fixed by PR 16). Trace callers and check PR 16 before measuring.
+- Check every table-variable column width against the real column (the PR 8 bug).
+- Any index on a partitioned table (`RejectEvent`, `ProductionEvent`, `ConsumptionEvent`, `LotMovement`, the Audit logs) must be on `ps_MonthlyUtc`, with a test proving partition `TRUNCATE` still works (PR 29 is the reference).
+- The `jacqpot` GitHub account can approve but cannot create or merge PRs on this repo; PRs and merges go through `Jacques-BRA`.
+
 ## 1. What this is
 
 A review of all 555 stored procedures (`sql/migrations/repeatable/R__*.sql` that create a procedure) for **performance and collision / concurrency** problems, prompted by the 2026-11-10 prod incident (`notes/2026-11-10_prod-incident-assembly-out-deadlock.md`, fixed by migration `0118`). The rules are Jacques's, in `CLAUDE.md` section "Stored-procedure review": one proc revision = one branch = one PR into `main`; never commit to `main` or `jacques/working`; never run anything against prod; never merge your own PR; ask before rewriting behaviour.
