@@ -2,7 +2,7 @@
 -- Procedure:   Workorder.ScaleStation_GetShiftTally
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   "This shift at this scale" for the scale station screen (spec 2026-10-19
@@ -28,6 +28,13 @@
 -- Change Log:
 --   2026-10-19 - 1.0 - Initial version.
 --   2026-10-20 - 1.1 - A press judged Ok whose close failed counts as RefusedOther.
+--   2026-11-16 - 1.2 - Stored-procedure review: OPTIMIZE FOR a one-shift window on
+--                      the tally, so the window (local variables, which the optimiser
+--                      otherwise guesses as 9% of all rows) is costed as what it is --
+--                      a sliver of history -- and the tray branch seeks migration 0124's
+--                      IX_ContainerTray_ClosedAt instead of reading every tray ever
+--                      closed. The plan stays cached (no per-call compile). Hint only:
+--                      same statement, same result set.
 -- =============================================
 CREATE OR ALTER PROCEDURE Workorder.ScaleStation_GetShiftTally
     @TerminalLocationId BIGINT
@@ -86,6 +93,13 @@ BEGIN
               AND (il.ErrorCondition IS NULL OR il.ErrorCondition NOT LIKE N'ScaleFlags%')
               AND il.LotId IS NULL
         ) p
-    ) rf;
+    ) rf
+    -- Stored-procedure review 2026-11-16 (migration 0124). The window is in local
+    -- variables, which the optimiser guesses as 9% of every row, so it read every tray
+    -- ever closed. It is always one shift, newest history: cost it as an 8-hour window
+    -- past the end of the statistics. The literal dates are ONLY an estimate; the query
+    -- still runs on @FromUtc / @ToUtc. Chosen over RECOMPILE (~15 ms CPU to compile on
+    -- every 60 s poll and every press, vs ~1 ms to run) and over an index hint.
+    OPTION (OPTIMIZE FOR (@FromUtc = '2100-01-01T00:00:00', @ToUtc = '2100-01-01T08:00:00'));
 END;
 GO
