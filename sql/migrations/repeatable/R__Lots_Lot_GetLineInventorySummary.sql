@@ -2,7 +2,8 @@
 -- Repeatable:  R__Lots_Lot_GetLineInventorySummary.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-17
--- Version:     2.0
+-- Modified:    2026-11-16
+-- Version:     2.1
 -- Description: The M&A Line Inventory sidebar's single read (spec revision 2,
 --              docs/superpowers/specs/2026-09-17-line-inventory-sidebar-design.md).
 --              One row per part.
@@ -41,12 +42,24 @@
 --
 --              FDS-11-011: no OUTPUT params; empty set = nothing to show.
 --
+--              v2.1 (2026-11-16, stored-procedure review): same rows, same order, no
+--              longer a heap scan. Step 4 filtered open LOTs only through the
+--              LotStatusCode join, so every call read the whole Lots.Lot heap (all
+--              pages, also for a line with no stock), and the sidebar runs this three
+--              times per 30 s per docked terminal. Step 4 now repeats the filtered-
+--              index predicate 'LotStatusId <> 4' (Closed, fixed Id, as 0118 checks)
+--              so the optimiser can seek IX_Lot_NotClosed_Location per line location;
+--              the code-table tests beside it still decide. Benefits from, but does
+--              not require, 0118 for correctness.
+--
 -- Change Log:
 --   2026-09-17 - 1.0 - BOM rollup x finished-good horizon (spec revision 1).
 --   2026-09-17 - 1.1 - Held (BlocksProduction) LOTs excluded from Available.
 --   2026-09-17 - 2.0 - Spec revision 2: consumption eligibility + % of Max; terminal
 --                      scope + line-wide; BOM / running-FG logic and the
 --                      @FinishedGoodItemId parameter removed.
+--   2026-11-16 - 2.1 - Step 4 repeats 'LotStatusId <> 4' so it seeks
+--                      IX_Lot_NotClosed_Location (0118) instead of scanning the heap.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.Lot_GetLineInventorySummary
     @LocationId   BIGINT,
@@ -116,13 +129,16 @@ BEGIN
     ) x
     WHERE x.rn = 1;
 
-    -- 4. available at the line (held / blocking / closed / open excluded)
+    -- 4. available at the line (held / blocking / closed / open excluded).
+    --    'LotStatusId <> 4' (Closed) repeats the filter of IX_Lot_NotClosed_Location
+    --    (0118) so the optimiser can seek it; the code-table tests decide.
     DECLARE @OnHand TABLE (ItemId BIGINT NOT NULL PRIMARY KEY, Available INT NOT NULL);
     INSERT INTO @OnHand (ItemId, Available)
     SELECT l.ItemId, SUM(l.InventoryAvailable)
     FROM Lots.Lot l
     INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
     WHERE l.CurrentLocationId IN (SELECT Id FROM @LineLocs)
+      AND l.LotStatusId <> 4
       AND l.InventoryAvailable > 0
       AND sc.BlocksProduction = 0
       AND sc.Code NOT IN (N'Closed', N'Open')
