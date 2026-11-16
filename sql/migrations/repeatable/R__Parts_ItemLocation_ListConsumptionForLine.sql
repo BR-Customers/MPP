@@ -2,7 +2,7 @@
 -- Repeatable:  R__Parts_ItemLocation_ListConsumptionForLine.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-17
--- Version:     1.1
+-- Version:     1.2
 -- Description: Read proc behind the Line Inventory "Tolerances" popup (Task R3,
 --              docs/superpowers/specs/2026-09-17-line-inventory-sidebar-design.md).
 --              One row per consumption part known to a line, so the popup can list
@@ -57,6 +57,14 @@
 --   Funcs:  Location.ufn_AncestorLocationIds
 --
 -- Change Log:
+--   2026-11-16 - 1.2 - Stored-procedure review. The Available fill (block 4)
+--                       filtered open LOTs only through the LotStatusCode join, so
+--                       it could not use migration 0118's IX_Lot_NotClosed_Location
+--                       and read the whole Lots.Lot heap, closed history included,
+--                       on every popup open. It now also carries the literal
+--                       l.LotStatusId <> 4 (Closed), repeating the index filter so
+--                       the optimiser can seek it; the code-table tests beside it
+--                       still decide. Same rows, same order, same values.
 --   2026-09-17 - 1.1 - Trailing LineLocationCode column (the resolved line's own
 --                       Code) so callers can tell a shared/ancestor Max row from
 --                       one scoped to this line (Task FINAL-REVIEW-5).
@@ -124,6 +132,7 @@ BEGIN
     FROM Lots.Lot l
     INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
     WHERE l.CurrentLocationId IN (SELECT Id FROM @LineLocs)
+      AND l.LotStatusId <> 4            -- Closed; literal so IX_Lot_NotClosed_Location (0118) can be sought
       AND l.InventoryAvailable > 0
       AND sc.BlocksProduction = 0
       AND sc.Code NOT IN (N'Closed', N'Open')
