@@ -2,7 +2,7 @@
 -- Function:    Workorder.ufn_ScaleStationEligibleParts
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   The finished goods a By Weight scale station may run right now, and how
@@ -41,6 +41,11 @@
 -- Change Log:
 --   2026-10-19 - 1.0 - Initial version.
 --   2026-10-21 - 1.1 - Line ancestors computed once and joined (was ~110 ms per call).
+--   2026-11-16 - 1.2 - Both stock reads add the literal l.LotStatusId <> 4 (Closed)
+--                      beside the code-table status test, so the 0118 filtered
+--                      index IX_Lot_NotClosed_Item serves them instead of a RID
+--                      lookup for every closed LOT of the part. Same rows: Closed
+--                      was already excluded by sc.Code NOT IN (N'Closed', ...).
 -- =============================================
 CREATE OR ALTER FUNCTION Workorder.ufn_ScaleStationEligibleParts
 (
@@ -100,6 +105,7 @@ RETURN
             FROM Lots.Lot l
             JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
             WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = fb.LineId
+              AND l.LotStatusId <> 4   -- = Closed; lets the 0118 filtered indexes serve
               AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0
               AND l.InventoryAvailable > 0
         ) st
@@ -116,6 +122,7 @@ RETURN
             JOIN Lots.LotOriginType o  ON o.Id = l.LotOriginTypeId
             WHERE l.ItemId = fb.ItemId AND l.CurrentLocationId = fb.LineId
               AND o.Code IN (N'Received', N'ReceivedOffsite')
+              AND l.LotStatusId <> 4   -- = Closed; lets the 0118 filtered indexes serve
               AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0
               AND l.InventoryAvailable > 0
         ) st

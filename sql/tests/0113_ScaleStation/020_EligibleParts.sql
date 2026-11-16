@@ -198,6 +198,33 @@ DECLARE @Tr NVARCHAR(10) = (SELECT CAST(TraysCovered AS NVARCHAR(10)) FROM #E WH
 EXEC test.Assert_IsEqual @TestName = N'[Elig] TraysCovered = whole trays the scarcest line covers', @Expected = N'1', @Actual = @Tr;
 GO
 
+-- ==== Test 7: closed stock never counts, even with InventoryAvailable left on it ====
+-- (ufn v1.2 adds the literal LotStatusId <> 4 beside the code-table test; the
+--  rows must not change.) C1 Good 10 + Closed 10, P1 Good 30:
+--  closed counted -> C1 20 -> TraysCovered 2; correct -> 1.
+--  Then C1 Good 5 + Closed 10: closed counted -> eligible; correct -> not.
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TST-SS-LINE');
+DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TST-SS-AOUT');
+DECLARE @Good BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
+DECLARE @Closed BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
+DECLARE @Rcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @C1 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TST-SS-C1');
+DECLARE @P1 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TST-SS-P1');
+DELETE FROM Lots.Lot WHERE CurrentLocationId = @Line;
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId)
+VALUES (N'TSS-C1-G-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), @C1, @Rcv, @Good,   10, 10, @Line, 1),
+       (N'TSS-C1-X-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), @C1, @Rcv, @Closed, 10, 10, @Line, 1),
+       (N'TSS-P1-G-' + LEFT(CAST(NEWID() AS NVARCHAR(36)), 8), @P1, @Rcv, @Good,   30, 30, @Line, 1);
+DELETE FROM #E; INSERT INTO #E EXEC Workorder.ScaleStation_ListEligibleParts @TerminalLocationId = @Term;
+DECLARE @Tr NVARCHAR(10) = (SELECT CAST(TraysCovered AS NVARCHAR(10)) FROM #E WHERE PartNumber = N'TST-SS-FG-B');
+EXEC test.Assert_IsEqual @TestName = N'[Elig] closed stock does not add to a covered line', @Expected = N'1', @Actual = @Tr;
+UPDATE Lots.Lot SET PieceCount = 5, InventoryAvailable = 5
+WHERE CurrentLocationId = @Line AND ItemId = @C1 AND LotStatusId = @Good;
+DELETE FROM #E; INSERT INTO #E EXEC Workorder.ScaleStation_ListEligibleParts @TerminalLocationId = @Term;
+DECLARE @N NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #E WHERE PartNumber = N'TST-SS-FG-B');
+EXEC test.Assert_IsEqual @TestName = N'[Elig] closed stock does not cover a short line', @Expected = N'0', @Actual = @N;
+GO
+
 DROP TABLE #E; DROP TABLE #Stock;
 GO
 EXEC test.EndTestFile;
