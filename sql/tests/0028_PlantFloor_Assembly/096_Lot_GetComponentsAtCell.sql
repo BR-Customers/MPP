@@ -89,5 +89,97 @@ DELETE il FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId
     WHERE i.PartNumber IN (N'P6-GCC-FG', N'P6-GCC-COMP', N'P6-GCC-NOISE');
 GO
 
+-- =============================================
+-- v1.2 (2026-11-13, SP review): LOT scoping + status + last-movement behaviour that the
+-- heap-scan rewrite must preserve. Uses ROUTEFUL LOTs (leg 1), which need no
+-- eligibility fixture. Pins: only Closed is excluded (Open is INCLUDED, unlike
+-- Lot_GetWipQueueByLocation); @IncludeDescendants 0 = exact, 1 = cell + descendants,
+-- NULL = nothing; LastMovementAt is the latest movement, converted to Eastern.
+-- =============================================
+
+-- ---- cleanup ----
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName LIKE N'STG-096-V2%';
+DELETE FROM Lots.Lot WHERE LotName LIKE N'STG-096-V2%';
+GO
+
+-- ---- fixture ----
+DECLARE @Now    DATETIME2(3) = SYSUTCDATETIME();
+DECLARE @Cell   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+DECLARE @Parent BIGINT = (SELECT ParentLocationId FROM Location.Location WHERE Id = @Cell);
+-- an Item with a published route that has a ConsumeMint step (always pending while open)
+DECLARE @RItem  BIGINT = (
+    SELECT TOP 1 rt.ItemId
+    FROM Parts.RouteTemplate rt
+    INNER JOIN Parts.RouteStep rs         ON rs.RouteTemplateId = rt.Id
+    INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+    INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
+    INNER JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
+    WHERE rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rk.Code = N'ConsumeMint'
+    ORDER BY rt.ItemId);
+
+-- A: Good at the cell (latest movement 2026-01-15 15:00 UTC = 10:00 ET; an earlier one proves MAX)
+-- B: Closed at the cell      -> excluded
+-- C: Open (status 5) at the cell -> INCLUDED (only Closed is excluded here)
+-- D: Good at the cell's PARENT -> only seen when the parent is the queried scope
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt)
+VALUES (N'STG-096-V2-A', @RItem, 1, 1, 10, 10, @Cell,   1, @Now),
+       (N'STG-096-V2-B', @RItem, 1, 4, 10,  0, @Cell,   1, @Now),
+       (N'STG-096-V2-C', @RItem, 1, 5, 10, 10, @Cell,   1, @Now),
+       (N'STG-096-V2-D', @RItem, 1, 1, 10, 10, @Parent, 1, @Now);
+
+INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
+SELECT l.Id, NULL, @Cell, 1, NULL, '2026-01-15 09:00:00.000' FROM Lots.Lot l WHERE l.LotName = N'STG-096-V2-A'
+UNION ALL
+SELECT l.Id, NULL, @Cell, 1, NULL, '2026-01-15 15:00:00.000' FROM Lots.Lot l WHERE l.LotName = N'STG-096-V2-A';
+GO
+
+DECLARE @Cell   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+DECLARE @Parent BIGINT = (SELECT ParentLocationId FROM Location.Location WHERE Id = @Cell);
+
+DECLARE @Res TABLE (
+    Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50),
+    ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20),
+    LastMovementAt DATETIME2(3), NextOperationTypeCode NVARCHAR(30), NextSequenceNumber INT);
+DECLARE @N NVARCHAR(10);
+
+-- cell, exact (@IncludeDescendants = 0)
+INSERT INTO @Res EXEC Lots.Lot_GetComponentsAtCell @CellLocationId = @Cell, @IncludeDescendants = 0;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Res WHERE LotName = N'STG-096-V2-A');
+EXEC test.Assert_IsEqual @TestName = N'[ComponentsAtCell v1.2] routeful Good LOT at the cell is returned', @Expected = N'1', @Actual = @N;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Res WHERE LotName = N'STG-096-V2-B');
+EXEC test.Assert_IsEqual @TestName = N'[ComponentsAtCell v1.2] Closed LOT is excluded', @Expected = N'0', @Actual = @N;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Res WHERE LotName = N'STG-096-V2-C');
+EXEC test.Assert_IsEqual @TestName = N'[ComponentsAtCell v1.2] Open-status LOT is INCLUDED (only Closed is excluded here)', @Expected = N'1', @Actual = @N;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Res WHERE LotName = N'STG-096-V2-D');
+EXEC test.Assert_IsEqual @TestName = N'[ComponentsAtCell v1.2] exact scope excludes a LOT at the parent location', @Expected = N'0', @Actual = @N;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Res WHERE LotName = N'STG-096-V2-A' AND NextOperationTypeCode IS NOT NULL AND NextSequenceNumber IS NOT NULL);
+EXEC test.Assert_IsEqual @TestName = N'[ComponentsAtCell v1.2] routeful LOT carries its next pending route step', @Expected = N'1', @Actual = @N;
+DECLARE @Lma NVARCHAR(30) = ISNULL((SELECT CONVERT(NVARCHAR(30), LastMovementAt, 121) FROM @Res WHERE LotName = N'STG-096-V2-A'), N'<null>');
+EXEC test.Assert_IsEqual @TestName = N'[ComponentsAtCell v1.2] LastMovementAt is the LATEST movement, converted UTC to Eastern', @Expected = N'2026-01-15 10:00:00.000', @Actual = @Lma;
+
+-- parent, with descendants: parent's own LOT + the cell's LOTs (Closed still excluded)
+DELETE FROM @Res;
+INSERT INTO @Res EXEC Lots.Lot_GetComponentsAtCell @CellLocationId = @Parent, @IncludeDescendants = 1;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Res WHERE LotName LIKE N'STG-096-V2%');
+EXEC test.Assert_IsEqual @TestName = N'[ComponentsAtCell v1.2] parent + descendants returns A, C and D (not Closed B)', @Expected = N'3', @Actual = @N;
+
+-- parent, exact: only the parent's own LOT
+DELETE FROM @Res;
+INSERT INTO @Res EXEC Lots.Lot_GetComponentsAtCell @CellLocationId = @Parent, @IncludeDescendants = 0;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Res WHERE LotName LIKE N'STG-096-V2%');
+EXEC test.Assert_IsEqual @TestName = N'[ComponentsAtCell v1.2] parent exact returns only the parent''s own LOT', @Expected = N'1', @Actual = @N;
+
+-- NULL @IncludeDescendants matches neither arm: nothing comes back
+DELETE FROM @Res;
+INSERT INTO @Res EXEC Lots.Lot_GetComponentsAtCell @CellLocationId = @Cell, @IncludeDescendants = NULL;
+SET @N = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Res WHERE LotName LIKE N'STG-096-V2%');
+EXEC test.Assert_IsEqual @TestName = N'[ComponentsAtCell v1.2] NULL @IncludeDescendants returns nothing', @Expected = N'0', @Actual = @N;
+GO
+
+-- ---- cleanup ----
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName LIKE N'STG-096-V2%';
+DELETE FROM Lots.Lot WHERE LotName LIKE N'STG-096-V2%';
+GO
+
 EXEC test.EndTestFile;
 GO
