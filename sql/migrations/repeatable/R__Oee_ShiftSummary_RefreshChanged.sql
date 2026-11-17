@@ -2,6 +2,7 @@
 -- Procedure:   Oee.ShiftSummary_RefreshChanged
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-30
+-- Version:     1.1 (2026-11-05; found in the container-as-LOT year-scale bench, landed alone 2026-11-16) - Volume: the input fingerprint runs only over the last 7 days' shifts, ONE SHIFT AT A TIME (as a set the inline function lost its seeks); a no-change tick at a year of history was ~30 s.
 -- Version:     1.0
 --
 -- Description:
@@ -77,17 +78,42 @@ BEGIN
         DECLARE @Recent DATETIME2(3) = DATEADD(DAY, -7, @Now);
         DECLARE @Todo TABLE (ShiftId BIGINT PRIMARY KEY, ActualStart DATETIME2(3));
 
+        -- Volume (2026-11-05): two passes. The cheap tests (never computed, config changed)
+        -- run over every closed shift; the input FINGERPRINT runs only over the last 7 days.
+        -- In one OR predicate the optimizer evaluated the fingerprint for every shift of the
+        -- year (~780 x 38 ms = a 30 s tick with nothing to do, every 15 minutes).
         INSERT INTO @Todo (ShiftId, ActualStart)
         SELECT s.Id, s.ActualStart
         FROM Oee.Shift s
-        OUTER APPLY (SELECT MIN(ss.ComputedAt) AS ComputedAt, MIN(ss.InputFingerprint) AS Fp, COUNT(*) AS N
+        OUTER APPLY (SELECT MIN(ss.ComputedAt) AS ComputedAt, COUNT(*) AS N
                      FROM Oee.ShiftSummary ss WHERE ss.ShiftId = s.Id) st
-        CROSS APPLY (SELECT CAST(s.ActualStart AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)) AS StartUtc) x
         WHERE s.ActualEnd IS NOT NULL
-          AND (    st.N = 0
-               OR (@ChangedAt IS NOT NULL AND st.ComputedAt < @ChangedAt)
-               OR (x.StartUtc >= @Recent
-                   AND st.Fp <> ISNULL((SELECT f.Fingerprint FROM Oee.ufn_ShiftInputFingerprint(s.Id) f), 0x)));
+          AND (st.N = 0 OR (@ChangedAt IS NOT NULL AND st.ComputedAt < @ChangedAt));
+
+        DECLARE @RecentShifts TABLE (ShiftId BIGINT PRIMARY KEY, ActualStart DATETIME2(3));
+        INSERT INTO @RecentShifts (ShiftId, ActualStart)
+        SELECT s.Id, s.ActualStart
+        FROM Oee.Shift s
+        WHERE s.ActualEnd IS NOT NULL
+          AND CAST(s.ActualStart AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)) >= @Recent
+          AND NOT EXISTS (SELECT 1 FROM @Todo t WHERE t.ShiftId = s.Id);
+
+        -- One shift at a time: inlined over a SET of shifts, ufn_ShiftInputFingerprint
+        -- expands into one large join and loses its per-shift seeks (19 shifts: 28.8 s as a
+        -- set, ~61 ms each one by one, benchmark 2026-11-05).
+        DECLARE @rs BIGINT, @rsStart DATETIME2(3), @StoredFp VARBINARY(32), @NowFp VARBINARY(32);
+        DECLARE recent_cur CURSOR LOCAL FAST_FORWARD FOR SELECT ShiftId, ActualStart FROM @RecentShifts;
+        OPEN recent_cur;
+        FETCH NEXT FROM recent_cur INTO @rs, @rsStart;
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            SET @StoredFp = (SELECT MIN(ss.InputFingerprint) FROM Oee.ShiftSummary ss WHERE ss.ShiftId = @rs);
+            SET @NowFp = ISNULL((SELECT f.Fingerprint FROM Oee.ufn_ShiftInputFingerprint(@rs) f), 0x);
+            IF @StoredFp <> @NowFp
+                INSERT INTO @Todo (ShiftId, ActualStart) VALUES (@rs, @rsStart);
+            FETCH NEXT FROM recent_cur INTO @rs, @rsStart;
+        END
+        CLOSE recent_cur; DEALLOCATE recent_cur;
 
         SET @Stale = (SELECT COUNT(*) FROM @Todo);
 
