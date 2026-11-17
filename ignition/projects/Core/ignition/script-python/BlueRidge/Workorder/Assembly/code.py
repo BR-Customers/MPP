@@ -27,7 +27,9 @@ def scanIn(cellLocationId, lotName=None, lotId=None, appUserId=None, terminalLoc
 
 def completeTray(finishedGoodItemId, pieceCount, cellLocationId,
                  closureMethod=None, appUserId=None, terminalLocationId=None):
-    """Complete an assembly tray = mint the finished-good LOT (tray = LOT), consume
+    """Complete an assembly tray = add it to the container's finished-good LOT (minted
+       on the container's first tray -- one LOT per container since migration 0119;
+       before that tray = LOT), consume
        BOM x PieceCount FIFO from component stock at the cell INTO that LOT, and attach
        the tray to the cell's open Container (auto-open). Returns {Status, Message,
        FinishedGoodLotId, ContainerId, ContainerTrayId, ContainerFull}. When

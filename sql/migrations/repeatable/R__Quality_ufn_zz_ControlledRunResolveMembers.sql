@@ -3,6 +3,7 @@
 -- Object:      Quality.ufn_ControlledRunResolveMembers
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
+-- Version:     1.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8 / D9: reads the container's LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers; a container LOT is in a time window by its TRAYS (ClosedAt, ClosedAtTerminalId), not Lot.CreatedAt.
 -- Version:     1.0
 -- Description: THE single place a candidate super-lot member is resolved,
 --              described and judged. Used by the preview
@@ -51,7 +52,8 @@ RETURN
                CASE WHEN r.ContainerId IS NULL AND t.ContainerId IS NULL THEN r.LotId END AS LotId,
                COALESCE(r.ContainerId, t.ContainerId)                                     AS ContainerId
         FROM Raw r
-        LEFT JOIN Lots.ContainerTray t ON r.ContainerId IS NULL AND t.FinishedGoodLotId = r.LotId
+        -- 0119: a tray LOT (old shape) or a container LOT (new) folds into its container
+        OUTER APPLY (SELECT TOP 1 lc.ContainerId FROM Lots.ufn_LotContainers(r.LotId) lc WHERE r.ContainerId IS NULL) t
         WHERE r.LotId IS NOT NULL OR r.ContainerId IS NOT NULL
     )
     SELECT
@@ -82,8 +84,7 @@ RETURN
     LEFT JOIN Lots.ContainerStatusCode cs ON cs.Id = c.ContainerStatusCodeId
     OUTER APPLY (
         SELECT SUM(tl.PieceCount) AS Pieces, MAX(CAST(tl.CrtActive AS INT)) AS AnyCrt
-        FROM Lots.ContainerTray t2 JOIN Lots.Lot tl ON tl.Id = t2.FinishedGoodLotId
-        WHERE t2.ContainerId = f.ContainerId
+        FROM Lots.ufn_ContainerLots(f.ContainerId) cl JOIN Lots.Lot tl ON tl.Id = cl.LotId   -- 0119: both shapes
     ) ct
     OUTER APPLY (
         SELECT TOP 1 r.RunNumber

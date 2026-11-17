@@ -2,6 +2,8 @@
 -- Repeatable:  R__Lots_Container_ListShipped.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
+-- Version:     1.3 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - LOT volume: the window's containers first (seek IX_Container_CompletedAt), serial counts aggregated once over that set instead of per-row correlated counts. Same rows, columns, order.
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: reads the container's finished-good LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers.
 -- Version:     1.1
 -- Description: FDS-12-011 Shipping History -- shipped containers over a date
 --              range, for Honda ASN reconciliation.
@@ -69,12 +71,67 @@ BEGIN
         SET @ToUtc = CAST(CAST(DATEADD(DAY, 1, @ToEt) AS DATETIME2(3))
             AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
 
+    -- LOT volume (2026-11-04): the window's containers first (seek IX_Container_CompletedAt),
+    -- then the serial counts aggregated once over that set. The old per-row correlated
+    -- counts spooled into worktables (22M page reads for a 30-day list at a year of
+    -- volume). Same rows, same columns, same order.
+    DECLARE @C TABLE (Id BIGINT NOT NULL PRIMARY KEY);
+    INSERT INTO @C (Id)
+    SELECT c.Id
+    FROM Lots.Container c
+    INNER JOIN Parts.Item i ON i.Id = c.ItemId
+    WHERE c.ContainerStatusCodeId IN (2, 3)    -- 2 Complete, 3 Shipped: see header
+      AND c.CompletedAt IS NOT NULL            -- closed is the observable end state
+      AND (@FromUtc IS NULL OR c.CompletedAt >= @FromUtc)
+      AND (@ToUtc   IS NULL OR c.CompletedAt <  @ToUtc)
+      AND (@P       IS NULL OR i.PartNumber LIKE @P)
+    OPTION (RECOMPILE);
+
+    DECLARE @Agg TABLE (ContainerId BIGINT NOT NULL PRIMARY KEY, Pieces INT NULL, SourceLots INT NOT NULL);
+    INSERT INTO @Agg (ContainerId, Pieces, SourceLots)
+    SELECT x.Id,
+           (SELECT SUM(ct.PartsClosedCount) FROM Lots.ContainerTray ct WHERE ct.ContainerId = x.Id),
+           (SELECT COUNT(*) FROM (
+                SELECT ct.FinishedGoodLotId AS LotId FROM Lots.ContainerTray ct
+                WHERE ct.ContainerId = x.Id AND ct.FinishedGoodLotId IS NOT NULL      -- 0119 old shape
+                UNION
+                SELECT c2.LotId FROM Lots.Container c2 WHERE c2.Id = x.Id AND c2.LotId IS NOT NULL   -- new shape
+                UNION
+                SELECT sp.ProducingLotId FROM Lots.ContainerSerial cs
+                INNER JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId
+                WHERE cs.ContainerId = x.Id) u)
+    FROM @C x
+    OPTION (RECOMPILE);
+
+    DECLARE @Scrapped TABLE (ContainerId BIGINT NOT NULL PRIMARY KEY, N INT NOT NULL);
+    INSERT INTO @Scrapped (ContainerId, N)
+    SELECT cs.ContainerId, COUNT(*) FROM @C x INNER JOIN Lots.ContainerSerial cs ON cs.ContainerId = x.Id
+    WHERE cs.RemovedAt IS NOT NULL GROUP BY cs.ContainerId;
+
+    DECLARE @MovedOut TABLE (ContainerId BIGINT NOT NULL PRIMARY KEY, N INT NOT NULL);
+    INSERT INTO @MovedOut (ContainerId, N)
+    SELECT h.OldContainerId, COUNT(DISTINCT h.ContainerSerialId)
+    FROM @C x
+    INNER JOIN Lots.ContainerSerialHistory h ON h.OldContainerId = x.Id
+    INNER JOIN Lots.ContainerSerial cs ON cs.Id = h.ContainerSerialId
+    WHERE h.NewContainerId <> x.Id AND cs.ContainerId <> x.Id
+    GROUP BY h.OldContainerId;
+
+    DECLARE @MovedIn TABLE (ContainerId BIGINT NOT NULL PRIMARY KEY, N INT NOT NULL);
+    INSERT INTO @MovedIn (ContainerId, N)
+    SELECT h.NewContainerId, COUNT(DISTINCT h.ContainerSerialId)
+    FROM @C x
+    INNER JOIN Lots.ContainerSerialHistory h ON h.NewContainerId = x.Id
+    INNER JOIN Lots.ContainerSerial cs ON cs.Id = h.ContainerSerialId
+    WHERE h.OldContainerId <> x.Id AND cs.ContainerId = x.Id
+    GROUP BY h.NewContainerId;
+
     SELECT
         c.Id                 AS ContainerId,
         i.PartNumber         AS ItemPartNumber,
         lbl.AimShipperId,
-        ISNULL(tray.PieceCount, 0)    AS PieceCount,
-        ISNULL(src.SourceLotCount, 0) AS SourceLotCount,
+        ISNULL(ag.Pieces, 0)          AS PieceCount,
+        ISNULL(ag.SourceLots, 0)      AS SourceLotCount,
         CAST(c.OpenedAt    AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS OpenedAt,
         CAST(c.CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CompletedAt,
         loc.Name             AS CurrentLocationName,
@@ -82,28 +139,17 @@ BEGIN
         CAST(rwk.VoidedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS ReplacedSerialVoidedAt,
         CAST(rwk.OpenedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS ReworkOpenedAt,
         rwk.Initials AS ReworkOpenedByInitials,
-        ISNULL(cnt.ScrappedCount, 0) AS ScrappedSerialCount,
-        ISNULL(cnt.MovedOutCount, 0) AS MovedOutSerialCount,
-        ISNULL(cnt.MovedInCount, 0) AS MovedInSerialCount
-    FROM Lots.Container c
+        ISNULL(sx.N, 0) AS ScrappedSerialCount,
+        ISNULL(mo.N, 0) AS MovedOutSerialCount,
+        ISNULL(mi.N, 0) AS MovedInSerialCount
+    FROM @C x
+    INNER JOIN Lots.Container c ON c.Id = x.Id
     INNER JOIN Parts.Item i ON i.Id = c.ItemId
     LEFT  JOIN Location.Location loc ON loc.Id = c.CurrentLocationId
-    OUTER APPLY (
-        SELECT SUM(ct.PartsClosedCount) AS PieceCount
-        FROM Lots.ContainerTray ct WHERE ct.ContainerId = c.Id
-    ) tray
-    OUTER APPLY (
-        SELECT COUNT(*) AS SourceLotCount FROM (
-            SELECT ct.FinishedGoodLotId AS LotId
-            FROM Lots.ContainerTray ct
-            WHERE ct.ContainerId = c.Id AND ct.FinishedGoodLotId IS NOT NULL
-            UNION
-            SELECT sp.ProducingLotId
-            FROM Lots.ContainerSerial cs
-            INNER JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId
-            WHERE cs.ContainerId = c.Id
-        ) u
-    ) src
+    LEFT  JOIN @Scrapped sx ON sx.ContainerId = c.Id
+    LEFT  JOIN @MovedOut mo ON mo.ContainerId = c.Id
+    LEFT  JOIN @MovedIn  mi ON mi.ContainerId = c.Id
+    LEFT  JOIN @Agg ag ON ag.ContainerId = c.Id
     OUTER APPLY (
         SELECT TOP (1) sl.AimShipperId
         FROM Lots.ShippingLabel sl
@@ -118,24 +164,7 @@ BEGIN
         WHERE rw.ContainerId = c.Id
         ORDER BY rw.OpenedAt DESC, rw.Id DESC
     ) rwk
-    OUTER APPLY (
-        SELECT
-            (SELECT COUNT(*) FROM Lots.ContainerSerial cs
-              WHERE cs.ContainerId = c.Id AND cs.RemovedAt IS NOT NULL) AS ScrappedCount,
-            (SELECT COUNT(DISTINCT h.ContainerSerialId)
-               FROM Lots.ContainerSerialHistory h
-               INNER JOIN Lots.ContainerSerial cs ON cs.Id = h.ContainerSerialId
-              WHERE h.OldContainerId = c.Id AND h.NewContainerId <> c.Id AND cs.ContainerId <> c.Id) AS MovedOutCount,
-            (SELECT COUNT(DISTINCT h.ContainerSerialId)
-               FROM Lots.ContainerSerialHistory h
-               INNER JOIN Lots.ContainerSerial cs ON cs.Id = h.ContainerSerialId
-              WHERE h.NewContainerId = c.Id AND h.OldContainerId <> c.Id AND cs.ContainerId = c.Id) AS MovedInCount
-    ) cnt
-    WHERE c.ContainerStatusCodeId IN (2, 3)    -- 2 Complete, 3 Shipped: see header
-      AND c.CompletedAt IS NOT NULL            -- closed is the observable end state
-      AND (@FromUtc IS NULL OR c.CompletedAt >= @FromUtc)
-      AND (@ToUtc   IS NULL OR c.CompletedAt <  @ToUtc)
-      AND (@P       IS NULL OR i.PartNumber LIKE @P)
-    ORDER BY c.CompletedAt DESC, c.Id DESC;
+    ORDER BY c.CompletedAt DESC, c.Id DESC
+    OPTION (RECOMPILE);   -- the window's real size, so per-container seeks beat scan + spool
 END
 GO

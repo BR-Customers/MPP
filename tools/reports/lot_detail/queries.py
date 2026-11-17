@@ -33,11 +33,14 @@ SUMMARY_SQL = """SELECT
       WHERE c.DescendantLotId = l.Id AND c.Depth > 0) AS ancestor_count
   ,(SELECT COUNT(*) FROM Lots.LotGenealogyClosure c
       WHERE c.AncestorLotId = l.Id AND c.Depth > 0) AS descendant_count
-  ,(SELECT COUNT(*) FROM Lots.ContainerTray ct
-      WHERE ct.FinishedGoodLotId = l.Id
-         OR ct.FinishedGoodLotId IN (
-              SELECT c.DescendantLotId FROM Lots.LotGenealogyClosure c
-              WHERE c.AncestorLotId = l.Id AND c.Depth > 0)) AS container_count
+  -- Containers holding this LOT or any descendant: distinct containers, in both
+  -- shapes (a tray's own LOT before migration 0119, the container's LOT after).
+  ,(SELECT COUNT(DISTINCT lc.ContainerId)
+      FROM (SELECT l.Id AS LotId
+            UNION
+            SELECT c.DescendantLotId FROM Lots.LotGenealogyClosure c
+            WHERE c.AncestorLotId = l.Id AND c.Depth > 0) x
+      CROSS APPLY Lots.ufn_LotContainers(x.LotId) lc) AS container_count
   ,(SELECT COUNT(*) FROM Workorder.ProductionEvent pe WHERE pe.LotId = l.Id) AS event_count
 FROM Lots.Lot l
 JOIN Parts.Item i ON i.Id = l.ItemId

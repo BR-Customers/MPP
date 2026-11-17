@@ -1,6 +1,6 @@
 # MPP MES — Data Model Reference
 
-**Version:** v3.11 (rev 2026-11-03 -- OEE dashboard: `Oee.ShiftSummary`, `Oee.ShiftSummaryConfig`, `Lots.Lot.ShiftId` / `MintedPieceCount`, migration `0117`; previously v3.9 rev 2026-10-21 -- merged with `jacques/working` (Assembly Out scale station = 3.8 / 3.9); 3.7: super-lot piece 6, visibility: `Audit.LogEventType` gains `RepeatsLotTimeline` / `LotTimelineKind` and six `ControlledRunLot*` codes (migration `0114`); the LOT History read now includes the LOT's audit stream. The full per-revision narrative is in the Revision History below.)
+**Version:** v3.12 (rev 2026-11-16 -- container-as-LOT: one finished-good LOT per container, `Lots.Container.LotId`, `Lots.ContainerTray` shift / station / minted-count stamps, migration `0119`; previously v3.11.2 rev 2026-11-10 -- not-closed LOT indexes, migration `0118`; previously v3.11 rev 2026-11-03 -- OEE dashboard: `Oee.ShiftSummary`, `Oee.ShiftSummaryConfig`, `Lots.Lot.ShiftId` / `MintedPieceCount`, migration `0117`; previously v3.9 rev 2026-10-21 -- merged with `jacques/working` (Assembly Out scale station = 3.8 / 3.9); 3.7: super-lot piece 6, visibility: `Audit.LogEventType` gains `RepeatsLotTimeline` / `LotTimelineKind` and six `ControlledRunLot*` codes (migration `0114`); the LOT History read now includes the LOT's audit stream. The full per-revision narrative is in the Revision History below.)
 **Schemas:** 8 | **Tables:** ~75
 **Target:** Microsoft SQL Server 2022 Standard Edition
 
@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 3.12 | 2026-11-16 | Blue Ridge Automation | **Container-as-LOT (migration `0119_container_as_lot`, built 2026-11-04 as 0119 and renumbered; spec `docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md`; plan `docs/superpowers/plans/2026-11-04-container-as-lot-and-lot-volume.md`).** One finished-good LOT per CONTAINER, not per tray: `Lots.Container` += `LotId` (FK `Lots.Lot`, filtered unique `UX_Container_LotId`), minted by `Workorder.Assembly_CompleteTray` v2.0 on the first accepted tray and appended to by every later tray. `Lots.ContainerTray` += `ShiftId` (FK `Oee.Shift`), `ClosedAtTerminalId` (FK `Location.Location`), `MintedPieceCount` -- stamped once at tray close; OEE good is read from them. New trays leave `FinishedGoodLotId` NULL; pre-0119 tray LOTs stay as history and every reader handles both shapes through `Lots.ufn_ContainerLots` / `Lots.ufn_LotContainers`. One genealogy edge per (source LOT, container LOT): a repeat draw adds to its `PieceCount` (the one exception to append-only on `Lots.LotGenealogy`). The Container / ContainerTray sections below were also corrected to the live schema (they described columns that were never built). |
 | 3.11.2 | 2026-11-10 | Blue Ridge Automation | **Not-closed LOT indexes (prod incident fix).** Migration `0118_lot_open_lot_indexes`: `IX_Lot_NotClosed_Location` and `IX_Lot_NotClosed_Item` on `Lots.Lot`, filtered `LotStatusId <> 4`. `Lots.Lot_GetWipQueueByLocation` v3.3 and `Lots.Lot_GetTrimStorageQueueForLine` v2.1 resolve their scope first and seek those indexes, and read each LOT's last movement by seek instead of aggregating all of `Lots.LotMovement`. Same rows, same order. See the Lot section note. |
 | 3.11.1 | 2026-11-03 | Blue Ridge Automation | **A shift schedule change is a line in the sand.** New `Oee.ufn_ShiftWindowForShift` resolves a recorded shift's window from its own `Oee.Shift` row (override for that day wins); `Oee.ufn_ShiftAvailability` v2.1 and `Oee.ufn_ShiftDowntimeEntries` v1.1 use it, so editing or deprecating a schedule no longer rewrites or hides past availability. `Oee.ShiftSchedule` removed from `Oee.ufn_ShiftSummaryConfigFingerprint` (v1.1). No schema change. |
 | 3.11 | 2026-11-03 | Blue Ridge Automation | **OEE dashboard -- availability and quality, site to unit (migration `0117_oee_shift_summary`; spec `docs/superpowers/specs/2026-10-27-oee-dashboard-design.md` v1.0; plan `docs/superpowers/plans/2026-10-30-oee-dashboard-v03.md`).** `Lots.Lot` += `ShiftId` (FK `Oee.Shift`) and `MintedPieceCount`, stamped only by the consume-mints (`Workorder.Assembly_CompleteTray` / `Workorder.MachiningOut_Mint`), filtered index `IX_Lot_ShiftId`; one-time backfill `Lots.Lot_BackfillMintStamp @Commit`. New tables `Oee.ShiftSummary` (stored per-shift minutes and counts, one row per unit / station / area placement / area charge) and `Oee.ShiftSummaryConfig` (single row: the configuration fingerprint). Availability is now computed from entered DURATIONS (`Oee.ufn_DowntimeEventMinutes`, `Oee.ufn_ShiftAvailability`, `Oee.Shift_GetAvailability` v4.0). Compute / refresh procs `Oee.ShiftSummary_Compute`, `_ComputeCore`, `_RecomputeRange`, `_RefreshChanged`; dashboard reads `Oee.Dashboard_GetPeriod`, `_GetUnitSummary` (v2.1 `@ReadLive`), `_GetTrend`, `_GetBreakdown`, `_GetDowntimeByReason`, `_GetScrap`, `_GetDowntimeEntries` (v1.1). Rules in Section 6 "OEE dashboard". |
@@ -773,47 +774,45 @@ LTT barcode label print/reprint tracking.
 
 ### Container
 
-Shipping containers for finished goods.
+Shipping containers for finished goods. **One finished-good LOT per container (v3.12, migration `0119`):** the first camera-accepted tray mints the container's LOT and every later tray adds its pieces to it; `Lots.Container_Complete` closes the LOT with the container. Containers from before `0119` have `LotId` NULL and one LOT per tray (`ContainerTray.FinishedGoodLotId`); a container open when `0119` landed is MIXED (tray LOTs + a container LOT). Readers resolve every shape through `Lots.ufn_ContainerLots(@ContainerId)` (representative LOT = `TOP 1 ... ORDER BY SortKey`: the first tray's LOT, else the container's) and `Lots.ufn_LotContainers(@LotId)`. Pieces in a container are always `SUM(ContainerTray.PartsClosedCount)`.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
 | Id | BIGINT | PK | |
-| ContainerName | NVARCHAR(50) | NOT NULL, UNIQUE | |
-| ItemId | BIGINT | FK → Item.Id, NOT NULL | |
-| ContainerConfigId | BIGINT | FK → ContainerConfig.Id, NULL | |
-| ContainerStatusId | BIGINT | FK → ContainerStatusCode.Id, NOT NULL | |
-| LotId | BIGINT | FK → Lot.Id, NULL | Source LOT |
-| CurrentLocationId | BIGINT | FK → Location.Id, NOT NULL | |
-| StationLocationId | BIGINT | FK → Location.Id, NULL | **The terminal that owns this open box** (migration `0078`). `Workorder.Assembly_CompleteTray` v1.4 files a tray into the station's own open box for (line, part), else **claims** an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-`0078` container, and any box opened by a caller that passes no Terminal. Filtered index `IX_Container_OpenByCellItemStation` on open rows. Why: METTs A and B on `MA2-6MACH` run the same part numbers at once into physically separate boxes. |
-| AimShipperId | NVARCHAR(50) | NULL | From AIM system |
-| HoldNumber | NVARCHAR(50) | NULL | Sort Cage hold reference |
-| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT GETDATE() | |
-| UpdatedAt | DATETIME2(3) | NULL | |
+| ItemId | BIGINT | FK -> Parts.Item.Id, NOT NULL | The finished good packed |
+| ContainerConfigId | BIGINT | FK -> Parts.ContainerConfig.Id, NOT NULL | Pack-out (trays per container, parts per tray, closure method) |
+| CurrentLocationId | BIGINT | FK -> Location.Location.Id, NOT NULL | The line while filling; the shipping location once shipped |
+| ContainerStatusCodeId | BIGINT | FK -> Lots.ContainerStatusCode.Id, NOT NULL, DEFAULT 1 (Open) | Open / Complete / Shipped / Hold / Void / ReworkProcessing / ReworkFilling |
+| OpenedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | |
+| CompletedAt | DATETIME2(3) | NULL | Set by `Container_Complete` |
+| CreatedByUserId | BIGINT | FK -> Location.AppUser.Id, NOT NULL | |
+| RowVersion | ROWVERSION | | |
+| StationLocationId | BIGINT | FK -> Location.Location.Id, NULL | **The terminal that owns this open box** (migration `0078`). `Workorder.Assembly_CompleteTray` files a tray into the station's own open box for (line, part), else **claims** an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-`0078` container, and any box opened by a caller that passes no Terminal. Filtered index `IX_Container_OpenByCellItemStation` on open rows. Why: METTs A and B on `MA2-6MACH` run the same part numbers at once into physically separate boxes. |
+| LotId | BIGINT | FK -> Lots.Lot.Id, NULL, filtered UNIQUE `UX_Container_LotId` | **The container's finished-good LOT** (v3.12, migration `0119`). Minted on the first tray; NULL on pre-`0119` containers and on a box opened before its first tray. Holds and CRT apply to it -- i.e. to the whole container (spec D7). A repack move into a container with no LOT mints one. |
+
+The AIM shipper ID, labels and holds live in `Lots.AimShipperIdPool`, `Lots.ShippingLabel` and `Quality.HoldEvent` (by `ContainerId`), not on this row.
 
 ### ContainerTray
 
-| Column | Type | Constraints | Description |
-|---|---|---|---|
-| Id | BIGINT | PK | |
-| ContainerId | BIGINT | FK → Container.Id, NOT NULL | |
-| TrayNumber | INT | NOT NULL | |
-| PieceCount | INT | NOT NULL | |
-| FinishedGoodLotId | BIGINT | FK → Lot.Id, NULL, UNIQUE (filtered on non-NULL) | Finished-good LOT minted at tray closure - `tray = LOT`, 1:1. Assembly-out consumption targets this LOT via `ConsumptionEvent.ProducedLotId` (see below), and container genealogy resolves `Container -> ContainerTray -> FinishedGoodLot -> component LOTs`. Nullable during transition; tightened to NOT NULL once all trays route through `Workorder.Assembly_CompleteTray`. |
-
-**Assembly consumption targets the finished-good LOT (v-bump 2026-07-06).** Non-serialized AND serialized assembly-out mint a finished-good LOT (`tray = LOT`) and consume `BomLine.QtyPer x PieceCount` FIFO (oldest-first by `Lot.CreatedAt`, tie-broken by `Id`) from eligible component LOTs at the line. Each draw's `Workorder.ConsumptionEvent` sets **`ProducedLotId` = the finished-good LOT** (the primary consumption target), not only `ProducedContainerId`; the Container is retained as the wrapper. See FDS-06-013 / FDS-06-020 / FDS-06-021.
-
-### SerializedPart
-
-Individual laser-etched serial numbers.
+One row per camera-accepted (or counted / weighed) tray, and per repack move into a container.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
-| Id | BIGINT | PK | |
-| SerialNumber | NVARCHAR(50) | NOT NULL, UNIQUE | |
-| ItemId | BIGINT | FK → Item.Id, NOT NULL | |
-| LotId | BIGINT | FK → Lot.Id, NOT NULL | Source LOT |
-| ContainerId | BIGINT | FK → Container.Id, NULL | Current container |
-| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT GETDATE() | |
+| Id | BIGINT | PK | The FRS "Produced Tray ID" (`ConsumptionEvent.TrayId`) |
+| ContainerId | BIGINT | FK -> Lots.Container.Id, NOT NULL | |
+| TrayPosition | INT | NOT NULL, UNIQUE with ContainerId | 1-based order in the container |
+| PartsClosedCount | INT | NOT NULL, DEFAULT 0 | Pieces in the tray now; repack scrap / moves lower it |
+| ClosedAt | DATETIME2(3) | NULL | When the tray passed the camera (or was counted / weighed) |
+| ClosedByUserId | BIGINT | FK -> Location.AppUser.Id, NULL | |
+| ClosureMethod | NVARCHAR(20) | NULL | ByCount / ByWeight / ByVision |
+| FinishedGoodLotId | BIGINT | FK -> Lots.Lot.Id, NULL, filtered UNIQUE | **Pre-`0119` only:** the tray's own finished-good LOT (tray = LOT, 1:1). NULL on every tray from `0119` on -- the LOT is the container's. |
+| ShiftId | BIGINT | FK -> Oee.Shift.Id, NULL | v3.12. The shift the tray passed the camera in, stamped once by `Assembly_CompleteTray`. OEE good (`Oee.ufn_ShiftGood`) reads it. NULL on pre-`0119` trays (their LOT carries the stamp) and on repack-move trays (not production). Filtered index `IX_ContainerTray_ShiftId`. |
+| ClosedAtTerminalId | BIGINT | FK -> Location.Location.Id, NULL | v3.12. The station that closed the tray (OEE area family; super-lot line filter). |
+| MintedPieceCount | INT | NULL | v3.12. `PartsClosedCount` at tray close, never changed: OEE good, so later repack scrap counts once as scrap, not also as less good (spec D11). |
+
+Index `IX_ContainerTray_ClosedAt (ClosedAt) INCLUDE (ContainerId, ClosedAtTerminalId)` serves the super-lot time windows (a container LOT is "produced in the window" when any of its trays was closed inside it -- spec D9).
+
+**Assembly consumption targets the finished-good LOT.** Assembly-out consumes `BomLine.QtyPer x PieceCount` FIFO (oldest-first by `Lot.CreatedAt`, tie-broken by `Id`) from eligible component LOTs at the line. Each draw writes one `Workorder.ConsumptionEvent` (`ProducedLotId` = the container's LOT, `ProducedContainerId`, `TrayId` = the tray) and adds to ONE `Lots.LotGenealogy` edge per (source LOT, container LOT) -- the edge's `PieceCount` grows with each draw; closure ancestors are inserted only when new. See FDS-06-013 / FDS-06-020 / FDS-06-021.
 
 ### ContainerSerial
 

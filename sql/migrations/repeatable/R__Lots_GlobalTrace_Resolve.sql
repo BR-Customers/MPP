@@ -2,6 +2,7 @@
 -- Repeatable:  R__Lots_GlobalTrace_Resolve.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: reads the container's finished-good LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers.
 -- Version:     1.1
 -- Description: Arc 2 Phase 9 (FDS-12-001/012/013). Global Trace entry point:
 --              maps ONE scanned/typed identifier to candidate LOT rows. The
@@ -107,9 +108,8 @@ BEGIN
                CAST(N'Container ' + CAST(c.Id AS NVARCHAR(20)) + N' source LOT' AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(500)), CAST(NULL AS NVARCHAR(50))
         FROM Lots.Container c
         CROSS APPLY (
-            SELECT ct.FinishedGoodLotId AS SrcLotId
-            FROM Lots.ContainerTray ct
-            WHERE ct.ContainerId = c.Id AND ct.FinishedGoodLotId IS NOT NULL
+            SELECT cl.LotId AS SrcLotId                       -- 0119: both shapes
+            FROM Lots.ufn_ContainerLots(c.Id) cl
             UNION
             SELECT sp.ProducingLotId
             FROM Lots.ContainerSerial cs
@@ -128,9 +128,8 @@ BEGIN
                CAST(N'Shipper ' + sl.AimShipperId + N' container ' + CAST(sl.ContainerId AS NVARCHAR(20)) AS NVARCHAR(200)), CAST(NULL AS DATETIME2(3)), CAST(NULL AS NVARCHAR(500)), CAST(NULL AS NVARCHAR(50))
         FROM Lots.ShippingLabel sl
         CROSS APPLY (
-            SELECT ct.FinishedGoodLotId AS SrcLotId
-            FROM Lots.ContainerTray ct
-            WHERE ct.ContainerId = sl.ContainerId AND ct.FinishedGoodLotId IS NOT NULL
+            SELECT cl.LotId AS SrcLotId                       -- 0119: both shapes
+            FROM Lots.ufn_ContainerLots(sl.ContainerId) cl
             UNION
             SELECT sp.ProducingLotId
             FROM Lots.ContainerSerial cs

@@ -102,8 +102,9 @@ EXEC test.Assert_IsEqual @TestName = N'[Validate] Container_Complete succeeds (f
 -- sanity: all 4 tray LOTs are CrtActive before we validate
 DECLARE @PreCount NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.Lot
     WHERE Id IN (SELECT LotId FROM @TrayLots) AND CrtActive = 1);
-EXEC test.Assert_IsEqual @TestName = N'[Validate] fixture sanity: all 4 tray LOTs CrtActive before validation',
-    @Expected = N'4', @Actual = @PreCount;
+-- container-as-LOT (0119): the 4 trays share ONE container LOT.
+EXEC test.Assert_IsEqual @TestName = N'[Validate] fixture sanity: the container LOT is CrtActive before validation',
+    @Expected = N'1', @Actual = @PreCount;
 
 DECLARE @V1 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @V1 EXEC Lots.Container_ValidateCrt @ContainerId = @Con, @AppUserId = 1, @TerminalLocationId = @Term;
@@ -126,8 +127,8 @@ DECLARE @Act10b NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
     FROM Lots.LotEventLog lel
     INNER JOIN Audit.LogEventType let ON let.Id = lel.LogEventTypeId
     WHERE lel.LotId IN (SELECT LotId FROM @TrayLots) AND let.Code = N'CrtCleared');
-EXEC test.Assert_IsEqual @TestName = N'[Validate] LotEventLog has one CrtCleared row per tray LOT (4)',
-    @Expected = N'4', @Actual = @Act10b;
+EXEC test.Assert_IsEqual @TestName = N'[Validate] LotEventLog has one CrtCleared row for the container LOT',
+    @Expected = N'1', @Actual = @Act10b;
 
 -- second call must reject: nothing pending any more (Finding 3: this is the
 -- @@ROWCOUNT race-guard path taken serially -- assert both the status AND the
