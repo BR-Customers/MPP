@@ -1,15 +1,16 @@
 # Prod release runbook -- Digi One SP scale feed
 
-**Release commit:** `f528c960` on `feature/digi-scale-feed` (PR into `main`). The archives were built from this commit.
-**Runs after:** the stored-procedure review release (`notes/2026-11-16_prod-release-runbook-sp-review.md`: `0118`, `0120`-`0133`). **That release must be executed first.** This release's pre-flight gate BLOCKs while `0133` is still pending.
-**Rehearsed against:** `MPP_MES_ProdSimDigi`, built at `8223d2cc` (`main` with the SP review merged): 127 migrations, highest `0133`, `Workorder.ScalePendingPress` absent. A full Execute ran on a second sim, `MPP_MES_ProdSimDigi2`.
+**Release commit:** `56e68d2f` on **`release/2026-11-19-digi-scale-feed`**, cut from prod's last release `96651770` (the 2026-11-04 bundle, executed 2026-11-05). **Run every command from that branch.** It carries only this change: the same code as PR BR-Customers/MPP#36, **without** the stored-procedure review (`0118`, `0120`-`0133`), which stays on `main` and ships later (Jacques, 2026-11-19).
+**Previous release:** `96651770`. Prod is expected at **116 migrations, highest `0117`**.
+**Rehearsed against:** `MPP_MES_ProdSimDigiRel`, built at `96651770`: 116 migrations, highest `0117`, `Workorder.ScalePendingPress` absent. A full Execute ran on a second sim, `MPP_MES_ProdSimDigiRel2`.
+**The SP review after this one:** add `-AllowOutOfOrder 0118,0120,0121,0122,0123,0124,0127,0128,0129,0130,0133` to its commands (note at the top of its runbook). Proven on `MPP_MES_ProdSimDigiRel2` after this release's Execute: without the list, 11 out-of-order BLOCKs; with it, clear with 11 WARNs, and the rehearsal applied 11 migrations + 22 procs and rolled back (0.3 s).
 **Spec:** `docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md`. **Findings:** `notes/2026-11-19_digi-one-sp-scale-capture.md`.
 
 > **Nothing may be committed between the preview you read and the Execute.** The plan fingerprint's first hashed line is the raw HEAD sha, so **any** commit changes it, a docs-only commit included, and Execute refuses. Re-preview and use the new fingerprint.
 >
 > **Two separate tests, two separate answers.** A docs-only commit invalidates the **fingerprint** but leaves the **archives** valid:
 > ```bash
-> git diff --stat f528c960..HEAD -- ignition/ sql/
+> git diff --stat 56e68d2f..HEAD -- ignition/ sql/
 > ```
 > Expect **no output**. Anything listed means the archives are stale: rebuild them, then re-preview.
 
@@ -61,7 +62,7 @@ Cheap: one row in a code table, two new empty tables, three event-type rows, six
 
 When a head is commissioned, the new behaviour is real: a press whose part code is not an MES part number waits on screen for the operator. If a head's codes are free text (some target tables carry rows like `Inner Housing`), every press on those parts will need a tap. Section 7 step 4 finds that out before go-live.
 
-SQL suite: **5,840 / 5,840** on a fresh build (5,813 before; +27 in `0134_ScaleDigi`). Python: 60 / 60 (`tools/test_scale_digi_watcher.py`); `tools/test_scale_eprint_watcher.py` passes unchanged.
+SQL suite on the release branch: **5,638 / 5,638** on a fresh build (prod's state plus +27 in `0134_ScaleDigi`). On `main` with the SP review: 5,840 / 5,840. Python: 60 / 60 (`tools/test_scale_digi_watcher.py`); `tools/test_scale_eprint_watcher.py` passes unchanged.
 
 ## 4. Deploy (SQL)
 
@@ -81,7 +82,7 @@ Expect (from the sim):
 
 ```
 [3] Versioned migrations
-  Database: 127 applied, highest 0133.
+  Database: 116 applied, highest 0117.
   Pending (1):
     + 0134_scale_digi_and_pending_press.sql
 [4] Repeatables -- target definitions vs this checkout
@@ -96,11 +97,11 @@ Verdict
   Clear to deploy. 0 warning(s) to read above.
 ```
 
-The sim printed `9b74b2ad44d1` at `f528c960`. Prod prints the same value only if HEAD is still `f528c960` and prod is at the sim's state; a match corroborates, a difference is not an error. **Use the fingerprint YOUR preview printed. Copy it, do not retype it.**
+The sim printed `8a4279341879` at `56e68d2f`. Prod prints the same value only if HEAD is still `56e68d2f` and prod is at the sim's state; a match corroborates, a difference is not an error. **Use the fingerprint YOUR preview printed. Copy it, do not retype it.**
 
 **If it differs:**
-- *`[5]` BLOCK "the stored-procedure review release ... is not on this database yet"* -- run the SP-review runbook first, then re-preview this one.
-- *Not 127 applied / highest not `0133`* -- prod is not where this runbook assumes. Stop and reconcile.
+- *Pending shows more than `0134`* (e.g. `0118`) -- you are on the wrong branch. Run from `release/2026-11-19-digi-scale-feed`.
+- *Not 116 applied / highest not `0117`* -- prod is not where this runbook assumes. Stop and reconcile.
 - *More than 6 NEW or any CHANGED repeatable* -- prod has drifted from git, or something landed that was never deployed. Read the report's `diffs` folder before continuing.
 - *`[5]` BLOCK "already exists but 0134 is not recorded"* -- someone created the tables by hand. Stop.
 - *`[6]` shows an open transaction* -- wait for it, or pick a quieter moment.
@@ -150,12 +151,12 @@ Note the backup path from `[9]` in section 8.
 
 Designer -> File -> Import, one zip at a time, accept overwrite. **Not** the Gateway web page's project import.
 
-1. `dist\ignition-exports\Core_digi-scale-feed_2026-11-19_1420.zip` -- 10 resources (6 NQs + ScaleDigiWatcher NEW; Sim, PlcWatcher, ScaleStation MOD).
-2. `dist\ignition-exports\MPP_digi-scale-feed_2026-11-19_1420.zip` -- 4 resources (ScaleStationPendingPress, ScaleStationPendingButton NEW; ScaleStation, Views/Dev/ScaleStationSim MOD).
+1. `dist\ignition-exports\Core_digi-scale-feed-rel_2026-11-19_1432.zip` -- 10 resources (6 NQs + ScaleDigiWatcher NEW; Sim, PlcWatcher, ScaleStation MOD).
+2. `dist\ignition-exports\MPP_digi-scale-feed-rel_2026-11-19_1432.zip` -- 4 resources (ScaleStationPendingPress, ScaleStationPendingButton NEW; ScaleStation, Views/Dev/ScaleStationSim MOD).
 3. MPP_Config: nothing.
 4. F5 every open Assembly Out screen.
 
-Checklist with commits per resource: `dist\ignition-exports\digi-scale-feed_2026-11-19_1420_CONTENTS.txt`.
+Checklist with commits per resource: `dist\ignition-exports\digi-scale-feed-rel_2026-11-19_1432_CONTENTS.txt` (built on the release branch).
 
 ## 6. Verification
 
@@ -163,7 +164,7 @@ Checklist with commits per resource: `dist\ignition-exports\digi-scale-feed_2026
 2. SQL, against prod (confirmed on the executed sim):
 
 ```sql
-SELECT COUNT(*) AS Applied, MAX(MigrationId) AS Highest FROM dbo.SchemaVersion;        -- 128, 0134_scale_digi_and_pending_press
+SELECT COUNT(*) AS Applied, MAX(MigrationId) AS Highest FROM dbo.SchemaVersion;        -- 117, 0134_scale_digi_and_pending_press
 SELECT Code, ClosureMethodCode FROM Location.PlcDeviceType WHERE Code = N'ScaleStationDigi';  -- ScaleStationDigi, ByWeight
 SELECT STRING_AGG(CONCAT(Id, N'=', Code), N',') WITHIN GROUP (ORDER BY Id) FROM Workorder.ScalePendingPressStatus;  -- 1=Pending,2=Closed,3=Discarded
 SELECT COUNT(*) FROM Workorder.ScalePendingPress;                                        -- 0
@@ -200,7 +201,7 @@ FROM Audit.InterfaceLog WHERE LocationId = <terminal> ORDER BY Id DESC;
 
 - **Before commit** (preview, rehearsal, or a failed execute): nothing to undo.
 - **After commit, SQL:** leave it. Everything 0134 adds is inert until a head is mapped as `ScaleStationDigi`. Restoring the `[9]` backup would discard plant data written since; only for a catastrophic failure.
-- **Ignition:** import `Core_digi-scale-feed-ROLLBACK_2026-11-19_1421.zip` (3: Sim, PlcWatcher, ScaleStation) then `MPP_digi-scale-feed-ROLLBACK_2026-11-19_1421.zip` (2: ScaleStation view, Views/Dev/ScaleStationSim). Imports cannot delete, so in the Designer delete by hand: Core NQs `workorder/ScalePendingPress_*` (6) and script `BlueRidge/Workorder/ScaleDigiWatcher`; MPP views `Components/PlantFloor/ScaleStationPendingPress` and `ScaleStationPendingButton`. Before doing that, deprecate any `ScaleStationDigi` terminal mapping (a mapped Digi with no watcher logs a warning per press and closes nothing).
+- **Ignition:** import `Core_digi-scale-feed-rel-ROLLBACK_2026-11-19_1432.zip` (3: Sim, PlcWatcher, ScaleStation) then `MPP_digi-scale-feed-rel-ROLLBACK_2026-11-19_1432.zip` (2: ScaleStation view, Views/Dev/ScaleStationSim). Imports cannot delete, so in the Designer delete by hand: Core NQs `workorder/ScalePendingPress_*` (6) and script `BlueRidge/Workorder/ScaleDigiWatcher`; MPP views `Components/PlantFloor/ScaleStationPendingPress` and `ScaleStationPendingButton`. Before doing that, deprecate any `ScaleStationDigi` terminal mapping (a mapped Digi with no watcher logs a warning per press and closes nothing).
 
 ## 9. Outcome -- filled in after the release
 

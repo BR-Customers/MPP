@@ -10,8 +10,9 @@
 > Then expect `[3]` to read `117 applied, highest 0134`, one `WARN ... out of order, ALLOWED by -AllowOutOfOrder` per
 > migration (11), and the plan to carry an `ALLOW|...` line (so the fingerprint differs from the one below). The
 > migrations are independent of `0134` (index changes on other tables), so the order does not matter to them. A
-> listed number that is not pending is a BLOCK. Everything else in this runbook stands. Not rehearsed in this order;
-> rehearse against a sim built at the Digi release's commit with that release executed, as the Digi runbook did.
+> listed number that is not pending is a BLOCK. Everything else in this runbook stands. **Rehearsed in this order 2026-11-19** on `MPP_MES_ProdSimDigiRel2`
+> (built at `96651770`, Digi release executed): without the list, 11 out-of-order BLOCKs; with it, clear with 11 WARNs,
+> `596 identical, 22 changed`, and the rehearsal applied 11 migrations + 22 procs and rolled back in 0.3 s.
 
 **Release commit:** `177f0b7a` on `main` -- the last commit that changes `sql/` or `ignition/` (PR 34 merge). `HEAD`
 will be this note's commit or later; see the drift rule below.
