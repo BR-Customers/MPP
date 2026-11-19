@@ -94,6 +94,14 @@ EXEC test.Assert_Contains @TestName = N'[Pending] pick audited with the held wei
 DELETE FROM #S2; INSERT INTO #S2 EXEC Workorder.ScalePendingPress_Release @Id = @Id, @AppUserId = 1;
 SET @St = (SELECT CAST(Status AS NVARCHAR(5)) FROM #S2);
 EXEC test.Assert_IsEqual @TestName = N'[Pending] release after complete refused', @Expected = N'0', @Actual = @St;
+
+-- A refused claim's failure row names the TERMINAL (entity Location), not the
+-- ScalePendingPress row id.
+DECLARE @FBefore BIGINT = ISNULL((SELECT MAX(Id) FROM Audit.FailureLog), 0);
+DELETE FROM #S2; INSERT INTO #S2 EXEC Workorder.ScalePendingPress_Claim @Id = @Id, @AppUserId = 1;
+DECLARE @FEnt NVARCHAR(20) = (SELECT TOP 1 CAST(EntityId AS NVARCHAR(20)) FROM Audit.FailureLog WHERE Id > @FBefore ORDER BY Id DESC);
+DECLARE @TermS NVARCHAR(20) = CAST(@Term AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[Pending] refused claim logs the terminal as its entity', @Expected = @TermS, @Actual = @FEnt;
 GO
 
 -- ==== discard ====

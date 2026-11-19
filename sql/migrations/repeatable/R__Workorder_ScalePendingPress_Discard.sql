@@ -21,7 +21,8 @@
 --   ROLLBACK site.
 --
 -- Change Log:
---   2026-11-19 - 1.0 - Initial version.
+--   2026-11-19 - 1.0 - Initial version (failure rows name the terminal; Discard
+--                      refuses, unaudited, when a pick claimed the press first).
 -- =============================================
 CREATE OR ALTER PROCEDURE Workorder.ScalePendingPress_Discard
     @Id        BIGINT,
@@ -46,7 +47,7 @@ BEGIN
             SET @Message = N'Required parameter missing (Id, AppUserId).';
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'Location',
-                    @EntityId = @Id, @LogEventTypeCode = N'ScalePressDiscarded',
+                    @EntityId = @TermId, @LogEventTypeCode = N'ScalePressDiscarded',
                     @FailureReason = @Message, @ProcedureName = @ProcName, @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
@@ -63,7 +64,7 @@ BEGIN
             SET @Message = N'Held press not found.';
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'Location',
-                    @EntityId = @Id, @LogEventTypeCode = N'ScalePressDiscarded',
+                    @EntityId = @TermId, @LogEventTypeCode = N'ScalePressDiscarded',
                     @FailureReason = @Message, @ProcedureName = @ProcName, @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
@@ -74,7 +75,7 @@ BEGIN
             SET @Message = @Gone;
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'Location',
-                    @EntityId = @Id, @LogEventTypeCode = N'ScalePressDiscarded',
+                    @EntityId = @TermId, @LogEventTypeCode = N'ScalePressDiscarded',
                     @FailureReason = @Message, @ProcedureName = @ProcName, @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
@@ -90,6 +91,15 @@ BEGIN
         UPDATE Workorder.ScalePendingPress
         SET StatusId = 3, ResolvedAt = SYSUTCDATETIME(), ResolvedByAppUserId = @AppUserId
         WHERE Id = @Id AND StatusId = 1;
+        IF @@ROWCOUNT = 0
+        BEGIN
+            -- A pick claimed it between the check above and this update.
+            -- Nothing changed: no audit row, and say so.
+            COMMIT TRANSACTION;
+            SET @Message = @Gone;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
 
         EXEC Audit.Audit_LogOperation @AppUserId = @AppUserId, @TerminalLocationId = @TermId, @LocationId = @TermId,
             @LogEntityTypeCode = N'Location', @EntityId = @TermId, @LogEventTypeCode = N'ScalePressDiscarded',
@@ -112,7 +122,7 @@ BEGIN
         SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
         BEGIN TRY
             EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'Location',
-                @EntityId = @Id, @LogEventTypeCode = N'ScalePressDiscarded',
+                @EntityId = @TermId, @LogEventTypeCode = N'ScalePressDiscarded',
                 @FailureReason = @Message, @ProcedureName = @ProcName, @AttemptedParameters = @Params;
         END TRY
         BEGIN CATCH

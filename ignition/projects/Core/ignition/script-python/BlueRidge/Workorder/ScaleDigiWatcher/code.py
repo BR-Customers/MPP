@@ -219,7 +219,7 @@ def _handle(instancePath, terminalLocationId, message):
     # chose the part): close as that part and say so. Otherwise the MES would
     # only be guessing: hold the press for the operator to pick.
     if running.get("ItemId") is not None and (
-            running.get("OpenContainerId") is not None or running.get("Source") == "Override"):
+            running.get("OpenContainerId") is not None or _operatorOverride(running)):
         body["partSource"] = SOURCE_RUNNING
         _warn(device, terminalLocationId, "Scale part not recognised", "ScaleFlagsPartUnknown",
               "The scale sent part '%s', which is not a part number; closed as %s."
@@ -239,6 +239,14 @@ def _handle(instancePath, terminalLocationId, message):
         "close the tray." % part, level="warning")
     return {"Status": 0, "Message": "Tray held until its part is chosen.", "ContainerId": None,
             "Held": True}
+
+
+def _operatorOverride(running):
+    """True when the running part is an override a PERSON chose. An override
+       the scale set itself (SYS, after a matched code) is not: once the scale
+       sends a code that matches nothing, its earlier choice is stale, and
+       closing as it could mint the wrong part (decided 2026-11-19)."""
+    return running.get("Source") == "Override" and ("%s" % (running.get("OverrideSetBy") or "")).upper() != "SYS"
 
 
 def closeAs(device, terminalLocationId, body, itemId):
@@ -306,23 +314,53 @@ def _pick(pendingId, terminalLocationId, itemId, appUserId):
         return {"Status": 0, "Message": claimed.get("Message") or "This tray has already been dealt with.",
                 "ContainerId": None}
 
-    running = S.getRunningPartOrEmpty(terminalLocationId) or {}
-    if running.get("ItemId") != itemId:
-        switched = S.setRunningPart(terminalLocationId, itemId, appUserId=appUserId) or {}
-        if not switched.get("Status"):
-            S.releasePress(pendingId, appUserId=appUserId)
-            return {"Status": 0, "Message": switched.get("Message") or "That part cannot run here.",
-                    "ContainerId": None}
+    # From here the press is claimed (no longer Pending). Every way out that did
+    # not close the tray must put it back, including an exception (a deadlock
+    # victim or timeout in the close), or the held tray would vanish from the
+    # screen with no tray closed.
+    closed = False
+    try:
+        running = S.getRunningPartOrEmpty(terminalLocationId) or {}
+        if running.get("ItemId") != itemId:
+            switched = S.setRunningPart(terminalLocationId, itemId, appUserId=appUserId) or {}
+            if not switched.get("Status"):
+                _release(pendingId, terminalLocationId, appUserId)
+                return {"Status": 0, "Message": switched.get("Message") or "That part cannot run here.",
+                        "ContainerId": None}
 
-    device = (S.scaleInstancePath(terminalLocationId) or "scale").rsplit("/", 1)[-1]
-    body = {"v": 2, "net": _num(held.get("NetWeight")), "uom": held.get("Uom"), "twm": 1,
-            "scalePart": held.get("ScalePartCode"), "partSource": SOURCE_PICKED, "heldId": pendingId}
-    result = closeAs(device, terminalLocationId, body, itemId)
-    if not result.get("Status"):
-        S.releasePress(pendingId, appUserId=appUserId)
+        device = (S.scaleInstancePath(terminalLocationId) or "scale").rsplit("/", 1)[-1]
+        body = {"v": 2, "net": _num(held.get("NetWeight")), "uom": held.get("Uom"), "twm": 1,
+                "scalePart": held.get("ScalePartCode"), "partSource": SOURCE_PICKED, "heldId": pendingId}
+        result = closeAs(device, terminalLocationId, body, itemId)
+        if not result.get("Status"):
+            _release(pendingId, terminalLocationId, appUserId)
+            return result
+        closed = True
+        S.completePress(pendingId, itemId, result.get("FinishedGoodLotId"), appUserId=appUserId)
         return result
-    S.completePress(pendingId, itemId, result.get("FinishedGoodLotId"), appUserId=appUserId)
-    return result
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("held-press pick %s failed: %s" % (pendingId, e), level="error")
+        if not closed:
+            _release(pendingId, terminalLocationId, appUserId)
+            return {"Status": 0, "Message": "The tray could not be closed: %s" % e, "ContainerId": None}
+        # The tray closed; only stamping the outcome failed. Do not release it.
+        return {"Status": 1, "Message": "Tray closed (the held press record was not updated: %s)" % e,
+                "ContainerId": None}
+
+
+def _release(pendingId, terminalLocationId, appUserId):
+    """Put a claimed press back to Pending. A release that fails is not
+       ignored: the press would otherwise be stranded with no tray closed."""
+    try:
+        r = BlueRidge.Workorder.ScaleStation.releasePress(pendingId, appUserId=appUserId) or {}
+        ok, why = bool(r.get("Status")), r.get("Message")
+    except (Exception, java.lang.Exception) as e:
+        ok, why = False, "%s" % e
+    if not ok:
+        BlueRidge.Workorder.PlcWatcher.notifyAlarm(
+            terminalLocationId, "Held tray could not be put back",
+            "The tray was not closed and its held weighment could not be restored (%s). Weigh "
+            "the tray again; a supervisor can check held press %s." % (why, pendingId), level="error")
 
 
 def discardPress(pendingId, terminalLocationId, appUserId):

@@ -150,7 +150,8 @@ class Recorder(object):
        call so a case can assert on it."""
 
     def __init__(self, items=None, running=None, pending=None, judge=None,
-                 setResult=None, holdResult=None, closeResult=None, claimResult=None):
+                 setResult=None, holdResult=None, closeResult=None, claimResult=None,
+                 closeRaises=None, releaseResult=None):
         self.items = items or {}
         self.running = running or _running()
         self.pending = pending
@@ -161,6 +162,8 @@ class Recorder(object):
         self.logs, self.alarms, self.closes, self.broadcasts = [], [], [], []
         self.sets, self.holds, self.judgeCalls, self.claims = [], [], [], []
         self.claimResult = claimResult or {"Status": 1, "Message": "Held press claimed."}
+        self.closeRaises = closeRaises
+        self.releaseResult = releaseResult or {"Status": 1}
         self.pressCalls = []
 
     def install(self, module):
@@ -177,8 +180,7 @@ class Recorder(object):
             ScaleEPrintWatcher=types.SimpleNamespace(
                 _claim=lambda path, stamp, initial: rec.claims.append(stamp) or not initial),
             Assembly=types.SimpleNamespace(
-                plcCompleteTray=lambda terminal, method:
-                    rec.closes.append(method) or rec.closeResult),
+                plcCompleteTray=rec._close),
             ScaleStation=types.SimpleNamespace(
                 getRunningPartOrEmpty=lambda terminal: dict(rec.running),
                 getPendingPressOrEmpty=lambda terminal: dict(rec.pending or {"Id": None}),
@@ -189,7 +191,7 @@ class Recorder(object):
                 claimPress=lambda pid, appUserId=None:
                     rec.pressCalls.append(("claim", pid, appUserId)) or rec.claimResult,
                 releasePress=lambda pid, appUserId=None:
-                    rec.pressCalls.append(("release", pid, appUserId)) or {"Status": 1},
+                    rec.pressCalls.append(("release", pid, appUserId)) or rec.releaseResult,
                 completePress=lambda pid, itemId, lotId, appUserId=None:
                     rec.pressCalls.append(("complete", pid, itemId, lotId, appUserId)) or {"Status": 1},
                 discardPress=lambda pid, appUserId=None:
@@ -201,6 +203,12 @@ class Recorder(object):
         BR.Common = types.SimpleNamespace(
             Util=types.SimpleNamespace(log=lambda *a, **k: None, systemAppUserId=lambda: SYS))
         module.BlueRidge = BR
+
+    def _close(self, terminal, method):
+        self.closes.append(method)
+        if self.closeRaises:
+            raise self.closeRaises
+        return self.closeResult
 
     def _setOutcome(self, itemId):
         if self.setResult.get("Status"):
@@ -267,6 +275,16 @@ class HandleMessageTests(unittest.TestCase):
         r = _run(rec)
         self.assertEqual(r["Status"], 1)
         self.assertIn("ScaleFlagsPartUnknown", rec.conditions())
+
+    def test_unknown_code_with_scale_set_override_holds(self):
+        # An override the SCALE set (SYS, after a matched code) is not an
+        # operator's choice: a later unknown code must not close as that part.
+        running = _running(110, "Override")
+        running["OverrideSetBy"] = "SYS"
+        rec = Recorder(running=running)
+        r = _run(rec)
+        self.assertTrue(r.get("Held"))
+        self.assertEqual(rec.closes, [])
 
     def test_unknown_code_default_holds(self):
         rec = Recorder(running=_running(110, "Default"))
@@ -414,6 +432,22 @@ class PickTests(unittest.TestCase):
         r = self._pick(rec)
         self.assertEqual(r["Status"], 0)
         self.assertEqual([c[0] for c in rec.pressCalls], ["claim", "release"])
+
+    def test_pick_close_exception_releases(self):
+        rec = Recorder(pending=dict(HELD), closeRaises=RuntimeError("deadlock victim"))
+        r = self._pick(rec)
+        self.assertEqual(r["Status"], 0)
+        self.assertEqual([c[0] for c in rec.pressCalls], ["claim", "release"])
+        self.assertIn("deadlock victim", r["Message"])
+        self.assertEqual(rec.broadcasts, [("scalePressRecorded", {"terminalLocationId": TERM})])
+
+    def test_pick_release_failure_alarms(self):
+        rec = Recorder(pending=dict(HELD), closeResult={"Status": 0, "Message": "No stock"},
+                       releaseResult={"Status": 0, "Message": "Only a claimed press"})
+        r = self._pick(rec)
+        self.assertEqual(r["Status"], 0)
+        self.assertEqual(rec.alarms[-1]["title"], "Held tray could not be put back")
+        self.assertEqual(rec.alarms[-1]["level"], "error")
 
     def test_pick_switch_refused_releases(self):
         rec = Recorder(pending=dict(HELD), setResult={"Status": 0, "Message": "Finish open box #5 first."})
