@@ -274,6 +274,71 @@ def closeAs(device, terminalLocationId, body, itemId):
             "FinishedGoodLotId": result.get("FinishedGoodLotId")}
 
 
+def pickPart(pendingId, terminalLocationId, itemId, appUserId):
+    """The operator picked the part for the terminal's held press: close that
+       tray as the picked part. Called from the scale station screen
+       (ScaleStation.applyPendingPick) with the signed-in operator.
+
+       Claim first (Pending -> Closed, conditional in SQL), so a double tap or a
+       second screen closes nothing. If the part switch or the close is then
+       refused, the claim is released and the press waits again. On a close the
+       outcome is stamped (_Complete), which writes the pick's audit row.
+
+       Returns {Status, Message, ContainerId}."""
+    try:
+        return _pick(pendingId, terminalLocationId, itemId, appUserId)
+    finally:
+        try:
+            BlueRidge.Workorder.PlcWatcher.broadcastPageMessage(
+                "scalePressRecorded", {"terminalLocationId": terminalLocationId})
+        except (Exception, java.lang.Exception) as e:
+            BlueRidge.Common.Util.log("scalePressRecorded broadcast failed: %s" % e, level="warn")
+
+
+def _pick(pendingId, terminalLocationId, itemId, appUserId):
+    S = BlueRidge.Workorder.ScaleStation
+    held = S.getPendingPressOrEmpty(terminalLocationId) or {}
+    if held.get("Id") is None or ("%s" % held.get("Id")) != ("%s" % pendingId):
+        return {"Status": 0, "Message": "This tray has already been dealt with.", "ContainerId": None}
+
+    claimed = S.claimPress(pendingId, appUserId=appUserId) or {}
+    if not claimed.get("Status"):
+        return {"Status": 0, "Message": claimed.get("Message") or "This tray has already been dealt with.",
+                "ContainerId": None}
+
+    running = S.getRunningPartOrEmpty(terminalLocationId) or {}
+    if running.get("ItemId") != itemId:
+        switched = S.setRunningPart(terminalLocationId, itemId, appUserId=appUserId) or {}
+        if not switched.get("Status"):
+            S.releasePress(pendingId, appUserId=appUserId)
+            return {"Status": 0, "Message": switched.get("Message") or "That part cannot run here.",
+                    "ContainerId": None}
+
+    device = (S.scaleInstancePath(terminalLocationId) or "scale").rsplit("/", 1)[-1]
+    body = {"v": 2, "net": _num(held.get("NetWeight")), "uom": held.get("Uom"), "twm": 1,
+            "scalePart": held.get("ScalePartCode"), "partSource": SOURCE_PICKED, "heldId": pendingId}
+    result = closeAs(device, terminalLocationId, body, itemId)
+    if not result.get("Status"):
+        S.releasePress(pendingId, appUserId=appUserId)
+        return result
+    S.completePress(pendingId, itemId, result.get("FinishedGoodLotId"), appUserId=appUserId)
+    return result
+
+
+def discardPress(pendingId, terminalLocationId, appUserId):
+    """Discard the terminal's held press (no tray closed, audited in SQL).
+       Returns {Status, Message}."""
+    try:
+        return BlueRidge.Workorder.ScaleStation.discardPress(pendingId, appUserId=appUserId) or {
+            "Status": 0, "Message": "The held tray could not be discarded."}
+    finally:
+        try:
+            BlueRidge.Workorder.PlcWatcher.broadcastPageMessage(
+                "scalePressRecorded", {"terminalLocationId": terminalLocationId})
+        except (Exception, java.lang.Exception) as e:
+            BlueRidge.Common.Util.log("scalePressRecorded broadcast failed: %s" % e, level="warn")
+
+
 def digiRecord(net, part, twm=1, uom="LB"):
     """The record exactly as the TCP driver delivers it for one press (the
        previous record's LFs in front, CR at the end), for the dev simulator

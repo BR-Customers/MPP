@@ -150,7 +150,7 @@ class Recorder(object):
        call so a case can assert on it."""
 
     def __init__(self, items=None, running=None, pending=None, judge=None,
-                 setResult=None, holdResult=None, closeResult=None):
+                 setResult=None, holdResult=None, closeResult=None, claimResult=None):
         self.items = items or {}
         self.running = running or _running()
         self.pending = pending
@@ -160,7 +160,8 @@ class Recorder(object):
         self.closeResult = closeResult or {"Status": 1, "ContainerId": 77, "FinishedGoodLotId": 501}
         self.logs, self.alarms, self.closes, self.broadcasts = [], [], [], []
         self.sets, self.holds, self.judgeCalls, self.claims = [], [], [], []
-        self.pendingCalls = []
+        self.claimResult = claimResult or {"Status": 1, "Message": "Held press claimed."}
+        self.pressCalls = []
 
     def install(self, module):
         rec = self
@@ -184,7 +185,16 @@ class Recorder(object):
                 setRunningPart=lambda terminal, itemId, appUserId=None:
                     rec.sets.append((terminal, itemId, appUserId)) or rec._setOutcome(itemId),
                 holdPress=lambda terminal, net, uom, code, appUserId=None:
-                    rec.holds.append((terminal, net, uom, code, appUserId)) or rec.holdResult))
+                    rec.holds.append((terminal, net, uom, code, appUserId)) or rec.holdResult,
+                claimPress=lambda pid, appUserId=None:
+                    rec.pressCalls.append(("claim", pid, appUserId)) or rec.claimResult,
+                releasePress=lambda pid, appUserId=None:
+                    rec.pressCalls.append(("release", pid, appUserId)) or {"Status": 1},
+                completePress=lambda pid, itemId, lotId, appUserId=None:
+                    rec.pressCalls.append(("complete", pid, itemId, lotId, appUserId)) or {"Status": 1},
+                discardPress=lambda pid, appUserId=None:
+                    rec.pressCalls.append(("discard", pid, appUserId)) or {"Status": 1, "Message": "Held tray discarded."},
+                scaleInstancePath=lambda terminal: PATH))
         BR.Parts = types.SimpleNamespace(
             ContainerConfig=types.SimpleNamespace(judgeWeight=rec._judge),
             Item=types.SimpleNamespace(getByPartNumber=lambda pn: rec.items.get(pn)))
@@ -361,6 +371,124 @@ class HandleMessageTests(unittest.TestCase):
         rec.install(W)
         self.assertIsNone(W.onReceive(PATH, TERM, object(), initialChange=True))
         self.assertEqual(rec.closes, [])
+
+OPERATOR = 42
+HELD = {"Id": 9, "NetWeight": 15.5, "Uom": "LB", "ScalePartCode": "TEST3"}
+
+
+class PickTests(unittest.TestCase):
+
+    def _pick(self, rec, itemId=110):
+        rec.install(W)
+        return W.pickPart(9, TERM, itemId, OPERATOR)
+
+    def test_pick_closes_and_completes(self):
+        rec = Recorder(pending=dict(HELD))
+        r = self._pick(rec)
+        self.assertEqual(r["Status"], 1)
+        self.assertEqual(rec.pressCalls, [("claim", 9, OPERATOR), ("complete", 9, 110, 501, OPERATOR)])
+        p = rec.payload()
+        self.assertEqual((p["partSource"], p["net"], p["scalePart"], p["heldId"]), ("Picked", 15.5, "TEST3", 9))
+        self.assertEqual(rec.broadcasts, [("scalePressRecorded", {"terminalLocationId": TERM})])
+
+    def test_pick_switches_part_when_different(self):
+        rec = Recorder(pending=dict(HELD))
+        self._pick(rec, itemId=222)
+        self.assertEqual(rec.sets, [(TERM, 222, OPERATOR)])
+        self.assertEqual(rec.pressCalls[-1][0:3], ("complete", 9, 222))
+
+    def test_pick_claim_refused_closes_nothing(self):
+        rec = Recorder(pending=dict(HELD), claimResult={"Status": 0, "Message": "This tray has already been dealt with."})
+        r = self._pick(rec)
+        self.assertEqual(r["Status"], 0)
+        self.assertEqual((rec.closes, rec.sets), ([], []))
+
+    def test_pick_with_nothing_pending_refused(self):
+        rec = Recorder(pending=None)
+        r = self._pick(rec)
+        self.assertEqual(r["Status"], 0)
+        self.assertEqual((rec.pressCalls, rec.closes), ([], []))
+
+    def test_pick_close_failure_releases(self):
+        rec = Recorder(pending=dict(HELD), closeResult={"Status": 0, "Message": "No stock"})
+        r = self._pick(rec)
+        self.assertEqual(r["Status"], 0)
+        self.assertEqual([c[0] for c in rec.pressCalls], ["claim", "release"])
+
+    def test_pick_switch_refused_releases(self):
+        rec = Recorder(pending=dict(HELD), setResult={"Status": 0, "Message": "Finish open box #5 first."})
+        r = self._pick(rec, itemId=222)
+        self.assertEqual(r["Message"], "Finish open box #5 first.")
+        self.assertEqual([c[0] for c in rec.pressCalls], ["claim", "release"])
+        self.assertEqual(rec.closes, [])
+
+    def test_discard(self):
+        rec = Recorder(pending=dict(HELD))
+        rec.install(W)
+        r = W.discardPress(9, TERM, OPERATOR)
+        self.assertEqual(r["Status"], 1)
+        self.assertEqual(rec.pressCalls, [("discard", 9, OPERATOR)])
+        self.assertEqual(rec.broadcasts, [("scalePressRecorded", {"terminalLocationId": TERM})])
+
+
+STATION = os.path.join(SCRIPTS, "Workorder", "ScaleStation", "code.py")
+
+
+def _station(devices=None, pendingRow=None, parts=None):
+    s = _loadFile(STATION, "ScaleStation")
+    calls = []
+    s.BlueRidge = types.SimpleNamespace(
+        Common=types.SimpleNamespace(
+            Util=types.SimpleNamespace(extractQualifiedValues=lambda v: v, requireAppUserId=lambda v: v),
+            Db=types.SimpleNamespace(
+                execOne=lambda nq, p: calls.append((nq, p)) or pendingRow,
+                execMutation=lambda nq, p: calls.append((nq, p)) or {"Status": 1, "Message": "ok"})),
+        Location=types.SimpleNamespace(TerminalPlcDevice=types.SimpleNamespace(
+            getByTerminal=lambda tid: list(devices or []))))
+    s.listEligibleParts = lambda tid, _token=None: list(parts or [])
+    return s, calls
+
+
+class StationTests(unittest.TestCase):
+
+    def test_scale_instance_path_finds_digi(self):
+        s, _ = _station(devices=[{"DeviceTypeCode": "TrayInspectionStation", "UdtInstancePath": "x"},
+                                 {"DeviceTypeCode": "ScaleStationDigi", "UdtInstancePath": "[MPP]PlcDevices/digiTest"}])
+        self.assertEqual(s.scaleInstancePath(106), "[MPP]PlcDevices/digiTest")
+
+    def test_scale_instance_path_still_finds_eprint(self):
+        s, _ = _station(devices=[{"DeviceTypeCode": "ScaleStationEPrint", "UdtInstancePath": "[MPP]PlcDevices/Scale"}])
+        self.assertEqual(s.scaleInstancePath(106), "[MPP]PlcDevices/Scale")
+
+    def test_pending_empty_shape(self):
+        s, calls = _station(pendingRow=None)
+        p = s.getPendingPressOrEmpty(106)
+        self.assertIsNone(p["Id"])
+        self.assertEqual(sorted(p.keys()), ["Id", "NetWeight", "ReceivedAtEt", "ScalePartCode", "Uom"])
+        self.assertEqual(calls, [("workorder/ScalePendingPress_GetForTerminal", {"terminalLocationId": 106})])
+
+    def test_pending_row(self):
+        s, _ = _station(pendingRow=dict(HELD, ReceivedAtEt=None, TerminalLocationId=106))
+        self.assertEqual(s.getPendingPressOrEmpty(106)["ScalePartCode"], "TEST3")
+
+    def test_hold_press_params(self):
+        s, calls = _station()
+        s.holdPress(106, 15.5, "LB", "TEST3", appUserId=1)
+        self.assertEqual(calls, [("workorder/ScalePendingPress_Hold",
+                                  {"terminalLocationId": 106, "netWeight": 15.5, "uom": "LB",
+                                   "scalePartCode": "TEST3", "appUserId": 1})])
+
+    def test_press_mutations_nq_names(self):
+        s, calls = _station()
+        s.claimPress(9, appUserId=2); s.releasePress(9, appUserId=2)
+        s.completePress(9, 110, 501, appUserId=2); s.discardPress(9, appUserId=2)
+        self.assertEqual([c[0] for c in calls], ["workorder/ScalePendingPress_Claim", "workorder/ScalePendingPress_Release",
+                                                 "workorder/ScalePendingPress_Complete", "workorder/ScalePendingPress_Discard"])
+        self.assertEqual(calls[2][1], {"id": 9, "itemId": 110, "finishedGoodLotId": 501, "appUserId": 2})
+
+    def test_pending_part_buttons(self):
+        s, _ = _station(parts=[{"ItemId": 5, "PartNumber": "12270-6NA -A000", "Description": "Fuel pump"}])
+        self.assertEqual(s.pendingPartButtons(106), [{"itemId": 5, "label": "12270-6NA -A000  Fuel pump"}])
 
 
 if __name__ == "__main__":

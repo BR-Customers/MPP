@@ -22,8 +22,15 @@
 #
 # _token is ignored: runScript bindings pass a bumped token to force a re-read.
 #
+# Held presses (Digi-read scales, spec 2026-11-19 section 7):
+#   getPendingPressOrEmpty, holdPress, claimPress, releasePress, completePress,
+#   discardPress -- thin wrappers on Workorder.ScalePendingPress_*;
+#   pendingPartButtons, applyPendingPick, applyPendingDiscard for the banner.
+#
 # Change Log:
 #   2026-10-19 - 1.0 - Initial version.
+#   2026-11-19 - 1.1 - Held-press wrappers + banner helpers; scaleInstancePath
+#                      also finds a ScaleStationDigi device.
 # =============================================================================
 
 import java.lang
@@ -236,10 +243,14 @@ def eligiblePartOptions(terminalLocationId, _token=None):
             for p in listEligibleParts(terminalLocationId)]
 
 
+_SCALE_DEVICE_TYPES = ("ScaleStationEPrint", "ScaleStationDigi")
+
+
 def scaleInstancePath(terminalLocationId):
-    """The terminal's EPrint scale tag instance path, or '' when none is mapped."""
+    """The terminal's scale tag instance path (an EPrint or a Digi-read scale),
+       or '' when none is mapped."""
     for d in BlueRidge.Location.TerminalPlcDevice.getByTerminal(_u(terminalLocationId)) or []:
-        if d.get("DeviceTypeCode") == "ScaleStationEPrint":
+        if d.get("DeviceTypeCode") in _SCALE_DEVICE_TYPES:
             return d.get("UdtInstancePath") or ""
     return ""
 
@@ -297,3 +308,74 @@ def shouldRefresh(messageType, payload, terminalLocationId, cellLocationId):
             return False
         return _same(cell, cellLocationId)
     return False
+
+# ---- held presses (Workorder.ScalePendingPress, migration 0134) --------------
+
+_PENDING_SHAPE = {"Id": None, "ReceivedAtEt": None, "NetWeight": None, "Uom": "", "ScalePartCode": ""}
+
+
+def getPendingPressOrEmpty(terminalLocationId, _token=None):
+    """The terminal's held press, or the full empty shape (Id None)."""
+    out = dict(_PENDING_SHAPE)
+    tid = _u(terminalLocationId)
+    if tid is None:
+        return out
+    row = BlueRidge.Common.Db.execOne("workorder/ScalePendingPress_GetForTerminal",
+                                      {"terminalLocationId": tid})
+    if row:
+        for k in out.keys():
+            if row.get(k) is not None:
+                out[k] = row.get(k)
+    return out
+
+
+def holdPress(terminalLocationId, net, uom, code, appUserId=None):
+    """Hold a press whose scale part code is no MES part. {Status, Message, NewId}."""
+    return BlueRidge.Common.Db.execMutation("workorder/ScalePendingPress_Hold", {
+        "terminalLocationId": _u(terminalLocationId), "netWeight": net, "uom": uom,
+        "scalePartCode": code, "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
+
+
+def claimPress(pendingId, appUserId=None):
+    return BlueRidge.Common.Db.execMutation("workorder/ScalePendingPress_Claim", {
+        "id": _u(pendingId), "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
+
+
+def releasePress(pendingId, appUserId=None):
+    return BlueRidge.Common.Db.execMutation("workorder/ScalePendingPress_Release", {
+        "id": _u(pendingId), "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
+
+
+def completePress(pendingId, itemId, finishedGoodLotId, appUserId=None):
+    return BlueRidge.Common.Db.execMutation("workorder/ScalePendingPress_Complete", {
+        "id": _u(pendingId), "itemId": _u(itemId), "finishedGoodLotId": _u(finishedGoodLotId),
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
+
+
+def discardPress(pendingId, appUserId=None):
+    return BlueRidge.Common.Db.execMutation("workorder/ScalePendingPress_Discard", {
+        "id": _u(pendingId), "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
+
+
+def pendingPartButtons(terminalLocationId, _token=None):
+    """One button per part that can run here, closest to ready first."""
+    return [{"itemId": p.get("ItemId"), "label": "%s  %s" % (p.get("PartNumber"), p.get("Description"))}
+            for p in listEligibleParts(terminalLocationId)]
+
+
+def applyPendingPick(session, terminalLocationId, pendingId, itemId):
+    """A part button on the held-press banner: close the held tray as that part,
+       as the signed-in operator, and toast the result."""
+    result = BlueRidge.Workorder.ScaleDigiWatcher.pickPart(
+        _u(pendingId), _u(terminalLocationId), _u(itemId),
+        BlueRidge.Common.Session.currentAppUserId(session))
+    BlueRidge.Common.Ui.notifyResult(result, "Tray closed")
+    return result
+
+
+def applyPendingDiscard(session, terminalLocationId, pendingId):
+    """The banner's Discard button."""
+    result = BlueRidge.Workorder.ScaleDigiWatcher.discardPress(
+        _u(pendingId), _u(terminalLocationId), BlueRidge.Common.Session.currentAppUserId(session))
+    BlueRidge.Common.Ui.notifyResult(result, "Held tray discarded")
+    return result
