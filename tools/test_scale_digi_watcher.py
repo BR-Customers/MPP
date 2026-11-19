@@ -488,7 +488,23 @@ class StationTests(unittest.TestCase):
 
     def test_pending_part_buttons(self):
         s, _ = _station(parts=[{"ItemId": 5, "PartNumber": "12270-6NA -A000", "Description": "Fuel pump"}])
-        self.assertEqual(s.pendingPartButtons(106), [{"itemId": 5, "label": "12270-6NA -A000  Fuel pump"}])
+        self.assertEqual(s.pendingPartButtons(106, 9),
+                         [{"terminalLocationId": 106, "pendingId": 9, "itemId": 5,
+                           "label": "12270-6NA -A000  Fuel pump"}])
+
+    def test_pending_part_buttons_none_without_pending(self):
+        s, _ = _station(parts=[{"ItemId": 5, "PartNumber": "P", "Description": "D"}])
+        self.assertEqual(s.pendingPartButtons(106, None), [])
+
+    def test_has_pending(self):
+        self.assertTrue(_station(pendingRow={"Id": 9})[0].hasPendingPress(106))
+        self.assertFalse(_station(pendingRow=None)[0].hasPendingPress(106))
+
+    def test_pending_banner_text(self):
+        s, _ = _station(pendingRow={"Id": 9, "NetWeight": 15.5, "Uom": "LB", "ScalePartCode": "TEST3"})
+        self.assertEqual(s.pendingBannerText(106),
+                         "Tray waiting: 15.5 LB. The scale said 'TEST3', which is not a part here. "
+                         "Choose the part to close it:")
 
 
 class _QV(object):

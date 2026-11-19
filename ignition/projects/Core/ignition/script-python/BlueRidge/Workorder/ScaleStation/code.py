@@ -25,7 +25,8 @@
 # Held presses (Digi-read scales, spec 2026-11-19 section 7):
 #   getPendingPressOrEmpty, holdPress, claimPress, releasePress, completePress,
 #   discardPress -- thin wrappers on Workorder.ScalePendingPress_*;
-#   pendingPartButtons, applyPendingPick, applyPendingDiscard for the banner.
+#   hasPendingPress, pendingBannerText, pendingPartButtons, applyPendingPick,
+#   applyPendingDiscard for the held-press banner.
 #
 # Change Log:
 #   2026-10-19 - 1.0 - Initial version.
@@ -357,10 +358,31 @@ def discardPress(pendingId, appUserId=None):
         "id": _u(pendingId), "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
 
 
-def pendingPartButtons(terminalLocationId, _token=None):
-    """One button per part that can run here, closest to ready first."""
-    return [{"itemId": p.get("ItemId"), "label": "%s  %s" % (p.get("PartNumber"), p.get("Description"))}
-            for p in listEligibleParts(terminalLocationId)]
+def hasPendingPress(terminalLocationId, _token=None):
+    """Whether the terminal has a held press (drives the banner's display)."""
+    return getPendingPressOrEmpty(terminalLocationId).get("Id") is not None
+
+
+def pendingBannerText(terminalLocationId, _token=None):
+    """The held-press banner's line, or '' when nothing is held."""
+    p = getPendingPressOrEmpty(terminalLocationId)
+    if p.get("Id") is None:
+        return ""
+    return ("Tray waiting: %s %s. The scale said '%s', which is not a part here. "
+            "Choose the part to close it:" % ("%.1f" % float("%s" % p.get("NetWeight")) if p.get("NetWeight") is not None else "?",
+                                              p.get("Uom"), p.get("ScalePartCode")))
+
+
+def pendingPartButtons(terminalLocationId, pendingId, _token=None):
+    """Flex-repeater instances for the held-press banner: one button per part
+       that can run here, closest to ready first. [] when nothing is held."""
+    tid = _u(terminalLocationId)
+    pid = _u(pendingId)
+    if pid is None:
+        return []
+    return [{"terminalLocationId": tid, "pendingId": pid, "itemId": p.get("ItemId"),
+             "label": "%s  %s" % (p.get("PartNumber"), p.get("Description"))}
+            for p in listEligibleParts(tid)]
 
 
 def applyPendingPick(session, terminalLocationId, pendingId, itemId):

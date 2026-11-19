@@ -22,6 +22,13 @@
       "OpenContainerId": null,
       "OpenTraysClosed": 0,
       "OpenPartsClosed": 0
+    },
+    "pending": {
+      "Id": null,
+      "ReceivedAtEt": null,
+      "NetWeight": null,
+      "Uom": "",
+      "ScalePartCode": ""
     }
   },
   "params": {
@@ -54,6 +61,14 @@
           "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.getRunningPartOrEmpty\", 0, {view.custom.tid}, {view.custom.pressToken})"
         }
       }
+    },
+    "custom.pending": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.getPendingPressOrEmpty\", 0, {view.custom.tid}, {view.custom.pressToken})"
+        }
+      }
     }
   },
   "props": {
@@ -79,6 +94,61 @@
       }
     },
     "children": [
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "PendingPress"
+        },
+        "position": {
+          "basis": "170px",
+          "grow": 0,
+          "shrink": 0
+        },
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/ScaleStationPendingPress",
+          "params": {
+            "terminalLocationId": null,
+            "pressToken": 0,
+            "pendingId": null
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!isNull({view.custom.pending.Id})"
+              }
+            }
+          },
+          "props.params.terminalLocationId": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.tid}"
+              }
+            }
+          },
+          "props.params.pressToken": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.pressToken}"
+              }
+            }
+          },
+          "props.params.pendingId": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.pending.Id}"
+              }
+            }
+          }
+        }
+      },
       {
         "type": "ia.display.view",
         "meta": {

@@ -1,0 +1,77 @@
+{
+  "custom": {},
+  "params": {
+    "terminalLocationId": null,
+    "pendingId": null,
+    "itemId": null,
+    "label": ""
+  },
+  "propConfig": {
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "params.pendingId": {
+      "paramDirection": "input"
+    },
+    "params.itemId": {
+      "paramDirection": "input"
+    },
+    "params.label": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 56,
+      "width": 280
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row"
+    },
+    "children": [
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "Pick"
+        },
+        "position": {
+          "basis": "auto",
+          "grow": 1,
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-primary pf-btn-large"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.label}"
+              }
+            }
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tBlueRidge.Workorder.ScaleStation.applyPendingPick(self.session, self.view.params.terminalLocationId, self.view.params.pendingId, self.view.params.itemId)"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
