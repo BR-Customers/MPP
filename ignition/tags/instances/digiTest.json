@@ -13,7 +13,7 @@
     },
     "BasePath": {
       "dataType": "String",
-      "value": ""
+      "value": "2101/"
     }
   }
 }
