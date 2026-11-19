@@ -5,11 +5,11 @@
 EXEC test.BeginTestFile @FileName = N'0038_PlcIntegration/010_schema.sql';
 GO
 
--- PlcDeviceType table: the 4-row seed (0038) + ScaleStationEPrint (0105)
+-- PlcDeviceType table: the 4-row seed (0038) + ScaleStationEPrint (0105) + ScaleStationDigi (0134)
 DECLARE @cnt INT = (SELECT COUNT(*) FROM Location.PlcDeviceType WHERE DeprecatedAt IS NULL);
 DECLARE @cntStr NVARCHAR(10) = CAST(@cnt AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName=N'PlcDeviceType seeded 5 active rows',
-    @Expected=N'5', @Actual=@cntStr;
+EXEC test.Assert_IsEqual @TestName=N'PlcDeviceType seeded 6 active rows',
+    @Expected=N'6', @Actual=@cntStr;
 
 DECLARE @hasTray NVARCHAR(1) = CASE WHEN EXISTS
     (SELECT 1 FROM Location.PlcDeviceType WHERE Code=N'TrayInspectionStation') THEN N'1' ELSE N'0' END;
