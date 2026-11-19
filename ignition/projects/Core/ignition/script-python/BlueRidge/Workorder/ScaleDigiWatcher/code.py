@@ -92,6 +92,188 @@ def parse(message):
             "twm": int(twm), "part": part.strip()}
 
 
+def _encode(body):
+    return system.util.jsonEncode(body)
+
+
+def _num(value):
+    """A DB decimal (BigDecimal) or None as a JSON-safe float or None."""
+    return None if value is None else float("%s" % value)
+
+
+def _refuse(device, terminalLocationId, title, message, body, level="error", itemId=None):
+    """One refusal: an InterfaceLog row and a toast at this terminal."""
+    W = BlueRidge.Workorder.PlcWatcher
+    W.logInterface(device, title, requestPayload=_encode(body), ok=False,
+                   errorDescription=message, locationId=terminalLocationId, itemId=itemId)
+    W.notifyAlarm(terminalLocationId, title, message, level=level)
+    return {"Status": 0, "Message": message, "ContainerId": None}
+
+
+def _warn(device, terminalLocationId, title, condition, message, body, itemId=None):
+    """A supervisor-facing warning row (no toast). The ScaleFlags* condition
+       keeps it out of the press log."""
+    BlueRidge.Workorder.PlcWatcher.logInterface(
+        device, title, requestPayload=_encode(body), ok=True, errorDescription=message,
+        locationId=terminalLocationId, itemId=itemId, errorCondition=condition)
+
+
+def _readMessage(instancePath):
+    """Read MessageBytes directly from the device, not from the tag: the
+       receive stamp and the bytes are separate subscribed tags, so when the
+       stamp's change event fires the tag may still hold the PREVIOUS press
+       (seen in the Digi history, 2026-11-19). Returns the text, or None when
+       it cannot be read at good quality -- no fallback to the tag value."""
+    cfg = system.tag.readBlocking([
+        "%s/MessageBytes.OpcServer" % instancePath,
+        "%s/MessageBytes.OpcItemPath" % instancePath,
+    ])
+    server = cfg[0].value
+    itemPath = cfg[1].value
+    if not server or not itemPath:
+        return None
+    qv = system.opc.readValue("%s" % server, "%s" % itemPath)
+    if qv is None or not qv.quality.isGood() or qv.value is None:
+        return None
+    return decodeBytes(qv.value)
+
+
+def onReceive(instancePath, terminalLocationId, stamp, initialChange=False):
+    """Routed here by PlcWatcher.dispatchMessage when LastReceiveTime changes.
+       The duplicate / initial-change / stale-stamp guard is the EPrint
+       watcher's, called rather than copied. None when not a new press."""
+    if not BlueRidge.Workorder.ScaleEPrintWatcher._claim(instancePath, stamp, initialChange):
+        return None
+    return handleMessage(instancePath, terminalLocationId, _readMessage(instancePath))
+
+
+def handleMessage(instancePath, terminalLocationId, message):
+    """Act on one Digi record. Public so the simulator and the script console
+       can drive the whole path with a typed record and no hardware.
+
+       Every outcome is announced once as a page-scoped 'scalePressRecorded'
+       so the scale station screen re-reads its press log and held press.
+
+       Returns {"Status": 1|0, "Message": str, "ContainerId": id or None},
+       plus "Held": True when the press was held for the operator."""
+    try:
+        return _handle(instancePath, terminalLocationId, message)
+    finally:
+        try:
+            BlueRidge.Workorder.PlcWatcher.broadcastPageMessage(
+                "scalePressRecorded", {"terminalLocationId": terminalLocationId})
+        except (Exception, java.lang.Exception) as e:
+            BlueRidge.Common.Util.log("scalePressRecorded broadcast failed: %s" % e, level="warn")
+
+
+def _handle(instancePath, terminalLocationId, message):
+    device = instancePath.rsplit("/", 1)[-1]
+    S = BlueRidge.Workorder.ScaleStation
+    sysUser = BlueRidge.Common.Util.systemAppUserId()
+
+    if message is None:
+        return _refuse(device, terminalLocationId, "Scale weighment not read",
+                       "The scale sent a weighment but it could not be read back. Check "
+                       "the scale's network connection and press the button again.", {"v": 2})
+
+    parsed = parse(message)
+    if not parsed["ok"]:
+        return _refuse(device, terminalLocationId, "Scale weighment not understood",
+                       parsed["reason"], {"v": 2, "raw": message})
+
+    part = parsed["part"]
+    body = {"v": 2, "net": parsed["net"], "uom": parsed["uom"], "twm": parsed["twm"],
+            "scalePart": part}
+
+    if parsed["uom"].lower() != EXPECTED_UOM:
+        return _refuse(device, terminalLocationId, "Scale is in the wrong units",
+                       "The scale reported %s, but this system expects %s. Have the scale's "
+                       "units checked before weighing again." % (parsed["uom"], EXPECTED_UOM), body)
+
+    if parsed["twm"] != 1:
+        return _refuse(device, terminalLocationId, "Scale did not pass this tray",
+                       "The scale reported the target weight as not met (TWM=%s). Nothing "
+                       "was closed." % parsed["twm"], body)
+
+    pending = S.getPendingPressOrEmpty(terminalLocationId) or {}
+    if pending.get("Id") is not None:
+        return _refuse(device, terminalLocationId, "Tray waiting for its part",
+                       "A tray is waiting for its part. Choose it on the screen, then "
+                       "press the scale button again.", body, level="warning")
+
+    running = S.getRunningPartOrEmpty(terminalLocationId) or {}
+    item = BlueRidge.Parts.Item.getByPartNumber(part) if part else None
+
+    if item:
+        itemId = item.get("Id")
+        body["partSource"] = SOURCE_SCALE
+        if running.get("ItemId") != itemId:
+            switched = S.setRunningPart(terminalLocationId, itemId, appUserId=sysUser) or {}
+            if not switched.get("Status"):
+                return _refuse(device, terminalLocationId, "Tray not closed",
+                               switched.get("Message") or "The scale's part could not be run here.",
+                               body, itemId=itemId)
+        return closeAs(device, terminalLocationId, body, itemId)
+
+    # The code is no MES part. Settled already (a box is open, or an operator
+    # chose the part): close as that part and say so. Otherwise the MES would
+    # only be guessing: hold the press for the operator to pick.
+    if running.get("ItemId") is not None and (
+            running.get("OpenContainerId") is not None or running.get("Source") == "Override"):
+        body["partSource"] = SOURCE_RUNNING
+        _warn(device, terminalLocationId, "Scale part not recognised", "ScaleFlagsPartUnknown",
+              "The scale sent part '%s', which is not a part number; closed as %s."
+              % (part, running.get("PartNumber")), body, itemId=running.get("ItemId"))
+        return closeAs(device, terminalLocationId, body, running.get("ItemId"))
+
+    held = S.holdPress(terminalLocationId, parsed["net"], parsed["uom"], part, appUserId=sysUser) or {}
+    if not held.get("Status"):
+        return _refuse(device, terminalLocationId, "Tray not closed",
+                       held.get("Message") or "The tray could not be held.", body, level="warning")
+    _warn(device, terminalLocationId, "Scale press held for part choice", "ScaleFlagsHeld",
+          "The scale sent part '%s', which is not a part number; the tray waits for the "
+          "operator to choose its part." % part, dict(body, heldId=held.get("NewId")))
+    BlueRidge.Workorder.PlcWatcher.notifyAlarm(
+        terminalLocationId, "Choose the part for this tray",
+        "The scale sent '%s', which is not a part here. Choose the part on the screen to "
+        "close the tray." % part, level="warning")
+    return {"Status": 0, "Message": "Tray held until its part is chosen.", "ContainerId": None,
+            "Held": True}
+
+
+def closeAs(device, terminalLocationId, body, itemId):
+    """Close one tray at the station's running part (already itemId), with the
+       MES weight judgement as a cross-check that never blocks. Shared by a
+       live press and a held-press pick. Returns {Status, Message, ContainerId,
+       FinishedGoodLotId}."""
+    W = BlueRidge.Workorder.PlcWatcher
+    verdict = BlueRidge.Parts.ContainerConfig.judgeWeight(itemId, "ByWeight", body.get("net")) or {}
+    mes = verdict.get("Verdict")
+    body.update({"verdict": "Ok", "scaleVerdict": "Ok", "mesVerdict": mes,
+                 "low": _num(verdict.get("LowLimit")), "high": _num(verdict.get("HighLimit")),
+                 "agree": (mes == "Ok") if mes in ("Ok", "Under", "Over") else None})
+    if mes != "Ok":
+        _warn(device, terminalLocationId, "Scale passed a weight the MES would not",
+              "ScaleFlagsMesMismatch",
+              "The scale passed %s %s; the MES judged it %s. %s"
+              % (body.get("net"), body.get("uom"), mes, verdict.get("Message") or ""),
+              body, itemId=itemId)
+
+    result = BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId, "ByWeight") or {}
+    ok = bool(result.get("Status"))
+    W.logInterface(device, "ByWeight tray close", requestPayload=_encode(body),
+                   responsePayload=system.util.jsonEncode(result), ok=ok,
+                   errorDescription=None if ok else result.get("Message"),
+                   locationId=terminalLocationId, itemId=itemId,
+                   lotId=result.get("FinishedGoodLotId") if ok else None)
+    if not ok:
+        msg = result.get("Message") or "Tray close failed"
+        W.notifyAlarm(terminalLocationId, "ByWeight tray close failed", msg)
+        return {"Status": 0, "Message": msg, "ContainerId": None, "FinishedGoodLotId": None}
+    return {"Status": 1, "Message": "Tray closed", "ContainerId": result.get("ContainerId"),
+            "FinishedGoodLotId": result.get("FinishedGoodLotId")}
+
+
 def digiRecord(net, part, twm=1, uom="LB"):
     """The record exactly as the TCP driver delivers it for one press (the
        previous record's LFs in front, CR at the end), for the dev simulator
