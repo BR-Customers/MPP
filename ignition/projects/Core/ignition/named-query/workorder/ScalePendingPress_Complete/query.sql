@@ -1,0 +1,1 @@
+EXEC Workorder.ScalePendingPress_Complete @Id = :id, @ItemId = :itemId, @FinishedGoodLotId = :finishedGoodLotId, @AppUserId = :appUserId

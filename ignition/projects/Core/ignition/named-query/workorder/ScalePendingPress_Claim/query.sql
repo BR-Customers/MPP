@@ -1,0 +1,1 @@
+EXEC Workorder.ScalePendingPress_Claim @Id = :id, @AppUserId = :appUserId

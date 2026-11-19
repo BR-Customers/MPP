@@ -11,6 +11,7 @@
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
 | 3.11.1 | 2026-11-03 | Blue Ridge Automation | **A shift schedule change is a line in the sand.** New `Oee.ufn_ShiftWindowForShift` resolves a recorded shift's window from its own `Oee.Shift` row (override for that day wins); `Oee.ufn_ShiftAvailability` v2.1 and `Oee.ufn_ShiftDowntimeEntries` v1.1 use it, so editing or deprecating a schedule no longer rewrites or hides past availability. `Oee.ShiftSchedule` removed from `Oee.ufn_ShiftSummaryConfigFingerprint` (v1.1). No schema change. |
+| 3.12 | 2026-11-19 | Blue Ridge Automation | **Assembly Out scales read through a Digi One SP (migration `0134_scale_digi_and_pending_press`; spec `docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md`).** `Location.PlcDeviceType` += `ScaleStationDigi` (ByWeight): an IND570 running its TaskExpert program, read on its serial port; one record per good press, and the scale decides the part and whether the tray is good. New `Workorder.ScalePendingPressStatus` and `Workorder.ScalePendingPress` (a press whose part code is no MES part, held until the operator picks the part; one Pending per terminal). `Audit.LogEventType` += `ScalePressHeld`, `ScalePressPicked`, `ScalePressDiscarded`. New procs `Workorder.ScalePendingPress_Hold` / `_GetForTerminal` / `_Claim` / `_Release` / `_Complete` / `_Discard`. No existing proc changed. |
 | 3.11 | 2026-11-03 | Blue Ridge Automation | **OEE dashboard -- availability and quality, site to unit (migration `0117_oee_shift_summary`; spec `docs/superpowers/specs/2026-10-27-oee-dashboard-design.md` v1.0; plan `docs/superpowers/plans/2026-10-30-oee-dashboard-v03.md`).** `Lots.Lot` += `ShiftId` (FK `Oee.Shift`) and `MintedPieceCount`, stamped only by the consume-mints (`Workorder.Assembly_CompleteTray` / `Workorder.MachiningOut_Mint`), filtered index `IX_Lot_ShiftId`; one-time backfill `Lots.Lot_BackfillMintStamp @Commit`. New tables `Oee.ShiftSummary` (stored per-shift minutes and counts, one row per unit / station / area placement / area charge) and `Oee.ShiftSummaryConfig` (single row: the configuration fingerprint). Availability is now computed from entered DURATIONS (`Oee.ufn_DowntimeEventMinutes`, `Oee.ufn_ShiftAvailability`, `Oee.Shift_GetAvailability` v4.0). Compute / refresh procs `Oee.ShiftSummary_Compute`, `_ComputeCore`, `_RecomputeRange`, `_RefreshChanged`; dashboard reads `Oee.Dashboard_GetPeriod`, `_GetUnitSummary` (v2.1 `@ReadLive`), `_GetTrend`, `_GetBreakdown`, `_GetDowntimeByReason`, `_GetScrap`, `_GetDowntimeEntries` (v1.1). Rules in Section 6 "OEE dashboard". |
 | 3.10 | 2026-10-29 | Blue Ridge Automation | **AIM failures in the Failure Log (migration `0116_failurelog_location_lot`; spec `docs/superpowers/specs/2026-10-29-aim-failure-log-design.md`; MPP request 2026-09-16).** `Audit.FailureLog` += `LocationId` / `LotId` (nullable FKs, partition-aligned filtered indexes `IX_FailureLog_Location_AttemptedAt` / `IX_FailureLog_Lot_AttemptedAt`). `Audit.LogEventType` gains `AimPostFailed` and `AimSerialFetchFailed`. New status-row procs `Audit.FailureLog_Record` (the Ignition-side writer: refuses an unknown entity/event code, truncates the reason to 500, drops a context id that names no row) and `Audit.InterfaceLog_Record` (returns the new InterfaceLog Id); `Audit.Audit_LogFailure` v1.1 (+ `@LocationId` / `@LotId`, still silent); `Audit.FailureLog_List` v3.1 (+ `@LocationId` / `@LotNameLike`, trailing `LocationId, LocationName, LotId, LotName`); `Audit.FailureLog_GetByEntity` v2.1 (same trailing columns); `Lots.AimShipperIdPool_GetForPost` v1.3 (+ `LocationId` = container cell, `LotId` = the LOT named by the frozen `LotNumber`). Every failed AIM attempt made while posting is switched on writes one row; posting switched off writes none. |
 | 3.9 | 2026-10-20 | Blue Ridge Automation | **Assembly Out scale station (migration `0113_interfacelog_context`).** `Audit.InterfaceLog` += `LocationId` / `ItemId` / `LotId` (nullable FKs, partition-aligned index `IX_InterfaceLog_Location_LoggedAt`): every integration row can now be tied to a terminal, a part and the LOT it produced; shift derives from `LocationId` + `LoggedAt`. The EPrint watcher writes them on every press with a JSON `RequestPayload` (`v`=1). New terminal attribute `ScaleRunningItemId` (LTD 7, the per-terminal running-part override) and `Audit.LogEventType` `ScaleRunningPartChanged`. New procs: `Workorder.ufn_ScaleStationEligibleParts` (eligible = set up at the line, By Weight pack-out, at least one cast line and 60% of other BOM lines covered for one tray), `Workorder.ScaleStation_GetRunningPart` / `_ListEligibleParts` / `_GetPressLog` / `_GetShiftTally` / `_GetRecentBoxes`, `Location.Terminal_SetScaleRunningPart`; `Audit.Audit_LogInterfaceCall` v1.1. Spec: `docs/superpowers/specs/2026-10-19-assembly-out-scale-station-design.md`. *(Merged 2026-10-21 with the super-lot branch: numbered 3.4 on `jacques/working`; renumbered so the super-lot revisions 3.3-3.7 keep the numbers their specs and status entries cite.)* |
@@ -1314,6 +1315,44 @@ The actual figures are stored as typed, alongside the die's lifetime shot count 
 | SortOrder | INT | NOT NULL, DEFAULT 0 | Dropdown order (`CounterReset` first — the commonest case). |
 
 `Workorder.DieCastCounterAnchorReason_List` derives a `RequiresNote` BIT from `Code = 'Other'` so the dialog can require the note at the button instead of letting the write reject.
+
+### ScalePendingPressStatus
+
+**Added migration `0134` (2026-11-19).** Read-only code table: the life of a held scale press. `Pending` must stay Id 1, because the filtered unique index on `ScalePendingPress` is written against it.
+
+| Id | Code | Meaning |
+|---|---|---|
+| 1 | `Pending` | Waiting for the operator to pick the part. |
+| 2 | `Closed` | Claimed by a pick; completed once the tray closed (`ResolvedItemId` set). |
+| 3 | `Discarded` | Discarded by the operator; no tray closed. |
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | |
+| Name | NVARCHAR(100) | NOT NULL | |
+
+### ScalePendingPress
+
+**Added migration `0134` (2026-11-19).** A good press from a Digi-read scale (`Location.PlcDeviceType` `ScaleStationDigi`) whose `<Part>` code matched no active part number, held until the operator picks the part on the scale station screen; the tray closes on the pick. Spec: `docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md`.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| TerminalLocationId | BIGINT | NOT NULL, FK -> Location.Location | The scale's terminal |
+| ReceivedAt | DATETIME2(3) | NOT NULL | UTC |
+| NetWeight | DECIMAL(10,3) | NOT NULL | As the scale sent it |
+| Uom | NVARCHAR(10) | NOT NULL | As the scale sent it |
+| ScalePartCode | NVARCHAR(50) | NOT NULL | The `<Part>` code, trimmed |
+| StatusId | BIGINT | NOT NULL, FK -> ScalePendingPressStatus | |
+| ResolvedAt | DATETIME2(3) | NULL | UTC, when claimed or discarded |
+| ResolvedByAppUserId | BIGINT | NULL, FK -> Location.AppUser | The operator |
+| ResolvedItemId | BIGINT | NULL, FK -> Parts.Item | The part picked |
+| FinishedGoodLotId | BIGINT | NULL, FK -> Lots.Lot | The tray LOT the pick minted |
+
+**Index:** `UX_ScalePendingPress_Terminal_Pending` UNIQUE on `(TerminalLocationId) WHERE StatusId = 1`: at most one held press per terminal. While one is held, further presses at that scale are refused.
+
+**Procs (status-row):** `Workorder.ScalePendingPress_Hold` (gateway, SYS), `_Claim` (Pending -> Closed, conditional single statement: one tray per press), `_Release` (back to Pending when the close after a pick fails), `_Complete` (stamps item + LOT, audits `ScalePressPicked`), `_Discard` (audits `ScalePressDiscarded`). Read: `_GetForTerminal`.
 
 ---
 

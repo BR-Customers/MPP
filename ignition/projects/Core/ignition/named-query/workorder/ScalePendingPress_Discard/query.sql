@@ -1,0 +1,1 @@
+EXEC Workorder.ScalePendingPress_Discard @Id = :id, @AppUserId = :appUserId
