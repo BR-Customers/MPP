@@ -491,5 +491,41 @@ class StationTests(unittest.TestCase):
         self.assertEqual(s.pendingPartButtons(106), [{"itemId": 5, "label": "12270-6NA -A000  Fuel pump"}])
 
 
+class _QV(object):
+    def __init__(self, value):
+        self.value = value
+        self.quality = types.SimpleNamespace(isGood=lambda: True)
+
+
+class DispatchTests(unittest.TestCase):
+
+    def _dispatch(self, deviceType):
+        mod = _loadFile(os.path.join(SCRIPTS, "Workorder", "PlcWatcher", "code.py"), "PlcWatcher")
+        calls = []
+        row = {"DeviceTypeCode": deviceType, "TerminalLocationId": TERM}
+        mod.BlueRidge = types.SimpleNamespace(
+            Location=types.SimpleNamespace(TerminalPlcDevice=types.SimpleNamespace(
+                getByInstancePath=lambda p: [row] if p == PATH else [])),
+            Common=types.SimpleNamespace(Util=types.SimpleNamespace(
+                log=lambda *a, **k: calls.append(("log",) + a),
+                extractQualifiedValues=lambda v: v)),
+            Workorder=types.SimpleNamespace(
+                ScaleEPrintWatcher=types.SimpleNamespace(
+                    onReceive=lambda *a: calls.append(("eprint",) + a)),
+                ScaleDigiWatcher=types.SimpleNamespace(
+                    onReceive=lambda *a: calls.append(("digi",) + a))))
+        mod.dispatchMessage(PATH + "/LastReceiveTime", None, _QV("stamp"), False)
+        return [c for c in calls if c[0] != "log"]
+
+    def test_routes_digi(self):
+        self.assertEqual(self._dispatch("ScaleStationDigi"), [("digi", PATH, TERM, "stamp", False)])
+
+    def test_routes_eprint_unchanged(self):
+        self.assertEqual(self._dispatch("ScaleStationEPrint"), [("eprint", PATH, TERM, "stamp", False)])
+
+    def test_other_type_ignored(self):
+        self.assertEqual(self._dispatch("TrayInspectionStation"), [])
+
+
 if __name__ == "__main__":
     unittest.main()

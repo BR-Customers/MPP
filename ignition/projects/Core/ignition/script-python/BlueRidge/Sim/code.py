@@ -228,3 +228,21 @@ def fireScaleEPrint(terminalLocationId, gross, tare, net, under, over, ok):
                 "ContainerId": None}
     return W.handleMessage(path, terminalLocationId,
                            W.template3Record(gross, tare, net, under, over, ok))
+
+
+def fireScaleDigi(terminalLocationId, net, part, twm=1):
+    """Dev-only: one Digi-read scale press without the hardware. Builds the
+       record exactly as the TCP driver delivers it
+       (ScaleDigiWatcher.digiRecord: previous record's LFs in front, CR at the
+       end) and hands it to the same handleMessage a real press reaches, so the
+       part lookup, the part switch or hold, the close, the interface-log rows
+       and the screen refresh are all real. Only the TCP receive + OPC read
+       are skipped. A good press really closes a tray on this database.
+       Returns handleMessage's {Status, Message, ContainerId[, Held]}."""
+    W = BlueRidge.Workorder.ScaleDigiWatcher
+    terminalLocationId = long("%s" % terminalLocationId)
+    path = BlueRidge.Workorder.ScaleStation.scaleInstancePath(terminalLocationId)
+    if not path:
+        return {"Status": 0, "Message": "No scale is mapped to terminal %s." % terminalLocationId,
+                "ContainerId": None}
+    return W.handleMessage(path, terminalLocationId, W.digiRecord(net, part, int(twm)))

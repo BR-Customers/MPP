@@ -409,13 +409,19 @@ def dispatchMessage(tagPath, previousValue, currentValue, initialChange=False):
                 % tagPath, level="warn")
             return
         code = row.get("DeviceTypeCode")
-        if code != "ScaleStationEPrint":
+        if code == "ScaleStationEPrint":
+            BlueRidge.Workorder.ScaleEPrintWatcher.onReceive(
+                instancePath, row.get("TerminalLocationId"), stamp, bool(initialChange))
+        elif code == "ScaleStationDigi":
+            # 2026-11-19: an IND570 read on its serial port through a Digi
+            # One SP (spec 2026-11-19-digi-scale-feed-design). Same driver
+            # members, different record and rules.
+            BlueRidge.Workorder.ScaleDigiWatcher.onReceive(
+                instancePath, row.get("TerminalLocationId"), stamp, bool(initialChange))
+        else:
             BlueRidge.Common.Util.log(
-                "%s is a %s, not a ScaleStationEPrint (message ignored)"
+                "%s is a %s, not a message-driven scale (message ignored)"
                 % (instancePath, code), level="warn")
-            return
-        BlueRidge.Workorder.ScaleEPrintWatcher.onReceive(
-            instancePath, row.get("TerminalLocationId"), stamp, bool(initialChange))
     except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log(
             "dispatchMessage error tagPath=%s: %s" % (tagPath, e), level="error")
