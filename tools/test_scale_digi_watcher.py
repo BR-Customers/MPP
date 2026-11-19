@@ -492,6 +492,20 @@ class StationTests(unittest.TestCase):
                          [{"terminalLocationId": 106, "pendingId": 9, "itemId": 5,
                            "label": "12270-6NA -A000  Fuel pump"}])
 
+    def test_apply_pending_pick_coerces_text_ids(self):
+        # A page URL parameter arrives as text ("106"); the close-context
+        # lookup compares numbers, so the pick must pass numbers.
+        s, _ = _station()
+        seen = []
+        s.BlueRidge.Workorder = types.SimpleNamespace(ScaleDigiWatcher=types.SimpleNamespace(
+            pickPart=lambda pid, tid, item, user: seen.append((pid, tid, item, user)) or {"Status": 1},
+            discardPress=lambda pid, tid, user: seen.append((pid, tid, user)) or {"Status": 1}))
+        s.BlueRidge.Common.Session = types.SimpleNamespace(currentAppUserId=lambda session: 2)
+        s.BlueRidge.Common.Ui = types.SimpleNamespace(notifyResult=lambda r, t: None)
+        s.applyPendingPick(None, "106", "9", "110")
+        s.applyPendingDiscard(None, "106", "9")
+        self.assertEqual(seen, [(9, 106, 110, 2), (9, 106, 2)])
+
     def test_pending_part_buttons_none_without_pending(self):
         s, _ = _station(parts=[{"ItemId": 5, "PartNumber": "P", "Description": "D"}])
         self.assertEqual(s.pendingPartButtons(106, None), [])

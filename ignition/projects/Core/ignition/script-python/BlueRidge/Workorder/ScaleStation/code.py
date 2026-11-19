@@ -385,11 +385,21 @@ def pendingPartButtons(terminalLocationId, pendingId, _token=None):
             for p in listEligibleParts(tid)]
 
 
+def _id(value):
+    """An id as a number. A page URL parameter arrives as text ("106"), and
+       the close-context lookup (Assembly.resolvePlcCloseContext) compares
+       numbers, so text there reads as 'terminal has no zone cell'."""
+    v = _u(value)
+    if v is None or ("%s" % v).strip() == "":
+        return None
+    return int("%s" % v)
+
+
 def applyPendingPick(session, terminalLocationId, pendingId, itemId):
     """A part button on the held-press banner: close the held tray as that part,
        as the signed-in operator, and toast the result."""
     result = BlueRidge.Workorder.ScaleDigiWatcher.pickPart(
-        _u(pendingId), _u(terminalLocationId), _u(itemId),
+        _id(pendingId), _id(terminalLocationId), _id(itemId),
         BlueRidge.Common.Session.currentAppUserId(session))
     BlueRidge.Common.Ui.notifyResult(result, "Tray closed")
     return result
@@ -398,6 +408,6 @@ def applyPendingPick(session, terminalLocationId, pendingId, itemId):
 def applyPendingDiscard(session, terminalLocationId, pendingId):
     """The banner's Discard button."""
     result = BlueRidge.Workorder.ScaleDigiWatcher.discardPress(
-        _u(pendingId), _u(terminalLocationId), BlueRidge.Common.Session.currentAppUserId(session))
+        _id(pendingId), _id(terminalLocationId), BlueRidge.Common.Session.currentAppUserId(session))
     BlueRidge.Common.Ui.notifyResult(result, "Held tray discarded")
     return result
