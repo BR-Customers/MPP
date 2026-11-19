@@ -213,6 +213,6 @@ FROM Audit.InterfaceLog WHERE LocationId = <terminal> ORDER BY Id DESC;
 | Preview / rehearsal as expected? | Yes: 1 pending (`0134`), 612 identical / 0 changed / 6 new, 0 warnings. Gate counted 8 scale mappings (sim 7). Live: 36 open baskets, 1 running shift, 86 gateway sessions |
 | Lock window | Rehearsal 3.4 s, Execute 2.8 s (sim 0.1 s; live plant traffic) |
 | Backup path | `C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\MPP_MES_Prod_pre-release_0117_20261119_145318.bak` (COPY_ONLY, CHECKSUM, verified) |
-| Report folder | `.claude\worktreeselease-digi\dist\deploy-reports\MPP_MES_Prod_Execute_20261119_145318` |
+| Report folder | `.claude\worktrees\release-digi\dist\deploy-reports\MPP_MES_Prod_Execute_20261119_145318` |
 | Imports | Core imported; MPP in progress at the time of writing |
 | Notes | Post-commit: descriptions applied, all migrations recorded, all 6 repeatables match the repo. Section 6 SQL on prod matched every expected value (117 / `0134`, `ScaleStationDigi` ByWeight, `1=Pending,2=Closed,3=Discarded`, 0, 3, 6). First Rehearse typed `-Mode -Rehearse` and was refused by parameter validation; nothing ran. **Prod is now at `0134`: the SP-review release needs `-AllowOutOfOrder` (note at the top of its runbook).** |
