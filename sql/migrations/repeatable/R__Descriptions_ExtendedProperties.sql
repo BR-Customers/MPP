@@ -8850,4 +8850,242 @@ BEGIN
 END
 GO
 
--- 84 table descriptions, 428 column descriptions
+-- Workorder.ScalePendingPressStatus
+IF OBJECT_ID(N'[Workorder].[ScalePendingPressStatus]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPressStatus]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Code table (migration 0134): the life of a held scale press. Pending must stay Id 1: the filtered unique index UX_ScalePendingPress_Terminal_Pending is written against it.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePendingPressStatus';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Code table (migration 0134): the life of a held scale press. Pending must stay Id 1: the filtered unique index UX_ScalePendingPress_Terminal_Pending is written against it.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePendingPressStatus';
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPressStatus]', N'Code') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPressStatus]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPressStatus]'), N'Code', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Pending, Closed or Discarded',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPressStatus',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Pending, Closed or Discarded',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPressStatus',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPressStatus]', N'Name') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPressStatus]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPressStatus]'), N'Name', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Display name',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPressStatus',
+                         @level2type = N'COLUMN', @level2name = N'Name';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Display name',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPressStatus',
+                         @level2type = N'COLUMN', @level2name = N'Name';
+    END
+END
+GO
+
+-- Workorder.ScalePendingPress
+IF OBJECT_ID(N'[Workorder].[ScalePendingPress]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0134 (2026-11-19). A good press from a Digi-read scale (ScaleStationDigi) whose part code matched no MES part, held until the operator picks the part on the scale station screen; the tray closes on the pick (Workorder.ScalePendingPress_Claim / _Complete), or the operator discards it. At most one Pending row per terminal (filtered unique index), and while one is pending further presses at that scale are refused.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePendingPress';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0134 (2026-11-19). A good press from a Digi-read scale (ScaleStationDigi) whose part code matched no MES part, held until the operator picks the part on the scale station screen; the tray closes on the pick (Workorder.ScalePendingPress_Claim / _Complete), or the operator discards it. At most one Pending row per terminal (filtered unique index), and while one is pending further presses at that scale are refused.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePendingPress';
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'TerminalLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'TerminalLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The Assembly Out terminal the scale is mapped to',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The Assembly Out terminal the scale is mapped to',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ReceivedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ReceivedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'When the press arrived (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ReceivedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'When the press arrived (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ReceivedAt';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'NetWeight') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'NetWeight', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Net weight the scale reported',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'NetWeight';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Net weight the scale reported',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'NetWeight';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'Uom') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'Uom', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Unit the scale reported',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'Uom';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Unit the scale reported',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'Uom';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ScalePartCode') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ScalePartCode', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The <Part> code the scale sent, trimmed; it matched no active Parts.Item.PartNumber',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ScalePartCode';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The <Part> code the scale sent, trimmed; it matched no active Parts.Item.PartNumber',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ScalePartCode';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'StatusId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'StatusId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'FK Workorder.ScalePendingPressStatus',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'StatusId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'FK Workorder.ScalePendingPressStatus',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'StatusId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ResolvedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ResolvedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'When the press was claimed or discarded (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'When the press was claimed or discarded (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedAt';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ResolvedByAppUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ResolvedByAppUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The operator who picked or discarded it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedByAppUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The operator who picked or discarded it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedByAppUserId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ResolvedItemId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ResolvedItemId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The finished good the operator picked',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedItemId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The finished good the operator picked',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedItemId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'FinishedGoodLotId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'FinishedGoodLotId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The tray LOT the pick minted',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'FinishedGoodLotId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The tray LOT the pick minted',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'FinishedGoodLotId';
+    END
+END
+GO
+
+-- 86 table descriptions, 440 column descriptions
