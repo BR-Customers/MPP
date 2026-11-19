@@ -27,6 +27,11 @@
 # SAFETY
 #   * refuses on out-of-order pending migrations, a dirty sql/ tree, or any
 #     BLOCK finding from the pre-flight gates
+#   * -AllowOutOfOrder 0118,0120 lets exactly those migration numbers apply
+#     below the high-water mark (2026-11-19: 0134 shipped to prod ahead of the
+#     stored-procedure review's 0118/0120-0133). Each must be pending; a listed
+#     number that is not is a BLOCK, so a typo cannot pass silently. The list is
+#     part of the plan fingerprint.
 #   * -ExpectedPlan <fingerprint> makes Execute refuse if anything changed
 #     between the preview you reviewed and the run
 #   * inside the transaction: DEADLOCK_PRIORITY LOW (the plant wins a deadlock),
@@ -55,6 +60,7 @@ param(
     [switch]$SkipBackup,
     [int]$LockTimeoutSeconds = 30,
     [string]$ReportRoot   = "",
+    [string[]]$AllowOutOfOrder = @(),  # migration numbers allowed below the high-water mark
     [switch]$Force                     # skip typed confirmation; REQUIRES -ExpectedPlan
 )
 
@@ -214,8 +220,21 @@ Log "  Database: $($applied.Count) applied, highest $('{0:D4}' -f $maxApplied). 
 Table $last @("MigrationId", "AppliedAt")
 $orphans = @($applied.Keys | Where-Object { -not (Test-Path (Join-Path $Versioned "$_.sql")) } | Sort-Object)
 foreach ($o in $orphans) { Finding "WARN" "migrations" "recorded in the database but not in this checkout: $o" }
+# -AllowOutOfOrder: "0118,0120" or "0118","0120" -> the integers 118, 120.
+$allowNums = @($AllowOutOfOrder | ForEach-Object { "$_" -split "," } | ForEach-Object { $_.Trim() } |
+               Where-Object { $_ -ne "" } | ForEach-Object { [int]$_ } | Sort-Object -Unique)
 $ooo = @($pending | Where-Object { (& $num $_.BaseName) -le $maxApplied })
-foreach ($o in $ooo) { Finding "BLOCK" "migrations" "out of order: $($o.Name) is pending below the applied high-water mark ($maxApplied)" }
+foreach ($o in $ooo) {
+    if ($allowNums -contains (& $num $o.BaseName)) {
+        Finding "WARN" "migrations" "out of order, ALLOWED by -AllowOutOfOrder: $($o.Name) is pending below the applied high-water mark ($maxApplied)"
+    } else {
+        Finding "BLOCK" "migrations" "out of order: $($o.Name) is pending below the applied high-water mark ($maxApplied)"
+    }
+}
+$pendingNums = @($pending | ForEach-Object { & $num $_.BaseName })
+foreach ($a in $allowNums) {
+    if ($pendingNums -notcontains $a) { Finding "BLOCK" "migrations" ("-AllowOutOfOrder names {0:D4}, which is not a pending migration here -- check the list" -f $a) }
+}
 if ($pending.Count -eq 0) { Log "  No pending migrations." "Green" }
 else { Log "  Pending ($($pending.Count)):" "Yellow"; $pending | ForEach-Object { Log "    + $($_.Name)" "Yellow" } }
 $pendingIds = @($pending | ForEach-Object { $_.BaseName })
@@ -738,6 +757,19 @@ if (& $has "0117_oee_shift_summary") {
     Finding "INFO" "0117" "adds Lots.Lot.ShiftId / MintedPieceCount (nullable, metadata-only) and a filtered index that scans its $lots existing LOT(s) once inside the release transaction. After the commit, the first fill recomputes $shifts closed shift(s), the earliest starting $first ET."
 }
 
+if (& $has "0134_scale_digi_and_pending_press") {
+    # 0134 shipped to prod AHEAD of the stored-procedure review (0118, 0120-0133;
+    # Jacques, 2026-11-19), so that release applies them with -AllowOutOfOrder.
+    # ScalePendingPressStatus is seeded with explicit Ids; Pending must be Id 1 for the
+    # filtered unique index. A table already present means 0134 ran partially by hand.
+    $pre = S "SELECT CASE WHEN OBJECT_ID(N'Workorder.ScalePendingPress', N'U') IS NULL AND OBJECT_ID(N'Workorder.ScalePendingPressStatus', N'U') IS NULL THEN 0 ELSE 1 END"
+    if ($pre -eq 1) {
+        Finding "BLOCK" "0134" "Workorder.ScalePendingPress or ScalePendingPressStatus already exists but 0134 is not recorded -- something created it by hand. Inspect and drop it before deploying."
+    }
+    $scales = S "SELECT COUNT(*) FROM Location.TerminalPlcDevice p JOIN Location.PlcDeviceType t ON t.Id = p.PlcDeviceTypeId WHERE t.Code LIKE N'ScaleStation%' AND p.DeprecatedAt IS NULL"
+    Finding "INFO" "0134" "adds PlcDeviceType ScaleStationDigi and the held-press tables; no existing row changes. $scales scale device mapping(s) exist today and are untouched -- a head goes onto the Digi path only when it is commissioned (runbook section 7)."
+}
+
 # Lots.Container_Ship v1.1 is a repeatable, so this keys off the apply list. It newly
 # refuses a container holding a LOT that is on hold (tray LOT, or a packed serial's
 # producing LOT). Count the containers that ship today and will be refused tomorrow.
@@ -798,6 +830,7 @@ if ($Mode -eq "Execute" -and $SkipBackup) { Finding "WARN" "backup" "-SkipBackup
 # ---------- [8] plan ----------
 Head "[8] Plan"
 $planLines = @("HEAD|$head")
+if ($allowNums.Count -gt 0) { $planLines += "ALLOW|$(($allowNums | ForEach-Object { '{0:D4}' -f $_ }) -join ',')" }
 foreach ($m in $pending) { $planLines += "M|$($m.Name)|$(Sha (Read-SqlText $m.FullName))" }
 foreach ($a in $toApply) { $planLines += "R|$($a.File)|$(Sha (Read-SqlText $a.Path))" }
 $fingerprint = (Sha ($planLines -join "`n")).Substring(0, 12)

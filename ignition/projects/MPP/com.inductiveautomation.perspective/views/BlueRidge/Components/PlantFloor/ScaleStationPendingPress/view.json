@@ -1,0 +1,151 @@
+{
+  "custom": {},
+  "params": {
+    "terminalLocationId": null,
+    "pressToken": 0,
+    "pendingId": null
+  },
+  "propConfig": {
+    "params.terminalLocationId": {
+      "paramDirection": "input"
+    },
+    "params.pressToken": {
+      "paramDirection": "input"
+    },
+    "params.pendingId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 170,
+      "width": 1500
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-panel",
+        "gap": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "auto",
+          "grow": 0,
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "style": {
+                "classes": "pf-section-title"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.pendingBannerText\", 0, {view.params.terminalLocationId}, {view.params.pressToken})"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "Discard"
+            },
+            "position": {
+              "basis": "auto",
+              "grow": 0,
+              "shrink": 0
+            },
+            "props": {
+              "text": "Discard this tray",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Workorder.ScaleStation.applyPendingDiscard(self.session, self.view.params.terminalLocationId, self.view.params.pendingId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Parts"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "wrap": "wrap",
+          "alignContent": "flex-start",
+          "path": "BlueRidge/Components/PlantFloor/ScaleStationPendingButton",
+          "elementPosition": {
+            "basis": "auto",
+            "grow": 0,
+            "shrink": 0
+          },
+          "style": {
+            "gap": "8px"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Workorder.ScaleStation.pendingPartButtons\", 0, {view.params.terminalLocationId}, {view.params.pendingId}, {view.params.pressToken})"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

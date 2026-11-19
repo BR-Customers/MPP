@@ -218,6 +218,144 @@
         ]
       },
       {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "DigiBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "wrap": "wrap",
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "10px",
+            "flexDirection": "row",
+            "margin": "14px 14px 0 14px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Kicker"
+            },
+            "props": {
+              "text": "DEV ONLY - SIMULATED DIGI PRESS (record as the Digi sends it)",
+              "style": {
+                "classes": "pf-kpi-label"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "DigiRunning"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Digi: running part",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleDigiPreset(self.view.params.terminalLocationId, \"running\"), \"Simulated Digi press\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "DigiOther"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Digi: another part",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleDigiPreset(self.view.params.terminalLocationId, \"other\"), \"Simulated Digi press\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "DigiUnknown"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Digi: part 'TEST3'",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleDigiPreset(self.view.params.terminalLocationId, \"unknown\"), \"Simulated Digi press\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "DigiTwm0"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Digi: TWM=0",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Ui.notifyResult(BlueRidge.Sim.fireScaleDigiPreset(self.view.params.terminalLocationId, \"twm0\"), \"Simulated Digi press\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
         "type": "ia.display.view",
         "meta": {
           "name": "Station"

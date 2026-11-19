@@ -1,0 +1,19 @@
+{
+  "name": "digiTest",
+  "tagType": "UdtInstance",
+  "typeId": "ScaleStationEPrint",
+  "parameters": {
+    "OpcServer": {
+      "dataType": "String",
+      "value": "Ignition OPC UA Server"
+    },
+    "Device": {
+      "dataType": "String",
+      "value": "digiTest"
+    },
+    "BasePath": {
+      "dataType": "String",
+      "value": "2101/"
+    }
+  }
+}
