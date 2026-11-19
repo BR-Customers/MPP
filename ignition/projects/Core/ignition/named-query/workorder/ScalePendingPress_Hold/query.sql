@@ -1,0 +1,1 @@
+EXEC Workorder.ScalePendingPress_Hold @TerminalLocationId = :terminalLocationId, @NetWeight = :netWeight, @Uom = :uom, @ScalePartCode = :scalePartCode, @AppUserId = :appUserId

@@ -1,0 +1,1 @@
+EXEC Workorder.ScalePendingPress_Release @Id = :id, @AppUserId = :appUserId

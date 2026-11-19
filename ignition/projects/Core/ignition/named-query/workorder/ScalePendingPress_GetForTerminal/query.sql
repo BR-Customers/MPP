@@ -1,0 +1,1 @@
+EXEC Workorder.ScalePendingPress_GetForTerminal @TerminalLocationId = :terminalLocationId
