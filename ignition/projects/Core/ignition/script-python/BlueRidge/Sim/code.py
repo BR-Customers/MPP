@@ -241,8 +241,40 @@ def fireScaleDigi(terminalLocationId, net, part, twm=1):
        Returns handleMessage's {Status, Message, ContainerId[, Held]}."""
     W = BlueRidge.Workorder.ScaleDigiWatcher
     terminalLocationId = long("%s" % terminalLocationId)
-    path = BlueRidge.Workorder.ScaleStation.scaleInstancePath(terminalLocationId)
+    path = _digiInstancePath(terminalLocationId)
     if not path:
-        return {"Status": 0, "Message": "No scale is mapped to terminal %s." % terminalLocationId,
+        return {"Status": 0, "Message": "No Digi scale is mapped to terminal %s." % terminalLocationId,
                 "ContainerId": None}
     return W.handleMessage(path, terminalLocationId, W.digiRecord(net, part, int(twm)))
+
+
+def _digiInstancePath(terminalLocationId):
+    """The terminal's ScaleStationDigi instance path, or '' (a terminal may
+       also carry an EPrint scale; the sim must name the Digi one)."""
+    for d in BlueRidge.Location.TerminalPlcDevice.getByTerminal(terminalLocationId) or []:
+        if d.get("DeviceTypeCode") == "ScaleStationDigi":
+            return d.get("UdtInstancePath") or ""
+    return ""
+
+
+def fireScaleDigiPreset(terminalLocationId, preset):
+    """Dev-only presets for the scale station sim page (the in-app browser
+       cannot commit a typed field):
+         running - the running part's own number, at its target weight
+         other   - another active part number than the running one
+         unknown - 'TEST3' (no part; held unless the part is settled)
+         twm0    - the running part, TWM=0 (refused)"""
+    terminalLocationId = long("%s" % terminalLocationId)
+    rp = BlueRidge.Workorder.ScaleStation.getRunningPartOrEmpty(terminalLocationId)
+    net = float("%s" % rp.get("TargetWeight")) if rp.get("TargetWeight") is not None else 15.5
+    part, twm = rp.get("PartNumber") or "", 1
+    if preset == "unknown":
+        part = "TEST3"
+    elif preset == "twm0":
+        twm = 0
+    elif preset == "other":
+        for r in BlueRidge.Parts.Item.getAll() or []:
+            if r.get("PartNumber") and r.get("Id") != rp.get("ItemId"):
+                part = r.get("PartNumber")
+                break
+    return fireScaleDigi(terminalLocationId, net, part, twm)
