@@ -738,6 +738,24 @@ if (& $has "0117_oee_shift_summary") {
     Finding "INFO" "0117" "adds Lots.Lot.ShiftId / MintedPieceCount (nullable, metadata-only) and a filtered index that scans its $lots existing LOT(s) once inside the release transaction. After the commit, the first fill recomputes $shifts closed shift(s), the earliest starting $first ET."
 }
 
+if (& $has "0134_scale_digi_and_pending_press") {
+    # 0134 is packaged as its OWN release, to run after the stored-procedure review
+    # release (0118 + 0120-0133). Its runbook's expected numbers assume that state; with
+    # 0133 still pending this run would carry the whole SP-review bundle under the Digi
+    # release's runbook instead of its own.
+    if (& $has "0133_shippinglabel_aimshipperid_index") {
+        Finding "BLOCK" "0134" "the stored-procedure review release (0118, 0120-0133) is not on this database yet. Run notes/2026-11-16_prod-release-runbook-sp-review.md first, then re-preview this release."
+    }
+    # ScalePendingPressStatus is seeded with explicit Ids; Pending must be Id 1 for the
+    # filtered unique index. A table already present means 0134 ran partially by hand.
+    $pre = S "SELECT CASE WHEN OBJECT_ID(N'Workorder.ScalePendingPress', N'U') IS NULL AND OBJECT_ID(N'Workorder.ScalePendingPressStatus', N'U') IS NULL THEN 0 ELSE 1 END"
+    if ($pre -eq 1) {
+        Finding "BLOCK" "0134" "Workorder.ScalePendingPress or ScalePendingPressStatus already exists but 0134 is not recorded -- something created it by hand. Inspect and drop it before deploying."
+    }
+    $scales = S "SELECT COUNT(*) FROM Location.TerminalPlcDevice p JOIN Location.PlcDeviceType t ON t.Id = p.PlcDeviceTypeId WHERE t.Code LIKE N'ScaleStation%' AND p.DeprecatedAt IS NULL"
+    Finding "INFO" "0134" "adds PlcDeviceType ScaleStationDigi and the held-press tables; no existing row changes. $scales scale device mapping(s) exist today and are untouched -- a head goes onto the Digi path only when it is commissioned (runbook section 7)."
+}
+
 # Lots.Container_Ship v1.1 is a repeatable, so this keys off the apply list. It newly
 # refuses a container holding a LOT that is on hold (tray LOT, or a packed serial's
 # producing LOT). Count the containers that ship today and will be refused tomorrow.
