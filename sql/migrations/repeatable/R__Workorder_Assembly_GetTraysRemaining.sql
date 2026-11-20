@@ -3,7 +3,7 @@
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-06
 -- Modified:    2026-11-13
--- Version:     1.1
+-- Version:     1.2
 -- Description: How many more trays of a finished good the line can close before a
 --              PURCHASED part runs out -- the read behind the Assembly OUT
 --              low-inventory lock
@@ -40,6 +40,9 @@
 --
 -- Change Log:
 --   2026-10-06 - 1.0 - Initial version.
+--   2026-11-20 - 1.2 - Named pack-outs (0136): + @TerminalLocationId = NULL; PartsPerTray
+--                      from Parts.ufn_PackOutInForce (open box > pick > default).
+--                      Result set unchanged.
 --   2026-11-13 - 1.1 - Stored-procedure review (same query SHAPE as the 2026-11-10 prod
 --                      incident reads, notes/2026-11-10_prod-incident-assembly-out-
 --                      deadlock.md; no deadlock has been observed on THIS proc). The
@@ -55,20 +58,19 @@
 CREATE OR ALTER PROCEDURE Workorder.Assembly_GetTraysRemaining
     @CellLocationId     BIGINT,
     @FinishedGoodItemId BIGINT,
-    @ClosureMethod      NVARCHAR(20) = NULL
+    @ClosureMethod      NVARCHAR(20) = NULL,
+    @TerminalLocationId BIGINT       = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
     DECLARE @ThresholdTrays INT = 3;
 
-    -- pack-out for THIS (Item, closure method) -- same resolution as CompleteTray 4b
+    -- pack-out IN FORCE for THIS (Item, closure method) at this terminal -- the same
+    -- rule as CompleteTray 4b (open box's version > terminal pick > default)
     DECLARE @PartsPerTray INT = (
-        SELECT cc.PartsPerTray
-        FROM Parts.ContainerConfig cc
-        WHERE cc.ItemId = @FinishedGoodItemId
-          AND cc.ClosureMethod = @ClosureMethod
-          AND cc.DeprecatedAt IS NULL);
+        SELECT f.PartsPerTray
+        FROM Parts.ufn_PackOutInForce(@FinishedGoodItemId, @ClosureMethod, @TerminalLocationId, @CellLocationId) f);
 
     -- Nothing to calculate -> @Need stays empty and the final SELECT returns an
     -- EMPTY SET. Never a bare RETURN: a proc that emits no result set at all makes

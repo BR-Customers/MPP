@@ -53,41 +53,41 @@ CREATE TABLE #J (
     Verdict NVARCHAR(20), Message NVARCHAR(500), Weight DECIMAL(10,4),
     TargetWeight DECIMAL(10,4), ToleranceWeight DECIMAL(10,4),
     LowLimit DECIMAL(10,4), HighLimit DECIMAL(10,4),
-    ScaleVerdict NVARCHAR(20), FlagsAgree BIT, FlagsMessage NVARCHAR(500));
+    ScaleVerdict NVARCHAR(20), FlagsAgree BIT, FlagsMessage NVARCHAR(500), PackOutName NVARCHAR(50));
 GO
 
 DECLARE @Item  BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-JUDGE');
 DECLARE @NoTol BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-JUDGE-NOTOL');
 DECLARE @NoCfg BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-JUDGE-NOCFG');
 
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.2000;
 UPDATE #J SET Label = N'inside' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.0000;
 UPDATE #J SET Label = N'onLow' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.5000;
 UPDATE #J SET Label = N'onHigh' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 17.9999;
 UPDATE #J SET Label = N'justUnder' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.5001;
 UPDATE #J SET Label = N'justOver' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = -0.0500;
 UPDATE #J SET Label = N'negative' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @NoCfg, @ClosureMethod = N'ByWeight', @Weight = 18.2000;
 UPDATE #J SET Label = N'noConfig' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByVision', @Weight = 18.2000;
 UPDATE #J SET Label = N'otherMethod' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @NoTol, @ClosureMethod = N'ByWeight', @Weight = 18.2000;
 UPDATE #J SET Label = N'noTolerance' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = NULL;
 UPDATE #J SET Label = N'noWeight' WHERE Label IS NULL;
 GO
@@ -145,47 +145,47 @@ GO
 DECLARE @Item  BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-JUDGE');
 DECLARE @NoCfg BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-JUDGE-NOCFG');
 
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.2000,
          @ScaleUnder = 0, @ScaleOver = 0, @ScaleOk = 1;
 UPDATE #J SET Label = N'agreeOk' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 17.0000,
          @ScaleUnder = 1, @ScaleOver = 0, @ScaleOk = 0;
 UPDATE #J SET Label = N'agreeUnder' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 19.0000,
          @ScaleUnder = 0, @ScaleOver = 1, @ScaleOk = 0;
 UPDATE #J SET Label = N'agreeOver' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.0000,
          @ScaleUnder = 1, @ScaleOver = 0, @ScaleOk = 0;
 UPDATE #J SET Label = N'scaleUnderMesOk' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 19.0000,
          @ScaleUnder = 0, @ScaleOver = 0, @ScaleOk = 1;
 UPDATE #J SET Label = N'scaleOkMesOver' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.2000,
          @ScaleUnder = 0, @ScaleOver = 0, @ScaleOk = 0;
 UPDATE #J SET Label = N'noTarget' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.2000,
          @ScaleUnder = 1, @ScaleOver = 0, @ScaleOk = 1;
 UPDATE #J SET Label = N'twoFlags' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.2000,
          @ScaleUnder = 0, @ScaleOver = 0, @ScaleOk = 2;
 UPDATE #J SET Label = N'outOfRange' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.2000,
          @ScaleUnder = NULL, @ScaleOver = 0, @ScaleOk = 1;
 UPDATE #J SET Label = N'partial' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @NoCfg, @ClosureMethod = N'ByWeight', @Weight = 18.2000,
          @ScaleUnder = 0, @ScaleOver = 0, @ScaleOk = 1;
 UPDATE #J SET Label = N'noConfigWithFlags' WHERE Label IS NULL;
-INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage)
+INSERT INTO #J (Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit, ScaleVerdict, FlagsAgree, FlagsMessage, PackOutName)
     EXEC Parts.ContainerConfig_JudgeWeight @ItemId = @Item, @ClosureMethod = N'ByWeight', @Weight = 18.2000;
 UPDATE #J SET Label = N'noFlags' WHERE Label IS NULL;
 GO
