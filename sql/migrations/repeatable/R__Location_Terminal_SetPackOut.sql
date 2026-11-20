@@ -2,7 +2,7 @@
 -- Procedure: Location.Terminal_SetPackOut
 -- Author:    Blue Ridge Automation
 -- Created:   2026-11-20
--- Version:   1.0
+-- Version:   1.1
 --
 -- Description:
 --   Sets the pack-out a terminal runs for one part + closure method (the
@@ -20,7 +20,12 @@
 --       tray would go into (Lots.ufn_ContainerForNextTray: the station's own
 --       box, else an unowned box at the line). Finish or close it first
 --       (D2). A box is never packed under two pack-outs;
---     - a no-op (already this terminal's pick).
+--     - a no-op (already this terminal's pick, or tapping the default while the
+--       terminal already follows the default).
+--
+--   FOLLOW THE DEFAULT (1.1, Jacques 2026-11-20): picking the part's current
+--   DEFAULT pack-out deletes the terminal's pick instead of pinning it, so the
+--   terminal keeps following whatever the default later becomes.
 --
 --   Status-row mutation (FDS-11-011): every rejection runs before BEGIN
 --   TRANSACTION; the upsert reads the row WITH (UPDLOCK, HOLDLOCK) so two
@@ -36,6 +41,7 @@
 --
 -- Change Log:
 --   2026-11-20 - 1.0 - Initial version (named pack-outs).
+--   2026-11-20 - 1.1 - Picking the default clears the pick (follow the default).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Terminal_SetPackOut
     @TerminalLocationId BIGINT,
@@ -53,7 +59,7 @@ BEGIN
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @TermCode NVARCHAR(50), @LineId BIGINT;
-    DECLARE @ItemId BIGINT, @Method NVARCHAR(20), @NewName NVARCHAR(50);
+    DECLARE @ItemId BIGINT, @Method NVARCHAR(20), @NewName NVARCHAR(50), @IsDefault BIT;
     DECLARE @CurPackOutId BIGINT, @OldName NVARCHAR(50), @OpenBox BIGINT, @OpenName NVARCHAR(50);
     DECLARE @PartNumber NVARCHAR(50);
     DECLARE @Activity NVARCHAR(500), @OldValue NVARCHAR(MAX), @NewValue NVARCHAR(MAX);
@@ -68,7 +74,7 @@ BEGIN
             FROM Location.Location
             WHERE Id = @TerminalLocationId AND LocationTypeDefinitionId = 7 AND DeprecatedAt IS NULL;
 
-            SELECT @ItemId = ItemId, @Method = ClosureMethod, @NewName = Name
+            SELECT @ItemId = ItemId, @Method = ClosureMethod, @NewName = Name, @IsDefault = IsDefault
             FROM Parts.PackOut WHERE Id = @PackOutId AND DeprecatedAt IS NULL;
 
             IF @TermCode IS NULL OR @LineId IS NULL
@@ -87,7 +93,7 @@ BEGIN
                 JOIN Parts.ContainerConfig cc ON cc.Id = b.ContainerConfigId
                 JOIN Parts.PackOut p ON p.Id = cc.PackOutId;
 
-                IF @CurPackOutId = @PackOutId
+                IF @CurPackOutId = @PackOutId OR (@IsDefault = 1 AND @CurPackOutId IS NULL)
                     SET @Message = N'''' + @NewName + N''' is already this station''s pack-out.';
                 ELSE IF @OpenBox IS NOT NULL
                     SET @Message = N'Box #' + CAST(@OpenBox AS NVARCHAR(20)) + N' is open (' + @OpenName
@@ -117,12 +123,17 @@ BEGIN
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Item
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
         SET @Activity = Audit.ufn_TruncateActivity(@TermCode + N' ' + Audit.ufn_MidDot() + N' Pack-Out ' + Audit.ufn_MidDot()
-            + N' ' + @PartNumber + N' ' + ISNULL(@OldName, N'(none)') + N' -> ' + @NewName);
+            + N' ' + @PartNumber + N' ' + ISNULL(@OldName, N'(none)') + N' -> ' + @NewName
+            + CASE WHEN @IsDefault = 1 THEN N' (default)' ELSE N'' END);
 
         -- ================= Mutation (atomic) =================
         BEGIN TRANSACTION;
 
-        IF EXISTS (SELECT 1 FROM Location.TerminalPackOutSelection WITH (UPDLOCK, HOLDLOCK)
+        IF @IsDefault = 1
+            -- Follow the default: no pick row at all.
+            DELETE FROM Location.TerminalPackOutSelection
+            WHERE TerminalLocationId = @TerminalLocationId AND ItemId = @ItemId AND ClosureMethod = @Method;
+        ELSE IF EXISTS (SELECT 1 FROM Location.TerminalPackOutSelection WITH (UPDLOCK, HOLDLOCK)
                    WHERE TerminalLocationId = @TerminalLocationId AND ItemId = @ItemId AND ClosureMethod = @Method)
             UPDATE Location.TerminalPackOutSelection
             SET PackOutId = @PackOutId, SetByUserId = @AppUserId, SetAt = SYSUTCDATETIME()

@@ -27,6 +27,7 @@ On the floor a new run starts when the operator or a supervisor brings over skid
 | D8 | Approach 2 (below): a pack-out header with versions under it. |
 | D9 | The stored procedures in the blast radius must stay performant -- measured, not assumed (section 9). |
 | D10 | **Every By Weight station** can select **and edit** pack-outs from the station popup; **no supervisor sign-in** (any PIN operator; the audit row is the control). |
+| D12 | **Picking the default follows the default** (Jacques, 2026-11-20, after review): tapping the part's current default clears the terminal's pick instead of pinning it, so the terminal follows whatever the default later becomes. |
 | D11 | **No rework across pack-outs.** Rework only offers / accepts a target box on the **same pack-out** (`PackOutId`) as the source box. |
 | -- | A scale code maps to a **part**, never to a pack-out (Tom via Jacques, 2026-11-20). The Digi scale-code mapping work is independent of this. |
 
