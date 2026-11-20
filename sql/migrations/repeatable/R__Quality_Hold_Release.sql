@@ -1,6 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Quality_Hold_Release.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: reads the container's finished-good LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers.
 -- Version:     1.1
 -- Description: Releases a single open hold (Arc 2 Phase 7). Validates the HoldEvent is
 --              open; sets ReleasedByUserId/ReleasedAt/ReleaseRemarks; restores the
@@ -89,10 +90,9 @@ BEGIN
             -- the recall case (Closed -> Hold -> release restores to Closed) is skipped.
             IF EXISTS (
                 SELECT 1
-                FROM Lots.ContainerTray t
-                INNER JOIN Lots.Container c ON c.Id = t.ContainerId
-                WHERE t.FinishedGoodLotId = @LotId
-                  AND c.ContainerStatusCodeId IN (2, 3))   -- Complete, Shipped
+                FROM Lots.ufn_LotContainers(@LotId) lc   -- 0119: tray LOT or container LOT
+                INNER JOIN Lots.Container c ON c.Id = lc.ContainerId
+                WHERE c.ContainerStatusCodeId IN (2, 3))   -- Complete, Shipped
             BEGIN
                 EXEC Lots.Lot_CloseInline
                     @LotId = @LotId,

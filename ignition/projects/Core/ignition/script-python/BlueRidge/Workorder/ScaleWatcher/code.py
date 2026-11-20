@@ -187,7 +187,9 @@ def loadSetpointForItem(instancePath, terminalLocationId, itemId):
     # (itemId, closureMethod), so a hand-rolled {"ItemId": ...} call fails at
     # runtime. getByItemAndMethod returns a plain dict, or {} when there is no
     # such config -- it is NOT a dataset, so there is no getRowCount().
-    cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(itemId, "ByWeight")
+    # Named pack-outs (2026-11-20): the setpoint is the pack-out in force at this
+    # terminal (open box's version > its pick > the default) -- SQL decides.
+    cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(itemId, "ByWeight", terminalLocationId)
     if not cfg:
         return {"ok": False,
                 "message": "No ByWeight container config for this item."}

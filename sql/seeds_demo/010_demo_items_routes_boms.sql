@@ -164,9 +164,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @iid)
     BEGIN
         DELETE @r;
-        INSERT INTO @r EXEC Parts.ContainerConfig_Create @ItemId = @iid, @TraysPerContainer = 4, @PartsPerTray = @ppt,
-            @IsSerialized = 0, @ClosureMethod = N'ByCount', @AppUserId = @Sys;
-        IF NOT EXISTS (SELECT 1 FROM @r WHERE Status = 1) BEGIN SELECT @msg = Message FROM @r; RAISERROR('ContainerConfig_Create %s: %s', 16, 1, @pn, @msg); END
+        INSERT INTO @r EXEC Parts.PackOut_Save @ItemId = @iid, @ClosureMethod = N'ByCount', @Name = N'By Count',
+            @TraysPerContainer = 4, @PartsPerTray = @ppt, @IsSerialized = 0, @AppUserId = @Sys;
+        IF NOT EXISTS (SELECT 1 FROM @r WHERE Status = 1) BEGIN SELECT @msg = Message FROM @r; RAISERROR('PackOut_Save %s: %s', 16, 1, @pn, @msg); END
     END
     SET @i += 1;
 END

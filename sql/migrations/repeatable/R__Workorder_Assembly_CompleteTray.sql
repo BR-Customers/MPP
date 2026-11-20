@@ -1,6 +1,32 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_CompleteTray.sql
 -- Author:      Blue Ridge Automation
+-- Version:     2.2 (2026-11-20, named pack-outs, migration 0136; release merge with 2.1) - the
+--              pack-out is the one IN FORCE at the station (Parts.ufn_PackOutInForce): the open
+--              box's OWN version when the next tray goes into an open box, else the terminal's
+--              pick, else the part's default. PartsPerTray (step 5), the over-fill target (8)
+--              and the full flag (B5) come from the box actually filled; a newly opened box is
+--              stamped with the resolved version (ufn_ResolvePackOut). The FIFO pick, the B2
+--              box claim and its locking are unchanged. (Was 1.7 on sp/parts-PackOut.)
+-- Version:     2.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - Review fixes (container-as-LOT whole-branch review): M1 CRT re-resolve over THIS tray's draws; M2 the locked container read re-checks Open; M5 a Closed container LOT gains no InventoryAvailable; stock pre-checks state InventoryAvailable > 0 (filtered index, I2).
+-- Version:     2.0 (2026-11-04, container-as-LOT spec
+--              docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md
+--              7.1, D1-D5, D10, D11) - ONE finished-good LOT PER CONTAINER. The
+--              container is resolved first; its first tray mints the LOT (stored on
+--              Lots.Container.LotId) and every later tray APPENDS its pieces to it,
+--              whatever the LOT's status (Hold: D10; Closed: a resumed rework
+--              container, 7.4). Trays carry no LOT (FinishedGoodLotId NULL) and are
+--              stamped ShiftId / ClosedAtTerminalId / MintedPieceCount (OEE reads
+--              them, D5, D11); the container LOT carries no ShiftId / MintedPieceCount.
+--              ConsumptionEvent stays per tray draw (D3). One genealogy edge per
+--              (source LOT, container LOT): a repeat draw adds to its PieceCount (D4).
+--              CRT is re-resolved on EVERY tray (raise only), so an input or an open
+--              super-lot window met mid-container tags the container LOT. A box opened
+--              before migration 0119 (trays with their own LOTs) gets a container LOT
+--              on its first new tray and becomes MIXED; readers handle all shapes via
+--              Lots.ufn_ContainerLots. Result columns unchanged; FinishedGoodLotId is
+--              now the container's LOT. Everything below describing "tray = LOT" is
+--              history.
 -- Version:     1.6 (2026-10-30, OEE dashboard spec v0.3.1 sec 7.4, D18, D21) - the minted
 --              tray LOT is STAMPED with ShiftId (Oee.ufn_ShiftIdForInstant(@CellLocationId,
 --              now), resolved before the transaction) and MintedPieceCount = @PieceCount.
@@ -136,10 +162,12 @@ BEGIN
     DECLARE @Repack BIT = 0;
     DECLARE @RepackAvail INT = 0;
 
+    DECLARE @NewBoxConfigId BIGINT;
     DECLARE @ContainerConfigId BIGINT, @PartsPerTray INT, @TraysPerContainer INT, @MaxLotSize INT;
     DECLARE @BomId BIGINT, @CellCode NVARCHAR(50), @PartNumber NVARCHAR(50);
     DECLARE @Accum INT, @Target INT, @TrayPosition INT;
     DECLARE @OpenedContainer BIT = 0;
+    DECLARE @Appended BIT = 0;   -- v2.0: 1 = this tray appended to the container's existing LOT
     DECLARE @OpenCid BIGINT, @OpenAccum INT, @FullTarget INT;
 
     -- Station (0078): the terminal filling the box, or NULL for the pre-0078
@@ -208,14 +236,14 @@ BEGIN
             GOTO Reply;
         END
 
-        -- ---- 4b. Resolve the ContainerConfig for THIS (Item, closure method) ----
-        --      Terminal mode selects the pack-out; no TOP-1/COALESCE fallback.
-        SELECT @ContainerConfigId = cc.Id, @PartsPerTray = cc.PartsPerTray,
-               @TraysPerContainer = cc.TraysPerContainer
-        FROM Parts.ContainerConfig cc
-        WHERE cc.ItemId = @FinishedGoodItemId
-          AND cc.ClosureMethod = @ClosureMethod
-          AND cc.DeprecatedAt IS NULL;
+        -- ---- 4b. The pack-out IN FORCE for THIS (Item, closure method) at this station:
+        --      the open box's own version, else the terminal's pick, else the default
+        --      (1.7). A box opened below is stamped with the RESOLVED version. ----
+        SELECT @ContainerConfigId = f.ContainerConfigId, @PartsPerTray = f.PartsPerTray,
+               @TraysPerContainer = f.TraysPerContainer
+        FROM Parts.ufn_PackOutInForce(@FinishedGoodItemId, @ClosureMethod, @StationLocationId, @CellLocationId) f;
+        SELECT @NewBoxConfigId = r.ContainerConfigId
+        FROM Parts.ufn_ResolvePackOut(@FinishedGoodItemId, @ClosureMethod, @StationLocationId) r;
 
         IF @ContainerConfigId IS NULL
         BEGIN
@@ -253,6 +281,7 @@ BEGIN
                 INNER JOIN Lots.LotOriginType o ON o.Id = l.LotOriginTypeId
                 WHERE l.ItemId = @FinishedGoodItemId AND l.CurrentLocationId = @CellLocationId
                   AND o.Code IN (N'Received', N'ReceivedOffsite')
+                  AND l.InventoryAvailable > 0   -- seeks IX_Lot_LocationItemCreated (filtered)
                   AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0);
             IF @RepackAvail < @PieceCount
             BEGIN
@@ -282,6 +311,7 @@ BEGIN
                 SELECT ISNULL(SUM(l.InventoryAvailable), 0) AS Avail FROM Lots.Lot l
                 INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                 WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @CellLocationId
+                  AND l.InventoryAvailable > 0   -- seeks IX_Lot_LocationItemCreated (filtered)
                   AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
             ) s
             WHERE bl.BomId = @BomId AND s.Avail < CAST(bl.QtyPer * @PieceCount AS INT));
@@ -348,7 +378,83 @@ BEGIN
         -- ================= Mutation (atomic) =================
         BEGIN TRANSACTION;
 
-        -- ---- B1. Mint the finished-good LOT (mirror R__Lots_Lot_Create) ----
+        -- ---- B2. Container: find the open box for this Item, else auto-open one
+        --      (mirror R__Lots_Container_Open). 0078: with a station, its OWN box,
+        --      else CLAIM an unowned one, else open one owned by the station.
+        --      UPDLOCK+HOLDLOCK so two stations cannot claim the same unowned box. ----
+        IF @StationLocationId IS NOT NULL
+        BEGIN
+            SELECT TOP 1 @ContainerId = Id FROM Lots.Container WITH (UPDLOCK, HOLDLOCK)
+            WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+              AND StationLocationId = @StationLocationId
+            ORDER BY OpenedAt, Id;
+            IF @ContainerId IS NULL
+            BEGIN
+                SELECT TOP 1 @ContainerId = Id FROM Lots.Container WITH (UPDLOCK, HOLDLOCK)
+                WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+                  AND StationLocationId IS NULL
+                ORDER BY OpenedAt, Id;
+                IF @ContainerId IS NOT NULL
+                BEGIN
+                    UPDATE Lots.Container SET StationLocationId = @StationLocationId WHERE Id = @ContainerId;
+                    SET @ClaimUnowned = 1;
+                END
+            END
+        END
+        ELSE
+            SELECT TOP 1 @ContainerId = Id FROM Lots.Container
+            WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+            ORDER BY OpenedAt, Id;
+
+        IF @ContainerId IS NULL
+        BEGIN
+            INSERT INTO Lots.Container (ItemId, ContainerConfigId, CurrentLocationId, ContainerStatusCodeId, OpenedAt, CreatedByUserId, StationLocationId)
+            VALUES (@FinishedGoodItemId, ISNULL(@NewBoxConfigId, @ContainerConfigId), @CellLocationId, 1, SYSUTCDATETIME(), @AppUserId, @StationLocationId);
+            SET @ContainerId = SCOPE_IDENTITY();
+            SET @OpenedContainer = 1;
+
+            SET @Activity = Audit.ufn_TruncateActivity(ISNULL(@CellCode, N'?') + N' ' + Audit.ufn_MidDot() + N' Container ' + Audit.ufn_MidDot() + N' Opened');
+            SET @NewValue = (SELECT JSON_QUERY((SELECT i.Id, i.PartNumber AS Code, i.Description AS Name FROM Parts.Item i WHERE i.Id = @FinishedGoodItemId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Item,
+                    ISNULL(@NewBoxConfigId, @ContainerConfigId) AS ContainerConfigId,
+                    JSON_QUERY((SELECT s.Id, s.Code, s.Name FROM Location.Location s WHERE s.Id = @StationLocationId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Station
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+            EXEC Audit.Audit_LogOperation @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = @CellLocationId,
+                @LogEntityTypeCode = N'Container', @EntityId = @ContainerId, @LogEventTypeCode = N'ContainerOpened',
+                @LogSeverityCode = N'Info', @Description = @Activity, @OldValue = NULL, @NewValue = @NewValue;
+        END
+
+        -- ---- B1. The container's finished-good LOT (v2.0, container-as-LOT D1).
+        --      The container was resolved first (B2 above). It has a LOT once its
+        --      first tray minted one: APPEND to it, whatever the LOT's status --
+        --      Good (normal), Hold (D10: a held skid keeps filling) or Closed (a
+        --      resumed rework container being topped up, spec 7.4). The container's
+        --      own Open status is what gates the tray (B2 only finds Open boxes).
+        --      No LOT yet (a new box, or a box opened before migration 0119 whose
+        --      trays carry their own LOTs -- it becomes MIXED): MINT one below and
+        --      hang it on the container. ----
+        SELECT @FinishedGoodLotId = c.LotId FROM Lots.Container c WITH (UPDLOCK, HOLDLOCK) WHERE c.Id = @ContainerId;
+        -- review M2: the line-wide path found the box without a lock; a Container_Complete
+        -- that committed in between must not receive this tray (-> CATCH, clean Status 0).
+        IF NOT EXISTS (SELECT 1 FROM Lots.Container WHERE Id = @ContainerId AND ContainerStatusCodeId = 1)
+            RAISERROR(N'The open container was completed while this tray was being recorded; record the tray again.', 16, 1);
+
+        IF @FinishedGoodLotId IS NOT NULL
+        BEGIN
+            SELECT @MintedName = l.LotName, @CrtActive = l.CrtActive FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK) WHERE l.Id = @FinishedGoodLotId;
+            SET @Appended = 1;
+            -- B5 materialized quantities grow with the pieces (mirror of the mint's 0 / @PieceCount).
+            -- review M5: a Closed container LOT (a resumed rework container) gains pieces
+            -- but no consumable inventory -- the same rule as ContainerRework_MovePieces.
+            UPDATE Lots.Lot
+            SET PieceCount = PieceCount + @PieceCount,
+                InventoryAvailable = InventoryAvailable
+                                   + CASE WHEN LotStatusId = @ClosedStatusId THEN 0 ELSE @PieceCount END,
+                UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
+            WHERE Id = @FinishedGoodLotId;
+        END
+        ELSE
+        BEGIN
+        -- Mint the finished-good LOT (mirror R__Lots_Lot_Create).
         -- Inline IdentifierSequence 'Lot' mint INSIDE the tran (rollback un-burns the
         -- counter, the point of B6); logic mirrors Lots.IdentifierSequence_Next.
         SELECT @SeqLast = s.LastValue + 1, @SeqEnd = s.EndingValue, @SeqFormat = s.FormatString
@@ -402,8 +508,12 @@ BEGIN
             NULL, NULL, NULL, NULL, NULL,
             NULL, NULL, @CellLocationId,
             0, @PieceCount,
-            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive, @MintShiftId, @PieceCount);
+            -- v2.0: ShiftId / MintedPieceCount stay NULL on a container LOT -- OEE good is
+            -- read from the trays (D5, D11), and NULL keeps the old tray-LOT branch of
+            -- Oee.ufn_ShiftGood from counting it.
+            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive, NULL, NULL);
         SET @FinishedGoodLotId = SCOPE_IDENTITY();
+        UPDATE Lots.Container SET LotId = @FinishedGoodLotId WHERE Id = @ContainerId;
 
         -- side effects mirror Lot_Create: status-history / closure self-row / first placement
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
@@ -423,56 +533,18 @@ BEGIN
         EXEC Audit.Audit_LogOperation @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = @CellLocationId,
             @LogEntityTypeCode = N'Lot', @EntityId = @FinishedGoodLotId, @LogEventTypeCode = N'LotCreated',
             @LogSeverityCode = N'Info', @Description = @Activity, @OldValue = NULL, @NewValue = @NewValue;
-
-        -- ---- B2. Container: find the open box for this Item, else auto-open one
-        --      (mirror R__Lots_Container_Open). 0078: with a station, its OWN box,
-        --      else CLAIM an unowned one, else open one owned by the station.
-        --      UPDLOCK+HOLDLOCK so two stations cannot claim the same unowned box. ----
-        IF @StationLocationId IS NOT NULL
-        BEGIN
-            SELECT TOP 1 @ContainerId = Id FROM Lots.Container WITH (UPDLOCK, HOLDLOCK)
-            WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
-              AND StationLocationId = @StationLocationId
-            ORDER BY OpenedAt, Id;
-            IF @ContainerId IS NULL
-            BEGIN
-                SELECT TOP 1 @ContainerId = Id FROM Lots.Container WITH (UPDLOCK, HOLDLOCK)
-                WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
-                  AND StationLocationId IS NULL
-                ORDER BY OpenedAt, Id;
-                IF @ContainerId IS NOT NULL
-                BEGIN
-                    UPDATE Lots.Container SET StationLocationId = @StationLocationId WHERE Id = @ContainerId;
-                    SET @ClaimUnowned = 1;
-                END
-            END
-        END
-        ELSE
-            SELECT TOP 1 @ContainerId = Id FROM Lots.Container
-            WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
-            ORDER BY OpenedAt, Id;
-
-        IF @ContainerId IS NULL
-        BEGIN
-            INSERT INTO Lots.Container (ItemId, ContainerConfigId, CurrentLocationId, ContainerStatusCodeId, OpenedAt, CreatedByUserId, StationLocationId)
-            VALUES (@FinishedGoodItemId, @ContainerConfigId, @CellLocationId, 1, SYSUTCDATETIME(), @AppUserId, @StationLocationId);
-            SET @ContainerId = SCOPE_IDENTITY();
-            SET @OpenedContainer = 1;
-
-            SET @Activity = Audit.ufn_TruncateActivity(ISNULL(@CellCode, N'?') + N' ' + Audit.ufn_MidDot() + N' Container ' + Audit.ufn_MidDot() + N' Opened');
-            SET @NewValue = (SELECT JSON_QUERY((SELECT i.Id, i.PartNumber AS Code, i.Description AS Name FROM Parts.Item i WHERE i.Id = @FinishedGoodItemId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Item,
-                    @ContainerConfigId AS ContainerConfigId,
-                    JSON_QUERY((SELECT s.Id, s.Code, s.Name FROM Location.Location s WHERE s.Id = @StationLocationId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Station
-                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-            EXEC Audit.Audit_LogOperation @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = @CellLocationId,
-                @LogEntityTypeCode = N'Container', @EntityId = @ContainerId, @LogEventTypeCode = N'ContainerOpened',
-                @LogSeverityCode = N'Info', @Description = @Activity, @OldValue = NULL, @NewValue = @NewValue;
         END
 
-        -- ---- B3. Insert the tray (tray = LOT; FinishedGoodLotId links the two 1:1) ----
+        -- ---- B3. Insert the tray (v2.0: the tray carries NO LOT of its own --
+        --      FinishedGoodLotId NULL; the LOT is the container's). Stamped ONCE with
+        --      the shift and station it passed the camera in and a fixed minted count
+        --      (D5, D11): OEE good per shift reads these, never PartsClosedCount, which
+        --      repack scrap / moves lower afterwards. ----
         SET @TrayPosition = ISNULL((SELECT MAX(TrayPosition) FROM Lots.ContainerTray WHERE ContainerId = @ContainerId), 0) + 1;
-        INSERT INTO Lots.ContainerTray (ContainerId, TrayPosition, PartsClosedCount, FinishedGoodLotId, ClosedAt, ClosedByUserId, ClosureMethod)
-        VALUES (@ContainerId, @TrayPosition, @PieceCount, @FinishedGoodLotId, SYSUTCDATETIME(), @AppUserId, @ClosureMethod);
+        INSERT INTO Lots.ContainerTray (ContainerId, TrayPosition, PartsClosedCount, FinishedGoodLotId, ClosedAt, ClosedByUserId, ClosureMethod,
+                                        ShiftId, ClosedAtTerminalId, MintedPieceCount)
+        VALUES (@ContainerId, @TrayPosition, @PieceCount, NULL, SYSUTCDATETIME(), @AppUserId, @ClosureMethod,
+                @MintShiftId, @TerminalLocationId, @PieceCount);
         SET @ContainerTrayId = SCOPE_IDENTITY();
 
         -- ---- B4. Consume each BOM line FIFO into the FG LOT (mirror
@@ -526,8 +598,16 @@ BEGIN
                      @Take, @CellLocationId, @AppUserId, @TerminalLocationId, @ContainerTrayId, SYSUTCDATETIME());
 
                 -- Consumption genealogy edge (RelationshipTypeId=3) + closure ancestors -> FG LOT.
-                INSERT INTO Lots.LotGenealogy (ParentLotId, ChildLotId, RelationshipTypeId, PieceCount, EventUserId, TerminalLocationId)
-                VALUES (@SrcLotId, @FinishedGoodLotId, 3, @Take, @AppUserId, @TerminalLocationId);
+                -- v2.0 (D4): ONE edge per (source LOT, container LOT). A later tray that
+                -- draws the same source adds its pieces to that edge -- a deliberate
+                -- exception to append-only for LotGenealogy; the per-draw history is the
+                -- ConsumptionEvent row above (TrayId names the tray).
+                UPDATE Lots.LotGenealogy
+                SET PieceCount = ISNULL(PieceCount, 0) + @Take
+                WHERE ParentLotId = @SrcLotId AND ChildLotId = @FinishedGoodLotId AND RelationshipTypeId = 3;
+                IF @@ROWCOUNT = 0
+                    INSERT INTO Lots.LotGenealogy (ParentLotId, ChildLotId, RelationshipTypeId, PieceCount, EventUserId, TerminalLocationId)
+                    VALUES (@SrcLotId, @FinishedGoodLotId, 3, @Take, @AppUserId, @TerminalLocationId);
                 INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth)
                 SELECT c.AncestorLotId, @FinishedGoodLotId, c.Depth + 1
                 FROM Lots.LotGenealogyClosure c
@@ -553,9 +633,11 @@ BEGIN
         IF @CrtActive = 0
         BEGIN
             DECLARE @ConsumedLotIdsCsv NVARCHAR(MAX) = (
-                SELECT STRING_AGG(CAST(g.ParentLotId AS NVARCHAR(20)), N',')
-                FROM Lots.LotGenealogy g
-                WHERE g.ChildLotId = @FinishedGoodLotId AND g.RelationshipTypeId = 3);
+                -- v2.0 (review M1): THIS tray's draws (spec 7.1 step 4). A validated container
+                -- LOT is not re-tagged by a CRT source an earlier tray drew.
+                SELECT STRING_AGG(CAST(x.SourceLotId AS NVARCHAR(20)), N',')
+                FROM (SELECT DISTINCT ce.SourceLotId FROM Workorder.ConsumptionEvent ce
+                      WHERE ce.TrayId = @ContainerTrayId AND ce.ProducedLotId = @FinishedGoodLotId) x);
             SET @CrtActive = (SELECT CrtActive FROM Lots.ufn_CrtForMint(@FinishedGoodItemId,
                 @TerminalLocationId, @ConsumedLotIdsCsv));
             IF @CrtActive = 1
@@ -565,6 +647,10 @@ BEGIN
         -- ---- B5. Container-full flag (delegation: DO NOT complete the container here;
         --      the view calls Lots.Container_Complete when @ContainerFull = 1) ----
         SET @Accum  = (SELECT SUM(PartsClosedCount) FROM Lots.ContainerTray WHERE ContainerId = @ContainerId AND ClosedAt IS NOT NULL);
+        -- 1.7: the target is the box actually filled (its own pack-out version).
+        SELECT @TraysPerContainer = cc.TraysPerContainer, @PartsPerTray = cc.PartsPerTray
+        FROM Lots.Container c JOIN Parts.ContainerConfig cc ON cc.Id = c.ContainerConfigId
+        WHERE c.Id = @ContainerId;
         SET @Target = CASE WHEN @TraysPerContainer IS NOT NULL AND @PartsPerTray IS NOT NULL
                            THEN @TraysPerContainer * @PartsPerTray ELSE NULL END;
         SET @ContainerFull = CASE WHEN @Target IS NOT NULL AND ISNULL(@Accum, 0) >= @Target THEN 1 ELSE 0 END;
@@ -586,7 +672,8 @@ BEGIN
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'Tray completed; finished-good LOT ' + @MintedName + N' minted.'
+        SET @Message = N'Tray completed; finished-good LOT ' + @MintedName
+                     + CASE WHEN @Appended = 1 THEN N' (container LOT) now ' + CAST(@Accum AS NVARCHAR(20)) + N' pcs.' ELSE N' minted for the container.' END
                      + CASE WHEN @ContainerFull = 1 THEN N' Container is full.' ELSE N'' END;
         GOTO Reply;
     END TRY

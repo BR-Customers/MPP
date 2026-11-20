@@ -3,6 +3,7 @@
 -- Object:      Oee.ufn_ShiftGood
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-29
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D5 / D11: M&A good is also read from container-shape TRAYS (ShiftId + fixed MintedPieceCount at the station); container LOTs are never stamped.
 -- Version:     1.1
 -- Description: Good pieces made in one runtime shift, by where they are booked
 --              (OEE dashboard spec
@@ -97,6 +98,26 @@ RETURN
         INNER JOIN Parts.ItemType it      ON it.Id = i.ItemTypeId AND it.Code = N'FinishedGood'
         CROSS APPLY Oee.ufn_AreaFamily(l.CreatedAtTerminalId) af
         WHERE l.ShiftId = @ShiftId
+          AND af.AreaFamily = N'ma'
+
+        UNION ALL
+
+        -- M&A (container-as-LOT, migration 0119, D5 / D11): one finished-good LOT per
+        -- container, so good is the TRAYS the shift ran through the camera -- each
+        -- stamped once at tray close with ShiftId, the station and a fixed
+        -- MintedPieceCount (repack scrap / moves lower PartsClosedCount later, never
+        -- this). A container LOT carries no ShiftId, so the branch above never sees it;
+        -- a pre-0119 tray carries no ShiftId, so this branch never sees it. Rework-move
+        -- trays leave ShiftId NULL: not production.
+        SELECT af.PlacementLocationId, af.PlacementIsArea, af.AreaFamily,
+               c.ItemId, CAST(NULL AS BIGINT), t.ClosedAt,
+               CAST(ISNULL(t.MintedPieceCount, 0) AS BIGINT)
+        FROM Lots.ContainerTray t
+        INNER JOIN Lots.Container c  ON c.Id  = t.ContainerId
+        INNER JOIN Parts.Item i      ON i.Id  = c.ItemId
+        INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId AND it.Code = N'FinishedGood'
+        CROSS APPLY Oee.ufn_AreaFamily(t.ClosedAtTerminalId) af
+        WHERE t.ShiftId = @ShiftId
           AND af.AreaFamily = N'ma'
     )
     SELECT UnitLocationId, PlacementIsArea, AreaFamily, ItemId, ToolId,

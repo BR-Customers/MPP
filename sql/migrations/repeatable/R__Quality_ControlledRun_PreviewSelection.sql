@@ -2,6 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_PreviewSelection.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
+-- Version:     1.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8 / D9: reads the container's LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers; a container LOT is in a time window by its TRAYS (ClosedAt, ClosedAtTerminalId), not Lot.CreatedAt.
 -- Version:     1.0
 -- Description: READ. The candidate list for a super-lot, before anything is
 --              written. Union of: the suspect (anchor) LOT; LOTs of a part
@@ -59,7 +60,25 @@ BEGIN
         WHERE l.ItemId = @ItemId
           AND l.CreatedAt >= @FromUtc AND l.CreatedAt <= @ToUtc
           AND (@LocationId IS NULL OR l.CreatedAtTerminalId IN (SELECT Id FROM Descendants))
+          AND NOT EXISTS (SELECT 1 FROM Lots.Container c0 WHERE c0.LotId = l.Id)   -- container LOTs: by tray, below
           AND NOT EXISTS (SELECT 1 FROM @Cand x WHERE x.LotId = l.Id)
+        OPTION (MAXRECURSION 8);
+
+        -- D9 (container-as-LOT 0119): a container LOT is produced in the window when any
+        -- of its trays passed the camera inside it, on a terminal under @LocationId.
+        ;WITH Descendants AS (
+            SELECT @LocationId AS Id WHERE @LocationId IS NOT NULL
+            UNION ALL
+            SELECT c.Id FROM Location.Location c INNER JOIN Descendants d ON c.ParentLocationId = d.Id
+        )
+        INSERT INTO @Cand (LotId, FoundRank)
+        SELECT DISTINCT c.LotId, 2
+        FROM Lots.Container c
+        INNER JOIN Lots.ContainerTray t ON t.ContainerId = c.Id
+        WHERE c.LotId IS NOT NULL AND c.ItemId = @ItemId
+          AND t.ClosedAt >= @FromUtc AND t.ClosedAt <= @ToUtc
+          AND (@LocationId IS NULL OR t.ClosedAtTerminalId IN (SELECT Id FROM Descendants))
+          AND NOT EXISTS (SELECT 1 FROM @Cand x WHERE x.LotId = c.LotId)
         OPTION (MAXRECURSION 8);
     END
 
@@ -91,7 +110,7 @@ BEGIN
         SELECT MIN(c.FoundRank) AS FoundRank
         FROM @Cand c
         WHERE (r.ContainerId IS NULL AND c.LotId = r.LotId)
-           OR (r.ContainerId IS NOT NULL AND c.LotId IN (SELECT t.FinishedGoodLotId FROM Lots.ContainerTray t WHERE t.ContainerId = r.ContainerId))
+           OR (r.ContainerId IS NOT NULL AND c.LotId IN (SELECT cl.LotId FROM Lots.ufn_ContainerLots(r.ContainerId) cl))   -- 0119
     ) fr
     ORDER BY r.ProducedAt ASC, r.ContainerId ASC, r.LotId ASC;
 END;

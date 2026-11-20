@@ -4,4 +4,5 @@ EXEC Parts.ContainerConfig_JudgeWeight
     @Weight = :weight,
     @ScaleUnder = :scaleUnder,
     @ScaleOver = :scaleOver,
-    @ScaleOk = :scaleOk
+    @ScaleOk = :scaleOk,
+    @TerminalLocationId = :terminalLocationId

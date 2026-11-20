@@ -2,6 +2,7 @@
 -- Procedure:   Workorder.ScaleStation_GetPressLog
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - 7.6: a press logged against a container LOT finds its tray via the payload containerTrayId; older presses resolve through the tray's own LOT.
 -- Version:     1.1
 --
 -- Description:
@@ -64,8 +65,13 @@ BEGIN
     CROSS APPLY (SELECT CASE WHEN ISJSON(il.RequestPayload) = 1 THEN il.RequestPayload END AS Body) j
     LEFT JOIN Lots.Lot l ON l.Id = il.LotId
     OUTER APPLY (
+        -- 0119: a container-LOT press names its tray in the payload (containerTrayId);
+        -- an older press resolves through the tray's own LOT.
         SELECT TOP 1 ct.ContainerId, ct.TrayPosition
-        FROM Lots.ContainerTray ct WHERE il.LotId IS NOT NULL AND ct.FinishedGoodLotId = il.LotId
+        FROM Lots.ContainerTray ct
+        WHERE il.LotId IS NOT NULL
+          AND (ct.Id = TRY_CAST(JSON_VALUE(j.Body, '$.containerTrayId') AS BIGINT)
+               OR (JSON_VALUE(j.Body, '$.containerTrayId') IS NULL AND ct.FinishedGoodLotId = il.LotId))
         ORDER BY ct.Id DESC
     ) tr
     LEFT JOIN Lots.Container c ON c.Id = tr.ContainerId

@@ -42,7 +42,7 @@ BEGIN
 END
 -- 2-tray container config (target = 2 parts => two FG LOTs).
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Fg AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Fg, 2, 1, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Fg, 2, 1, 0, N'ByCount', @Now);
 -- FG item eligible at the cell (Assembly_CompleteTray mirrors Lot_Create eligibility; see sibling
 -- test 0028_PlantFloor_Assembly/092_Assembly_CompleteTray.sql -- not in the brief's listing, added
 -- here because Assembly_CompleteTray otherwise rejects with "Finished-good Item is not eligible at this cell.").
@@ -66,7 +66,10 @@ DECLARE @Fg2 BIGINT = (SELECT FinishedGoodLotId FROM @AT); DECLARE @Full BIT = (
 DECLARE @InvBefore TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3), LotStatusCode NVARCHAR(20));
 INSERT INTO @InvBefore EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 DECLARE @InvB NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @InvBefore WHERE LotId IN (@Fg1, @Fg2));
-EXEC test.Assert_IsEqual @TestName = N'[FGClose] both FG LOTs on-hand before complete', @Expected = N'2', @Actual = @InvB;
+-- container-as-LOT (0119): both trays went into ONE container LOT (@Fg1 = @Fg2).
+EXEC test.Assert_IsEqual @TestName = N'[FGClose] the container LOT is on-hand before complete', @Expected = N'1', @Actual = @InvB;
+DECLARE @SameLot NVARCHAR(10) = CASE WHEN @Fg1 = @Fg2 THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[FGClose] both trays share the container LOT', @Expected = N'1', @Actual = @SameLot;
 
 -- ---- Act: complete the (full) container ----
 DECLARE @CMP TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
@@ -105,7 +108,7 @@ DECLARE @Now2 DATETIME2(3) = SYSUTCDATETIME();
 DECLARE @Cell2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'P21-FGC-NUL') INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId) VALUES (3, N'P21-FGC-NUL', N'FAT21 null-tray part', 1, @Now2, 1);
 DECLARE @Nul BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-NUL');
-IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Nul AND DeprecatedAt IS NULL) INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Nul, 1, 1, 0, N'ByCount', @Now2);
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Nul AND DeprecatedAt IS NULL) INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Nul, 1, 1, 0, N'ByCount', @Now2);
 -- ContainerTray_Close needs a published BOM + staged component (reuse P21-FGC-CHILD stock at cell).
 DECLARE @NChild BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD');
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId = @Nul AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)

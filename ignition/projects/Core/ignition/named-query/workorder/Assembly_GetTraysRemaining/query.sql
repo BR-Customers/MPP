@@ -1,1 +1,1 @@
-EXEC Workorder.Assembly_GetTraysRemaining @CellLocationId = :cellLocationId, @FinishedGoodItemId = :finishedGoodItemId, @ClosureMethod = :closureMethod
+EXEC Workorder.Assembly_GetTraysRemaining @CellLocationId = :cellLocationId, @FinishedGoodItemId = :finishedGoodItemId, @ClosureMethod = :closureMethod, @TerminalLocationId = :terminalLocationId

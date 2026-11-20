@@ -5,55 +5,112 @@
     "partLabel": "",
     "itemId": null,
     "partOptions": [],
-    "history": {
-      "options": {
-        "ByCount": [],
-        "ByWeight": [],
-        "ByVision": []
-      },
-      "rows": {}
-    },
     "editDraft": {
       "ByCount": {
-        "Id": null,
+        "PackOutId": null,
         "ItemId": null,
         "ClosureMethod": "ByCount",
+        "Name": "",
         "Active": false,
+        "IsDefault": false,
+        "VersionNumber": null,
         "PartsPerTray": "",
         "TraysPerContainer": "",
+        "TargetWeight": "",
+        "ToleranceWeight": "",
         "DunnageCode": "",
         "CustomerCode": "",
-        "IsSerialized": false,
-        "TargetWeight": "",
-        "ToleranceWeight": ""
+        "IsSerialized": false
       },
       "ByWeight": {
-        "Id": null,
+        "PackOutId": null,
         "ItemId": null,
         "ClosureMethod": "ByWeight",
+        "Name": "",
         "Active": false,
+        "IsDefault": false,
+        "VersionNumber": null,
         "PartsPerTray": "",
         "TraysPerContainer": "",
+        "TargetWeight": "",
+        "ToleranceWeight": "",
         "DunnageCode": "",
         "CustomerCode": "",
-        "IsSerialized": false,
-        "TargetWeight": "",
-        "ToleranceWeight": ""
+        "IsSerialized": false
       },
       "ByVision": {
-        "Id": null,
+        "PackOutId": null,
         "ItemId": null,
         "ClosureMethod": "ByVision",
+        "Name": "",
         "Active": false,
+        "IsDefault": false,
+        "VersionNumber": null,
         "PartsPerTray": "",
         "TraysPerContainer": "",
+        "TargetWeight": "",
+        "ToleranceWeight": "",
         "DunnageCode": "",
         "CustomerCode": "",
-        "IsSerialized": false,
-        "TargetWeight": "",
-        "ToleranceWeight": ""
+        "IsSerialized": false
       }
-    }
+    },
+    "loaded": {
+      "ByCount": {
+        "PackOutId": null,
+        "ItemId": null,
+        "ClosureMethod": "ByCount",
+        "Name": "",
+        "Active": false,
+        "IsDefault": false,
+        "VersionNumber": null,
+        "PartsPerTray": "",
+        "TraysPerContainer": "",
+        "TargetWeight": "",
+        "ToleranceWeight": "",
+        "DunnageCode": "",
+        "CustomerCode": "",
+        "IsSerialized": false
+      },
+      "ByWeight": {
+        "PackOutId": null,
+        "ItemId": null,
+        "ClosureMethod": "ByWeight",
+        "Name": "",
+        "Active": false,
+        "IsDefault": false,
+        "VersionNumber": null,
+        "PartsPerTray": "",
+        "TraysPerContainer": "",
+        "TargetWeight": "",
+        "ToleranceWeight": "",
+        "DunnageCode": "",
+        "CustomerCode": "",
+        "IsSerialized": false
+      },
+      "ByVision": {
+        "PackOutId": null,
+        "ItemId": null,
+        "ClosureMethod": "ByVision",
+        "Name": "",
+        "Active": false,
+        "IsDefault": false,
+        "VersionNumber": null,
+        "PartsPerTray": "",
+        "TraysPerContainer": "",
+        "TargetWeight": "",
+        "ToleranceWeight": "",
+        "DunnageCode": "",
+        "CustomerCode": "",
+        "IsSerialized": false
+      }
+    },
+    "packOuts": {
+      "ByCount": [],
+      "ByWeight": [],
+      "ByVision": []
+    },
+    "refreshToken": 0
   },
   "params": {
     "itemId": null,
@@ -112,34 +169,41 @@
         {
           "name": "loadPart",
           "params": [],
-          "script": "\titemId = self.view.custom.itemId\n\tself.view.custom.activeField = \"\"\n\tself.view.custom.editDraft = BlueRidge.Parts.ContainerConfig.getDraftForItem(itemId)\n\tself.view.custom.history = BlueRidge.Parts.ContainerConfig.getHistoryForItem(itemId)\n\tpn = \"\"\n\tif itemId:\n\t\titem = BlueRidge.Parts.Item.getOneOrEmpty(itemId) or {}\n\t\tpn = \"%s\" % (item[\"PartNumber\"] or \"\")\n\tself.view.custom.partLabel = pn"
+          "script": "\tt = self.session.custom.terminal\n\ttid = t[\"terminalLocationId\"] if t else None\n\titemId = self.view.custom.itemId\n\tself.view.custom.activeField = \"\"\n\tpackOuts = BlueRidge.Parts.ContainerConfig.listForItem(itemId, tid)\n\tdraft = BlueRidge.Parts.PackOutPopup.draftForItem(itemId, packOuts)\n\tself.view.custom.packOuts = packOuts\n\tself.view.custom.loaded = system.util.jsonDecode(system.util.jsonEncode(draft))\n\tself.view.custom.editDraft = draft\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\tpn = \"\"\n\tif itemId:\n\t\titem = BlueRidge.Parts.Item.getOneOrEmpty(itemId) or {}\n\t\tpn = \"%s\" % (item[\"PartNumber\"] or \"\")\n\tself.view.custom.partLabel = pn"
         },
         {
           "name": "addMethod",
           "params": [
             "method"
           ],
-          "script": "\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.editDraft)) or {}\n\tblock = draft.get(method) or {}\n\tblock[\"Active\"] = True\n\tblock[\"ClosureMethod\"] = method\n\tblock[\"ItemId\"] = self.view.custom.itemId\n\tdraft[method] = block\n\tself.view.custom.editDraft = draft\n\tself.view.custom.activeField = method + \".PartsPerTray\""
+          "script": "\t# + New / Add: a blank named pack-out for this method in the form.\n\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.editDraft)) or {}\n\tblock = BlueRidge.Parts.PackOutPopup.blankBlock(self.view.custom.itemId, method)\n\tblock[\"Active\"] = True\n\tdraft[method] = block\n\tself.view.custom.editDraft = draft\n\tself.view.custom.activeField = method + \".PartsPerTray\""
         },
         {
-          "name": "clearMethod",
+          "name": "pickPackOut",
+          "params": [
+            "method",
+            "packOutId"
+          ],
+          "script": "\tt = self.session.custom.terminal\n\ttid = t[\"terminalLocationId\"] if t else None\n\t# A pack-out button: the running one just loads into the form; another one is\n\t# first selected for this terminal (SQL refuses while a box is open).\n\trows = (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.packOuts) or {}).get(method) or []\n\trow = ([r for r in rows if r.get(\"PackOutId\") == packOutId] or [None])[0]\n\tif row is None:\n\t\treturn\n\tif not row.get(\"IsRunning\"):\n\t\tres = BlueRidge.Parts.ContainerConfig.select(tid, packOutId, BlueRidge.Common.Session.currentAppUserId(self.session)) or {}\n\t\tif not res.get(\"Status\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pack-out not changed\", res.get(\"Message\") or \"Unknown error\", \"warning\")\n\t\t\treturn\n\t\tBlueRidge.Common.Notify.toast(\"Pack-out changed\", res.get(\"Message\") or \"\", \"success\")\n\t\tsystem.perspective.sendMessage(\"packOutChanged\", payload={\"itemId\": self.view.custom.itemId}, scope=\"page\")\n\tself.loadPart()\n\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.editDraft)) or {}\n\tdraft[method] = BlueRidge.Parts.PackOutPopup.blockFromRow(self.view.custom.itemId, row)\n\tloaded = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.loaded)) or {}\n\tloaded[method] = dict(draft[method])\n\tself.view.custom.loaded = loaded\n\tself.view.custom.editDraft = draft"
+        },
+        {
+          "name": "makeDefault",
           "params": [
             "method"
           ],
-          "script": "\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.editDraft)) or {}\n\tcur = draft.get(method) or {}\n\tdraft[method] = {\"Id\": cur.get(\"Id\"), \"ItemId\": self.view.custom.itemId, \"ClosureMethod\": method, \"Active\": False, \"PartsPerTray\": \"\", \"TraysPerContainer\": \"\", \"DunnageCode\": \"\", \"CustomerCode\": \"\", \"IsSerialized\": False, \"TargetWeight\": \"\", \"ToleranceWeight\": \"\"}\n\tself.view.custom.editDraft = draft\n\tif (self.view.custom.activeField or \"\").startswith(method + \".\"):\n\t\tself.view.custom.activeField = \"\""
+          "script": "\tpid = self.view.custom.editDraft[method][\"PackOutId\"]\n\tres = BlueRidge.Parts.ContainerConfig.setDefault(pid, BlueRidge.Common.Session.currentAppUserId(self.session)) or {}\n\tok = bool(res.get(\"Status\"))\n\tBlueRidge.Common.Notify.toast(\"Default pack-out\" if ok else \"Default not changed\", res.get(\"Message\") or \"\", \"success\" if ok else \"warning\")\n\tif ok:\n\t\tsystem.perspective.sendMessage(\"packOutChanged\", payload={\"itemId\": self.view.custom.itemId}, scope=\"page\")\n\t\tself.loadPart()"
         },
         {
-          "name": "applyHistory",
+          "name": "removePackOut",
           "params": [
-            "method",
-            "key"
+            "method"
           ],
-          "script": "\thist = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.history)) or {}\n\trow = (hist.get(\"rows\") or {}).get(\"%s\" % key)\n\tif not row:\n\t\treturn\n\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.editDraft)) or {}\n\tcur = draft.get(method) or {}\n\tblock = dict(row)\n\tblock[\"Id\"] = cur.get(\"Id\")\n\tblock[\"ItemId\"] = self.view.custom.itemId\n\tblock[\"ClosureMethod\"] = method\n\tblock[\"Active\"] = True\n\tdraft[method] = block\n\tself.view.custom.editDraft = draft\n\tself.view.custom.activeField = \"\"\n\tBlueRidge.Common.Notify.toast(\"Previous pack-out loaded\", \"Check the values, then press Save to apply.\", \"info\")"
+          "script": "\tpid = self.view.custom.editDraft[method][\"PackOutId\"]\n\tres = BlueRidge.Parts.ContainerConfig.deprecate(pid, BlueRidge.Common.Session.currentAppUserId(self.session)) or {}\n\tok = bool(res.get(\"Status\"))\n\tBlueRidge.Common.Notify.toast(\"Pack-out removed\" if ok else \"Pack-out not removed\", res.get(\"Message\") or \"\", \"success\" if ok else \"warning\")\n\tif ok:\n\t\tsystem.perspective.sendMessage(\"packOutChanged\", payload={\"itemId\": self.view.custom.itemId}, scope=\"page\")\n\t\tself.loadPart()"
         },
         {
           "name": "save",
           "params": [],
-          "script": "\tif not self.view.custom.itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No part selected\", \"Pick the part this pack-out is for.\", \"warning\")\n\t\treturn\n\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tres = BlueRidge.Parts.ContainerConfig.saveDraft(self.view.custom.itemId, self.view.custom.editDraft, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Common.Notify.toast(\"Pack-out saved\", self.view.custom.partLabel, \"success\")\n\t\tsystem.perspective.sendMessage(\"packOutChanged\", payload={\"itemId\": self.view.custom.itemId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(\"mpp-packout-edit\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Pack-out not saved\", (res or {}).get(\"Message\") or \"Unknown error\", \"error\")\n\t\tself.view.custom.busyUntil = 0\n\t\tself.loadPart()"
+          "script": "\tif not self.view.custom.itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No part selected\", \"Pick the part this pack-out is for.\", \"warning\")\n\t\treturn\n\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tres = BlueRidge.Parts.PackOutPopup.saveDraft(self.view.custom.itemId, self.view.custom.editDraft, self.view.custom.loaded, BlueRidge.Common.Session.currentAppUserId(self.session))\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Common.Notify.toast(\"Pack-out saved\", self.view.custom.partLabel, \"success\")\n\t\tsystem.perspective.sendMessage(\"packOutChanged\", payload={\"itemId\": self.view.custom.itemId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(\"mpp-packout-edit\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Pack-out not saved\", (res or {}).get(\"Message\") or \"Unknown error\", \"error\")\n\t\tself.view.custom.busyUntil = 0"
         }
       ],
       "extensionFunctions": null,
@@ -150,6 +214,13 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\taf = self.view.custom.activeField or \"\"\n\tif \".\" not in af:\n\t\treturn\n\tmethod, fld = af.split(\".\", 1)\n\ta = payload.get(\"action\") if payload else None\n\t# Read and write ONLY the one leaf: a whole-draft rewrite per key lets\n\t# fast presses overwrite each other and scrambles the digits.\n\tblock = self.view.custom.editDraft[method]\n\tcur = \"%s\" % (block[fld] or \"\")\n\tif a == \"key\":\n\t\tk = \"%s\" % payload.get(\"key\")\n\t\tif k == \".\" and (fld not in (\"TargetWeight\", \"ToleranceWeight\") or \".\" in cur):\n\t\t\treturn\n\t\tif len(cur) < 10:\n\t\t\tcur = cur + k\n\telif a == \"backspace\":\n\t\tcur = cur[:-1]\n\telif a == \"clear\":\n\t\tcur = \"\"\n\telse:\n\t\treturn\n\tblock[fld] = cur"
+        },
+        {
+          "messageType": "packOutPicked",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"method\") and payload.get(\"packOutId\"):\n\t\tself.view.rootContainer.pickPackOut(payload.get(\"method\"), payload.get(\"packOutId\"))"
         }
       ]
     },
@@ -350,61 +421,15 @@
                         }
                       },
                       {
-                        "type": "ia.input.dropdown",
-                        "meta": {
-                          "name": "History_ByCount"
-                        },
-                        "position": {
-                          "basis": "420px",
-                          "shrink": 1
-                        },
-                        "props": {
-                          "value": null,
-                          "options": [],
-                          "showClearIcon": false,
-                          "placeholder": {
-                            "text": "Load a previous pack-out..."
-                          },
-                          "style": {
-                            "classes": "pf-field-select",
-                            "height": "40px"
-                          }
-                        },
-                        "propConfig": {
-                          "position.display": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "len({view.custom.history.options.ByCount}) > 0"
-                              }
-                            }
-                          },
-                          "props.options": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.history.options.ByCount"
-                              }
-                            }
-                          },
-                          "props.value": {
-                            "onChange": {
-                              "enabled": true,
-                              "script": "\tif currentValue is None or currentValue.value is None:\n\t\treturn\n\tself.view.rootContainer.applyHistory(\"ByCount\", currentValue.value)\n\tself.props.value = None"
-                            }
-                          }
-                        }
-                      },
-                      {
                         "type": "ia.input.button",
                         "meta": {
-                          "name": "Btn_Clear_ByCount"
+                          "name": "BtnNew_ByCount"
                         },
                         "position": {
                           "shrink": 0
                         },
                         "props": {
-                          "text": "Clear",
+                          "text": "+ New",
                           "style": {
                             "classes": "pf-btn pf-btn-secondary",
                             "minHeight": "36px"
@@ -415,7 +440,7 @@
                             "binding": {
                               "type": "expr",
                               "config": {
-                                "expression": "{view.custom.editDraft.ByCount.Active} = true"
+                                "expression": "len({view.custom.packOuts.ByCount}) > 0"
                               }
                             }
                           }
@@ -424,7 +449,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tself.view.rootContainer.clearMethod(\"ByCount\")"
+                                "script": "\tself.view.rootContainer.addMethod(\"ByCount\")"
                               },
                               "scope": "G",
                               "type": "script"
@@ -433,6 +458,52 @@
                         }
                       }
                     ]
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "PackOuts_ByCount"
+                    },
+                    "position": {
+                      "basis": "64px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PackOutButton",
+                      "instances": [],
+                      "direction": "row",
+                      "alignItems": "stretch",
+                      "justify": "flex-start",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": {
+                        "basis": "230px",
+                        "shrink": 0,
+                        "grow": 0
+                      },
+                      "style": {
+                        "gap": "8px",
+                        "overflowX": "auto"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.packOuts.ByCount}) > 0"
+                          }
+                        }
+                      },
+                      "props.instances": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Parts.PackOutPopup.buttonInstances\", 0, {view.custom.itemId}, \"ByCount\", {session.custom.terminal.terminalLocationId}, {view.custom.refreshToken})"
+                          }
+                        }
+                      }
+                    }
                   },
                   {
                     "type": "ia.container.flex",
@@ -461,6 +532,73 @@
                       }
                     },
                     "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByCount_Name"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByCount_Name"
+                            },
+                            "props": {
+                              "text": "Name",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByCount_Name"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "placeholder": "e.g. Tote",
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "200px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByCount.Name"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
                       {
                         "type": "ia.container.flex",
                         "meta": {
@@ -732,6 +870,133 @@
                   {
                     "type": "ia.container.flex",
                     "meta": {
+                      "name": "ActionsRow_ByCount"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "12px"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.editDraft.ByCount.Active} = true"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Editing_ByCount"
+                        },
+                        "position": {
+                          "grow": 1,
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "classes": "pf-inv-sub"
+                          }
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if(isNull({view.custom.editDraft.ByCount.PackOutId}), \"New pack-out: give it a name, then Save\", \"Editing \" + {view.custom.editDraft.ByCount.Name} + \" (v\" + toStr({view.custom.editDraft.ByCount.VersionNumber}) + \"). Changed numbers save as a new version; open boxes keep theirs.\")"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnDefault_ByCount"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Make default",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "36px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "!isNull({view.custom.editDraft.ByCount.PackOutId}) && !({view.custom.editDraft.ByCount.IsDefault} = true)"
+                              }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.makeDefault(\"ByCount\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnRemove_ByCount"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Remove",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "36px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "!isNull({view.custom.editDraft.ByCount.PackOutId})"
+                              }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.removePackOut(\"ByCount\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
                       "name": "AddRow_ByCount"
                     },
                     "position": {
@@ -748,7 +1013,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "!({view.custom.editDraft.ByCount.Active} = true)"
+                            "expression": "!({view.custom.editDraft.ByCount.Active} = true) && len({view.custom.packOuts.ByCount}) = 0"
                           }
                         }
                       }
@@ -849,61 +1114,15 @@
                         }
                       },
                       {
-                        "type": "ia.input.dropdown",
-                        "meta": {
-                          "name": "History_ByWeight"
-                        },
-                        "position": {
-                          "basis": "420px",
-                          "shrink": 1
-                        },
-                        "props": {
-                          "value": null,
-                          "options": [],
-                          "showClearIcon": false,
-                          "placeholder": {
-                            "text": "Load a previous pack-out..."
-                          },
-                          "style": {
-                            "classes": "pf-field-select",
-                            "height": "40px"
-                          }
-                        },
-                        "propConfig": {
-                          "position.display": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "len({view.custom.history.options.ByWeight}) > 0"
-                              }
-                            }
-                          },
-                          "props.options": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.history.options.ByWeight"
-                              }
-                            }
-                          },
-                          "props.value": {
-                            "onChange": {
-                              "enabled": true,
-                              "script": "\tif currentValue is None or currentValue.value is None:\n\t\treturn\n\tself.view.rootContainer.applyHistory(\"ByWeight\", currentValue.value)\n\tself.props.value = None"
-                            }
-                          }
-                        }
-                      },
-                      {
                         "type": "ia.input.button",
                         "meta": {
-                          "name": "Btn_Clear_ByWeight"
+                          "name": "BtnNew_ByWeight"
                         },
                         "position": {
                           "shrink": 0
                         },
                         "props": {
-                          "text": "Clear",
+                          "text": "+ New",
                           "style": {
                             "classes": "pf-btn pf-btn-secondary",
                             "minHeight": "36px"
@@ -914,7 +1133,7 @@
                             "binding": {
                               "type": "expr",
                               "config": {
-                                "expression": "{view.custom.editDraft.ByWeight.Active} = true"
+                                "expression": "len({view.custom.packOuts.ByWeight}) > 0"
                               }
                             }
                           }
@@ -923,7 +1142,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tself.view.rootContainer.clearMethod(\"ByWeight\")"
+                                "script": "\tself.view.rootContainer.addMethod(\"ByWeight\")"
                               },
                               "scope": "G",
                               "type": "script"
@@ -932,6 +1151,52 @@
                         }
                       }
                     ]
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "PackOuts_ByWeight"
+                    },
+                    "position": {
+                      "basis": "64px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PackOutButton",
+                      "instances": [],
+                      "direction": "row",
+                      "alignItems": "stretch",
+                      "justify": "flex-start",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": {
+                        "basis": "230px",
+                        "shrink": 0,
+                        "grow": 0
+                      },
+                      "style": {
+                        "gap": "8px",
+                        "overflowX": "auto"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.packOuts.ByWeight}) > 0"
+                          }
+                        }
+                      },
+                      "props.instances": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Parts.PackOutPopup.buttonInstances\", 0, {view.custom.itemId}, \"ByWeight\", {session.custom.terminal.terminalLocationId}, {view.custom.refreshToken})"
+                          }
+                        }
+                      }
+                    }
                   },
                   {
                     "type": "ia.container.flex",
@@ -960,6 +1225,73 @@
                       }
                     },
                     "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByWeight_Name"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByWeight_Name"
+                            },
+                            "props": {
+                              "text": "Name",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByWeight_Name"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "placeholder": "e.g. Tote",
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "200px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByWeight.Name"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
                       {
                         "type": "ia.container.flex",
                         "meta": {
@@ -1379,6 +1711,133 @@
                   {
                     "type": "ia.container.flex",
                     "meta": {
+                      "name": "ActionsRow_ByWeight"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "12px"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.editDraft.ByWeight.Active} = true"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Editing_ByWeight"
+                        },
+                        "position": {
+                          "grow": 1,
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "classes": "pf-inv-sub"
+                          }
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if(isNull({view.custom.editDraft.ByWeight.PackOutId}), \"New pack-out: give it a name, then Save\", \"Editing \" + {view.custom.editDraft.ByWeight.Name} + \" (v\" + toStr({view.custom.editDraft.ByWeight.VersionNumber}) + \"). Changed numbers save as a new version; open boxes keep theirs.\")"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnDefault_ByWeight"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Make default",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "36px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "!isNull({view.custom.editDraft.ByWeight.PackOutId}) && !({view.custom.editDraft.ByWeight.IsDefault} = true)"
+                              }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.makeDefault(\"ByWeight\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnRemove_ByWeight"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Remove",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "36px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "!isNull({view.custom.editDraft.ByWeight.PackOutId})"
+                              }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.removePackOut(\"ByWeight\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
                       "name": "AddRow_ByWeight"
                     },
                     "position": {
@@ -1395,7 +1854,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "!({view.custom.editDraft.ByWeight.Active} = true)"
+                            "expression": "!({view.custom.editDraft.ByWeight.Active} = true) && len({view.custom.packOuts.ByWeight}) = 0"
                           }
                         }
                       }
@@ -1496,61 +1955,15 @@
                         }
                       },
                       {
-                        "type": "ia.input.dropdown",
-                        "meta": {
-                          "name": "History_ByVision"
-                        },
-                        "position": {
-                          "basis": "420px",
-                          "shrink": 1
-                        },
-                        "props": {
-                          "value": null,
-                          "options": [],
-                          "showClearIcon": false,
-                          "placeholder": {
-                            "text": "Load a previous pack-out..."
-                          },
-                          "style": {
-                            "classes": "pf-field-select",
-                            "height": "40px"
-                          }
-                        },
-                        "propConfig": {
-                          "position.display": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "len({view.custom.history.options.ByVision}) > 0"
-                              }
-                            }
-                          },
-                          "props.options": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.history.options.ByVision"
-                              }
-                            }
-                          },
-                          "props.value": {
-                            "onChange": {
-                              "enabled": true,
-                              "script": "\tif currentValue is None or currentValue.value is None:\n\t\treturn\n\tself.view.rootContainer.applyHistory(\"ByVision\", currentValue.value)\n\tself.props.value = None"
-                            }
-                          }
-                        }
-                      },
-                      {
                         "type": "ia.input.button",
                         "meta": {
-                          "name": "Btn_Clear_ByVision"
+                          "name": "BtnNew_ByVision"
                         },
                         "position": {
                           "shrink": 0
                         },
                         "props": {
-                          "text": "Clear",
+                          "text": "+ New",
                           "style": {
                             "classes": "pf-btn pf-btn-secondary",
                             "minHeight": "36px"
@@ -1561,7 +1974,7 @@
                             "binding": {
                               "type": "expr",
                               "config": {
-                                "expression": "{view.custom.editDraft.ByVision.Active} = true"
+                                "expression": "len({view.custom.packOuts.ByVision}) > 0"
                               }
                             }
                           }
@@ -1570,7 +1983,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tself.view.rootContainer.clearMethod(\"ByVision\")"
+                                "script": "\tself.view.rootContainer.addMethod(\"ByVision\")"
                               },
                               "scope": "G",
                               "type": "script"
@@ -1579,6 +1992,52 @@
                         }
                       }
                     ]
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "PackOuts_ByVision"
+                    },
+                    "position": {
+                      "basis": "64px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PackOutButton",
+                      "instances": [],
+                      "direction": "row",
+                      "alignItems": "stretch",
+                      "justify": "flex-start",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": {
+                        "basis": "230px",
+                        "shrink": 0,
+                        "grow": 0
+                      },
+                      "style": {
+                        "gap": "8px",
+                        "overflowX": "auto"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.packOuts.ByVision}) > 0"
+                          }
+                        }
+                      },
+                      "props.instances": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Parts.PackOutPopup.buttonInstances\", 0, {view.custom.itemId}, \"ByVision\", {session.custom.terminal.terminalLocationId}, {view.custom.refreshToken})"
+                          }
+                        }
+                      }
+                    }
                   },
                   {
                     "type": "ia.container.flex",
@@ -1607,6 +2066,73 @@
                       }
                     },
                     "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByVision_Name"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByVision_Name"
+                            },
+                            "props": {
+                              "text": "Name",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByVision_Name"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "placeholder": "e.g. Tote",
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "200px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByVision.Name"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
                       {
                         "type": "ia.container.flex",
                         "meta": {
@@ -1878,6 +2404,133 @@
                   {
                     "type": "ia.container.flex",
                     "meta": {
+                      "name": "ActionsRow_ByVision"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "12px"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.editDraft.ByVision.Active} = true"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Editing_ByVision"
+                        },
+                        "position": {
+                          "grow": 1,
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "classes": "pf-inv-sub"
+                          }
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if(isNull({view.custom.editDraft.ByVision.PackOutId}), \"New pack-out: give it a name, then Save\", \"Editing \" + {view.custom.editDraft.ByVision.Name} + \" (v\" + toStr({view.custom.editDraft.ByVision.VersionNumber}) + \"). Changed numbers save as a new version; open boxes keep theirs.\")"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnDefault_ByVision"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Make default",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "36px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "!isNull({view.custom.editDraft.ByVision.PackOutId}) && !({view.custom.editDraft.ByVision.IsDefault} = true)"
+                              }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.makeDefault(\"ByVision\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnRemove_ByVision"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Remove",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "36px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "!isNull({view.custom.editDraft.ByVision.PackOutId})"
+                              }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.removePackOut(\"ByVision\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
                       "name": "AddRow_ByVision"
                     },
                     "position": {
@@ -1894,7 +2547,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "!({view.custom.editDraft.ByVision.Active} = true)"
+                            "expression": "!({view.custom.editDraft.ByVision.Active} = true) && len({view.custom.packOuts.ByVision}) = 0"
                           }
                         }
                       }

@@ -2,7 +2,7 @@
 -- Procedure:   Parts.ContainerConfig_JudgeWeight
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-06
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   The checkweigh verdict for one tray: is @Weight inside the part's
@@ -69,6 +69,12 @@
 --   2026-10-19 - 1.1 - Optional @ScaleUnder/@ScaleOver/@ScaleOk; ScaleVerdict,
 --                      FlagsAgree, FlagsMessage columns (the scale's flags are
 --                      compared and reported, never acted on).
+--   2026-11-20 - 1.2 - Named pack-outs (0136): + @TerminalLocationId (optional, last).
+--                      The window is the pack-out IN FORCE at the terminal
+--                      (Parts.ufn_PackOutInForce: the open box's own version, else
+--                      the terminal's pick, else the default) -- the tray is judged
+--                      against the box it goes into. + PackOutName column (last).
+--                      Without a terminal: the part's default pack-out.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.ContainerConfig_JudgeWeight
     @ItemId        BIGINT,
@@ -76,7 +82,8 @@ CREATE OR ALTER PROCEDURE Parts.ContainerConfig_JudgeWeight
     @Weight        DECIMAL(10,4),
     @ScaleUnder    INT = NULL,
     @ScaleOver     INT = NULL,
-    @ScaleOk       INT = NULL
+    @ScaleOk       INT = NULL,
+    @TerminalLocationId BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -90,15 +97,14 @@ BEGIN
             @Message   NVARCHAR(500),
             @ScaleVerdict NVARCHAR(20),
             @FlagsAgree   BIT,
-            @FlagsMessage NVARCHAR(500);
+            @FlagsMessage NVARCHAR(500),
+            @PackOutName  NVARCHAR(50);
 
-    SELECT @ConfigId  = Id,
-           @Target    = TargetWeight,
-           @Tolerance = ToleranceWeight
-    FROM Parts.ContainerConfig
-    WHERE ItemId = @ItemId
-      AND ClosureMethod = @ClosureMethod
-      AND DeprecatedAt IS NULL;
+    SELECT @ConfigId    = ContainerConfigId,
+           @Target      = TargetWeight,
+           @Tolerance   = ToleranceWeight,
+           @PackOutName = PackOutName
+    FROM Parts.ufn_PackOutInForce(@ItemId, @ClosureMethod, @TerminalLocationId, NULL);
 
     IF @Weight IS NULL
     BEGIN
@@ -184,6 +190,7 @@ BEGIN
            @High      AS HighLimit,
            @ScaleVerdict AS ScaleVerdict,
            @FlagsAgree   AS FlagsAgree,
-           @FlagsMessage AS FlagsMessage;
+           @FlagsMessage AS FlagsMessage,
+           @PackOutName  AS PackOutName;
 END;
 GO

@@ -1,0 +1,1 @@
+EXEC Workorder.ScalePartCode_Deprecate @Id = :id, @AppUserId = :appUserId

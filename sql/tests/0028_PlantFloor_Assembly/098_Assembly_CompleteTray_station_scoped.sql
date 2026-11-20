@@ -51,9 +51,9 @@ DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MAC
 
 -- 2 trays x 5 parts, ByCount
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @F1 AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@F1, 2, 5, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@F1, 2, 5, 0, N'ByCount', @Now);
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @F2 AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@F2, 2, 5, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@F2, 2, 5, 0, N'ByCount', @Now);
 
 -- 1-line BOMs: each FG <- component x1 (the METTs shape: one machined part per FG)
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId = @F1 AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)

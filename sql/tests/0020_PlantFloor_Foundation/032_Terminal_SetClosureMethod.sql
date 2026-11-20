@@ -29,7 +29,7 @@ VALUES (@Term, @ScaleType, N'TEST-CHG-SCALE', N'PlcDevices/TEST_ChgScale');
 DECLARE @RI TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO @RI EXEC Parts.Item_Create @ItemTypeId = 4, @PartNumber = N'TEST-CHG-ITEM', @Description = N'chg item', @UomId = 1, @AppUserId = 1;
 DECLARE @Item BIGINT = (SELECT NewId FROM @RI);
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Item, 2, 24, 0, N'ByCount', @Now);
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Item, 2, 24, 0, N'ByCount', @Now);
 GO
 
 DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-CHG-TERM');

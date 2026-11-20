@@ -2,7 +2,7 @@
 -- Procedure:   Parts.ContainerConfig_GetByItemAndMethod
 -- Author:      Blue Ridge Automation
 -- Created:     2026-07-17
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   Returns the single active ContainerConfig for a given (Item, closure
@@ -25,22 +25,29 @@
 --   2026-08-27 - 1.1 - ToleranceWeight projected, immediately after
 --                       TargetWeight (IND570 checkweigh, migration 0068).
 --                       This is the proc the ByWeight setpoint load reads.
+--   2026-11-20 - 1.2 - Named pack-outs (0136): + @TerminalLocationId = NULL. Returns
+--                       the pack-out IN FORCE (Parts.ufn_PackOutInForce: open box's
+--                       version > terminal pick > default), so the PLC close's piece
+--                       count, the parts-per-tray prefill and the setpoint push match
+--                       the box being filled. Id = that version's ContainerConfig Id.
+--                       + PackOutId, PackOutName, PackOutSource, VersionNumber
+--                       (appended). CreatedAt/UpdatedAt/DeprecatedAt kept for shape.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.ContainerConfig_GetByItemAndMethod
     @ItemId        BIGINT,
-    @ClosureMethod NVARCHAR(20)
+    @ClosureMethod NVARCHAR(20),
+    @TerminalLocationId BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
     SELECT
-        Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized,
-        DunnageCode, CustomerCode,
-        ClosureMethod, TargetWeight, ToleranceWeight,
-        CreatedAt, UpdatedAt, DeprecatedAt
-    FROM Parts.ContainerConfig
-    WHERE ItemId = @ItemId
-      AND ClosureMethod = @ClosureMethod
-      AND DeprecatedAt IS NULL;
+        cc.Id, cc.ItemId, f.TraysPerContainer, f.PartsPerTray, f.IsSerialized,
+        f.DunnageCode, f.CustomerCode,
+        cc.ClosureMethod, f.TargetWeight, f.ToleranceWeight,
+        cc.CreatedAt, cc.UpdatedAt, cc.DeprecatedAt,
+        f.PackOutId, f.PackOutName, f.Source AS PackOutSource, f.VersionNumber
+    FROM Parts.ufn_PackOutInForce(@ItemId, @ClosureMethod, @TerminalLocationId, NULL) f
+    JOIN Parts.ContainerConfig cc ON cc.Id = f.ContainerConfigId;
 END;
 GO

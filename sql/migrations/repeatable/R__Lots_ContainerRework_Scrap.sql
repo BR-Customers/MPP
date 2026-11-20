@@ -2,6 +2,7 @@
 -- Repeatable:  R__Lots_ContainerRework_Scrap.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D6: scrap from a new-shape tray takes the pieces off the container's LOT (COALESCE(tray LOT, container LOT)) and the tray; RejectEvent.LotId = that LOT.
 -- Version:     1.1
 -- Change Log:  2026-10-21 - 1.1 - Super-lot piece 6: when it writes an APPLIED scrap result
 --                                 for a container member, 'Result recorded . Scrap <qty>
@@ -73,7 +74,8 @@ BEGIN
     DECLARE @ContainerId BIGINT, @TrayLotId BIGINT, @TrayPieces INT, @TrayPos INT, @ConStatus NVARCHAR(50),
             @IsSerialized BIT, @ItemId BIGINT, @LotName NVARCHAR(50), @LotPieces INT, @LotCrt BIT,
             @SerialContainerId BIGINT, @SerialTrayId BIGINT, @SerialRemoved DATETIME2(3), @SerialNumber NVARCHAR(100);
-    SELECT @ContainerId = t.ContainerId, @TrayLotId = t.FinishedGoodLotId, @TrayPieces = ISNULL(t.PartsClosedCount, 0),
+    -- 0119: the tray's own LOT (old shape) or the container's LOT (container-as-LOT)
+    SELECT @ContainerId = t.ContainerId, @TrayLotId = COALESCE(t.FinishedGoodLotId, c.LotId), @TrayPieces = ISNULL(t.PartsClosedCount, 0),
            @TrayPos = t.TrayPosition, @ConStatus = cs.Code, @IsSerialized = ISNULL(cc.IsSerialized, 0), @ItemId = c.ItemId
     FROM Lots.ContainerTray t
     INNER JOIN Lots.Container c            ON c.Id = t.ContainerId

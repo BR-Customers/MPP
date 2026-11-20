@@ -1,6 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetShippedContainers.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - Review I1 / M3: reach via the genealogy closure (not an edge walk); a container LOT's quantity is its own LOT-less trays.
+-- Version:     1.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: reads the container's finished-good LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers.
 -- Version:     1.0
 -- Description: The shipped-container / Honda-AIM band for the LOT Genealogy &
 --              Traceability report. Returns every finished-good container the LOT
@@ -24,31 +26,42 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Container-as-LOT (review I1): reach is the genealogy CLOSURE -- the same
+    -- authority as the Honda trace, written when each edge is recorded. A recursive walk
+    -- of the edges over-reaches once a long-lived container LOT gains ancestors after it
+    -- gave pieces away (a reworked container topped up later): the later source never
+    -- reached the pieces that had already left. The closure also replaces the
+    -- path-enumerating recursion, which grew with every path.
     ;WITH Reach AS (
-        -- Seed with the subject itself, then walk down every consumption edge.
-        SELECT @LotId AS LotId,
-               CAST(N'/' + CAST(@LotId AS NVARCHAR(20)) + N'/' AS NVARCHAR(MAX)) AS Path
-        UNION ALL
-        SELECT g.ChildLotId,
-               CAST(r.Path + CAST(g.ChildLotId AS NVARCHAR(20)) + N'/' AS NVARCHAR(MAX))
-        FROM Lots.LotGenealogy g
-        INNER JOIN Reach r ON g.ParentLotId = r.LotId
-        WHERE r.Path NOT LIKE N'%/' + CAST(g.ChildLotId AS NVARCHAR(20)) + N'/%'
+        SELECT gc.DescendantLotId AS LotId
+        FROM Lots.LotGenealogyClosure gc
+        WHERE gc.AncestorLotId = @LotId
     )
     SELECT
-        ct.FinishedGoodLotId,
+        lc.FinishedGoodLotId,
         fgl.LotName          AS FinishedGoodLotName,
         fgi.PartNumber       AS FinishedGoodPartNumber,
         c.Id                 AS ContainerId,
         sl.AimShipperId,
-        ct.PartsClosedCount  AS Quantity,
+        lc.Quantity          AS Quantity,
         csc.Name             AS ContainerStatusName,
         loc.Name             AS CurrentLocationName,
         CAST(c.CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CompletedAt
-    FROM Lots.ContainerTray ct
-    INNER JOIN (SELECT DISTINCT LotId FROM Reach) r ON r.LotId = ct.FinishedGoodLotId
-    INNER JOIN Lots.Container            c   ON c.Id   = ct.ContainerId
-    INNER JOIN Lots.Lot                  fgl ON fgl.Id = ct.FinishedGoodLotId
+    -- 0119: a reached LOT is packed as a tray LOT (quantity = that tray) or as a
+    -- container LOT (quantity = the whole container's trays).
+    FROM Reach r
+    CROSS APPLY (
+        SELECT x.ContainerId, r.LotId AS FinishedGoodLotId,
+               CASE WHEN x.ContainerTrayId IS NOT NULL
+                    THEN (SELECT t.PartsClosedCount FROM Lots.ContainerTray t WHERE t.Id = x.ContainerTrayId)
+                    -- a container LOT holds its container's LOT-less trays (a mixed container's
+                    -- old trays belong to their own tray LOTs -- review M3)
+                    ELSE (SELECT SUM(t.PartsClosedCount) FROM Lots.ContainerTray t
+                          WHERE t.ContainerId = x.ContainerId AND t.FinishedGoodLotId IS NULL) END AS Quantity
+        FROM Lots.ufn_LotContainers(r.LotId) x
+    ) lc
+    INNER JOIN Lots.Container            c   ON c.Id   = lc.ContainerId
+    INNER JOIN Lots.Lot                  fgl ON fgl.Id = lc.FinishedGoodLotId
     INNER JOIN Parts.Item                fgi ON fgi.Id = fgl.ItemId
     LEFT  JOIN Lots.ContainerStatusCode  csc ON csc.Id = c.ContainerStatusCodeId
     LEFT  JOIN Location.Location         loc ON loc.Id = c.CurrentLocationId
@@ -58,7 +71,6 @@ BEGIN
         WHERE s.ContainerId = c.Id AND s.IsVoid = 0
         ORDER BY s.CreatedAt DESC
     ) sl
-    ORDER BY fgl.LotName, c.Id
-    OPTION (MAXRECURSION 100);
+    ORDER BY fgl.LotName, c.Id;
 END;
 GO

@@ -154,11 +154,25 @@ for r in PACK:
         q(r[7]) if r[7] else 'NULL', q(r[8]) if r[8] else 'NULL'))
 A(',\n'.join(vals) + ';')
 A("""
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized,
-                                   DunnageCode, CustomerCode, ClosureMethod, TargetWeight, CreatedAt)
-SELECT i.Id, c.Trays, c.PerTray, c.Ser, c.Dunnage, c.Cust, c.Closure, c.TgtWt, SYSUTCDATETIME()
+-- Since 0136 (named pack-outs) a config row is a VERSION of a Parts.PackOut header:
+-- one default header per part + method (named after the method), then version 1.
+INSERT INTO Parts.PackOut (ItemId, ClosureMethod, Name, IsDefault, CreatedByUserId)
+SELECT i.Id, c.Closure, m.Name, 1, @Dev
 FROM @C c
 JOIN Parts.Item i ON i.PartNumber = c.Pn
+JOIN Parts.ClosureMethodCode m ON m.Code = c.Closure
+WHERE NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig x
+                  WHERE x.ItemId = i.Id AND x.DeprecatedAt IS NULL)
+  AND NOT EXISTS (SELECT 1 FROM Parts.PackOut p
+                  WHERE p.ItemId = i.Id AND p.ClosureMethod = c.Closure AND p.DeprecatedAt IS NULL);
+INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized,
+                                   DunnageCode, CustomerCode, ClosureMethod, TargetWeight, CreatedAt,
+                                   PackOutId, VersionNumber, CreatedByUserId)
+SELECT i.Id, c.Trays, c.PerTray, c.Ser, c.Dunnage, c.Cust, c.Closure, c.TgtWt, SYSUTCDATETIME(),
+       p.Id, 1, @Dev
+FROM @C c
+JOIN Parts.Item i ON i.PartNumber = c.Pn
+JOIN Parts.PackOut p ON p.ItemId = i.Id AND p.ClosureMethod = c.Closure AND p.IsDefault = 1 AND p.DeprecatedAt IS NULL
 WHERE NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig x
                   WHERE x.ItemId = i.Id AND x.DeprecatedAt IS NULL);
 PRINT 'seed_mpp_parts: ContainerConfig -> ' + CAST(@@ROWCOUNT AS VARCHAR(10)) + ' inserted.';

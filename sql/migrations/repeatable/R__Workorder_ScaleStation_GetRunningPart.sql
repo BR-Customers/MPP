@@ -2,7 +2,7 @@
 -- Procedure:   Workorder.ScaleStation_GetRunningPart
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   The part a By Weight scale station's next press will close. The ONE
@@ -26,11 +26,15 @@
 --   PartsPerTray, TraysPerContainer, TargetWeight, ToleranceWeight,
 --   LowLimit, HighLimit, EligibleCount, Message, OverrideItemId,
 --   OverrideSetBy, OverrideSetAtEt, OpenContainerId, OpenTraysClosed,
---   OpenPartsClosed.
+--   OpenPartsClosed, PackOutId, PackOutName, PackOutSource.
 --
 -- Change Log:
 --   2026-10-19 - 1.0 - Initial version.
 --   2026-10-20 - 1.1 - Eligibility evaluated once per call (table variable).
+--   2026-11-20 - 1.2 - Named pack-outs (0136): the pack-out columns come from
+--                      Parts.ufn_PackOutInForce (the open box's own version, else
+--                      the terminal's pick, else the default). + PackOutId,
+--                      PackOutName, PackOutSource (appended).
 -- =============================================
 CREATE OR ALTER PROCEDURE Workorder.ScaleStation_GetRunningPart
     @TerminalLocationId BIGINT
@@ -116,11 +120,11 @@ BEGIN
            CAST(@OverrideSetAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS OverrideSetAtEt,
            @OpenContainerId AS OpenContainerId,
            ISNULL(ob.TraysClosed, 0) AS OpenTraysClosed,
-           ISNULL(ob.PartsClosed, 0) AS OpenPartsClosed
+           ISNULL(ob.PartsClosed, 0) AS OpenPartsClosed,
+           cc.PackOutId, cc.PackOutName, cc.Source AS PackOutSource
     FROM (SELECT 1 AS One) x
     LEFT JOIN Parts.Item i ON i.Id = @ItemId
-    LEFT JOIN Parts.ContainerConfig cc
-      ON cc.ItemId = @ItemId AND cc.ClosureMethod = N'ByWeight' AND cc.DeprecatedAt IS NULL
+    OUTER APPLY Parts.ufn_PackOutInForce(@ItemId, N'ByWeight', @TerminalLocationId, NULL) cc
     OUTER APPLY (
         SELECT COUNT(*) AS TraysClosed, SUM(t.PartsClosedCount) AS PartsClosed
         FROM Lots.ContainerTray t WHERE t.ContainerId = @OpenContainerId

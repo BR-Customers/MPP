@@ -2,6 +2,7 @@
 -- Procedure:   Lots.Lot_BackfillMintStamp
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-30
+-- Version:     1.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D5 / D11: M&A good is also read from container-shape TRAYS (ShiftId + fixed MintedPieceCount at the station); container LOTs are never stamped.
 -- Version:     1.0
 --
 -- Description:
@@ -120,6 +121,8 @@ BEGIN
     ) q
     WHERE l.ShiftId IS NULL
       AND l.LotOriginTypeId = @Mfg
+      -- 0119: a container LOT is never stamped; its good lives on its trays (D5)
+      AND NOT EXISTS (SELECT 1 FROM Lots.Container cx WHERE cx.LotId = l.Id)
       AND ty.Code IN (N'FinishedGood', N'SubAssembly')
       AND EXISTS (
           SELECT 1

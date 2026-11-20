@@ -2,6 +2,7 @@
 -- Repeatable:  R__Lots_Container_ValidateCrt.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-18
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: the container's finished-good LOT(s) are read in BOTH shapes through Lots.ufn_ContainerLots (tray LOTs before migration 0119, the container LOT after, both for a mixed container).
 -- Version:     1.1
 -- Description: A second person has validated a container that completed under a
 --              Controlled Run Tag. Clears the CRT flag on the container's
@@ -94,8 +95,8 @@ BEGIN
         IF NOT EXISTS (
             SELECT 1
             FROM Lots.Container c
-            JOIN Lots.ContainerTray ct ON ct.ContainerId = c.Id
-            JOIN Lots.Lot fgl ON fgl.Id = ct.FinishedGoodLotId
+            CROSS APPLY Lots.ufn_ContainerLots(c.Id) cl   -- 0119: both shapes
+            JOIN Lots.Lot fgl ON fgl.Id = cl.LotId
             WHERE c.Id = @ContainerId AND c.CompletedAt IS NOT NULL AND fgl.CrtActive = 1)
         BEGIN
             SET @Message = N'Container is not pending validation.';
@@ -123,8 +124,8 @@ BEGIN
             fgl.UpdatedByUserId = @AppUserId
         OUTPUT inserted.Id INTO @ClearedLots (LotId)
         FROM Lots.Lot fgl
-        JOIN Lots.ContainerTray ct ON ct.FinishedGoodLotId = fgl.Id
-        WHERE ct.ContainerId = @ContainerId AND fgl.CrtActive = 1;
+        WHERE fgl.Id IN (SELECT cl.LotId FROM Lots.ufn_ContainerLots(@ContainerId) cl)   -- 0119: both shapes
+          AND fgl.CrtActive = 1;
 
         IF @@ROWCOUNT = 0
         BEGIN

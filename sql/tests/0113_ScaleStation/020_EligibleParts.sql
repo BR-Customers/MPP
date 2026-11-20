@@ -65,7 +65,7 @@ FROM (VALUES (@Fg, N'TST-SS-FG-A', N'Scale test FG A'),
 WHERE NOT EXISTS (SELECT 1 FROM Parts.Item i WHERE i.PartNumber = v.PartNumber);
 
 -- pack-outs: A/B/X ByWeight 4 x 10, 18.25 +/- 0.5; N ByCount only
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, ToleranceWeight, CreatedAt)
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, ToleranceWeight, CreatedAt)
 SELECT i.Id, 4, 10, 0, CASE WHEN i.PartNumber = N'TST-SS-FG-N' THEN N'ByCount' ELSE N'ByWeight' END, 18.25, 0.5, @Now
 FROM Parts.Item i
 WHERE i.PartNumber IN (N'TST-SS-FG-A', N'TST-SS-FG-B', N'TST-SS-FG-N', N'TST-SS-FG-X')

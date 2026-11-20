@@ -19,7 +19,7 @@ INSERT INTO @RI EXEC Parts.Item_Create @ItemTypeId = 4, @PartNumber = N'TEST-CT-
 DECLARE @Fg BIGINT = (SELECT NewId FROM @RI);
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
 INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt) VALUES (@Fg, @Cell, 0, @Now);
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Fg, 2, 24, 0, N'ByCount', @Now);
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Fg, 2, 24, 0, N'ByCount', @Now);
 GO
 
 DECLARE @Fg BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CT-METHOD');

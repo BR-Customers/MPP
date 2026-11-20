@@ -1,5 +1,19 @@
 # Prod release runbook -- stored-procedure review bundle (`0118` + `0120`-`0133`)
 
+> **IF THE DIGI SCALE RELEASE RAN FIRST (`0134`, `notes/2026-11-19_prod-release-runbook-digi-scale-feed.md`).**
+> Jacques decided on 2026-11-19 to ship it ahead of this one. Prod is then at **117 migrations, highest `0134`**, and
+> every migration below is "pending below the high-water mark", which the deploy script BLOCKs unless told otherwise.
+> Add this to **every** Preview / Rehearse / Execute command in this runbook:
+> ```
+> -AllowOutOfOrder 0118,0120,0121,0122,0123,0124,0127,0128,0129,0130,0133
+> ```
+> Then expect `[3]` to read `117 applied, highest 0134`, one `WARN ... out of order, ALLOWED by -AllowOutOfOrder` per
+> migration (11), and the plan to carry an `ALLOW|...` line (so the fingerprint differs from the one below). The
+> migrations are independent of `0134` (index changes on other tables), so the order does not matter to them. A
+> listed number that is not pending is a BLOCK. Everything else in this runbook stands. **Rehearsed in this order 2026-11-19** on `MPP_MES_ProdSimDigiRel2`
+> (built at `96651770`, Digi release executed): without the list, 11 out-of-order BLOCKs; with it, clear with 11 WARNs,
+> `596 identical, 22 changed`, and the rehearsal applied 11 migrations + 22 procs and rolled back in 0.3 s.
+
 **Release commit:** `177f0b7a` on `main` -- the last commit that changes `sql/` or `ignition/` (PR 34 merge). `HEAD`
 will be this note's commit or later; see the drift rule below.
 **Previous release:** `96651770` (2026-11-04 bundle, executed Thursday 2026-11-05). Prod is expected at 116 migrations,

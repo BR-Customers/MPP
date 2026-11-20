@@ -40,7 +40,7 @@ BEGIN
     INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) VALUES (SCOPE_IDENTITY(), @Child, 1, 1, 1);
 END
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Fg AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Fg, 2, 1, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Fg, 2, 1, 0, N'ByCount', @Now);
 -- FG item eligible at the cell -- Assembly_CompleteTray mirrors Lot_Create's eligibility cascade
 -- and rejects "Finished-good Item is not eligible at this cell." without a Parts.ItemLocation row
 -- (same setup the sibling test sql/tests/0028_PlantFloor_Assembly/092_Assembly_CompleteTray.sql uses).
@@ -67,9 +67,10 @@ DECLARE @He BIGINT = (SELECT NewId FROM @HP); DELETE FROM @HP;
 DECLARE @CMP TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
 INSERT INTO @CMP EXEC Lots.Container_Complete @ContainerId = @Con, @OperatorConfirmed = 1, @AppUserId = 1, @TerminalLocationId = @Cell; DELETE FROM @CMP;
 
--- Assert: FG LOT 2 closed; FG LOT 1 skipped (still Hold = 2).
-DECLARE @S2 NVARCHAR(10) = (SELECT CAST(LotStatusId AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @Fg2);
-EXEC test.Assert_IsEqual @TestName = N'[FGReclose] non-held FG LOT closed on complete (4)', @Expected = N'4', @Actual = @S2;
+-- container-as-LOT (0119): both trays are ONE container LOT (@Fg1 = @Fg2), so the hold
+-- covers the whole container (D7) and the completion close skips it (D10).
+DECLARE @S2 NVARCHAR(10) = CASE WHEN @Fg1 = @Fg2 THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[FGReclose] both trays share the container LOT', @Expected = N'1', @Actual = @S2;
 DECLARE @S1 NVARCHAR(10) = (SELECT CAST(LotStatusId AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @Fg1);
 EXEC test.Assert_IsEqual @TestName = N'[FGReclose] held FG LOT skipped, stays Hold (2)', @Expected = N'2', @Actual = @S1;
 

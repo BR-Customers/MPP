@@ -2,6 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_ApplyMembersInternal.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
+-- Version:     1.3 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8 / D9: reads the container's LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers; a container LOT is in a time window by its TRAYS (ClosedAt, ClosedAtTerminalId), not Lot.CreatedAt.
 -- Version:     1.2
 -- Change Log:  2026-10-13 - 1.1 - Piece 2: the Closed tray LOTs of a container that
 --                                 joins ARE tagged, so a completed container is
@@ -75,8 +76,8 @@ BEGIN
     INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
     WHERE l.CrtActive = 0
       AND ( (sc.Code <> N'Closed' AND l.Id IN (SELECT LotId FROM @M WHERE LotId IS NOT NULL))
-         OR l.Id IN (SELECT t.FinishedGoodLotId FROM Lots.ContainerTray t
-                     WHERE t.ContainerId IN (SELECT ContainerId FROM @M WHERE ContainerId IS NOT NULL)) );
+         OR l.Id IN (SELECT cl.LotId FROM @M mm CROSS APPLY Lots.ufn_ContainerLots(mm.ContainerId) cl   -- 0119: both shapes
+                     WHERE mm.ContainerId IS NOT NULL) );
 
     DECLARE @NewMembers TABLE (Id BIGINT NOT NULL);
     INSERT INTO Quality.ControlledRunMember
@@ -86,8 +87,7 @@ BEGIN
            CONVERT(BIT, CASE
                WHEN m.LotId IS NOT NULL AND EXISTS (SELECT 1 FROM @Tagged g WHERE g.LotId = m.LotId) THEN 1
                WHEN m.ContainerId IS NOT NULL AND EXISTS (
-                    SELECT 1 FROM @Tagged g JOIN Lots.ContainerTray t ON t.FinishedGoodLotId = g.LotId
-                    WHERE t.ContainerId = m.ContainerId) THEN 1
+                    SELECT 1 FROM @Tagged g JOIN Lots.ufn_ContainerLots(m.ContainerId) cl ON cl.LotId = g.LotId) THEN 1
                ELSE 0 END),
            -- Once a later piece reopens a container, nothing else records that it
            -- was pulled back from finished stock. CompletedAt as well as the status,

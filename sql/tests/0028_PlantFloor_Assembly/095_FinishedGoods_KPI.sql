@@ -48,7 +48,7 @@ DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMP
 
 -- container config: 4 trays x 24 parts (two mints stay in one Open container)
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Out AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Out, 4, 24, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Out, 4, 24, 0, N'ByCount', @Now);
 
 -- published BOM: OUT <- A x1
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId = @Out AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
@@ -96,7 +96,8 @@ CREATE TABLE #k1 (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(5
 INSERT INTO #k1 EXEC Workorder.FinishedGoods_GetProducedSummary @CellLocationId = @Cell, @ShiftStartUtc = @WinStart, @ShiftEndUtc = @WinEnd;
 
 DECLARE @Lc NVARCHAR(10) = (SELECT CAST(LotCount AS NVARCHAR(10)) FROM #k1 WHERE PartNumber = N'P6-KPI-OUT');
-EXEC test.Assert_IsEqual @TestName = N'[FgKpi] LotCount 2 for the FG part', @Expected = N'2', @Actual = @Lc;
+-- container-as-LOT (0119): both trays went into one container LOT, counted once.
+EXEC test.Assert_IsEqual @TestName = N'[FgKpi] LotCount 1 (the container LOT) for the FG part', @Expected = N'1', @Actual = @Lc;
 DECLARE @Pc NVARCHAR(10) = (SELECT CAST(PartCount AS NVARCHAR(10)) FROM #k1 WHERE PartNumber = N'P6-KPI-OUT');
 EXEC test.Assert_IsEqual @TestName = N'[FgKpi] PartCount 48 for the FG part', @Expected = N'48', @Actual = @Pc;
 DROP TABLE #k1;

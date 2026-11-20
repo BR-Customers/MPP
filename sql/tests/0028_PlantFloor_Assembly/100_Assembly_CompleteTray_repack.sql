@@ -49,7 +49,7 @@ DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMP
 
 -- container config: 4 trays x 24 parts, ByCount (4 so the over-fill guard never fires here)
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Fg AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
     VALUES (@Fg, 4, 24, 0, N'ByCount', @Now);
 IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @Fg AND LocationId = @Cell AND DeprecatedAt IS NULL)
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt) VALUES (@Fg, @Cell, 0, @Now);
@@ -114,8 +114,9 @@ EXEC test.Assert_IsEqual @TestName = N'[Repack] tray LOT is Manufactured, 24 pcs
 -- OEE mint stamp (spec 7.4, D21): a pass-through mint is a mint too. The exact
 -- ShiftId is pinned in 092 (which owns a covering shift); here it must match
 -- whatever the resolver gives for the cell now ('none' when no shift covers it).
+-- v2.0 (D5/D11): the stamp is on the tray row, not the container LOT.
 DECLARE @MintStamp NVARCHAR(40) = (SELECT ISNULL(CAST(ShiftId AS NVARCHAR(20)), N'none') + N'/' + ISNULL(CAST(MintedPieceCount AS NVARCHAR(10)), N'null')
-                                   FROM Lots.Lot WHERE Id = @Tray);
+                                   FROM Lots.ContainerTray WHERE Id = (SELECT ContainerTrayId FROM @R));
 DECLARE @ExpStamp NVARCHAR(40) = ISNULL((SELECT TOP 1 CAST(ShiftId AS NVARCHAR(20)) FROM Oee.ufn_ShiftIdForInstant(@Cell, SYSUTCDATETIME())), N'none') + N'/24';
 EXEC test.Assert_IsEqual @TestName = N'[Repack] tray LOT stamped ShiftId + MintedPieceCount 24', @Expected = @ExpStamp, @Actual = @MintStamp;
 DECLARE @Left NVARCHAR(40) = (SELECT CAST(PieceCount AS NVARCHAR(10)) + N'/' + CAST(InventoryAvailable AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @R1);
@@ -178,7 +179,8 @@ EXEC test.Assert_IsEqual @TestName = N'[Repack] tray closes across two received 
 DECLARE @Tray BIGINT = (SELECT FinishedGoodLotId FROM @R);
 DECLARE @Split NVARCHAR(100) = (
     SELECT STRING_AGG(l.LotName + N'=' + CAST(ce.PieceCount AS NVARCHAR(10)), N',') WITHIN GROUP (ORDER BY l.LotName)
-    FROM Workorder.ConsumptionEvent ce INNER JOIN Lots.Lot l ON l.Id = ce.SourceLotId WHERE ce.ProducedLotId = @Tray);
+    FROM Workorder.ConsumptionEvent ce INNER JOIN Lots.Lot l ON l.Id = ce.SourceLotId
+    WHERE ce.ProducedLotId = @Tray AND ce.TrayId = (SELECT ContainerTrayId FROM @R));   -- v2.0: this tray's draws only
 EXEC test.Assert_IsEqual @TestName = N'[Repack] FIFO: 6 from the older LOT, 18 from the newer, none from the held one',
     @Expected = N'STG-100R1=6,STG-100R2=18', @Actual = @Split;
 DECLARE @Closed NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId

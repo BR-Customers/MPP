@@ -54,9 +54,9 @@ DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMP
 
 -- container config: 2 trays x 24 parts
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Out AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Out, 2, 24, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Out, 2, 24, 0, N'ByCount', @Now);
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Short AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Short, 1, 24, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Short, 1, 24, 0, N'ByCount', @Now);
 
 -- published BOM: OUT <- A x1 + B x2 ;  SHORT <- SC x1
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId = @Out AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
@@ -137,16 +137,21 @@ EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] FG LOT origin Manufactured
 DECLARE @FgStatus NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @Fg1);
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] FG LOT status Good', @Expected = N'Good', @Actual = @FgStatus;
 
--- OEE mint stamp (spec 7.4, D18, D21): shift + quantity at mint
+-- OEE stamp (container-as-LOT v2.0, D5/D11): shift + fixed quantity on the TRAY;
+-- the container LOT itself carries neither.
 DECLARE @ShiftExp NVARCHAR(20) = (SELECT CAST(Id AS NVARCHAR(20)) FROM Oee.Shift WHERE Remarks = N'CT092-SHIFT');
-DECLARE @FgShift  NVARCHAR(20) = (SELECT CAST(ShiftId AS NVARCHAR(20)) FROM Lots.Lot WHERE Id = @Fg1);
-EXEC test.Assert_IsEqual @TestName = N'[Tray] FG LOT ShiftId = ufn_ShiftIdForInstant(cell, now)', @Expected = @ShiftExp, @Actual = @FgShift;
-DECLARE @FgMinted NVARCHAR(10) = (SELECT CAST(MintedPieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @Fg1);
-EXEC test.Assert_IsEqual @TestName = N'[Tray] FG LOT MintedPieceCount = PieceCount', @Expected = N'24', @Actual = @FgMinted;
+DECLARE @FgShift  NVARCHAR(20) = (SELECT CAST(ShiftId AS NVARCHAR(20)) FROM Lots.ContainerTray WHERE Id = @Tid);
+EXEC test.Assert_IsEqual @TestName = N'[Tray] tray ShiftId = ufn_ShiftIdForInstant(cell, now)', @Expected = @ShiftExp, @Actual = @FgShift;
+DECLARE @FgMinted NVARCHAR(10) = (SELECT CAST(MintedPieceCount AS NVARCHAR(10)) FROM Lots.ContainerTray WHERE Id = @Tid);
+EXEC test.Assert_IsEqual @TestName = N'[Tray] tray MintedPieceCount = PieceCount', @Expected = N'24', @Actual = @FgMinted;
+DECLARE @LotStamp NVARCHAR(40) = (SELECT ISNULL(CAST(ShiftId AS NVARCHAR(20)), N'null') + N'/' + ISNULL(CAST(MintedPieceCount AS NVARCHAR(10)), N'null') FROM Lots.Lot WHERE Id = @Fg1);
+EXEC test.Assert_IsEqual @TestName = N'[Tray] container LOT carries no ShiftId / MintedPieceCount', @Expected = N'null/null', @Actual = @LotStamp;
 
--- tray links to the FG LOT 1:1
-DECLARE @TrayFg NVARCHAR(20) = (SELECT CAST(FinishedGoodLotId AS NVARCHAR(20)) FROM Lots.ContainerTray WHERE Id = @Tid);
-EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] tray.FinishedGoodLotId = minted FG LOT', @Expected = @Fg1Str, @Actual = @TrayFg;
+-- v2.0 (D1/D2): the tray carries no LOT; the LOT hangs off the container
+DECLARE @TrayFg NVARCHAR(20) = (SELECT ISNULL(CAST(FinishedGoodLotId AS NVARCHAR(20)), N'null') FROM Lots.ContainerTray WHERE Id = @Tid);
+EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] tray.FinishedGoodLotId NULL (container shape)', @Expected = N'null', @Actual = @TrayFg;
+DECLARE @CtrFg NVARCHAR(20) = (SELECT CAST(LotId AS NVARCHAR(20)) FROM Lots.Container WHERE Id = @Cid);
+EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] Container.LotId = minted FG LOT', @Expected = @Fg1Str, @Actual = @CtrFg;
 
 -- consumption targets the FG LOT (ProducedLotId), A=24 (x1), B=48 (x2)
 DECLARE @AConsumed NVARCHAR(10) = (SELECT CAST(ISNULL(SUM(PieceCount),0) AS NVARCHAR(10)) FROM Workorder.ConsumptionEvent WHERE ProducedLotId = @Fg1 AND ConsumedItemId = @A);
@@ -182,7 +187,7 @@ EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] FG LOT stamped with active
 DECLARE @FgBomVer NVARCHAR(10) = (SELECT CAST(b.VersionNumber AS NVARCHAR(10)) FROM Lots.Lot l INNER JOIN Parts.Bom b ON b.Id = l.BomId WHERE l.Id = @Fg1);
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] FG LOT BomId resolves to version 1', @Expected = N'1', @Actual = @FgBomVer;
 
-DECLARE @LC TABLE (ContainerId BIGINT, ContainerTrayId BIGINT, TrayPosition INT, ClosureMethod NVARCHAR(20), TrayClosedAt DATETIME2(3), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ContainerStatusCode NVARCHAR(20), ContainerStatusName NVARCHAR(50), CurrentLocationId BIGINT, CurrentLocationName NVARCHAR(100), OpenedAt DATETIME2(3), CompletedAt DATETIME2(3), AimShipperId NVARCHAR(50));
+DECLARE @LC TABLE (ContainerId BIGINT, ContainerTrayId BIGINT, TrayPosition INT, ClosureMethod NVARCHAR(20), TrayClosedAt DATETIME2(3), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ContainerStatusCode NVARCHAR(20), ContainerStatusName NVARCHAR(50), CurrentLocationId BIGINT, CurrentLocationName NVARCHAR(100), OpenedAt DATETIME2(3), CompletedAt DATETIME2(3), AimShipperId NVARCHAR(50), TrayCount INT);   -- + TrayCount (0119)
 INSERT INTO @LC EXEC Lots.Lot_GetLinkedContainer @LotId = @Fg1;
 DECLARE @LcRows NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @LC);
 EXEC test.Assert_IsEqual @TestName = N'[LinkedContainer] returns exactly 1 row for the FG LOT', @Expected = N'1', @Actual = @LcRows;
@@ -205,13 +210,14 @@ EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] tray-2 Status 1', @Expecte
 DECLARE @Full2 NVARCHAR(10) = (SELECT CAST(ContainerFull AS NVARCHAR(10)) FROM @R2);
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] container FULL after tray 2', @Expected = N'1', @Actual = @Full2;
 
--- same container reused (both trays); a second distinct FG LOT minted
+-- same container reused (both trays); v2.0: the second tray APPENDS to the container's LOT
 DECLARE @Cid2 BIGINT = (SELECT ContainerId FROM @R2);
 DECLARE @Fg2 BIGINT = (SELECT FinishedGoodLotId FROM @R2);
 DECLARE @TrayCount NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.ContainerTray WHERE ContainerId = @Cid2);
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] two trays on the container', @Expected = N'2', @Actual = @TrayCount;
-DECLARE @DistinctFg NVARCHAR(10) = (SELECT CAST(COUNT(DISTINCT FinishedGoodLotId) AS NVARCHAR(10)) FROM Lots.ContainerTray WHERE ContainerId = @Cid2);
-EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] two distinct FG LOTs (one per tray)', @Expected = N'2', @Actual = @DistinctFg;
+DECLARE @SameFg NVARCHAR(10) = (SELECT CASE WHEN @Fg2 = (SELECT LotId FROM Lots.Container WHERE Id = @Cid2)
+                                             AND (SELECT PieceCount FROM Lots.Lot WHERE Id = @Fg2) = 48 THEN N'1' ELSE N'0' END);
+EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] tray 2 appends to the container LOT (48 pcs)', @Expected = N'1', @Actual = @SameFg;
 
 -- DELEGATION: A2 did NOT complete the container - still Open (1), no ShippingLabel
 DECLARE @CStat2 NVARCHAR(10) = (SELECT CAST(ContainerStatusCodeId AS NVARCHAR(10)) FROM Lots.Container WHERE Id = @Cid2);

@@ -1,6 +1,6 @@
 # MPP MES — Data Model Reference
 
-**Version:** v3.11 (rev 2026-11-03 -- OEE dashboard: `Oee.ShiftSummary`, `Oee.ShiftSummaryConfig`, `Lots.Lot.ShiftId` / `MintedPieceCount`, migration `0117`; previously v3.9 rev 2026-10-21 -- merged with `jacques/working` (Assembly Out scale station = 3.8 / 3.9); 3.7: super-lot piece 6, visibility: `Audit.LogEventType` gains `RepeatsLotTimeline` / `LotTimelineKind` and six `ControlledRunLot*` codes (migration `0114`); the LOT History read now includes the LOT's audit stream. The full per-revision narrative is in the Revision History below.)
+**Version:** v3.12 (rev 2026-11-16 -- container-as-LOT: one finished-good LOT per container, `Lots.Container.LotId`, `Lots.ContainerTray` shift / station / minted-count stamps, migration `0119`; previously v3.11.2 rev 2026-11-10 -- not-closed LOT indexes, migration `0118`; previously v3.11 rev 2026-11-03 -- OEE dashboard: `Oee.ShiftSummary`, `Oee.ShiftSummaryConfig`, `Lots.Lot.ShiftId` / `MintedPieceCount`, migration `0117`; previously v3.9 rev 2026-10-21 -- merged with `jacques/working` (Assembly Out scale station = 3.8 / 3.9); 3.7: super-lot piece 6, visibility: `Audit.LogEventType` gains `RepeatsLotTimeline` / `LotTimelineKind` and six `ControlledRunLot*` codes (migration `0114`); the LOT History read now includes the LOT's audit stream. The full per-revision narrative is in the Revision History below.)
 **Schemas:** 8 | **Tables:** ~75
 **Target:** Microsoft SQL Server 2022 Standard Edition
 
@@ -12,6 +12,10 @@
 |---|---|---|---|
 | 3.11.2 | 2026-11-10 | Blue Ridge Automation | **Not-closed LOT indexes (prod incident fix).** Migration `0118_lot_open_lot_indexes`: `IX_Lot_NotClosed_Location` and `IX_Lot_NotClosed_Item` on `Lots.Lot`, filtered `LotStatusId <> 4`. `Lots.Lot_GetWipQueueByLocation` v3.3 and `Lots.Lot_GetTrimStorageQueueForLine` v2.1 resolve their scope first and seek those indexes, and read each LOT's last movement by seek instead of aggregating all of `Lots.LotMovement`. Same rows, same order. See the Lot section note. |
 | 3.11.1 | 2026-11-03 | Blue Ridge Automation | **A shift schedule change is a line in the sand.** New `Oee.ufn_ShiftWindowForShift` resolves a recorded shift's window from its own `Oee.Shift` row (override for that day wins); `Oee.ufn_ShiftAvailability` v2.1 and `Oee.ufn_ShiftDowntimeEntries` v1.1 use it, so editing or deprecating a schedule no longer rewrites or hides past availability. `Oee.ShiftSchedule` removed from `Oee.ufn_ShiftSummaryConfigFingerprint` (v1.1). No schema change. |
+| 3.15 | 2026-11-20 | Blue Ridge Automation | **Container-as-LOT (built 2026-11-04, PR #16 of 2026-11-16; was rev 3.12 on that branch, renumbered when merged into the 2026-11-20 release; migration `0119_container_as_lot`, built 2026-11-04 as 0119 and renumbered; spec `docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md`; plan `docs/superpowers/plans/2026-11-04-container-as-lot-and-lot-volume.md`).** One finished-good LOT per CONTAINER, not per tray: `Lots.Container` += `LotId` (FK `Lots.Lot`, filtered unique `UX_Container_LotId`), minted by `Workorder.Assembly_CompleteTray` v2.0 on the first accepted tray and appended to by every later tray. `Lots.ContainerTray` += `ShiftId` (FK `Oee.Shift`), `ClosedAtTerminalId` (FK `Location.Location`), `MintedPieceCount` -- stamped once at tray close; OEE good is read from them. New trays leave `FinishedGoodLotId` NULL; pre-0119 tray LOTs stay as history and every reader handles both shapes through `Lots.ufn_ContainerLots` / `Lots.ufn_LotContainers`. One genealogy edge per (source LOT, container LOT): a repeat draw adds to its `PieceCount` (the one exception to append-only on `Lots.LotGenealogy`). The Container / ContainerTray sections below were also corrected to the live schema (they described columns that were never built). |
+| 3.14 | 2026-11-20 | Blue Ridge Automation | **Named pack-outs, selectable per terminal (migration `0136_named_pack_outs`; spec `docs/superpowers/specs/2026-11-20-named-pack-outs-design.md`).** New `Parts.PackOut` (a named pack-out of a part for one closure method -- e.g. Cardboard vs Tote -- with one `IsDefault` per part + method) and `Location.TerminalPackOutSelection` (a terminal's pick, one per terminal + part + method). `Parts.ContainerConfig` rows become the pack-out's immutable **versions** (`PackOutId`, `VersionNumber`, `CreatedByUserId`); an edit retires the active version and saves the next, so `Lots.Container.ContainerConfigId` keeps the numbers each box was opened on. `UQ_ContainerConfig_ActiveItemMethod` dropped (several pack-outs per method now); `UQ_ContainerConfig_ActivePackOut` (one active version per pack-out) added. Backfill: every existing (item, method) became one default pack-out named after the method. The pack-out a terminal runs is `Parts.ufn_PackOutInForce`: the open box's own version, else the terminal's pick, else the default. Procs `Parts.PackOut_Save` / `_SetDefault` / `_Deprecate` / `_ListByItem`, `Location.Terminal_SetPackOut` (refused while a box is open); `ContainerConfig_Create` / `_Update` / `_Deprecate` / `_GetByItem` / `_ListHistory` dropped. Rework moves only between boxes of the same pack-out. |
+| 3.13 | 2026-11-20 | Blue Ridge Automation | **Learned scale part codes (migration `0135_scale_part_code_map`; spec `docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md` section 13).** New `Workorder.ScalePartCode` (per terminal, one active mapping per code); `Audit.LogEventType` += `ScalePartCodeLearned`, `ScalePartCodeRemoved`. New procs `Workorder.ScalePartCode_Resolve`, `_ListForTerminal`, `_Deprecate`; `Workorder.ScalePendingPress_Complete` v1.1 learns the code on a pick. |
+| 3.12 | 2026-11-19 | Blue Ridge Automation | **Assembly Out scales read through a Digi One SP (migration `0134_scale_digi_and_pending_press`; spec `docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md`).** `Location.PlcDeviceType` += `ScaleStationDigi` (ByWeight): an IND570 running its TaskExpert program, read on its serial port; one record per good press, and the scale decides the part and whether the tray is good. New `Workorder.ScalePendingPressStatus` and `Workorder.ScalePendingPress` (a press whose part code is no MES part, held until the operator picks the part; one Pending per terminal). `Audit.LogEventType` += `ScalePressHeld`, `ScalePressPicked`, `ScalePressDiscarded`. New procs `Workorder.ScalePendingPress_Hold` / `_GetForTerminal` / `_Claim` / `_Release` / `_Complete` / `_Discard`. No existing proc changed. |
 | 3.11 | 2026-11-03 | Blue Ridge Automation | **OEE dashboard -- availability and quality, site to unit (migration `0117_oee_shift_summary`; spec `docs/superpowers/specs/2026-10-27-oee-dashboard-design.md` v1.0; plan `docs/superpowers/plans/2026-10-30-oee-dashboard-v03.md`).** `Lots.Lot` += `ShiftId` (FK `Oee.Shift`) and `MintedPieceCount`, stamped only by the consume-mints (`Workorder.Assembly_CompleteTray` / `Workorder.MachiningOut_Mint`), filtered index `IX_Lot_ShiftId`; one-time backfill `Lots.Lot_BackfillMintStamp @Commit`. New tables `Oee.ShiftSummary` (stored per-shift minutes and counts, one row per unit / station / area placement / area charge) and `Oee.ShiftSummaryConfig` (single row: the configuration fingerprint). Availability is now computed from entered DURATIONS (`Oee.ufn_DowntimeEventMinutes`, `Oee.ufn_ShiftAvailability`, `Oee.Shift_GetAvailability` v4.0). Compute / refresh procs `Oee.ShiftSummary_Compute`, `_ComputeCore`, `_RecomputeRange`, `_RefreshChanged`; dashboard reads `Oee.Dashboard_GetPeriod`, `_GetUnitSummary` (v2.1 `@ReadLive`), `_GetTrend`, `_GetBreakdown`, `_GetDowntimeByReason`, `_GetScrap`, `_GetDowntimeEntries` (v1.1). Rules in Section 6 "OEE dashboard". |
 | 3.10 | 2026-10-29 | Blue Ridge Automation | **AIM failures in the Failure Log (migration `0116_failurelog_location_lot`; spec `docs/superpowers/specs/2026-10-29-aim-failure-log-design.md`; MPP request 2026-09-16).** `Audit.FailureLog` += `LocationId` / `LotId` (nullable FKs, partition-aligned filtered indexes `IX_FailureLog_Location_AttemptedAt` / `IX_FailureLog_Lot_AttemptedAt`). `Audit.LogEventType` gains `AimPostFailed` and `AimSerialFetchFailed`. New status-row procs `Audit.FailureLog_Record` (the Ignition-side writer: refuses an unknown entity/event code, truncates the reason to 500, drops a context id that names no row) and `Audit.InterfaceLog_Record` (returns the new InterfaceLog Id); `Audit.Audit_LogFailure` v1.1 (+ `@LocationId` / `@LotId`, still silent); `Audit.FailureLog_List` v3.1 (+ `@LocationId` / `@LotNameLike`, trailing `LocationId, LocationName, LotId, LotName`); `Audit.FailureLog_GetByEntity` v2.1 (same trailing columns); `Lots.AimShipperIdPool_GetForPost` v1.3 (+ `LocationId` = container cell, `LotId` = the LOT named by the frozen `LotNumber`). Every failed AIM attempt made while posting is switched on writes one row; posting switched off writes none. |
 | 3.9 | 2026-10-20 | Blue Ridge Automation | **Assembly Out scale station (migration `0113_interfacelog_context`).** `Audit.InterfaceLog` += `LocationId` / `ItemId` / `LotId` (nullable FKs, partition-aligned index `IX_InterfaceLog_Location_LoggedAt`): every integration row can now be tied to a terminal, a part and the LOT it produced; shift derives from `LocationId` + `LoggedAt`. The EPrint watcher writes them on every press with a JSON `RequestPayload` (`v`=1). New terminal attribute `ScaleRunningItemId` (LTD 7, the per-terminal running-part override) and `Audit.LogEventType` `ScaleRunningPartChanged`. New procs: `Workorder.ufn_ScaleStationEligibleParts` (eligible = set up at the line, By Weight pack-out, at least one cast line and 60% of other BOM lines covered for one tray), `Workorder.ScaleStation_GetRunningPart` / `_ListEligibleParts` / `_GetPressLog` / `_GetShiftTally` / `_GetRecentBoxes`, `Location.Terminal_SetScaleRunningPart`; `Audit.Audit_LogInterfaceCall` v1.1. Spec: `docs/superpowers/specs/2026-10-19-assembly-out-scale-station-design.md`. *(Merged 2026-10-21 with the super-lot branch: numbered 3.4 on `jacques/working`; renumbered so the super-lot revisions 3.3-3.7 keep the numbers their specs and status entries cite.)* |
@@ -282,6 +286,24 @@ Event tables carry two location references when both operator position and machi
 - `TerminalLocationId` — FK → `Location.Id` where the definition is `Terminal` (where the operator is standing)
 - `LocationId` — FK → `Location.Id` where the definition is a machine kind (the active Cell context — either fixed by parent on Dedicated terminals or selected by scan/dropdown on Shared terminals)
 
+### TerminalPackOutSelection
+
+**Added migration `0136` (2026-11-20)** (schema `Location`). A terminal's pick of which pack-out it runs for a part + closure method. One row per (terminal, part, method), updated in place; the history is the `Audit.OperationLog` row (`PackOutSelected`).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| TerminalLocationId | BIGINT | NOT NULL, FK -> Location.Location | The terminal (LTD 7) |
+| ItemId | BIGINT | NOT NULL | Copied from the pack-out (no FK: avoids a second cascade path) |
+| ClosureMethod | NVARCHAR(20) | NOT NULL | Copied from the pack-out |
+| PackOutId | BIGINT | NOT NULL, FK -> Parts.PackOut.Id (ON DELETE CASCADE) | The pick. A pick on a removed pack-out is ignored (and deleted by `PackOut_Deprecate`). |
+| SetByUserId | BIGINT | NOT NULL, FK -> Location.AppUser | |
+| SetAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | UTC |
+
+**Index:** `UQ_TerminalPackOutSelection` UNIQUE `(TerminalLocationId, ItemId, ClosureMethod) INCLUDE (PackOutId)`.
+
+**Proc:** `Location.Terminal_SetPackOut` -- any PIN operator; refused while the box the next tray would go into is open.
+
 ### AppUser
 
 MES users in two classes (FDS §4):
@@ -539,9 +561,38 @@ Honda-specified packing rules per product.
 | ToleranceWeight | DECIMAL(10,4) | NULL | **Added 2026-08-27 (migration `0068`).** One symmetric tolerance around `TargetWeight`. `Parts.ContainerConfig_JudgeWeight` judges a scale's net weight against `TargetWeight - ToleranceWeight` to `TargetWeight + ToleranceWeight`, both ends inclusive. NULL is its own verdict (`NoTolerance`) and closes nothing, never a zero-width window. **This window is the only checkweigh verdict** (option C, v3.3): a scale printing its own UNDER / OVER / OK flags (IND570 Template 3) has them compared and logged as `ScaleVerdict` / `FlagsAgree`, but they never decide a close. |
 | DunnageCode | NVARCHAR(50) | NULL | Returnable dunnage identifier |
 | CustomerCode | NVARCHAR(50) | NULL | Honda customer code |
+| PackOutId | BIGINT | NOT NULL, FK -> PackOut.Id | **Added migration `0136` (2026-11-20).** The named pack-out this row is a version of. `ItemId` and `ClosureMethod` are copied from it and never change. |
+| VersionNumber | INT | NOT NULL | Version of the pack-out, 1..N. An edit to any pack value retires the active version and inserts N+1; rows are never updated in place, so a box keeps the numbers it was opened on. UNIQUE `(PackOutId, VersionNumber)`. |
+| CreatedByUserId | BIGINT | NULL, FK -> Location.AppUser | Who saved this version (NULL on rows older than `0136`). |
 | CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT GETDATE() | |
-| UpdatedAt | DATETIME2(3) | NULL | |
-| DeprecatedAt | DATETIME2(3) | NULL | |
+| UpdatedAt | DATETIME2(3) | NULL | No longer written (versions are immutable since `0136`). |
+| DeprecatedAt | DATETIME2(3) | NULL | Set when a newer version is saved or the pack-out is removed. |
+
+**Indexes (since `0136`):** `UQ_ContainerConfig_ActivePackOut` UNIQUE `(PackOutId) WHERE DeprecatedAt IS NULL` (covering the pack values) -- one active version per pack-out; `UQ_ContainerConfig_PackOutVersion` UNIQUE `(PackOutId, VersionNumber)`. The old one-per-(item, method) index is gone.
+
+### PackOut
+
+**Added migration `0136` (2026-11-20).** A named pack-out (container type) of a part for one closure method -- e.g. *Cardboard* and *Tote* for the same part, differing in parts per tray, trays per box and weight. Its values live in versioned `ContainerConfig` rows. One per (part, method) is the default: a terminal with no pick runs it.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| ItemId | BIGINT | NOT NULL, FK -> Item.Id (ON DELETE CASCADE) | |
+| ClosureMethod | NVARCHAR(20) | NOT NULL, FK -> ClosureMethodCode.Code | |
+| Name | NVARCHAR(50) | NOT NULL, CHECK not blank | What the operator sees on the pack-out button. Unique among the part's active pack-outs for the method. |
+| IsDefault | BIT | NOT NULL, DEFAULT 0 | The pack-out a terminal runs when it has no pick. At most one active default per (part, method). |
+| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | UTC |
+| CreatedByUserId | BIGINT | NOT NULL, FK -> Location.AppUser | |
+| UpdatedAt | DATETIME2(3) | NULL | Rename or default change (UTC) |
+| UpdatedByUserId | BIGINT | NULL, FK -> Location.AppUser | |
+| DeprecatedAt | DATETIME2(3) | NULL | Removed (UTC) |
+| DeprecatedByUserId | BIGINT | NULL, FK -> Location.AppUser | |
+
+**Indexes:** `UQ_PackOut_ActiveName` UNIQUE `(ItemId, ClosureMethod, Name) WHERE DeprecatedAt IS NULL`; `UQ_PackOut_ActiveDefault` UNIQUE `(ItemId, ClosureMethod) WHERE IsDefault = 1 AND DeprecatedAt IS NULL`.
+
+**Rule (one place):** `Parts.ufn_ResolvePackOut` = the terminal's active pick, else the active default; `Parts.ufn_PackOutInForce` = the open box the next tray would go into (`Lots.ufn_ContainerForNextTray`) -> that box's own version, else the resolver. Every reader (`Assembly_CompleteTray`, `ContainerConfig_JudgeWeight`, `ContainerConfig_GetByItemAndMethod`, `Assembly_GetTraysRemaining`, `ScaleStation_GetRunningPart`, `ufn_ScaleStationEligibleParts`) uses it.
+
+**Procs:** `Parts.PackOut_Save` (create / rename / new version), `_SetDefault`, `_Deprecate` (refuses the default while others exist), `_ListByItem` (read; `IsSelected` / `IsRunning` with a terminal). Audited to `Audit.ConfigLog`, entity `PackOut`.
 
 ### ✅ Resolved (v1.8 rev / FDS-05-033 v0.11m): Trim → Machining Part Identity Change → 1-line BOM
 
@@ -773,34 +824,45 @@ LTT barcode label print/reprint tracking.
 
 ### Container
 
-Shipping containers for finished goods.
+Shipping containers for finished goods. **One finished-good LOT per container (v3.12, migration `0119`):** the first camera-accepted tray mints the container's LOT and every later tray adds its pieces to it; `Lots.Container_Complete` closes the LOT with the container. Containers from before `0119` have `LotId` NULL and one LOT per tray (`ContainerTray.FinishedGoodLotId`); a container open when `0119` landed is MIXED (tray LOTs + a container LOT). Readers resolve every shape through `Lots.ufn_ContainerLots(@ContainerId)` (representative LOT = `TOP 1 ... ORDER BY SortKey`: the first tray's LOT, else the container's) and `Lots.ufn_LotContainers(@LotId)`. Pieces in a container are always `SUM(ContainerTray.PartsClosedCount)`.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
 | Id | BIGINT | PK | |
-| ContainerName | NVARCHAR(50) | NOT NULL, UNIQUE | |
-| ItemId | BIGINT | FK → Item.Id, NOT NULL | |
-| ContainerConfigId | BIGINT | FK → ContainerConfig.Id, NULL | |
-| ContainerStatusId | BIGINT | FK → ContainerStatusCode.Id, NOT NULL | |
-| LotId | BIGINT | FK → Lot.Id, NULL | Source LOT |
-| CurrentLocationId | BIGINT | FK → Location.Id, NOT NULL | |
-| StationLocationId | BIGINT | FK → Location.Id, NULL | **The terminal that owns this open box** (migration `0078`). `Workorder.Assembly_CompleteTray` v1.4 files a tray into the station's own open box for (line, part), else **claims** an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-`0078` container, and any box opened by a caller that passes no Terminal. Filtered index `IX_Container_OpenByCellItemStation` on open rows. Why: METTs A and B on `MA2-6MACH` run the same part numbers at once into physically separate boxes. |
-| AimShipperId | NVARCHAR(50) | NULL | From AIM system |
-| HoldNumber | NVARCHAR(50) | NULL | Sort Cage hold reference |
-| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT GETDATE() | |
-| UpdatedAt | DATETIME2(3) | NULL | |
+| ItemId | BIGINT | FK -> Parts.Item.Id, NOT NULL | The finished good packed |
+| ContainerConfigId | BIGINT | FK -> Parts.ContainerConfig.Id, NOT NULL | Pack-out (trays per container, parts per tray, closure method) |
+| CurrentLocationId | BIGINT | FK -> Location.Location.Id, NOT NULL | The line while filling; the shipping location once shipped |
+| ContainerStatusCodeId | BIGINT | FK -> Lots.ContainerStatusCode.Id, NOT NULL, DEFAULT 1 (Open) | Open / Complete / Shipped / Hold / Void / ReworkProcessing / ReworkFilling |
+| OpenedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | |
+| CompletedAt | DATETIME2(3) | NULL | Set by `Container_Complete` |
+| CreatedByUserId | BIGINT | FK -> Location.AppUser.Id, NOT NULL | |
+| RowVersion | ROWVERSION | | |
+| StationLocationId | BIGINT | FK -> Location.Location.Id, NULL | **The terminal that owns this open box** (migration `0078`). `Workorder.Assembly_CompleteTray` files a tray into the station's own open box for (line, part), else **claims** an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-`0078` container, and any box opened by a caller that passes no Terminal. Filtered index `IX_Container_OpenByCellItemStation` on open rows. Why: METTs A and B on `MA2-6MACH` run the same part numbers at once into physically separate boxes. |
+| LotId | BIGINT | FK -> Lots.Lot.Id, NULL, filtered UNIQUE `UX_Container_LotId` | **The container's finished-good LOT** (v3.12, migration `0119`). Minted on the first tray; NULL on pre-`0119` containers and on a box opened before its first tray. Holds and CRT apply to it -- i.e. to the whole container (spec D7). A repack move into a container with no LOT mints one. |
+
+The AIM shipper ID, labels and holds live in `Lots.AimShipperIdPool`, `Lots.ShippingLabel` and `Quality.HoldEvent` (by `ContainerId`), not on this row.
 
 ### ContainerTray
 
+One row per camera-accepted (or counted / weighed) tray, and per repack move into a container.
+
 | Column | Type | Constraints | Description |
 |---|---|---|---|
-| Id | BIGINT | PK | |
-| ContainerId | BIGINT | FK → Container.Id, NOT NULL | |
-| TrayNumber | INT | NOT NULL | |
-| PieceCount | INT | NOT NULL | |
-| FinishedGoodLotId | BIGINT | FK → Lot.Id, NULL, UNIQUE (filtered on non-NULL) | Finished-good LOT minted at tray closure - `tray = LOT`, 1:1. Assembly-out consumption targets this LOT via `ConsumptionEvent.ProducedLotId` (see below), and container genealogy resolves `Container -> ContainerTray -> FinishedGoodLot -> component LOTs`. Nullable during transition; tightened to NOT NULL once all trays route through `Workorder.Assembly_CompleteTray`. |
+| Id | BIGINT | PK | The FRS "Produced Tray ID" (`ConsumptionEvent.TrayId`) |
+| ContainerId | BIGINT | FK -> Lots.Container.Id, NOT NULL | |
+| TrayPosition | INT | NOT NULL, UNIQUE with ContainerId | 1-based order in the container |
+| PartsClosedCount | INT | NOT NULL, DEFAULT 0 | Pieces in the tray now; repack scrap / moves lower it |
+| ClosedAt | DATETIME2(3) | NULL | When the tray passed the camera (or was counted / weighed) |
+| ClosedByUserId | BIGINT | FK -> Location.AppUser.Id, NULL | |
+| ClosureMethod | NVARCHAR(20) | NULL | ByCount / ByWeight / ByVision |
+| FinishedGoodLotId | BIGINT | FK -> Lots.Lot.Id, NULL, filtered UNIQUE | **Pre-`0119` only:** the tray's own finished-good LOT (tray = LOT, 1:1). NULL on every tray from `0119` on -- the LOT is the container's. |
+| ShiftId | BIGINT | FK -> Oee.Shift.Id, NULL | v3.12. The shift the tray passed the camera in, stamped once by `Assembly_CompleteTray`. OEE good (`Oee.ufn_ShiftGood`) reads it. NULL on pre-`0119` trays (their LOT carries the stamp) and on repack-move trays (not production). Filtered index `IX_ContainerTray_ShiftId`. |
+| ClosedAtTerminalId | BIGINT | FK -> Location.Location.Id, NULL | v3.12. The station that closed the tray (OEE area family; super-lot line filter). |
+| MintedPieceCount | INT | NULL | v3.12. `PartsClosedCount` at tray close, never changed: OEE good, so later repack scrap counts once as scrap, not also as less good (spec D11). |
 
-**Assembly consumption targets the finished-good LOT (v-bump 2026-07-06).** Non-serialized AND serialized assembly-out mint a finished-good LOT (`tray = LOT`) and consume `BomLine.QtyPer x PieceCount` FIFO (oldest-first by `Lot.CreatedAt`, tie-broken by `Id`) from eligible component LOTs at the line. Each draw's `Workorder.ConsumptionEvent` sets **`ProducedLotId` = the finished-good LOT** (the primary consumption target), not only `ProducedContainerId`; the Container is retained as the wrapper. See FDS-06-013 / FDS-06-020 / FDS-06-021.
+Index `IX_ContainerTray_ClosedAt (ClosedAt) INCLUDE (ContainerId, ClosedAtTerminalId)` serves the super-lot time windows (a container LOT is "produced in the window" when any of its trays was closed inside it -- spec D9).
+
+**Assembly consumption targets the finished-good LOT.** Assembly-out consumes `BomLine.QtyPer x PieceCount` FIFO (oldest-first by `Lot.CreatedAt`, tie-broken by `Id`) from eligible component LOTs at the line. Each draw writes one `Workorder.ConsumptionEvent` (`ProducedLotId` = the container's LOT, `ProducedContainerId`, `TrayId` = the tray) and adds to ONE `Lots.LotGenealogy` edge per (source LOT, container LOT) -- the edge's `PieceCount` grows with each draw; closure ancestors are inserted only when new. See FDS-06-013 / FDS-06-020 / FDS-06-021.
 
 ### SerializedPart
 
@@ -1317,6 +1379,63 @@ The actual figures are stored as typed, alongside the die's lifetime shot count 
 | SortOrder | INT | NOT NULL, DEFAULT 0 | Dropdown order (`CounterReset` first — the commonest case). |
 
 `Workorder.DieCastCounterAnchorReason_List` derives a `RequiresNote` BIT from `Code = 'Other'` so the dialog can require the note at the button instead of letting the write reject.
+
+### ScalePendingPressStatus
+
+**Added migration `0134` (2026-11-19).** Read-only code table: the life of a held scale press. `Pending` must stay Id 1, because the filtered unique index on `ScalePendingPress` is written against it.
+
+| Id | Code | Meaning |
+|---|---|---|
+| 1 | `Pending` | Waiting for the operator to pick the part. |
+| 2 | `Closed` | Claimed by a pick; completed once the tray closed (`ResolvedItemId` set). |
+| 3 | `Discarded` | Discarded by the operator; no tray closed. |
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | |
+| Name | NVARCHAR(100) | NOT NULL | |
+
+### ScalePendingPress
+
+**Added migration `0134` (2026-11-19).** A good press from a Digi-read scale (`Location.PlcDeviceType` `ScaleStationDigi`) whose `<Part>` code matched no active part number, held until the operator picks the part on the scale station screen; the tray closes on the pick. Spec: `docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md`.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| TerminalLocationId | BIGINT | NOT NULL, FK -> Location.Location | The scale's terminal |
+| ReceivedAt | DATETIME2(3) | NOT NULL | UTC |
+| NetWeight | DECIMAL(10,3) | NOT NULL | As the scale sent it |
+| Uom | NVARCHAR(10) | NOT NULL | As the scale sent it |
+| ScalePartCode | NVARCHAR(50) | NOT NULL | The `<Part>` code, trimmed |
+| StatusId | BIGINT | NOT NULL, FK -> ScalePendingPressStatus | |
+| ResolvedAt | DATETIME2(3) | NULL | UTC, when claimed or discarded |
+| ResolvedByAppUserId | BIGINT | NULL, FK -> Location.AppUser | The operator |
+| ResolvedItemId | BIGINT | NULL, FK -> Parts.Item | The part picked |
+| FinishedGoodLotId | BIGINT | NULL, FK -> Lots.Lot | The tray LOT the pick minted |
+
+**Index:** `UX_ScalePendingPress_Terminal_Pending` UNIQUE on `(TerminalLocationId) WHERE StatusId = 1`: at most one held press per terminal. While one is held, further presses at that scale are refused.
+
+**Procs (status-row):** `Workorder.ScalePendingPress_Hold` (gateway, SYS), `_Claim` (Pending -> Closed, conditional single statement: one tray per press), `_Release` (back to Pending when the close after a pick fails), `_Complete` (stamps item + LOT, audits `ScalePressPicked`), `_Discard` (audits `ScalePressDiscarded`). Read: `_GetForTerminal`.
+
+### ScalePartCode
+
+**Added migration `0135` (2026-11-20).** Learned scale part codes, per terminal. When the operator picks the part for a held press, `ScalePendingPress_Complete` v1.1 records the scale's code -> that part for that terminal; later presses resolve with no tap. Spec section 13.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| TerminalLocationId | BIGINT | NOT NULL, FK -> Location.Location | The scale's terminal |
+| ScalePartCode | NVARCHAR(50) | NOT NULL | As the scale sends it, trimmed |
+| ItemId | BIGINT | NOT NULL, FK -> Parts.Item | The part the code means here |
+| LearnedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | UTC |
+| LearnedByAppUserId | BIGINT | NOT NULL, FK -> Location.AppUser | The operator whose pick taught it |
+| DeprecatedAt | DATETIME2(3) | NULL | Replaced or removed (UTC) |
+| DeprecatedByAppUserId | BIGINT | NULL, FK -> Location.AppUser | |
+
+**Index:** `UX_ScalePartCode_Terminal_Code_Active` UNIQUE on `(TerminalLocationId, ScalePartCode) INCLUDE (ItemId) WHERE DeprecatedAt IS NULL`.
+
+**Procs:** `Workorder.ScalePartCode_Resolve` (read: exact active part number, else this terminal's learned code; returns `Source` and `Eligible`), `_ListForTerminal` (read, Config Tool), `_Deprecate` (status-row, audits `ScalePartCodeRemoved`). Learning is audited as `ScalePartCodeLearned`.
 
 ---
 

@@ -819,6 +819,108 @@ BEGIN
 END
 GO
 
+-- Location.TerminalPackOutSelection
+IF OBJECT_ID(N'[Location].[TerminalPackOutSelection]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Location].[TerminalPackOutSelection]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0136 (2026-11-20) (schema Location). A terminal''s pick of which pack-out it runs for a part + closure method. One row per (terminal, part, method), updated in place; the history is the Audit.OperationLog row (PackOutSelected).',
+                     @level0type = N'SCHEMA', @level0name = N'Location',
+                     @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0136 (2026-11-20) (schema Location). A terminal''s pick of which pack-out it runs for a part + closure method. One row per (terminal, part, method), updated in place; the history is the Audit.OperationLog row (PackOutSelected).',
+                     @level0type = N'SCHEMA', @level0name = N'Location',
+                     @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection';
+
+    IF COL_LENGTH(N'[Location].[TerminalPackOutSelection]', N'TerminalLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Location].[TerminalPackOutSelection]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Location].[TerminalPackOutSelection]'), N'TerminalLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The terminal (LTD 7)',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The terminal (LTD 7)',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+
+    IF COL_LENGTH(N'[Location].[TerminalPackOutSelection]', N'ItemId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Location].[TerminalPackOutSelection]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Location].[TerminalPackOutSelection]'), N'ItemId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Copied from the pack-out (no FK: avoids a second cascade path)',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Copied from the pack-out (no FK: avoids a second cascade path)',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+    END
+
+    IF COL_LENGTH(N'[Location].[TerminalPackOutSelection]', N'ClosureMethod') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Location].[TerminalPackOutSelection]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Location].[TerminalPackOutSelection]'), N'ClosureMethod', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Copied from the pack-out',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'ClosureMethod';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Copied from the pack-out',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'ClosureMethod';
+    END
+
+    IF COL_LENGTH(N'[Location].[TerminalPackOutSelection]', N'PackOutId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Location].[TerminalPackOutSelection]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Location].[TerminalPackOutSelection]'), N'PackOutId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The pick. A pick on a removed pack-out is ignored (and deleted by PackOut_Deprecate).',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'PackOutId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The pick. A pick on a removed pack-out is ignored (and deleted by PackOut_Deprecate).',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'PackOutId';
+    END
+
+    IF COL_LENGTH(N'[Location].[TerminalPackOutSelection]', N'SetAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Location].[TerminalPackOutSelection]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Location].[TerminalPackOutSelection]'), N'SetAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'SetAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'TerminalPackOutSelection',
+                         @level2type = N'COLUMN', @level2name = N'SetAt';
+    END
+END
+GO
+
 -- Location.AppUser
 IF OBJECT_ID(N'[Location].[AppUser]', 'U') IS NOT NULL
 BEGIN
@@ -1871,6 +1973,193 @@ BEGIN
                          @level1type = N'TABLE',  @level1name = N'ContainerConfig',
                          @level2type = N'COLUMN', @level2name = N'CustomerCode';
     END
+
+    IF COL_LENGTH(N'[Parts].[ContainerConfig]', N'PackOutId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[ContainerConfig]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[ContainerConfig]'), N'PackOutId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0136 (2026-11-20). The named pack-out this row is a version of. ItemId and ClosureMethod are copied from it and never change.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'PackOutId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0136 (2026-11-20). The named pack-out this row is a version of. ItemId and ClosureMethod are copied from it and never change.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'PackOutId';
+    END
+
+    IF COL_LENGTH(N'[Parts].[ContainerConfig]', N'VersionNumber') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[ContainerConfig]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[ContainerConfig]'), N'VersionNumber', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Version of the pack-out, 1..N. An edit to any pack value retires the active version and inserts N+1; rows are never updated in place, so a box keeps the numbers it was opened on. UNIQUE (PackOutId, VersionNumber).',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'VersionNumber';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Version of the pack-out, 1..N. An edit to any pack value retires the active version and inserts N+1; rows are never updated in place, so a box keeps the numbers it was opened on. UNIQUE (PackOutId, VersionNumber).',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'VersionNumber';
+    END
+
+    IF COL_LENGTH(N'[Parts].[ContainerConfig]', N'CreatedByUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[ContainerConfig]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[ContainerConfig]'), N'CreatedByUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Who saved this version (NULL on rows older than 0136).',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'CreatedByUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Who saved this version (NULL on rows older than 0136).',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'CreatedByUserId';
+    END
+
+    IF COL_LENGTH(N'[Parts].[ContainerConfig]', N'UpdatedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[ContainerConfig]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[ContainerConfig]'), N'UpdatedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'No longer written (versions are immutable since 0136).',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'UpdatedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'No longer written (versions are immutable since 0136).',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'UpdatedAt';
+    END
+
+    IF COL_LENGTH(N'[Parts].[ContainerConfig]', N'DeprecatedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[ContainerConfig]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[ContainerConfig]'), N'DeprecatedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Set when a newer version is saved or the pack-out is removed.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Set when a newer version is saved or the pack-out is removed.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'ContainerConfig',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedAt';
+    END
+END
+GO
+
+-- Parts.PackOut
+IF OBJECT_ID(N'[Parts].[PackOut]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Parts].[PackOut]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0136 (2026-11-20). A named pack-out (container type) of a part for one closure method -- e.g. Cardboard and Tote for the same part, differing in parts per tray, trays per box and weight. Its values live in versioned ContainerConfig rows. One per (part, method) is the default: a terminal with no pick runs it.',
+                     @level0type = N'SCHEMA', @level0name = N'Parts',
+                     @level1type = N'TABLE',  @level1name = N'PackOut';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0136 (2026-11-20). A named pack-out (container type) of a part for one closure method -- e.g. Cardboard and Tote for the same part, differing in parts per tray, trays per box and weight. Its values live in versioned ContainerConfig rows. One per (part, method) is the default: a terminal with no pick runs it.',
+                     @level0type = N'SCHEMA', @level0name = N'Parts',
+                     @level1type = N'TABLE',  @level1name = N'PackOut';
+
+    IF COL_LENGTH(N'[Parts].[PackOut]', N'Name') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[PackOut]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[PackOut]'), N'Name', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'What the operator sees on the pack-out button. Unique among the part''s active pack-outs for the method.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'Name';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'What the operator sees on the pack-out button. Unique among the part''s active pack-outs for the method.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'Name';
+    END
+
+    IF COL_LENGTH(N'[Parts].[PackOut]', N'IsDefault') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[PackOut]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[PackOut]'), N'IsDefault', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The pack-out a terminal runs when it has no pick. At most one active default per (part, method).',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'IsDefault';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The pack-out a terminal runs when it has no pick. At most one active default per (part, method).',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'IsDefault';
+    END
+
+    IF COL_LENGTH(N'[Parts].[PackOut]', N'CreatedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[PackOut]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[PackOut]'), N'CreatedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'CreatedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'CreatedAt';
+    END
+
+    IF COL_LENGTH(N'[Parts].[PackOut]', N'UpdatedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[PackOut]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[PackOut]'), N'UpdatedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Rename or default change (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'UpdatedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Rename or default change (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'UpdatedAt';
+    END
+
+    IF COL_LENGTH(N'[Parts].[PackOut]', N'DeprecatedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[PackOut]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[PackOut]'), N'DeprecatedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Removed (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Removed (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'PackOut',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedAt';
+    END
 END
 GO
 
@@ -2222,6 +2511,40 @@ BEGIN
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Lot',
                          @level2type = N'COLUMN', @level2name = N'CrtActive';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Lot]', N'ShiftId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Lot]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Lot]'), N'ShiftId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v3.11 (migration 0117, OEE dashboard D18). The shift a LOT was minted in, stamped ONLY by the consume-mints (Workorder.Assembly_CompleteTray for finished goods, Workorder.MachiningOut_Mint for SubAssemblies) from Oee.ufn_ShiftIdForInstant; the dashboard counts FinishedGood LOTs only. Split, merge and rework children never carry it, so they never count as new production. Filtered index IX_Lot_ShiftId (WHERE ShiftId IS NOT NULL). Historic LOTs: Lots.Lot_BackfillMintStamp.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v3.11 (migration 0117, OEE dashboard D18). The shift a LOT was minted in, stamped ONLY by the consume-mints (Workorder.Assembly_CompleteTray for finished goods, Workorder.MachiningOut_Mint for SubAssemblies) from Oee.ufn_ShiftIdForInstant; the dashboard counts FinishedGood LOTs only. Split, merge and rework children never carry it, so they never count as new production. Filtered index IX_Lot_ShiftId (WHERE ShiftId IS NOT NULL). Historic LOTs: Lots.Lot_BackfillMintStamp.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Lot]', N'MintedPieceCount') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Lot]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Lot]'), N'MintedPieceCount', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v3.11 (migration 0117, D21). The piece count at mint, written with ShiftId and never changed after. The dashboard''s M&A good = SUM(MintedPieceCount) of the line''s FG LOTs in the shift, so a later scrap (which lowers PieceCount) is counted once, as scrap, not also as less good.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'MintedPieceCount';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v3.11 (migration 0117, D21). The piece count at mint, written with ShiftId and never changed after. The dashboard''s M&A good = SUM(MintedPieceCount) of the line''s FG LOTs in the shift, so a later scrap (which lowers PieceCount) is counted once, as scrap, not also as less good.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'MintedPieceCount';
     END
 END
 GO
@@ -2721,29 +3044,97 @@ BEGIN
                WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
                  AND minor_id = 0
                  AND name = N'MS_Description')
-        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Shipping containers for finished goods.',
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Shipping containers for finished goods. One finished-good LOT per container (v3.12, migration 0119): the first camera-accepted tray mints the container''s LOT and every later tray adds its pieces to it; Lots.Container_Complete closes the LOT with the container. Containers from before 0119 have LotId NULL and one LOT per tray (ContainerTray.FinishedGoodLotId); a container open when 0119 landed is MIXED (tray LOTs + a container LOT). Readers resolve every shape through Lots.ufn_ContainerLots(@ContainerId) (representative LOT = TOP 1 ... ORDER BY SortKey: the first tray''s LOT, else the container''s) and Lots.ufn_LotContainers(@LotId). Pieces in a container are always SUM(ContainerTray.PartsClosedCount).',
                      @level0type = N'SCHEMA', @level0name = N'Lots',
                      @level1type = N'TABLE',  @level1name = N'Container';
     ELSE
-        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Shipping containers for finished goods.',
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Shipping containers for finished goods. One finished-good LOT per container (v3.12, migration 0119): the first camera-accepted tray mints the container''s LOT and every later tray adds its pieces to it; Lots.Container_Complete closes the LOT with the container. Containers from before 0119 have LotId NULL and one LOT per tray (ContainerTray.FinishedGoodLotId); a container open when 0119 landed is MIXED (tray LOTs + a container LOT). Readers resolve every shape through Lots.ufn_ContainerLots(@ContainerId) (representative LOT = TOP 1 ... ORDER BY SortKey: the first tray''s LOT, else the container''s) and Lots.ufn_LotContainers(@LotId). Pieces in a container are always SUM(ContainerTray.PartsClosedCount).',
                      @level0type = N'SCHEMA', @level0name = N'Lots',
                      @level1type = N'TABLE',  @level1name = N'Container';
 
-    IF COL_LENGTH(N'[Lots].[Container]', N'LotId') IS NOT NULL
+    IF COL_LENGTH(N'[Lots].[Container]', N'ItemId') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
                    WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'LotId', 'ColumnId')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'ItemId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Source LOT',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The finished good packed',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'LotId';
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Source LOT',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The finished good packed',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'LotId';
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Container]', N'ContainerConfigId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'ContainerConfigId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Pack-out (trays per container, parts per tray, closure method)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'ContainerConfigId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Pack-out (trays per container, parts per tray, closure method)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'ContainerConfigId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Container]', N'CurrentLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'CurrentLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The line while filling; the shipping location once shipped',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'CurrentLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The line while filling; the shipping location once shipped',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'CurrentLocationId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Container]', N'ContainerStatusCodeId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'ContainerStatusCodeId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Open / Complete / Shipped / Hold / Void / ReworkProcessing / ReworkFilling',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'ContainerStatusCodeId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Open / Complete / Shipped / Hold / Void / ReworkProcessing / ReworkFilling',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'ContainerStatusCodeId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Container]', N'CompletedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'CompletedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Set by Container_Complete',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'CompletedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Set by Container_Complete',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'CompletedAt';
     END
 
     IF COL_LENGTH(N'[Lots].[Container]', N'StationLocationId') IS NOT NULL
@@ -2752,49 +3143,32 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'StationLocationId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray v1.4 files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
                          @level2type = N'COLUMN', @level2name = N'StationLocationId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray v1.4 files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
                          @level2type = N'COLUMN', @level2name = N'StationLocationId';
     END
 
-    IF COL_LENGTH(N'[Lots].[Container]', N'AimShipperId') IS NOT NULL
+    IF COL_LENGTH(N'[Lots].[Container]', N'LotId') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
                    WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'AimShipperId', 'ColumnId')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'LotId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'From AIM system',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The container''s finished-good LOT (v3.12, migration 0119). Minted on the first tray; NULL on pre-0119 containers and on a box opened before its first tray. Holds and CRT apply to it -- i.e. to the whole container (spec D7). A repack move into a container with no LOT mints one.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'AimShipperId';
+                         @level2type = N'COLUMN', @level2name = N'LotId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'From AIM system',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The container''s finished-good LOT (v3.12, migration 0119). Minted on the first tray; NULL on pre-0119 containers and on a box opened before its first tray. Holds and CRT apply to it -- i.e. to the whole container (spec D7). A repack move into a container with no LOT mints one.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'AimShipperId';
-    END
-
-    IF COL_LENGTH(N'[Lots].[Container]', N'HoldNumber') IS NOT NULL
-    BEGIN
-        IF EXISTS (SELECT 1 FROM sys.extended_properties
-                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'HoldNumber', 'ColumnId')
-                     AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Sort Cage hold reference',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'HoldNumber';
-        ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Sort Cage hold reference',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'HoldNumber';
+                         @level2type = N'COLUMN', @level2name = N'LotId';
     END
 END
 GO
@@ -2806,13 +3180,98 @@ BEGIN
                WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
                  AND minor_id = 0
                  AND name = N'MS_Description')
-        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Assembly consumption targets the finished-good LOT (v-bump 2026-07-06). Non-serialized AND serialized assembly-out mint a finished-good LOT (tray = LOT) and consume BomLine.QtyPer x PieceCount FIFO (oldest-first by Lot.CreatedAt, tie-broken by Id) from eligible component LOTs at the line. Each draw''s Workorder.ConsumptionEvent sets ProducedLotId = the finished-good LOT (the primary consumption target), not only ProducedContainerId; the Container is retained as the wrapper. See FDS-06-013 / FDS-06-020 / FDS-06-021.',
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'One row per camera-accepted (or counted / weighed) tray, and per repack move into a container.',
                      @level0type = N'SCHEMA', @level0name = N'Lots',
                      @level1type = N'TABLE',  @level1name = N'ContainerTray';
     ELSE
-        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Assembly consumption targets the finished-good LOT (v-bump 2026-07-06). Non-serialized AND serialized assembly-out mint a finished-good LOT (tray = LOT) and consume BomLine.QtyPer x PieceCount FIFO (oldest-first by Lot.CreatedAt, tie-broken by Id) from eligible component LOTs at the line. Each draw''s Workorder.ConsumptionEvent sets ProducedLotId = the finished-good LOT (the primary consumption target), not only ProducedContainerId; the Container is retained as the wrapper. See FDS-06-013 / FDS-06-020 / FDS-06-021.',
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'One row per camera-accepted (or counted / weighed) tray, and per repack move into a container.',
                      @level0type = N'SCHEMA', @level0name = N'Lots',
                      @level1type = N'TABLE',  @level1name = N'ContainerTray';
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'Id') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'Id', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The FRS "Produced Tray ID" (ConsumptionEvent.TrayId)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The FRS "Produced Tray ID" (ConsumptionEvent.TrayId)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'TrayPosition') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'TrayPosition', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'1-based order in the container',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'TrayPosition';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'1-based order in the container',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'TrayPosition';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'PartsClosedCount') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'PartsClosedCount', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Pieces in the tray now; repack scrap / moves lower it',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'PartsClosedCount';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Pieces in the tray now; repack scrap / moves lower it',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'PartsClosedCount';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'ClosedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'ClosedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'When the tray passed the camera (or was counted / weighed)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'When the tray passed the camera (or was counted / weighed)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAt';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'ClosureMethod') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'ClosureMethod', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'ByCount / ByWeight / ByVision',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosureMethod';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'ByCount / ByWeight / ByVision',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosureMethod';
+    END
 
     IF COL_LENGTH(N'[Lots].[ContainerTray]', N'FinishedGoodLotId') IS NOT NULL
     BEGIN
@@ -2820,15 +3279,66 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'FinishedGoodLotId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Finished-good LOT minted at tray closure - tray = LOT, 1:1. Assembly-out consumption targets this LOT via ConsumptionEvent.ProducedLotId (see below), and container genealogy resolves Container -> ContainerTray -> FinishedGoodLot -> component LOTs. Nullable during transition; tightened to NOT NULL once all trays route through Workorder.Assembly_CompleteTray.',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Pre-0119 only: the tray''s own finished-good LOT (tray = LOT, 1:1). NULL on every tray from 0119 on -- the LOT is the container''s.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'ContainerTray',
                          @level2type = N'COLUMN', @level2name = N'FinishedGoodLotId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Finished-good LOT minted at tray closure - tray = LOT, 1:1. Assembly-out consumption targets this LOT via ConsumptionEvent.ProducedLotId (see below), and container genealogy resolves Container -> ContainerTray -> FinishedGoodLot -> component LOTs. Nullable during transition; tightened to NOT NULL once all trays route through Workorder.Assembly_CompleteTray.',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Pre-0119 only: the tray''s own finished-good LOT (tray = LOT, 1:1). NULL on every tray from 0119 on -- the LOT is the container''s.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'ContainerTray',
                          @level2type = N'COLUMN', @level2name = N'FinishedGoodLotId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'ShiftId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'ShiftId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'v3.12. The shift the tray passed the camera in, stamped once by Assembly_CompleteTray. OEE good (Oee.ufn_ShiftGood) reads it. NULL on pre-0119 trays (their LOT carries the stamp) and on repack-move trays (not production). Filtered index IX_ContainerTray_ShiftId.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'v3.12. The shift the tray passed the camera in, stamped once by Assembly_CompleteTray. OEE good (Oee.ufn_ShiftGood) reads it. NULL on pre-0119 trays (their LOT carries the stamp) and on repack-move trays (not production). Filtered index IX_ContainerTray_ShiftId.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'ClosedAtTerminalId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'ClosedAtTerminalId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'v3.12. The station that closed the tray (OEE area family; super-lot line filter).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAtTerminalId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'v3.12. The station that closed the tray (OEE area family; super-lot line filter).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAtTerminalId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'MintedPieceCount') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'MintedPieceCount', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'v3.12. PartsClosedCount at tray close, never changed: OEE good, so later repack scrap counts once as scrap, not also as less good (spec D11).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'MintedPieceCount';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'v3.12. PartsClosedCount at tray close, never changed: OEE good, so later repack scrap counts once as scrap, not also as less good (spec D11).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'MintedPieceCount';
     END
 END
 GO
@@ -5310,6 +5820,312 @@ BEGIN
 END
 GO
 
+-- Workorder.ScalePendingPressStatus
+IF OBJECT_ID(N'[Workorder].[ScalePendingPressStatus]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPressStatus]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0134 (2026-11-19). Read-only code table: the life of a held scale press. Pending must stay Id 1, because the filtered unique index on ScalePendingPress is written against it.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePendingPressStatus';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0134 (2026-11-19). Read-only code table: the life of a held scale press. Pending must stay Id 1, because the filtered unique index on ScalePendingPress is written against it.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePendingPressStatus';
+END
+GO
+
+-- Workorder.ScalePendingPress
+IF OBJECT_ID(N'[Workorder].[ScalePendingPress]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0134 (2026-11-19). A good press from a Digi-read scale (Location.PlcDeviceType ScaleStationDigi) whose code matched no active part number, held until the operator picks the part on the scale station screen; the tray closes on the pick. Spec: docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePendingPress';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0134 (2026-11-19). A good press from a Digi-read scale (Location.PlcDeviceType ScaleStationDigi) whose code matched no active part number, held until the operator picks the part on the scale station screen; the tray closes on the pick. Spec: docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePendingPress';
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'TerminalLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'TerminalLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The scale''s terminal',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The scale''s terminal',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ReceivedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ReceivedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ReceivedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ReceivedAt';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'NetWeight') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'NetWeight', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'As the scale sent it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'NetWeight';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'As the scale sent it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'NetWeight';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'Uom') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'Uom', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'As the scale sent it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'Uom';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'As the scale sent it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'Uom';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ScalePartCode') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ScalePartCode', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The code, trimmed',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ScalePartCode';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The code, trimmed',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ScalePartCode';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ResolvedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ResolvedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC, when claimed or discarded',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC, when claimed or discarded',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedAt';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ResolvedByAppUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ResolvedByAppUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The operator',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedByAppUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The operator',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedByAppUserId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'ResolvedItemId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'ResolvedItemId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The part picked',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedItemId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The part picked',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'ResolvedItemId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePendingPress]', N'FinishedGoodLotId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePendingPress]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePendingPress]'), N'FinishedGoodLotId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The tray LOT the pick minted',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'FinishedGoodLotId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The tray LOT the pick minted',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePendingPress',
+                         @level2type = N'COLUMN', @level2name = N'FinishedGoodLotId';
+    END
+END
+GO
+
+-- Workorder.ScalePartCode
+IF OBJECT_ID(N'[Workorder].[ScalePartCode]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0135 (2026-11-20). Learned scale part codes, per terminal. When the operator picks the part for a held press, ScalePendingPress_Complete v1.1 records the scale''s code -> that part for that terminal; later presses resolve with no tap. Spec section 13.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePartCode';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0135 (2026-11-20). Learned scale part codes, per terminal. When the operator picks the part for a held press, ScalePendingPress_Complete v1.1 records the scale''s code -> that part for that terminal; later presses resolve with no tap. Spec section 13.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePartCode';
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'TerminalLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'TerminalLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The scale''s terminal',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The scale''s terminal',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'ScalePartCode') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'ScalePartCode', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'As the scale sends it, trimmed',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'ScalePartCode';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'As the scale sends it, trimmed',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'ScalePartCode';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'ItemId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'ItemId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The part the code means here',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The part the code means here',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'LearnedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'LearnedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'LearnedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'LearnedAt';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'LearnedByAppUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'LearnedByAppUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The operator whose pick taught it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'LearnedByAppUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The operator whose pick taught it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'LearnedByAppUserId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'DeprecatedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'DeprecatedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Replaced or removed (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Replaced or removed (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedAt';
+    END
+END
+GO
+
 -- Quality.DefectCode
 IF OBJECT_ID(N'[Quality].[DefectCode]', 'U') IS NOT NULL
 BEGIN
@@ -7416,6 +8232,363 @@ BEGIN
 END
 GO
 
+-- OEE.ShiftSummary
+IF OBJECT_ID(N'[OEE].[ShiftSummary]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v3.11 (migration 0117). Derived, not system of record: one closed shift''s OEE minutes and counts,',
+                     @level0type = N'SCHEMA', @level0name = N'OEE',
+                     @level1type = N'TABLE',  @level1name = N'ShiftSummary';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v3.11 (migration 0117). Derived, not system of record: one closed shift''s OEE minutes and counts,',
+                     @level0type = N'SCHEMA', @level0name = N'OEE',
+                     @level1type = N'TABLE',  @level1name = N'ShiftSummary';
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'LocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'LocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The unit / station / area placement; NULL on the unplaced AreaCharge row',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'LocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The unit / station / area placement; NULL on the unplaced AreaCharge row',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'LocationId';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'RowKind') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'RowKind', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Unit (press, trim press, line), Station (OEE station under a line), AreaPlacement (a ProductionArea booked on directly -- the trim shop), AreaCharge (all scrap charged to a family by defect code, plus one NULL-family row for Non-Specific rejects with no cell)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'RowKind';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Unit (press, trim press, line), Station (OEE station under a line), AreaPlacement (a ProductionArea booked on directly -- the trim shop), AreaCharge (all scrap charged to a family by defect code, plus one NULL-family row for Non-Specific rejects with no cell)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'RowKind';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'AreaFamily') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'AreaFamily', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'diecast / trim / ma (Oee.ufn_AreaFamily)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'AreaFamily';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'diecast / trim / ma (Oee.ufn_AreaFamily)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'AreaFamily';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'ProductionAreaId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'ProductionAreaId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The unit''s ProductionArea group',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'ProductionAreaId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The unit''s ProductionArea group',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'ProductionAreaId';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'ParentUnitLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'ParentUnitLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'A station''s line',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'ParentUnitLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'A station''s line',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'ParentUnitLocationId';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'PlannedMinutes') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'PlannedMinutes', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Scheduled window minutes',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'PlannedMinutes';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Scheduled window minutes',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'PlannedMinutes';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'PlannedDowntimeMinutes') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'PlannedDowntimeMinutes', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Entered durations with an excused reason',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'PlannedDowntimeMinutes';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Entered durations with an excused reason',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'PlannedDowntimeMinutes';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'UnplannedDowntimeMinutes') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'UnplannedDowntimeMinutes', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Entered durations without (no-reason counts as unplanned)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'UnplannedDowntimeMinutes';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Entered durations without (no-reason counts as unplanned)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'UnplannedDowntimeMinutes';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'BaseMinutes') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'BaseMinutes', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Planned - planned downtime; 0 = no availability',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'BaseMinutes';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Planned - planned downtime; 0 = no availability',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'BaseMinutes';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'EffectiveUnplannedMinutes') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'EffectiveUnplannedMinutes', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The capped unplanned minutes; a roll-up line''s is Base * (1 - station mean)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'EffectiveUnplannedMinutes';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The capped unplanned minutes; a roll-up line''s is Base * (1 - station mean)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'EffectiveUnplannedMinutes';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'Good') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'Good', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Die cast credits / trim checkpoint credits / FG MintedPieceCount (6.4 of the spec)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'Good';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Die cast credits / trim checkpoint credits / FG MintedPieceCount (6.4 of the spec)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'Good';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'Scrap') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'Scrap', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Rejects charged here by defect code, excluding non-reject scrap',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'Scrap';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Rejects charged here by defect code, excluding non-reject scrap',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'Scrap';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'NonRejectScrap') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'NonRejectScrap', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Counted, excluded from quality',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'NonRejectScrap';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Counted, excluded from quality',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'NonRejectScrap';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'FoundDownstreamScrap') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'FoundDownstreamScrap', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'(AreaCharge) charged to the family but found elsewhere or with no cell',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'FoundDownstreamScrap';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'(AreaCharge) charged to the family but found elsewhere or with no cell',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'FoundDownstreamScrap';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'UnplacedScrap') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'UnplacedScrap', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'(NULL-family AreaCharge) Non-Specific rejects with no cell',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'UnplacedScrap';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'(NULL-family AreaCharge) Non-Specific rejects with no cell',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'UnplacedScrap';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'LastToolId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'LastToolId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'A press''s latest die in the shift',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'LastToolId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'A press''s latest die in the shift',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'LastToolId';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'IsActive') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'IsActive', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Good, scrap or a downtime entry this shift (only active pairs pool)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'IsActive';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Good, scrap or a downtime entry this shift (only active pairs pool)',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'IsActive';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'ComputedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'ComputedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'ComputedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'UTC',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'ComputedAt';
+    END
+
+    IF COL_LENGTH(N'[OEE].[ShiftSummary]', N'InputFingerprint') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummary]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[OEE].[ShiftSummary]'), N'InputFingerprint', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Oee.ufn_ShiftInputFingerprint at compute time',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'InputFingerprint';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Oee.ufn_ShiftInputFingerprint at compute time',
+                         @level0type = N'SCHEMA', @level0name = N'OEE',
+                         @level1type = N'TABLE',  @level1name = N'ShiftSummary',
+                         @level2type = N'COLUMN', @level2name = N'InputFingerprint';
+    END
+END
+GO
+
+-- OEE.ShiftSummaryConfig
+IF OBJECT_ID(N'[OEE].[ShiftSummaryConfig]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[OEE].[ShiftSummaryConfig]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v3.11 (migration 0117). Single row (CHECK Id = 1). ConfigFingerprint VARBINARY(32) NULL =',
+                     @level0type = N'SCHEMA', @level0name = N'OEE',
+                     @level1type = N'TABLE',  @level1name = N'ShiftSummaryConfig';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v3.11 (migration 0117). Single row (CHECK Id = 1). ConfigFingerprint VARBINARY(32) NULL =',
+                     @level0type = N'SCHEMA', @level0name = N'OEE',
+                     @level1type = N'TABLE',  @level1name = N'ShiftSummaryConfig';
+END
+GO
+
 -- Tools.ToolType
 IF OBJECT_ID(N'[Tools].[ToolType]', 'U') IS NOT NULL
 BEGIN
@@ -8850,4 +10023,4 @@ BEGIN
 END
 GO
 
--- 84 table descriptions, 428 column descriptions
+-- 91 table descriptions, 490 column descriptions

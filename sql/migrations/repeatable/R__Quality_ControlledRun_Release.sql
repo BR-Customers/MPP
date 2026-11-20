@@ -2,6 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_Release.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
+-- Version:     1.3 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8 / D9: reads the container's LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers; a container LOT is in a time window by its TRAYS (ClosedAt, ClosedAtTerminalId), not Lot.CreatedAt.
 -- Version:     1.2
 -- Change Log:  2026-10-21 - 1.2 - Piece 6 timing gap: inside the transaction, each ticked member's
 --                                 result row(s) are locked (UPDLOCK, HOLDLOCK) and ReleaseBlockReason is
@@ -175,8 +176,8 @@ BEGIN
         FROM Lots.Lot l
         WHERE l.CrtActive = 1
           AND ( l.Id IN (SELECT LotId FROM @T WHERE LotId IS NOT NULL)
-             OR l.Id IN (SELECT ct.FinishedGoodLotId FROM Lots.ContainerTray ct
-                         WHERE ct.ContainerId IN (SELECT ContainerId FROM @T WHERE ContainerId IS NOT NULL)) );
+             OR l.Id IN (SELECT cl.LotId FROM @T tt CROSS APPLY Lots.ufn_ContainerLots(tt.ContainerId) cl   -- 0119: both shapes
+                         WHERE tt.ContainerId IS NOT NULL) );
 
         DECLARE @LotId BIGINT, @LotName NVARCHAR(50), @LotActRaw NVARCHAR(MAX), @LotAct NVARCHAR(500), @LotNew NVARCHAR(MAX);
         DECLARE cleared_cur CURSOR LOCAL FAST_FORWARD FOR SELECT LotId, LotName FROM @Cleared ORDER BY LotId;
