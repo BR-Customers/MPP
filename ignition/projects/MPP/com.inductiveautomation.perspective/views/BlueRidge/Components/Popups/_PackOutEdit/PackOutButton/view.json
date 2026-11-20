@@ -1,0 +1,142 @@
+{
+  "custom": {},
+  "params": {
+    "packOutId": null,
+    "method": "",
+    "name": "",
+    "summary": "",
+    "isDefault": false,
+    "isRunning": false
+  },
+  "propConfig": {
+    "params.packOutId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.method": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.name": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.summary": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.isDefault": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.isRunning": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 230,
+      "height": 60
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "justify": "center",
+      "style": {
+        "classes": "pf-btn pf-btn-secondary",
+        "padding": "4px 12px",
+        "gap": "2px",
+        "cursor": "pointer",
+        "overflow": "hidden"
+      }
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.isRunning}, \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+          }
+        }
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"packOutPicked\", payload={\"method\": self.view.params.method, \"packOutId\": self.view.params.packOutId}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Name"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "18px",
+            "fontWeight": "600",
+            "whiteSpace": "nowrap",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.isDefault}, {view.params.name} + \"  (default)\", {view.params.name})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Summary"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "whiteSpace": "nowrap",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.summary"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

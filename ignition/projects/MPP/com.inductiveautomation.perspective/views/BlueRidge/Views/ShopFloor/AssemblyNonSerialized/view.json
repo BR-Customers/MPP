@@ -1,5 +1,6 @@
 {
   "custom": {
+    "fgConfig": {"Id": null, "ItemId": null, "TraysPerContainer": 0, "PartsPerTray": 0, "IsSerialized": false, "DunnageCode": "", "CustomerCode": "", "ClosureMethod": "", "TargetWeight": null, "ToleranceWeight": null, "PackOutId": null, "PackOutName": "", "PackOutSource": "", "VersionNumber": null},
     "draft": {
       "partsCount": "",
       "trayPosition": ""
@@ -21,7 +22,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\t# Closure method changed via the Change Closure Mode changeover: RESET the\n\t# parts-in-tray field to the newly-selected config default PartsPerTray\n\t# (overwrites any prior/stale value; fgConfig.onChange only prefills empty).\n\tmethod \u003d self.session.custom.closureMethod\n\tif not method:\n\t\treturn\n\tcontainer \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.container) or {}\n\titemId \u003d container.get(\"ItemId\") or self.view.custom.selectedFinishedGoodItemId\n\tif not itemId:\n\t\treturn\n\tcfg \u003d BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty(itemId, method) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tself.view.custom.draft \u003d {\"partsCount\": ppt if ppt else \"\", \"trayPosition\": d.get(\"trayPosition\") or \"\"}\n\t# Bump refreshToken too -- container.TraysPerContainer/ClosedTrays (the tray-of-tray\n\t# label numbers) would otherwise stay on the pre-switch query result until some other\n\t# event happens to refresh it.\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+        "script": "\t# Closure method changed via the Change Closure Mode changeover: RESET the\n\t# parts-in-tray field to the newly-selected config default PartsPerTray\n\t# (overwrites any prior/stale value; fgConfig.onChange only prefills empty).\n\tmethod \u003d self.session.custom.closureMethod\n\tif not method:\n\t\treturn\n\tcontainer \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.container) or {}\n\titemId \u003d container.get(\"ItemId\") or self.view.custom.selectedFinishedGoodItemId\n\tif not itemId:\n\t\treturn\n\tcfg \u003d BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty(itemId, method, None, self.session.custom.terminal[\"terminalLocationId\"] if self.session.custom.terminal else None) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tself.view.custom.draft \u003d {\"partsCount\": ppt if ppt else \"\", \"trayPosition\": d.get(\"trayPosition\") or \"\"}\n\t# Bump refreshToken too -- container.TraysPerContainer/ClosedTrays (the tray-of-tray\n\t# label numbers) would otherwise stay on the pre-switch query result until some other\n\t# event happens to refresh it.\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
       }
     },
     "custom.closureRaw": {
@@ -77,7 +78,7 @@
     "custom.fgConfig": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty\", 0, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}), {session.custom.closureMethod}, {view.custom.packOutToken})"
+          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty\", 0, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}), {session.custom.closureMethod}, {view.custom.packOutToken}, {session.custom.terminal.terminalLocationId})"
         },
         "type": "expr"
       },
@@ -350,7 +351,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.params.allowPackOutEdit} \u003d true"
+                    "expression": "{view.params.allowPackOutEdit} \u003d true || {session.custom.closureMethod} \u003d \"ByWeight\""
                   },
                   "type": "expr"
                 }
@@ -771,7 +772,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} \u003e 0, \u0027Per-Tray Close - first tray opens a container (\u0027 + toStr({view.custom.fgConfig.TraysPerContainer}) + \u0027 trays x \u0027 + toStr({view.custom.fgConfig.PartsPerTray}) + \u0027 parts/tray)\u0027, \u0027Per-Tray Close - completing the first tray opens a container\u0027), \u0027Per-Tray Close - \u0027 + if({session.custom.closureMethod} \u003d \"ByVision\", \"Vision\", if({session.custom.closureMethod} \u003d \"ByWeight\", \"Weight\", \"Count\")) + \u0027 - Closed \u0027 + toStr({view.custom.container.ClosedTrays}) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer}))"
+                                    "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} \u003e 0, \u0027Per-Tray Close - first tray opens a container (\u0027 + toStr({view.custom.fgConfig.TraysPerContainer}) + \u0027 trays x \u0027 + toStr({view.custom.fgConfig.PartsPerTray}) + \u0027 parts/tray)\u0027, \u0027Per-Tray Close - completing the first tray opens a container\u0027), \u0027Per-Tray Close - \u0027 + if({session.custom.closureMethod} \u003d \"ByVision\", \"Vision\", if({session.custom.closureMethod} \u003d \"ByWeight\", \"Weight\", \"Count\")) + \u0027 - Closed \u0027 + toStr({view.custom.container.ClosedTrays}) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer})) + if(len(toStr({view.custom.fgConfig.PackOutName})) \u003e 0, \u0027 - pack-out \u0027 + {view.custom.fgConfig.PackOutName}, \u0027\u0027)"
                                   },
                                   "type": "expr"
                                 }
