@@ -9088,4 +9088,140 @@ BEGIN
 END
 GO
 
--- 86 table descriptions, 440 column descriptions
+-- Workorder.ScalePartCode
+IF OBJECT_ID(N'[Workorder].[ScalePartCode]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0135 (2026-11-20). Learned scale part codes, per terminal: the code a Digi-read scale sends (<Part>) and the part an operator taught it to mean by picking the part for a held press (Workorder.ScalePendingPress_Complete v1.1). Workorder.ScalePartCode_Resolve reads it after an exact part-number match fails. One active mapping per (terminal, code); replaced or removed mappings are kept, deprecated.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePartCode';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0135 (2026-11-20). Learned scale part codes, per terminal: the code a Digi-read scale sends (<Part>) and the part an operator taught it to mean by picking the part for a held press (Workorder.ScalePendingPress_Complete v1.1). Workorder.ScalePartCode_Resolve reads it after an exact part-number match fails. One active mapping per (terminal, code); replaced or removed mappings are kept, deprecated.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'ScalePartCode';
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'TerminalLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'TerminalLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The scale''s terminal; a learned code belongs to that scale only',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The scale''s terminal; a learned code belongs to that scale only',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'ScalePartCode') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'ScalePartCode', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The code exactly as the scale sends it, trimmed',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'ScalePartCode';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The code exactly as the scale sends it, trimmed',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'ScalePartCode';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'ItemId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'ItemId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The part the code means at this terminal',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The part the code means at this terminal',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'LearnedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'LearnedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'When the pick taught it (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'LearnedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'When the pick taught it (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'LearnedAt';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'LearnedByAppUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'LearnedByAppUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The operator whose pick taught it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'LearnedByAppUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The operator whose pick taught it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'LearnedByAppUserId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'DeprecatedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'DeprecatedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'When it was replaced by a different pick or removed in the Config Tool (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'When it was replaced by a different pick or removed in the Config Tool (UTC)',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedAt';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[ScalePartCode]', N'DeprecatedByAppUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ScalePartCode]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ScalePartCode]'), N'DeprecatedByAppUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Who replaced or removed it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedByAppUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Who replaced or removed it',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ScalePartCode',
+                         @level2type = N'COLUMN', @level2name = N'DeprecatedByAppUserId';
+    END
+END
+GO
+
+-- 87 table descriptions, 447 column descriptions

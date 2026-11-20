@@ -2,13 +2,20 @@
 -- Procedure: Workorder.ScalePendingPress_Complete
 -- Author:    Blue Ridge Automation
 -- Created:   2026-11-19
--- Version:   1.0
+-- Version:   1.1
 --
 -- Description:
 --   Records the outcome of a pick on a claimed press: the part chosen and the
 --   tray LOT the close minted, and writes the pick's audit row
 --   (ScalePressPicked). Refused unless the row is Closed (claimed) and not yet
 --   completed.
+--
+--   v1.1 (migration 0135): the pick also TEACHES this terminal the scale's
+--   code -> the picked part (Workorder.ScalePartCode), in the same
+--   transaction, so a closed tray and its learned mapping cannot drift apart.
+--   A different part replaces the active mapping (the old one is kept,
+--   deprecated); the same part changes nothing; an empty code is never
+--   learned. Audited as ScalePartCodeLearned.
 --
 -- Parameters:
 --   @Id                BIGINT - Workorder.ScalePendingPress.Id. Required.
@@ -24,6 +31,7 @@
 --   ROLLBACK site.
 --
 -- Change Log:
+--   2026-11-20 - 1.1 - Learns the scale code -> part for the terminal (0135).
 --   2026-11-19 - 1.0 - Initial version (failure rows name the terminal; Discard
 --                      refuses, unaudited, when a pick claimed the press first).
 -- =============================================
@@ -43,6 +51,8 @@ BEGIN
     DECLARE @Params   NVARCHAR(MAX) = (SELECT @Id AS Id, @ItemId AS ItemId, @FinishedGoodLotId AS FinishedGoodLotId,
                                                @AppUserId AS AppUserId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
     DECLARE @Pn NVARCHAR(50), @Activity NVARCHAR(500), @NewValue NVARCHAR(MAX);
+    DECLARE @MapId BIGINT, @MapItemId BIGINT, @OldPn NVARCHAR(50), @Learn BIT = 0,
+            @LearnActivity NVARCHAR(500), @LearnOld NVARCHAR(MAX), @LearnNew NVARCHAR(MAX);
     DECLARE @StatusId BIGINT, @TermId BIGINT, @TermCode NVARCHAR(50), @Net DECIMAL(10,3), @Uom NVARCHAR(10),
             @Code NVARCHAR(50), @LotId BIGINT, @PickedItemId BIGINT;
     DECLARE @Gone NVARCHAR(500) = N'This tray has already been dealt with.';
@@ -88,6 +98,27 @@ BEGIN
         END
 
         SET @Pn = (SELECT PartNumber FROM Parts.Item WHERE Id = @ItemId);
+
+        -- What the pick teaches: code -> part for this terminal (v1.1).
+        SELECT @MapId = Id, @MapItemId = ItemId FROM Workorder.ScalePartCode
+        WHERE TerminalLocationId = @TermId AND ScalePartCode = @Code AND DeprecatedAt IS NULL;
+        IF LTRIM(RTRIM(ISNULL(@Code, N''))) <> N'' AND (@MapItemId IS NULL OR @MapItemId <> @ItemId)
+            SET @Learn = 1;
+        IF @Learn = 1
+        BEGIN
+            SET @OldPn = (SELECT PartNumber FROM Parts.Item WHERE Id = @MapItemId);
+            SET @LearnActivity = Audit.ufn_TruncateActivity(@TermCode + N' ' + Audit.ufn_MidDot()
+                + N' Scale part code ' + Audit.ufn_MidDot() + N' [' + @Code + N'] -> ' + @Pn
+                + CASE WHEN @OldPn IS NULL THEN N'' ELSE N' (was ' + @OldPn + N')' END);
+            SET @LearnOld = (SELECT @Code AS ScalePartCode,
+                                    JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description FROM Parts.Item i WHERE i.Id = @MapItemId
+                                                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ItemId
+                             WHERE @MapItemId IS NOT NULL FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+            SET @LearnNew = (SELECT @Code AS ScalePartCode,
+                                    JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description FROM Parts.Item i WHERE i.Id = @ItemId
+                                                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ItemId
+                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        END
         IF @Pn IS NULL
         BEGIN
             SET @Message = N'Part not found.';
@@ -119,6 +150,19 @@ BEGIN
         EXEC Audit.Audit_LogOperation @AppUserId = @AppUserId, @TerminalLocationId = @TermId, @LocationId = @TermId,
             @LogEntityTypeCode = N'Location', @EntityId = @TermId, @LogEventTypeCode = N'ScalePressPicked',
             @LogSeverityCode = N'Info', @Description = @Activity, @OldValue = NULL, @NewValue = @NewValue;
+
+        IF @Learn = 1
+        BEGIN
+            IF @MapId IS NOT NULL
+                UPDATE Workorder.ScalePartCode
+                SET DeprecatedAt = SYSUTCDATETIME(), DeprecatedByAppUserId = @AppUserId
+                WHERE Id = @MapId;
+            INSERT INTO Workorder.ScalePartCode (TerminalLocationId, ScalePartCode, ItemId, LearnedByAppUserId)
+            VALUES (@TermId, @Code, @ItemId, @AppUserId);
+            EXEC Audit.Audit_LogOperation @AppUserId = @AppUserId, @TerminalLocationId = @TermId, @LocationId = @TermId,
+                @LogEntityTypeCode = N'Location', @EntityId = @TermId, @LogEventTypeCode = N'ScalePartCodeLearned',
+                @LogSeverityCode = N'Info', @Description = @LearnActivity, @OldValue = @LearnOld, @NewValue = @LearnNew;
+        END
 
         COMMIT TRANSACTION;
 

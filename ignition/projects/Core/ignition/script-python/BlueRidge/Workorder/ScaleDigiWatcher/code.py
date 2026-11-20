@@ -50,6 +50,7 @@ EXPECTED_UOM = "lb"
 SOURCE_SCALE = "Scale"
 SOURCE_RUNNING = "Running"
 SOURCE_PICKED = "Picked"
+SOURCE_LEARNED = "Learned"
 
 # (NET)<number><UOM><letters><TWM><digit><Part><rest of the line>
 _RECORD = re.compile(r"^\(NET\)\s*(-?\d+(?:\.\d+)?)\s*<UOM>\s*([A-Za-z]+)\s*"
@@ -202,11 +203,22 @@ def _handle(instancePath, terminalLocationId, message):
                        "press the scale button again.", body, level="warning")
 
     running = S.getRunningPartOrEmpty(terminalLocationId) or {}
-    item = BlueRidge.Parts.Item.getByPartNumber(part) if part else None
+    # The ONE rule, in SQL (Workorder.ScalePartCode_Resolve, 2026-11-20): an
+    # exact active part number, else this terminal's learned code.
+    item = S.resolveScalePart(terminalLocationId, part) if part else None
+    learned = bool(item) and item.get("Source") == SOURCE_LEARNED
+
+    if learned and not item.get("Eligible"):
+        # A learned part that can no longer run here: ask again, and the pick
+        # re-teaches the code. Not 'settled' by an open box or override -- the
+        # scale named a part, just not one that can run.
+        return _hold(device, terminalLocationId, body, parsed, part, sysUser,
+                     "The scale sent '%s', learned as %s, which cannot run here now; the tray "
+                     "waits for the operator to choose its part." % (part, item.get("PartNumber")))
 
     if item:
-        itemId = item.get("Id")
-        body["partSource"] = SOURCE_SCALE
+        itemId = item.get("ItemId")
+        body["partSource"] = SOURCE_LEARNED if learned else SOURCE_SCALE
         if running.get("ItemId") != itemId:
             switched = S.setRunningPart(terminalLocationId, itemId, appUserId=sysUser) or {}
             if not switched.get("Status"):
@@ -226,13 +238,20 @@ def _handle(instancePath, terminalLocationId, message):
               % (part, running.get("PartNumber")), body, itemId=running.get("ItemId"))
         return closeAs(device, terminalLocationId, body, running.get("ItemId"))
 
+    return _hold(device, terminalLocationId, body, parsed, part, sysUser,
+                 "The scale sent part '%s', which is not a part number; the tray waits for the "
+                 "operator to choose its part." % part)
+
+
+def _hold(device, terminalLocationId, body, parsed, part, sysUser, why):
+    """Hold the press for the operator's pick (Workorder.ScalePendingPress_Hold)."""
+    S = BlueRidge.Workorder.ScaleStation
     held = S.holdPress(terminalLocationId, parsed["net"], parsed["uom"], part, appUserId=sysUser) or {}
     if not held.get("Status"):
         return _refuse(device, terminalLocationId, "Tray not closed",
                        held.get("Message") or "The tray could not be held.", body, level="warning")
     _warn(device, terminalLocationId, "Scale press held for part choice", "ScaleFlagsHeld",
-          "The scale sent part '%s', which is not a part number; the tray waits for the "
-          "operator to choose its part." % part, dict(body, heldId=held.get("NewId")))
+          why, dict(body, heldId=held.get("NewId")))
     BlueRidge.Workorder.PlcWatcher.notifyAlarm(
         terminalLocationId, "Choose the part for this tray",
         "The scale sent '%s', which is not a part here. Choose the part on the screen to "

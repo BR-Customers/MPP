@@ -1,0 +1,1 @@
+EXEC Workorder.ScalePartCode_Resolve @TerminalLocationId = :terminalLocationId, @ScalePartCode = :scalePartCode
