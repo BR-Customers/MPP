@@ -381,7 +381,9 @@ GO
 
 -- ============================================================
 -- 6. CONTAINER CONFIGS (added 2026-07-20). Per-part pack-out methods captured
---    from Dev. Guarded by (Item, ClosureMethod). Via Parts.ContainerConfig_Create.
+--    from Dev. Guarded by (Item, ClosureMethod). Since 0136 (named pack-outs) each is a
+--    default Parts.PackOut header named after the method + version 1, inserted directly
+--    (the 5G0 By Weight row has no tolerance, which PackOut_Save would refuse).
 -- ============================================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @cc TABLE (Seq INT IDENTITY(1,1), PN NVARCHAR(50), Method NVARCHAR(20),
@@ -401,10 +403,11 @@ BEGIN
     SET @iid = (SELECT Id FROM Parts.Item WHERE PartNumber = @pn);
     IF @iid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId=@iid AND ClosureMethod=@m)
     BEGIN
-        DELETE FROM @ccr;
-        INSERT INTO @ccr EXEC Parts.ContainerConfig_Create
-            @ItemId=@iid, @TraysPerContainer=@tpc, @PartsPerTray=@ppt, @IsSerialized=@ser,
-            @DunnageCode=@dunn, @CustomerCode=NULL, @ClosureMethod=@m, @TargetWeight=@tgt, @AppUserId=@U;
+        INSERT INTO Parts.PackOut (ItemId, ClosureMethod, Name, IsDefault, CreatedByUserId)
+        VALUES (@iid, @m, (SELECT Name FROM Parts.ClosureMethodCode WHERE Code = @m), 1, @U);
+        INSERT INTO Parts.ContainerConfig (ItemId, ClosureMethod, PackOutId, VersionNumber, TraysPerContainer, PartsPerTray,
+                                           IsSerialized, DunnageCode, CustomerCode, TargetWeight, CreatedByUserId)
+        VALUES (@iid, @m, SCOPE_IDENTITY(), 1, @tpc, @ppt, @ser, @dunn, NULL, @tgt, @U);
     END
     SET @i += 1;
 END

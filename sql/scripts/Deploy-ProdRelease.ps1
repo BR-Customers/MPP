@@ -770,6 +770,25 @@ if (& $has "0134_scale_digi_and_pending_press") {
     Finding "INFO" "0134" "adds PlcDeviceType ScaleStationDigi and the held-press tables; no existing row changes. $scales scale device mapping(s) exist today and are untouched -- a head goes onto the Digi path only when it is commissioned (runbook section 7)."
 }
 
+if (& $has "0136_named_pack_outs") {
+    # 0136 turns every Parts.ContainerConfig row into a version of a new Parts.PackOut
+    # header (one default per item + closure method). The backfill relies on there being
+    # at most ONE active config per (item, method) -- the index 0136 drops -- and on no
+    # PackOut table existing yet. Either broken means a part would get two defaults or
+    # none, and every station on it would run the wrong pack-out.
+    $pre = S "SELECT CASE WHEN OBJECT_ID(N'Parts.PackOut', N'U') IS NULL AND OBJECT_ID(N'Location.TerminalPackOutSelection', N'U') IS NULL THEN 0 ELSE 1 END"
+    if ($pre -eq 1) {
+        Finding "BLOCK" "0136" "Parts.PackOut or Location.TerminalPackOutSelection already exists but 0136 is not recorded -- something created it by hand. Inspect and drop it before deploying."
+    }
+    $dup = S "SELECT COUNT(*) FROM (SELECT ItemId, ClosureMethod FROM Parts.ContainerConfig WHERE DeprecatedAt IS NULL GROUP BY ItemId, ClosureMethod HAVING COUNT(*) > 1) d"
+    if ($dup -gt 0) {
+        Finding "BLOCK" "0136" "$dup part + closure method pair(s) have more than one ACTIVE ContainerConfig -- 0136 would give each two default pack-outs. Deprecate the extra row(s) first (Item Master)."
+    }
+    $cfgs = S "SELECT COUNT(*) FROM Parts.ContainerConfig WHERE DeprecatedAt IS NULL"
+    $open = S "SELECT COUNT(*) FROM Lots.Container WHERE ContainerStatusCodeId = 1"
+    Finding "INFO" "0136" "turns $cfgs active pack-out config(s) into default named pack-outs (named after the method); every station keeps running exactly what it runs today. $open open box(es) keep their config row unchanged."
+}
+
 # Lots.Container_Ship v1.1 is a repeatable, so this keys off the apply list. It newly
 # refuses a container holding a LOT that is on hold (tray LOT, or a packed serial's
 # producing LOT). Count the containers that ship today and will be refused tomorrow.
