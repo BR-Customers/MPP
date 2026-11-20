@@ -9,6 +9,7 @@
     },
     "mappings": [],
     "mode": "view",
+    "scaleCodes": [],
     "selectedTerminalId": ""
   },
   "params": {},
@@ -288,6 +289,81 @@
                   "text": "+ Add mapping"
                 },
                 "type": "ia.input.button"
+              },
+              {
+                "meta": {
+                  "name": "CodesHdr"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px",
+                    "fontWeight": "600"
+                  },
+                  "text": "Learned scale codes (Digi scales): the code the scale sends, and the part an operator taught it to mean"
+                },
+                "type": "ia.display.label",
+                "position": {
+                  "shrink": 0
+                }
+              },
+              {
+                "meta": {
+                  "name": "CodesEmpty"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.scaleCodes}) \u003d 0"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "text-muted"
+                  },
+                  "text": "None learned. The first press with an unrecognised code asks the operator; their pick is remembered here."
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "CodesRepeater"
+                },
+                "position": {
+                  "basis": "auto",
+                  "grow": 0,
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.scaleCodes"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto"
+                  },
+                  "path": "BlueRidge/Components/ScalePartCodeRow",
+                  "style": {
+                    "gap": "6px",
+                    "overflowY": "auto"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
               }
             ],
             "meta": {
@@ -638,7 +714,7 @@
           "params": [
             "terminalId"
           ],
-          "script": "\tself.view.custom.selectedTerminalId \u003d terminalId\n\tself.view.custom.mappings \u003d BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(terminalId)\n\tself.view.custom.mode \u003d \"view\""
+          "script": "\tself.view.custom.selectedTerminalId \u003d terminalId\n\tself.view.custom.mappings \u003d BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(terminalId)\n\tself.view.custom.scaleCodes \u003d BlueRidge.Workorder.ScaleStation.scalePartCodeInstances(terminalId)\n\tself.view.custom.mode \u003d \"view\""
         },
         {
           "name": "newDraft",
@@ -669,6 +745,13 @@
           "messageType": "plcMappingDeprecate",
           "pageScope": true,
           "script": "\tp \u003d payload or {}\n\tresult \u003d BlueRidge.Location.TerminalPlcDevice.deprecate(p.get(\"id\"), appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Mapping removed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.mappings \u003d BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(self.view.custom.selectedTerminalId)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "scalePartCodeRemove",
+          "pageScope": true,
+          "script": "\tp \u003d payload or {}\n\tresult \u003d BlueRidge.Workorder.ScaleStation.applyRemoveScalePartCode(self.session, p.get(\"id\"))\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.scaleCodes \u003d BlueRidge.Workorder.ScaleStation.scalePartCodeInstances(self.view.custom.selectedTerminalId)",
           "sessionScope": false,
           "viewScope": false
         }

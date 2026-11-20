@@ -32,6 +32,8 @@
 #   2026-10-19 - 1.0 - Initial version.
 #   2026-11-19 - 1.1 - Held-press wrappers + banner helpers; scaleInstancePath
 #                      also finds a ScaleStationDigi device.
+#   2026-11-20 - 1.2 - Learned scale part codes (0135): resolveScalePart,
+#                      listScalePartCodes, removeScalePartCode, applyRemoveScalePartCode.
 # =============================================================================
 
 import java.lang
@@ -410,4 +412,53 @@ def applyPendingDiscard(session, terminalLocationId, pendingId):
     result = BlueRidge.Workorder.ScaleDigiWatcher.discardPress(
         _id(pendingId), _id(terminalLocationId), BlueRidge.Common.Session.currentAppUserId(session))
     BlueRidge.Common.Ui.notifyResult(result, "Held tray discarded")
+    return result
+
+
+# ---- learned scale part codes (Workorder.ScalePartCode, migration 0135) ------
+
+def resolveScalePart(terminalLocationId, code):
+    """The part the scale's code names at this terminal
+       (Workorder.ScalePartCode_Resolve): {ItemId, PartNumber, Source
+       'PartNumber' | 'Learned', Eligible}, or None."""
+    return BlueRidge.Common.Db.execOne("workorder/ScalePartCode_Resolve", {
+        "terminalLocationId": _u(terminalLocationId), "scalePartCode": _u(code)}) or None
+
+
+def listScalePartCodes(terminalLocationId, _token=None):
+    """A terminal's active learned codes, for the Config Tool. [] when none."""
+    tid = _u(terminalLocationId)
+    if tid is None:
+        return []
+    return BlueRidge.Common.Db.execList("workorder/ScalePartCode_ListForTerminal",
+                                        {"terminalLocationId": tid}) or []
+
+
+def scalePartCodeInstances(terminalLocationId, _token=None):
+    """Flex-repeater instances for the Config Tool's learned-codes list
+       (Components/ScalePartCodeRow params: id, code, part, learned)."""
+    if _u(terminalLocationId) is None:
+        return []
+    out = []
+    for r in listScalePartCodes(terminalLocationId):
+        when = r.get("LearnedAtEt")
+        learned = "learned by %s" % (r.get("LearnedBy") or "?")
+        if when is not None:
+            learned += " " + system.date.format(when, "MMM d, h:mm a")
+        out.append({"id": r.get("Id"), "code": r.get("ScalePartCode"),
+                    "part": "%s  %s" % (r.get("PartNumber"), r.get("Description") or ""),
+                    "learned": learned})
+    return out
+
+
+def removeScalePartCode(mappingId, appUserId=None):
+    """Remove one learned code; the next press with it asks again."""
+    return BlueRidge.Common.Db.execMutation("workorder/ScalePartCode_Deprecate", {
+        "id": _id(mappingId), "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
+
+
+def applyRemoveScalePartCode(session, mappingId):
+    """The Config Tool's Remove button: as the signed-in user, toast the result."""
+    result = removeScalePartCode(mappingId, appUserId=BlueRidge.Common.Session.currentAppUserId(session))
+    BlueRidge.Common.Ui.notifyResult(result, "Learned code removed")
     return result

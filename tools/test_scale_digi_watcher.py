@@ -165,6 +165,7 @@ class Recorder(object):
         self.closeRaises = closeRaises
         self.releaseResult = releaseResult or {"Status": 1}
         self.pressCalls = []
+        self.resolves = []
 
     def install(self, module):
         rec = self
@@ -196,13 +197,24 @@ class Recorder(object):
                     rec.pressCalls.append(("complete", pid, itemId, lotId, appUserId)) or {"Status": 1},
                 discardPress=lambda pid, appUserId=None:
                     rec.pressCalls.append(("discard", pid, appUserId)) or {"Status": 1, "Message": "Held tray discarded."},
-                scaleInstancePath=lambda terminal: PATH))
+                scaleInstancePath=lambda terminal: PATH,
+                resolveScalePart=rec._resolve))
         BR.Parts = types.SimpleNamespace(
             ContainerConfig=types.SimpleNamespace(judgeWeight=rec._judge),
-            Item=types.SimpleNamespace(getByPartNumber=lambda pn: rec.items.get(pn)))
+            Item=types.SimpleNamespace(getByPartNumber=lambda pn: None))
         BR.Common = types.SimpleNamespace(
             Util=types.SimpleNamespace(log=lambda *a, **k: None, systemAppUserId=lambda: SYS))
         module.BlueRidge = BR
+
+    def _resolve(self, terminal, code):
+        """Workorder.ScalePartCode_Resolve stand-in: items maps code -> {Id,
+           Source?, Eligible?}; a code not in it resolves to nothing."""
+        self.resolves.append((terminal, code))
+        it = self.items.get(code)
+        if not it:
+            return None
+        return {"ItemId": it["Id"], "PartNumber": "FG-%s" % it["Id"],
+                "Source": it.get("Source", "PartNumber"), "Eligible": it.get("Eligible", True)}
 
     def _close(self, terminal, method):
         self.closes.append(method)
@@ -275,6 +287,39 @@ class HandleMessageTests(unittest.TestCase):
         r = _run(rec)
         self.assertEqual(r["Status"], 1)
         self.assertIn("ScaleFlagsPartUnknown", rec.conditions())
+
+    def test_resolver_called_with_terminal_and_code(self):
+        rec = Recorder(items={"TEST3": {"Id": 110}})
+        _run(rec)
+        self.assertEqual(rec.resolves, [(TERM, "TEST3")])
+
+    def test_learned_code_closes_without_a_tap(self):
+        rec = Recorder(items={"66V": {"Id": 110, "Source": "Learned"}})
+        r = _run(rec, "(NET)15.5<UOM>LB<TWM>1<Part>66V")
+        self.assertEqual(r["Status"], 1)
+        self.assertEqual(rec.holds, [])
+        self.assertEqual(rec.payload()["partSource"], "Learned")
+
+    def test_learned_code_switches_part_like_a_match(self):
+        rec = Recorder(items={"66V": {"Id": 222, "Source": "Learned"}})
+        _run(rec, "(NET)15.5<UOM>LB<TWM>1<Part>66V")
+        self.assertEqual(rec.sets, [(TERM, 222, SYS)])
+
+    def test_learned_part_not_eligible_holds_even_with_open_box(self):
+        rec = Recorder(items={"66V": {"Id": 222, "Source": "Learned", "Eligible": False}},
+                       running=_running(110, "Default", openContainerId=5))
+        r = _run(rec, "(NET)15.5<UOM>LB<TWM>1<Part>66V")
+        self.assertTrue(r.get("Held"))
+        self.assertEqual((rec.sets, rec.closes), ([], []))
+        self.assertEqual(rec.holds[0][3], "66V")
+
+    def test_part_number_not_eligible_still_goes_to_the_switch(self):
+        rec = Recorder(items={"TEST3": {"Id": 222, "Eligible": False}},
+                       setResult={"Status": 0, "Message": "That part cannot run here now"})
+        r = _run(rec)
+        self.assertEqual(r["Status"], 0)
+        self.assertEqual(rec.holds, [])
+        self.assertEqual(rec.sets, [(TERM, 222, SYS)])
 
     def test_unknown_code_with_scale_set_override_holds(self):
         # An override the SCALE set (SYS, after a matched code) is not an
@@ -519,6 +564,32 @@ class StationTests(unittest.TestCase):
         self.assertEqual([c[0] for c in calls], ["workorder/ScalePendingPress_Claim", "workorder/ScalePendingPress_Release",
                                                  "workorder/ScalePendingPress_Complete", "workorder/ScalePendingPress_Discard"])
         self.assertEqual(calls[2][1], {"id": 9, "itemId": 110, "finishedGoodLotId": 501, "appUserId": 2})
+
+    def test_resolve_scale_part(self):
+        s, calls = _station(pendingRow={"ItemId": 5, "PartNumber": "P", "Source": "Learned", "Eligible": True})
+        self.assertEqual(s.resolveScalePart(106, "66V")["Source"], "Learned")
+        self.assertEqual(calls, [("workorder/ScalePartCode_Resolve", {"terminalLocationId": 106, "scalePartCode": "66V"})])
+
+    def test_resolve_scale_part_none(self):
+        s, _ = _station(pendingRow=None)
+        self.assertIsNone(s.resolveScalePart(106, "66V"))
+
+    def test_remove_scale_part_code(self):
+        s, calls = _station()
+        s.removeScalePartCode("7", appUserId=2)
+        self.assertEqual(calls, [("workorder/ScalePartCode_Deprecate", {"id": 7, "appUserId": 2})])
+
+    def test_scale_part_code_instances(self):
+        s, _ = _station()
+        s.listScalePartCodes = lambda tid, _token=None: [
+            {"Id": 7, "ScalePartCode": "66V", "PartNumber": "19321-66V-A100", "Description": "66V Thermo Case",
+             "LearnedAtEt": None, "LearnedBy": "JGP"}]
+        self.assertEqual(s.scalePartCodeInstances(215), [
+            {"id": 7, "code": "66V", "part": "19321-66V-A100  66V Thermo Case", "learned": "learned by JGP"}])
+
+    def test_scale_part_code_instances_none(self):
+        s, _ = _station()
+        self.assertEqual(s.scalePartCodeInstances(None), [])
 
     def test_pending_part_buttons(self):
         s, _ = _station(parts=[{"ItemId": 5, "PartNumber": "12270-6NA -A000", "Description": "Fuel pump"}])
