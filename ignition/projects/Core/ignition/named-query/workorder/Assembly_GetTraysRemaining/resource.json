@@ -27,7 +27,7 @@
     ],
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-10-06T12:00:00Z"
+      "timestamp": "2026-11-20T00:00:00Z"
     },
     "parameters": [
       {
@@ -44,6 +44,11 @@
         "type": "Parameter",
         "identifier": "closureMethod",
         "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "terminalLocationId",
+        "sqlType": 3
       }
     ]
   }

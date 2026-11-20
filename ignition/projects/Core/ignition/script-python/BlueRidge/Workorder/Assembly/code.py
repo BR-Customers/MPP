@@ -370,11 +370,13 @@ _EMPTY_LOW_INV_LOCK = {"short": False, "itemId": None, "description": "", "partN
 _lowInvIds = {}
 
 
-def getTraysRemaining(cellLocationId, finishedGoodItemId, closureMethod):
+def getTraysRemaining(cellLocationId, finishedGoodItemId, closureMethod, terminalLocationId=None):
     """Workorder.Assembly_GetTraysRemaining rows: one per purchased part the
        finished good draws on, shortest first -- ItemId, PartNumber, Description,
        BoxQuantity, PiecesPerTray, Available, TraysLeft, IsShort, ThresholdTrays.
-       [] when there is nothing to calculate. The proc decides IsShort."""
+       [] when there is nothing to calculate. The proc decides IsShort.
+       terminalLocationId (2026-11-20, named pack-outs): pieces per tray come from
+       the pack-out in force at that terminal (SQL decides)."""
     cell = _asId(cellLocationId)
     fg = _asId(finishedGoodItemId)
     method = BlueRidge.Common.Util.extractQualifiedValues(closureMethod)
@@ -382,10 +384,11 @@ def getTraysRemaining(cellLocationId, finishedGoodItemId, closureMethod):
         return []
     return BlueRidge.Common.Db.execList(
         "workorder/Assembly_GetTraysRemaining",
-        {"cellLocationId": cell, "finishedGoodItemId": fg, "closureMethod": method}) or []
+        {"cellLocationId": cell, "finishedGoodItemId": fg, "closureMethod": method,
+         "terminalLocationId": _asId(terminalLocationId)}) or []
 
 
-def getLowInventoryLock(cellLocationId, finishedGoodItemId, closureMethod, _refreshToken=None):
+def getLowInventoryLock(cellLocationId, finishedGoodItemId, closureMethod, _refreshToken=None, terminalLocationId=None):
     """Binding reader for the low-inventory lock. ALWAYS returns the full
        _EMPTY_LOW_INV_LOCK shape (bindings traverse it). 'short' is True when the
        proc flags any part; the part reported is the worst one (the proc's first
@@ -393,7 +396,7 @@ def getLowInventoryLock(cellLocationId, finishedGoodItemId, closureMethod, _refr
     out = dict(_EMPTY_LOW_INV_LOCK)
     out["finishedGoodItemId"] = _asId(finishedGoodItemId)
     try:
-        rows = getTraysRemaining(cellLocationId, finishedGoodItemId, closureMethod)
+        rows = getTraysRemaining(cellLocationId, finishedGoodItemId, closureMethod, terminalLocationId)
     except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("getLowInventoryLock failed: %s" % e, level="warn")
         return out

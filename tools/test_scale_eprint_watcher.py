@@ -397,6 +397,23 @@ class CloseContextTests(unittest.TestCase):
         self.assertEqual(a.cfgTerminals, [106])
 
 
+
+class LowInventoryLockTests(unittest.TestCase):
+    """Named pack-outs (2026-11-20): the low-inventory lock's pieces per tray is
+       the pack-out in force AT THIS TERMINAL, so the terminal reaches the
+       Assembly_GetTraysRemaining named query (review finding I1)."""
+
+    def test_terminal_reaches_trays_remaining_query(self):
+        a = _loadAssembly({}, [])
+        seen = []
+        a.BlueRidge.Common.Db = types.SimpleNamespace(
+            execList=lambda nq, params: seen.append((nq, dict(params))) or [])
+        a._asId = lambda v: v
+        a.getLowInventoryLock(104, 555, "ByWeight", 7, 195)
+        self.assertEqual(seen[0][0], "workorder/Assembly_GetTraysRemaining")
+        self.assertEqual(seen[0][1].get("terminalLocationId"), 195)
+
+
 STATION = os.path.join(ROOT, "ignition", "projects", "Core", "ignition",
                        "script-python", "BlueRidge", "Workorder", "ScaleStation", "code.py")
 
