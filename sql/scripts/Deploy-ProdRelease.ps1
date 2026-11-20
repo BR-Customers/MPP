@@ -770,6 +770,29 @@ if (& $has "0134_scale_digi_and_pending_press") {
     Finding "INFO" "0134" "adds PlcDeviceType ScaleStationDigi and the held-press tables; no existing row changes. $scales scale device mapping(s) exist today and are untouched -- a head goes onto the Digi path only when it is commissioned (runbook section 7)."
 }
 
+if (& $has "0119_container_as_lot") {
+    # Container-as-LOT (spec 2026-11-04 section 9): no data migration. A box OPEN when the
+    # release lands becomes MIXED -- its old trays keep their own LOTs and the first new tray
+    # mints the container's LOT. Every reader handles that (ufn_ContainerLots), so this is a
+    # WARN for timing only: deploy between boxes if you prefer no mixed containers.
+    $openTrayLot = Q @"
+SELECT c.Id AS ContainerId, i.PartNumber, COUNT(t.Id) AS TraysWithLot, CONVERT(NVARCHAR(16), c.OpenedAt, 120) AS OpenedAtUtc
+FROM Lots.Container c
+JOIN Parts.Item i ON i.Id = c.ItemId
+JOIN Lots.ContainerTray t ON t.ContainerId = c.Id AND t.FinishedGoodLotId IS NOT NULL
+WHERE c.ContainerStatusCodeId = 1
+GROUP BY c.Id, i.PartNumber, c.OpenedAt
+ORDER BY c.Id
+"@
+    $nOpen = @($openTrayLot).Count
+    if ($nOpen -gt 0) {
+        Finding "WARN" "0119" "$nOpen open box(es) already hold tray LOTs and will become MIXED (old trays keep their LOTs, the next tray mints the box's LOT). Every reader handles this; deploy between boxes only if you prefer none. Listed below."
+        Table $openTrayLot @("ContainerId", "PartNumber", "TraysWithLot", "OpenedAtUtc")
+    } else {
+        Finding "INFO" "0119" "no open box holds a tray LOT -- every box opened after the release is a container LOT from its first tray."
+    }
+}
+
 if (& $has "0136_named_pack_outs") {
     # 0136 turns every Parts.ContainerConfig row into a version of a new Parts.PackOut
     # header (one default per item + closure method). The backfill relies on there being
