@@ -42,12 +42,10 @@ DECLARE @Item  BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-
 DECLARE @NoTol BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-JUDGE-NOTOL');
 
 -- Window 18.0000 .. 18.5000
-INSERT INTO @R EXEC Parts.ContainerConfig_Create @ItemId = @Item, @TraysPerContainer = 4,
-    @PartsPerTray = 60, @IsSerialized = 0, @ClosureMethod = N'ByWeight',
-    @TargetWeight = 18.2500, @ToleranceWeight = 0.2500, @AppUserId = 1;
-INSERT INTO @R EXEC Parts.ContainerConfig_Create @ItemId = @NoTol, @TraysPerContainer = 4,
-    @PartsPerTray = 60, @IsSerialized = 0, @ClosureMethod = N'ByWeight',
-    @TargetWeight = 18.2500, @ToleranceWeight = NULL, @AppUserId = 1;
+-- Raw (test view): PackOut_Save refuses a NULL tolerance, which is the case under test.
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, ToleranceWeight)
+VALUES (@Item, 4, 60, 0, N'ByWeight', 18.2500, 0.2500),
+       (@NoTol, 4, 60, 0, N'ByWeight', 18.2500, NULL);
 GO
 
 CREATE TABLE #J (

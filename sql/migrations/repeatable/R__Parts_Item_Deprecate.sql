@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Deprecate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     3.0
+-- Version:     3.1
 --
 -- Description:
 --   Soft-deletes an active Item by setting DeprecatedAt, and CASCADE-deprecates
@@ -55,6 +55,8 @@
 --   2026-07-07 - 3.0 - Cascade-deprecate owned config dependents (RouteTemplate,
 --                       Bom-as-parent, ItemLocation, ContainerConfig); replace all
 --                       dependent-reject guards with a single active-LOT hard stop.
+--   2026-11-20 - 3.1 - Cascade also deprecates the part's Parts.PackOut headers
+--                      (and clears their default flag + terminal picks); 0136.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Deprecate
     @Id        BIGINT,
@@ -193,6 +195,18 @@ BEGIN
                 UpdatedAt    = SYSUTCDATETIME()
             OUTPUT inserted.Id INTO @CfgIds
             WHERE ItemId = @Id AND DeprecatedAt IS NULL;
+
+        -- 3.1 (0136 named pack-outs): the pack-out headers go with their
+        -- versions, and no terminal keeps a pick on them.
+        IF OBJECT_ID(N'Parts.PackOut', N'U') IS NOT NULL
+        BEGIN
+            DELETE s FROM Location.TerminalPackOutSelection s
+            JOIN Parts.PackOut p ON p.Id = s.PackOutId
+            WHERE p.ItemId = @Id;
+            UPDATE Parts.PackOut
+            SET DeprecatedAt = SYSUTCDATETIME(), DeprecatedByUserId = @AppUserId, IsDefault = 0
+            WHERE ItemId = @Id AND DeprecatedAt IS NULL;
+        END
 
         -- ---- Deprecate the Item itself ----
         UPDATE Parts.Item
