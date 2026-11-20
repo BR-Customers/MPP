@@ -76,15 +76,25 @@ RETURN
         FROM Line ln
         CROSS APPLY Location.ufn_AncestorLocationIds(ln.LineId) a
     ),
-    Fg AS (
-        SELECT DISTINCT i.Id AS ItemId, i.PartNumber, i.Description,
-               po.PartsPerTray, po.TraysPerContainer, po.TargetWeight, po.ToleranceWeight,
-               anc.LineId
+    -- The distinct finished goods set up at the line; the pack-out this terminal
+    -- runs is resolved once per part below (resolving before the DISTINCT ran it
+    -- once per ancestor/eligibility row -- ~1,200 extra reads per call on the
+    -- bench). No EXISTS pre-filter on PackOut: it tipped the plan to nested loops
+    -- (+4 ms CPU per GetRunningPart); the resolver already drops parts without one.
+    -- notes/2026-11-20_packout-perf.md.
+    FgItem AS (
+        SELECT DISTINCT i.Id AS ItemId, i.PartNumber, i.Description, anc.LineId
         FROM Anc anc
         JOIN Parts.v_EffectiveItemLocation eil ON eil.LocationId = anc.LocationId
         JOIN Parts.Item i      ON i.Id = eil.ItemId AND i.DeprecatedAt IS NULL
         JOIN Parts.ItemType it ON it.Id = i.ItemTypeId AND it.Code = N'FinishedGood'
-        CROSS APPLY Parts.ufn_ResolvePackOut(i.Id, N'ByWeight', @TerminalLocationId) po
+    ),
+    Fg AS (
+        SELECT fi.ItemId, fi.PartNumber, fi.Description,
+               po.PartsPerTray, po.TraysPerContainer, po.TargetWeight, po.ToleranceWeight,
+               fi.LineId
+        FROM FgItem fi
+        CROSS APPLY Parts.ufn_ResolvePackOut(fi.ItemId, N'ByWeight', @TerminalLocationId) po
         WHERE po.PartsPerTray > 0
     ),
     FgBom AS (

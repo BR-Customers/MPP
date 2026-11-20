@@ -37,6 +37,8 @@
 --
 -- Change Log:
 --   2026-11-20 - 1.0 - Initial version (named pack-outs).
+--   2026-11-20 - 1.1 - ufn_ResolvePackOut as plain joins (bench: the TOP/UNION
+--                      form doubled ScaleStation_GetRunningPart's CPU).
 -- =============================================
 CREATE OR ALTER FUNCTION Parts.ufn_ResolvePackOut
 (
@@ -47,31 +49,31 @@ CREATE OR ALTER FUNCTION Parts.ufn_ResolvePackOut
 RETURNS TABLE
 AS
 RETURN
-    SELECT TOP (1)
-           cc.Id            AS ContainerConfigId,
+    -- Plain joins, no TOP/UNION/ORDER BY (1.1): the shape is cheap to expand
+    -- inside callers that reference it per row (ufn_ScaleStationEligibleParts).
+    -- At most one row: one selection per (terminal, part, method) and one
+    -- active default per (part, method) are both unique indexes.
+    SELECT cc.Id            AS ContainerConfigId,
            p.Id             AS PackOutId,
            p.Name           AS PackOutName,
            cc.VersionNumber,
-           c.Source,
+           CAST(CASE WHEN sel.PackOutId IS NULL THEN N'Default' ELSE N'Selected' END AS NVARCHAR(10)) AS Source,
            cc.PartsPerTray, cc.TraysPerContainer, cc.TargetWeight, cc.ToleranceWeight,
            cc.IsSerialized, cc.DunnageCode, cc.CustomerCode
-    FROM (
-        SELECT s.PackOutId, CAST(N'Selected' AS NVARCHAR(10)) AS Source, 1 AS Prio
+    FROM (SELECT 1 AS One) x
+    OUTER APPLY (
+        SELECT s.PackOutId
         FROM Location.TerminalPackOutSelection s
+        JOIN Parts.PackOut sp ON sp.Id = s.PackOutId AND sp.DeprecatedAt IS NULL
         WHERE s.TerminalLocationId = @TerminalLocationId
           AND s.ItemId = @ItemId
           AND s.ClosureMethod = @ClosureMethod
-        UNION ALL
-        SELECT d.Id, CAST(N'Default' AS NVARCHAR(10)), 2
-        FROM Parts.PackOut d
-        WHERE d.ItemId = @ItemId
-          AND d.ClosureMethod = @ClosureMethod
-          AND d.IsDefault = 1
-          AND d.DeprecatedAt IS NULL
-    ) c
-    JOIN Parts.PackOut p         ON p.Id = c.PackOutId AND p.DeprecatedAt IS NULL
-    JOIN Parts.ContainerConfig cc ON cc.PackOutId = p.Id AND cc.DeprecatedAt IS NULL
-    ORDER BY c.Prio;
+    ) sel
+    JOIN Parts.PackOut p
+      ON p.ItemId = @ItemId AND p.ClosureMethod = @ClosureMethod AND p.DeprecatedAt IS NULL
+     AND ((sel.PackOutId IS NOT NULL AND p.Id = sel.PackOutId)
+       OR (sel.PackOutId IS NULL AND p.IsDefault = 1))
+    JOIN Parts.ContainerConfig cc ON cc.PackOutId = p.Id AND cc.DeprecatedAt IS NULL;
 GO
 
 CREATE OR ALTER FUNCTION Parts.ufn_PackOutInForce
