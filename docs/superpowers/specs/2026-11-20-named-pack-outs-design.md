@@ -1,6 +1,6 @@
 # Named pack-outs, selectable per terminal -- design
 
-**Status:** DRAFT for Jacques's review (2026-11-20). Nothing built.
+**Status:** APPROVED by Jacques 2026-11-20 ("get to it"). Branch `sp/parts-PackOut`, stacked on `feature/scale-part-code-map` (itself on `feature/digi-scale-feed`).
 **Origin:** first real Digi press on prod terminal 215 (`66V-insp`, 19321-66V-A100), 2026-11-20. Jacques asked for pack-out configs to be savable and selectable with a button, because running a different container for the same part currently means overwriting the part's one config.
 
 ## 1. Intent
@@ -26,6 +26,8 @@ On the floor a new run starts when the operator or a supervisor brings over skid
 | D7 | The Config Tool Item Master Container Config tab becomes a full editor for named pack-outs (list, add, edit, set default, remove) -- same abilities as the station popup. |
 | D8 | Approach 2 (below): a pack-out header with versions under it. |
 | D9 | The stored procedures in the blast radius must stay performant -- measured, not assumed (section 9). |
+| D10 | **Every By Weight station** can select **and edit** pack-outs from the station popup; **no supervisor sign-in** (any PIN operator; the audit row is the control). |
+| D11 | **No rework across pack-outs.** Rework only offers / accepts a target box on the **same pack-out** (`PackOutId`) as the source box. |
 | -- | A scale code maps to a **part**, never to a pack-out (Tom via Jacques, 2026-11-20). The Digi scale-code mapping work is independent of this. |
 
 ## 3. Goals, non-goals, anti-goals
@@ -51,8 +53,8 @@ On the floor a new run starts when the operator or a supervisor brings over skid
 
 ## 4. How it works today (blast radius, read 2026-11-20)
 
-`Lots.Container.ContainerConfigId` (NOT NULL FK) is stamped when a box opens. Everything that reads **a box** goes through it and needs no change:
-`Lots.ContainerTray_Close`, `Lots.Container_Complete`, `Lots.Container_GetOpenByCell`, `Lots.ContainerRework_*` (Get / ListAtLocation / ListTargets / MovePieces / Resume / Scrap), `Workorder.ScaleStation_GetPressLog`. None of them filter on `DeprecatedAt`, so a box on a retired version still reads correctly (the builder confirms this per proc).
+`Lots.Container.ContainerConfigId` (NOT NULL FK) is stamped when a box opens. Everything that reads **a box** goes through it and needs no change (except rework targets, D11):
+`Lots.ContainerTray_Close`, `Lots.Container_Complete`, `Lots.Container_GetOpenByCell`, `Lots.ContainerRework_*` (Get / ListAtLocation / Resume / Scrap), `Workorder.ScaleStation_GetPressLog`. None of them filter on `DeprecatedAt`, so a box on a retired version still reads correctly (the builder confirms this per proc).
 
 Everything that reads **"the part's config for a method"** looks it up by `(ItemId, ClosureMethod, DeprecatedAt IS NULL)` and must change:
 
@@ -81,9 +83,9 @@ Other code that touches the table and must keep working: `sql/seeds/020_seed_ite
 2. **Pack-out header with versions under it (chosen).** `Parts.PackOut` holds identity (part, method, name, default); `Parts.ContainerConfig` rows become its versions. Boxes keep pointing at the exact version, so every box-reading proc is untouched; a terminal pick points at the header, so it survives edits and renames. Matches how BOMs / routes / quality specs carry versions under one identity.
 3. **Terminal stores a config Id; an edit re-points terminals.** Fragile: every edit must find and rewrite every terminal pick. Dropped.
 
-## 6. Data model (migration `0135_named_pack_outs`)
+## 6. Data model (migration `0136_named_pack_outs`)
 
-Prod is at `0134`; `0118`, `0120`-`0133` ship with the SP-review bundle under `-AllowOutOfOrder`; container-as-LOT (PR #16) holds `0119`. `0135` is free on every branch (checked 2026-11-20).
+Prod is at `0134`; `0118`, `0120`-`0133` ship with the SP-review bundle under `-AllowOutOfOrder`; container-as-LOT (PR #16) holds `0119`; the learned scale part codes (`feature/scale-part-code-map`) hold `0135`. `0136` is free (checked 2026-11-20).
 
 ### 6.1 `Parts.PackOut` (new) -- the identity
 
@@ -131,7 +133,7 @@ Indexes:
 
 A pick whose pack-out is later deprecated is ignored by the resolver (falls back to the default); `PackOut_Deprecate` also deletes picks pointing at it, in the same transaction.
 
-### 6.4 Backfill (inside `0135`)
+### 6.4 Backfill (inside `0136`)
 
 Per existing `(ItemId, ClosureMethod)` group in `ContainerConfig`:
 - one `PackOut` header, `Name` = the method's display name ("By Count" / "By Weight" / "By Vision"), `IsDefault = 1`;
@@ -177,6 +179,7 @@ Readers return which one they used: `+ PackOutSource` = `OpenBox | Selected | De
 | `Workorder.ufn_ScaleStationEligibleParts` | "has a By Weight pack-out" and the parts-for-a-tray ranking use the **resolved** pack-out at `@TerminalLocationId`. Must build on the `origin/main` v1.2 (PR #24, literal `LotStatusId <> 4`) and keep its measured shape. |
 | `Parts.ContainerConfig_GetByItemAndMethod` | `+ @TerminalLocationId = NULL` -> resolver; `+ PackOutId, PackOutName, Source`. |
 | `Parts.Item_Deprecate` | cascade also deprecates the part's `PackOut` headers and deletes their terminal picks. |
+| `Lots.ContainerRework_ListTargets` / `_MovePieces` | D11: targets restricted to boxes whose config has the **same `PackOutId`** as the source box; `MovePieces` refuses a cross-pack-out move (the list is a convenience, the mutation is the guard). |
 | `Parts.ContainerConfig_Create / _Update / _Deprecate` | **Dropped** (replaced by `PackOut_Save` / `_Deprecate`). `_Update` must not survive -- it is the in-place overwrite D5 removes. Named queries removed with them. |
 | `Parts.ContainerConfig_GetByItem` | Replaced by `PackOut_ListByItem` for the Item Master; drop it if nothing else calls it (builder greps). |
 | `Parts.ContainerConfig_ListHistory` | The popup stops using it (the buttons are the reusable history now). Builder's call: drop it with its NQ, or keep it unused for a later version-history view. |
@@ -203,6 +206,8 @@ Dunnage [      ]  Serialized [ ]                 [Make default] [Remove]
 - "Load a previous pack-out..." and the per-section Clear go away.
 - At a non-terminal session (unregistered IP, facility fallback) the buttons show but selecting is disabled with a reason.
 - Save / select / default / remove each send `packOutChanged` (existing message) so `AssemblyNonSerialized` re-reads `fgConfig` -- which keeps Flow A's setpoint push working on a switch.
+
+Availability (D10): the Pack-Out button on `AssemblyNonSerialized` shows where the host sets `allowPackOutEdit` (today `ThirdPartyInspection`) **or** the session's closure method is `ByWeight`. Select and edit both open to any PIN-signed-in operator.
 
 ### 8.2 Station screens
 
@@ -235,15 +240,15 @@ Measurement (the acceptance test, recorded in the PR):
 
 - **Branch:** one branch `sp/parts-PackOut`, one PR, using the CLAUDE.md SP-rule exception ("cannot land separately": one migration + the procs that read its columns). Never `main` / `jacques/working`; never prod. Jacques merges.
 - **Base:** see open question Q1.
-- **Pre-flight gate for the release** (written per `prod-release-context-pack/04_preflight_gates.md`): after `0135`, for every terminal and every finished good with an active config, `ufn_ResolvePackOut` returns the same `ContainerConfigId` the old `(ItemId, ClosureMethod, active)` lookup returned; zero differences, or BLOCK.
-- **Tests:** new `sql/tests/0135_PackOut/` (resolver precedence; pick per part; deprecated pick falls back; save creates / versions / renames / no-op; default uniqueness and the refuse-deprecate-default rule; `Terminal_SetPackOut` refused with an open box; `CompleteTray` keeps an open box on its own version after an edit; `JudgeWeight` judges against the open box's version; backfill shape). The 44 fixture files that insert into `Parts.ContainerConfig` are updated mechanically to insert a `PackOut` header first. Python: the existing `tools/test_scale_*` style tests cover the watcher call changes. Suite assertion count before and after, per the SP rule.
+- **Pre-flight gate for the release** (written per `prod-release-context-pack/04_preflight_gates.md`): after `0136`, for every terminal and every finished good with an active config, `ufn_ResolvePackOut` returns the same `ContainerConfigId` the old `(ItemId, ClosureMethod, active)` lookup returned; zero differences, or BLOCK.
+- **Tests:** new `sql/tests/0136_PackOut/` (resolver precedence; pick per part; deprecated pick falls back; save creates / versions / renames / no-op; default uniqueness and the refuse-deprecate-default rule; `Terminal_SetPackOut` refused with an open box; `CompleteTray` keeps an open box on its own version after an edit; `JudgeWeight` judges against the open box's version; backfill shape). The 44 fixture files that insert into `Parts.ContainerConfig` are updated mechanically to insert a `PackOut` header first. Python: the existing `tools/test_scale_*` style tests cover the watcher call changes. Suite assertion count before and after, per the SP rule.
 - **Docs:** Data Model (new table, changed columns), `PROJECT_STATUS.md`. The FDS is not edited to match the build.
 - Prod packaging per "Production deployments" only if Jacques asks.
 
-## 11. Open questions
+## 11. Resolved questions
 
-- **Q1. Base branch.** `origin/main` lacks the Digi feed (PR #36, deployed to prod from `release/2026-11-19-digi-scale-feed`, **not merged**), and `ScaleDigiWatcher` is one of the callers that must pass the terminal. Options: wait for #36 to merge and branch from `main`; or branch from `feature/digi-scale-feed` and retarget when #36 merges.
-- **Q2. Container-as-LOT (PR #16, open)** rewrites `Assembly_CompleteTray`'s box handling. Whichever merges second rebases onto the other.
+- **Base branch:** stacked on `feature/scale-part-code-map` (which is on `feature/digi-scale-feed`), so the Digi feed, the learned part codes and this ship together; migration `0136`. Retarget when those merge.
+- **Container-as-LOT (PR #16)** rewrites `Assembly_CompleteTray`'s box handling; whichever merges second rebases onto the other.
 
 ## 12. Left to the builder
 
