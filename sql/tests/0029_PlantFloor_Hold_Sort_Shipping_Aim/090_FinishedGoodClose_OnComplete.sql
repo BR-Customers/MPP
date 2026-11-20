@@ -66,7 +66,10 @@ DECLARE @Fg2 BIGINT = (SELECT FinishedGoodLotId FROM @AT); DECLARE @Full BIT = (
 DECLARE @InvBefore TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3), LotStatusCode NVARCHAR(20));
 INSERT INTO @InvBefore EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 DECLARE @InvB NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @InvBefore WHERE LotId IN (@Fg1, @Fg2));
-EXEC test.Assert_IsEqual @TestName = N'[FGClose] both FG LOTs on-hand before complete', @Expected = N'2', @Actual = @InvB;
+-- container-as-LOT (0119): both trays went into ONE container LOT (@Fg1 = @Fg2).
+EXEC test.Assert_IsEqual @TestName = N'[FGClose] the container LOT is on-hand before complete', @Expected = N'1', @Actual = @InvB;
+DECLARE @SameLot NVARCHAR(10) = CASE WHEN @Fg1 = @Fg2 THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[FGClose] both trays share the container LOT', @Expected = N'1', @Actual = @SameLot;
 
 -- ---- Act: complete the (full) container ----
 DECLARE @CMP TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));

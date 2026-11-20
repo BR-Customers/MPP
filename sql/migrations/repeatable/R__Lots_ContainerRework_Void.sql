@@ -2,6 +2,7 @@
 -- Repeatable:  R__Lots_ContainerRework_Void.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8 / D9: reads the container's LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers; a container LOT is in a time window by its TRAYS (ClosedAt, ClosedAtTerminalId), not Lot.CreatedAt.
 -- Version:     1.1
 -- Change Log:  2026-10-21 - 1.1 - Super-lot piece 6: the membership it ends gets
 --                                 'Left (container voided)' (ControlledRunLotLeft) on the
@@ -49,10 +50,11 @@ BEGIN
     SELECT @Cur = cs.Code FROM Lots.Container c INNER JOIN Lots.ContainerStatusCode cs ON cs.Id = c.ContainerStatusCodeId
     WHERE c.Id = @ContainerId;
     -- pieces = what the tray LOTs hold AND what the trays say; either being non-zero blocks
-    SET @Pieces = ISNULL((SELECT SUM(CASE WHEN ISNULL(l.PieceCount, 0) > ISNULL(t.PartsClosedCount, 0)
-                                          THEN ISNULL(l.PieceCount, 0) ELSE ISNULL(t.PartsClosedCount, 0) END)
-                          FROM Lots.ContainerTray t LEFT JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
-                          WHERE t.ContainerId = @ContainerId), 0);
+    -- 0119: the container's LOT(s) in either shape vs its trays; the larger blocks
+    DECLARE @LotPieces INT = ISNULL((SELECT SUM(l.PieceCount) FROM Lots.ufn_ContainerLots(@ContainerId) cl
+                                     JOIN Lots.Lot l ON l.Id = cl.LotId), 0);
+    DECLARE @TrayPieces INT = ISNULL((SELECT SUM(t.PartsClosedCount) FROM Lots.ContainerTray t WHERE t.ContainerId = @ContainerId), 0);
+    SET @Pieces = CASE WHEN @LotPieces > @TrayPieces THEN @LotPieces ELSE @TrayPieces END;
     SET @ReworkId = (SELECT MAX(Id) FROM Lots.ContainerRework WHERE ContainerId = @ContainerId);
     SET @RunNumber = (SELECT TOP 1 r.RunNumber FROM Quality.ControlledRunMember m
                       INNER JOIN Quality.ControlledRun r ON r.Id = m.ControlledRunId
@@ -108,7 +110,7 @@ BEGIN
         OUTPUT inserted.Id, inserted.LotName INTO @Cleared (LotId, LotName)
         FROM Lots.Lot l
         WHERE l.CrtActive = 1
-          AND l.Id IN (SELECT t.FinishedGoodLotId FROM Lots.ContainerTray t WHERE t.ContainerId = @ContainerId);
+          AND l.Id IN (SELECT cl.LotId FROM Lots.ufn_ContainerLots(@ContainerId) cl);   -- 0119: both shapes
 
         DECLARE @LotId BIGINT, @LotName NVARCHAR(50);
         DECLARE cleared_cur CURSOR LOCAL FAST_FORWARD FOR SELECT LotId, LotName FROM @Cleared ORDER BY LotId;

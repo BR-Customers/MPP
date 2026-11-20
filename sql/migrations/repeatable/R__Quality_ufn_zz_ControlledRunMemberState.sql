@@ -3,6 +3,7 @@
 -- Object:      Quality.ufn_ControlledRunMemberState
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
+-- Version:     1.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8 / D9: reads the container's LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers; a container LOT is in a time window by its TRAYS (ClosedAt, ClosedAtTerminalId), not Lot.CreatedAt.
 -- Version:     1.0
 -- Description: One row per member of a super-lot (open and ended), with the
 --              things every reader needs and none should re-derive: what to
@@ -53,9 +54,8 @@ RETURN
     LEFT JOIN Lots.Container c ON c.Id = m.ContainerId
     OUTER APPLY (
         SELECT SUM(tl.PieceCount) AS Pieces, MAX(CAST(tl.CrtActive AS INT)) AS AnyCrt
-        FROM Lots.ContainerTray t
-        INNER JOIN Lots.Lot tl ON tl.Id = t.FinishedGoodLotId
-        WHERE t.ContainerId = m.ContainerId
+        FROM Lots.ufn_ContainerLots(m.ContainerId) cl   -- 0119: both shapes
+        INNER JOIN Lots.Lot tl ON tl.Id = cl.LotId
     ) ct
     WHERE m.ControlledRunId = @ControlledRunId
 );

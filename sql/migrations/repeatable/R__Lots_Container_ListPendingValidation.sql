@@ -2,6 +2,8 @@
 -- Repeatable:  R__Lots_Container_ListPendingValidation.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-18
+-- Version:     1.3 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - LOT volume: candidates start from CRT-tagged LOTs (filtered IX_Lot_CrtActive), not every completed container. Same rows, same order.
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: the container's finished-good LOT(s) are read in BOTH shapes through Lots.ufn_ContainerLots (tray LOTs before migration 0119, the container LOT after, both for a mixed container).
 -- Version:     1.1
 -- Description: Containers awaiting Controlled Run Tag validation: their finished-good
 --              LOT is still CrtActive, so their AIM Shipper ID is claimed but held.
@@ -50,6 +52,16 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- LOT volume (2026-11-04): candidates start from the CRT-tagged LOTs (filtered index
+    -- IX_Lot_CrtActive -- few rows) and their containers in either shape, not from every
+    -- completed container in the plant. Same rows, same order.
+    DECLARE @Cand TABLE (ContainerId BIGINT NOT NULL PRIMARY KEY);
+    INSERT INTO @Cand (ContainerId)
+    SELECT DISTINCT lc.ContainerId
+    FROM Lots.Lot l
+    CROSS APPLY Lots.ufn_LotContainers(l.Id) lc
+    WHERE l.CrtActive = 1;
+
     ;WITH Descendants AS (
         SELECT @LocationId AS Id
         UNION ALL
@@ -59,24 +71,28 @@ BEGIN
         c.Id                                AS ContainerId,
         i.PartNumber                        AS ItemPartNumber,
         i.Description                       AS ItemDescription,
-        ISNULL(SUM(ct.PartsClosedCount), 0) AS PieceCount,
+        pc.Pieces                           AS PieceCount,
         CAST(c.CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time'
              AS DATETIME2(3))               AS CompletedAtEt,
         MAX(p.AimShipperId)                 AS AimShipperId,
         DATEDIFF(MINUTE, c.CompletedAt, SYSUTCDATETIME()) AS AgeMinutes,
-        COUNT(*)                            AS PendingLotCount
-    FROM Lots.Container c
-    INNER JOIN Lots.ContainerTray ct ON ct.ContainerId = c.Id
-    INNER JOIN Lots.Lot fgl          ON fgl.Id = ct.FinishedGoodLotId AND fgl.CrtActive = 1
+        MAX(cr.N)                           AS PendingLotCount
+    FROM @Cand cand
+    INNER JOIN Lots.Container c ON c.Id = cand.ContainerId
+    -- 0119: CRT LOTs of the container in either shape; pieces = the whole container's tray sum
+    CROSS APPLY (SELECT COUNT(*) AS N FROM Lots.ufn_ContainerLots(c.Id) cl
+                 JOIN Lots.Lot fgl ON fgl.Id = cl.LotId WHERE fgl.CrtActive = 1) cr
+    CROSS APPLY (SELECT ISNULL(SUM(ct.PartsClosedCount), 0) AS Pieces FROM Lots.ContainerTray ct WHERE ct.ContainerId = c.Id) pc
     INNER JOIN Parts.Item i          ON i.Id = c.ItemId
     LEFT  JOIN Lots.AimShipperIdPool p ON p.ConsumedByContainerId = c.Id
                                       AND p.VoidedAt IS NULL   -- 0111: a reworked container's serial is its LIVE one
     WHERE c.CompletedAt IS NOT NULL   -- see header: only a COMPLETED container has a serial
+      AND cr.N > 0
       AND ((@ContainerId IS NOT NULL AND c.Id = @ContainerId)
         OR (@ContainerId IS NULL AND @LocationId IS NOT NULL
             AND (c.CurrentLocationId IN (SELECT Id FROM Descendants)
               OR c.ContainerStatusCodeId = 3)))  -- Shipped: defence in depth, see header
-    GROUP BY c.Id, i.PartNumber, i.Description, c.CompletedAt
+    GROUP BY c.Id, i.PartNumber, i.Description, c.CompletedAt, pc.Pieces
     ORDER BY c.CompletedAt, c.Id
     OPTION (MAXRECURSION 8);
 END;

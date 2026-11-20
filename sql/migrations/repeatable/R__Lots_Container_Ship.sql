@@ -1,6 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Container_Ship.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: the container's finished-good LOT(s) are read in BOTH shapes through Lots.ufn_ContainerLots (tray LOTs before migration 0119, the container LOT after, both for a mixed container).
 -- Version:     1.1
 -- Description: Ships a container at the Shipping Dock (Arc 2 Phase 7). Validates the
 --              container is Complete (2), has NO open hold, holds no LOT that is on
@@ -72,8 +73,7 @@ BEGIN
         -- producing LOT). Named in the refusal so the dock knows which hold to chase.
         SELECT TOP 1 @HeldLotName = l.LotName
         FROM Lots.Lot l
-        WHERE l.Id IN (SELECT ct.FinishedGoodLotId FROM Lots.ContainerTray ct
-                       WHERE ct.ContainerId = @ContainerId AND ct.FinishedGoodLotId IS NOT NULL
+        WHERE l.Id IN (SELECT cl.LotId FROM Lots.ufn_ContainerLots(@ContainerId) cl   -- 0119: both shapes
                        UNION
                        SELECT sp.ProducingLotId FROM Lots.ContainerSerial cs
                        INNER JOIN Lots.SerializedPart sp ON sp.Id = cs.SerializedPartId
@@ -93,9 +93,9 @@ BEGIN
         -- drops the container out of Container_ListPendingValidation's location scope
         -- while ListUnposted still excludes it - invisible to the backlog, the sweep and
         -- the alarm alike.
-        IF EXISTS (SELECT 1 FROM Lots.ContainerTray ct
-                   JOIN Lots.Lot l ON l.Id = ct.FinishedGoodLotId
-                   WHERE ct.ContainerId = @ContainerId AND l.CrtActive = 1)
+        IF EXISTS (SELECT 1 FROM Lots.ufn_ContainerLots(@ContainerId) cl   -- 0119: both shapes
+                   JOIN Lots.Lot l ON l.Id = cl.LotId
+                   WHERE l.CrtActive = 1)
         BEGIN
             SET @Message = N'Container is pending Controlled Run Tag validation (cannot ship).';
             SELECT @Status AS Status, @Message AS Message;

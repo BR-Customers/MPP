@@ -325,6 +325,11 @@ def _handle(instancePath, terminalLocationId, message):
 
     result = BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId, "ByWeight")
     ok = bool(result and result.get("Status"))
+    # Container-as-LOT (migration 0119): FinishedGoodLotId is the CONTAINER's LOT,
+    # shared by every tray in it, so the press names its own tray for the press
+    # log (Workorder.ScaleStation_GetPressLog reads $.containerTrayId).
+    if ok and result.get("ContainerTrayId") is not None:
+        body["containerTrayId"] = result.get("ContainerTrayId")
     W.logInterface(device, "ByWeight tray close", requestPayload=_encode(body),
                    responsePayload=system.util.jsonEncode(result or {}), ok=ok,
                    errorDescription=None if ok else (result or {}).get("Message"),

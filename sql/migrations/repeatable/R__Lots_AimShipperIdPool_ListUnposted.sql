@@ -1,6 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_AimShipperIdPool_ListUnposted.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.5 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: the container's finished-good LOT(s) are read in BOTH shapes through Lots.ufn_ContainerLots (tray LOTs before migration 0119, the container LOT after, both for a mixed container).
 -- Version:     1.4
 -- Description: Rows owed to AIM - consumed but not yet reported. Serves BOTH the
 --              retry sweep (BlueRidge.Lots.AimPost.retryTick) and the supervisor
@@ -67,10 +68,9 @@ BEGIN
       -- posts a CRT container within a minute of completion.
       AND NOT EXISTS (
           SELECT 1
-          FROM Lots.ContainerTray ct
-          JOIN Lots.Lot fgl ON fgl.Id = ct.FinishedGoodLotId
-          WHERE ct.ContainerId = p.ConsumedByContainerId
-            AND fgl.CrtActive = 1)
+          FROM Lots.ufn_ContainerLots(p.ConsumedByContainerId) cl   -- 0119: both shapes
+          JOIN Lots.Lot fgl ON fgl.Id = cl.LotId
+          WHERE fgl.CrtActive = 1)
     ORDER BY p.ConsumedAt, p.Id;
 END;
 GO

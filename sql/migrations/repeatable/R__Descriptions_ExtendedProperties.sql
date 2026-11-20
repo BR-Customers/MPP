@@ -3044,29 +3044,97 @@ BEGIN
                WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
                  AND minor_id = 0
                  AND name = N'MS_Description')
-        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Shipping containers for finished goods.',
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Shipping containers for finished goods. One finished-good LOT per container (v3.12, migration 0119): the first camera-accepted tray mints the container''s LOT and every later tray adds its pieces to it; Lots.Container_Complete closes the LOT with the container. Containers from before 0119 have LotId NULL and one LOT per tray (ContainerTray.FinishedGoodLotId); a container open when 0119 landed is MIXED (tray LOTs + a container LOT). Readers resolve every shape through Lots.ufn_ContainerLots(@ContainerId) (representative LOT = TOP 1 ... ORDER BY SortKey: the first tray''s LOT, else the container''s) and Lots.ufn_LotContainers(@LotId). Pieces in a container are always SUM(ContainerTray.PartsClosedCount).',
                      @level0type = N'SCHEMA', @level0name = N'Lots',
                      @level1type = N'TABLE',  @level1name = N'Container';
     ELSE
-        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Shipping containers for finished goods.',
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Shipping containers for finished goods. One finished-good LOT per container (v3.12, migration 0119): the first camera-accepted tray mints the container''s LOT and every later tray adds its pieces to it; Lots.Container_Complete closes the LOT with the container. Containers from before 0119 have LotId NULL and one LOT per tray (ContainerTray.FinishedGoodLotId); a container open when 0119 landed is MIXED (tray LOTs + a container LOT). Readers resolve every shape through Lots.ufn_ContainerLots(@ContainerId) (representative LOT = TOP 1 ... ORDER BY SortKey: the first tray''s LOT, else the container''s) and Lots.ufn_LotContainers(@LotId). Pieces in a container are always SUM(ContainerTray.PartsClosedCount).',
                      @level0type = N'SCHEMA', @level0name = N'Lots',
                      @level1type = N'TABLE',  @level1name = N'Container';
 
-    IF COL_LENGTH(N'[Lots].[Container]', N'LotId') IS NOT NULL
+    IF COL_LENGTH(N'[Lots].[Container]', N'ItemId') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
                    WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'LotId', 'ColumnId')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'ItemId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Source LOT',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The finished good packed',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'LotId';
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Source LOT',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The finished good packed',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'LotId';
+                         @level2type = N'COLUMN', @level2name = N'ItemId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Container]', N'ContainerConfigId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'ContainerConfigId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Pack-out (trays per container, parts per tray, closure method)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'ContainerConfigId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Pack-out (trays per container, parts per tray, closure method)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'ContainerConfigId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Container]', N'CurrentLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'CurrentLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The line while filling; the shipping location once shipped',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'CurrentLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The line while filling; the shipping location once shipped',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'CurrentLocationId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Container]', N'ContainerStatusCodeId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'ContainerStatusCodeId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Open / Complete / Shipped / Hold / Void / ReworkProcessing / ReworkFilling',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'ContainerStatusCodeId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Open / Complete / Shipped / Hold / Void / ReworkProcessing / ReworkFilling',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'ContainerStatusCodeId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Container]', N'CompletedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'CompletedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Set by Container_Complete',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'CompletedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Set by Container_Complete',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'CompletedAt';
     END
 
     IF COL_LENGTH(N'[Lots].[Container]', N'StationLocationId') IS NOT NULL
@@ -3075,49 +3143,32 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'StationLocationId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray v1.4 files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
                          @level2type = N'COLUMN', @level2name = N'StationLocationId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray v1.4 files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
                          @level2type = N'COLUMN', @level2name = N'StationLocationId';
     END
 
-    IF COL_LENGTH(N'[Lots].[Container]', N'AimShipperId') IS NOT NULL
+    IF COL_LENGTH(N'[Lots].[Container]', N'LotId') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
                    WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'AimShipperId', 'ColumnId')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'LotId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'From AIM system',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The container''s finished-good LOT (v3.12, migration 0119). Minted on the first tray; NULL on pre-0119 containers and on a box opened before its first tray. Holds and CRT apply to it -- i.e. to the whole container (spec D7). A repack move into a container with no LOT mints one.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'AimShipperId';
+                         @level2type = N'COLUMN', @level2name = N'LotId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'From AIM system',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The container''s finished-good LOT (v3.12, migration 0119). Minted on the first tray; NULL on pre-0119 containers and on a box opened before its first tray. Holds and CRT apply to it -- i.e. to the whole container (spec D7). A repack move into a container with no LOT mints one.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'AimShipperId';
-    END
-
-    IF COL_LENGTH(N'[Lots].[Container]', N'HoldNumber') IS NOT NULL
-    BEGIN
-        IF EXISTS (SELECT 1 FROM sys.extended_properties
-                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'HoldNumber', 'ColumnId')
-                     AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Sort Cage hold reference',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'HoldNumber';
-        ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Sort Cage hold reference',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Container',
-                         @level2type = N'COLUMN', @level2name = N'HoldNumber';
+                         @level2type = N'COLUMN', @level2name = N'LotId';
     END
 END
 GO
@@ -3129,13 +3180,98 @@ BEGIN
                WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
                  AND minor_id = 0
                  AND name = N'MS_Description')
-        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Assembly consumption targets the finished-good LOT (v-bump 2026-07-06). Non-serialized AND serialized assembly-out mint a finished-good LOT (tray = LOT) and consume BomLine.QtyPer x PieceCount FIFO (oldest-first by Lot.CreatedAt, tie-broken by Id) from eligible component LOTs at the line. Each draw''s Workorder.ConsumptionEvent sets ProducedLotId = the finished-good LOT (the primary consumption target), not only ProducedContainerId; the Container is retained as the wrapper. See FDS-06-013 / FDS-06-020 / FDS-06-021.',
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'One row per camera-accepted (or counted / weighed) tray, and per repack move into a container.',
                      @level0type = N'SCHEMA', @level0name = N'Lots',
                      @level1type = N'TABLE',  @level1name = N'ContainerTray';
     ELSE
-        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Assembly consumption targets the finished-good LOT (v-bump 2026-07-06). Non-serialized AND serialized assembly-out mint a finished-good LOT (tray = LOT) and consume BomLine.QtyPer x PieceCount FIFO (oldest-first by Lot.CreatedAt, tie-broken by Id) from eligible component LOTs at the line. Each draw''s Workorder.ConsumptionEvent sets ProducedLotId = the finished-good LOT (the primary consumption target), not only ProducedContainerId; the Container is retained as the wrapper. See FDS-06-013 / FDS-06-020 / FDS-06-021.',
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'One row per camera-accepted (or counted / weighed) tray, and per repack move into a container.',
                      @level0type = N'SCHEMA', @level0name = N'Lots',
                      @level1type = N'TABLE',  @level1name = N'ContainerTray';
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'Id') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'Id', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The FRS "Produced Tray ID" (ConsumptionEvent.TrayId)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The FRS "Produced Tray ID" (ConsumptionEvent.TrayId)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'TrayPosition') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'TrayPosition', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'1-based order in the container',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'TrayPosition';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'1-based order in the container',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'TrayPosition';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'PartsClosedCount') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'PartsClosedCount', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Pieces in the tray now; repack scrap / moves lower it',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'PartsClosedCount';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Pieces in the tray now; repack scrap / moves lower it',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'PartsClosedCount';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'ClosedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'ClosedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'When the tray passed the camera (or was counted / weighed)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'When the tray passed the camera (or was counted / weighed)',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAt';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'ClosureMethod') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'ClosureMethod', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'ByCount / ByWeight / ByVision',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosureMethod';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'ByCount / ByWeight / ByVision',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosureMethod';
+    END
 
     IF COL_LENGTH(N'[Lots].[ContainerTray]', N'FinishedGoodLotId') IS NOT NULL
     BEGIN
@@ -3143,15 +3279,66 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'FinishedGoodLotId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Finished-good LOT minted at tray closure - tray = LOT, 1:1. Assembly-out consumption targets this LOT via ConsumptionEvent.ProducedLotId (see below), and container genealogy resolves Container -> ContainerTray -> FinishedGoodLot -> component LOTs. Nullable during transition; tightened to NOT NULL once all trays route through Workorder.Assembly_CompleteTray.',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Pre-0119 only: the tray''s own finished-good LOT (tray = LOT, 1:1). NULL on every tray from 0119 on -- the LOT is the container''s.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'ContainerTray',
                          @level2type = N'COLUMN', @level2name = N'FinishedGoodLotId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Finished-good LOT minted at tray closure - tray = LOT, 1:1. Assembly-out consumption targets this LOT via ConsumptionEvent.ProducedLotId (see below), and container genealogy resolves Container -> ContainerTray -> FinishedGoodLot -> component LOTs. Nullable during transition; tightened to NOT NULL once all trays route through Workorder.Assembly_CompleteTray.',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Pre-0119 only: the tray''s own finished-good LOT (tray = LOT, 1:1). NULL on every tray from 0119 on -- the LOT is the container''s.',
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'ContainerTray',
                          @level2type = N'COLUMN', @level2name = N'FinishedGoodLotId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'ShiftId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'ShiftId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'v3.12. The shift the tray passed the camera in, stamped once by Assembly_CompleteTray. OEE good (Oee.ufn_ShiftGood) reads it. NULL on pre-0119 trays (their LOT carries the stamp) and on repack-move trays (not production). Filtered index IX_ContainerTray_ShiftId.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'v3.12. The shift the tray passed the camera in, stamped once by Assembly_CompleteTray. OEE good (Oee.ufn_ShiftGood) reads it. NULL on pre-0119 trays (their LOT carries the stamp) and on repack-move trays (not production). Filtered index IX_ContainerTray_ShiftId.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'ClosedAtTerminalId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'ClosedAtTerminalId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'v3.12. The station that closed the tray (OEE area family; super-lot line filter).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAtTerminalId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'v3.12. The station that closed the tray (OEE area family; super-lot line filter).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'ClosedAtTerminalId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ContainerTray]', N'MintedPieceCount') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ContainerTray]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ContainerTray]'), N'MintedPieceCount', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'v3.12. PartsClosedCount at tray close, never changed: OEE good, so later repack scrap counts once as scrap, not also as less good (spec D11).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'MintedPieceCount';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'v3.12. PartsClosedCount at tray close, never changed: OEE good, so later repack scrap counts once as scrap, not also as less good (spec D11).',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ContainerTray',
+                         @level2type = N'COLUMN', @level2name = N'MintedPieceCount';
     END
 END
 GO
@@ -9836,4 +10023,4 @@ BEGIN
 END
 GO
 
--- 91 table descriptions, 479 column descriptions
+-- 91 table descriptions, 490 column descriptions

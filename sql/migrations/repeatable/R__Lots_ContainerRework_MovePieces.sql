@@ -2,9 +2,12 @@
 -- Repeatable:  R__Lots_ContainerRework_MovePieces.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-13
--- Version:     1.1
--- 1.1 (2026-11-20, named pack-outs 0136, D11): refuses a destination box on a
---              different pack-out than the source box (no rework across pack-outs).
+-- Version:     1.3 (2026-11-20, named pack-outs 0136, D11) - refuses a destination box on a different
+--              pack-out than the source box (no rework across pack-outs). Release merge of v1.2 below
+--              with the pack-out guard (was 1.1 on sp/parts-PackOut).
+-- Version:     1.2 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - Review I1: refuses a move into a container whose LOT is already an ancestor of the donor LOT (genealogy loop).
+-- Version:     1.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D6 / D12: a container LOT donates and receives -- pieces move LOT to LOT with one genealogy edge per (donor, receiver) that a repeat move adds to; a receiver with no LOT mints one; the tray carries no LOT and no OEE stamp.
+-- Version:     1.0
 -- Description: Moves loose pieces from a tray of one container under rework into
 --              another container that is REFILL-READY (spec D1 / D2): consolidation,
 --              and topping up from a finished container of new production. Moving a
@@ -64,7 +67,8 @@ BEGIN
             @IsSerialized BIT, @ItemId BIGINT, @LotName NVARCHAR(50), @LotPieces INT, @LotCrt BIT,
             @SerialContainerId BIGINT, @SerialTrayId BIGINT, @SerialRemoved DATETIME2(3), @SerialNumber NVARCHAR(100),
             @SrcPackOutId BIGINT, @ToPackOutId BIGINT, @ToPackOutName NVARCHAR(50);
-    SELECT @ContainerId = t.ContainerId, @TrayLotId = t.FinishedGoodLotId, @TrayPieces = ISNULL(t.PartsClosedCount, 0),
+    -- 0119: the tray's own LOT (old shape) or the container's LOT (container-as-LOT)
+    SELECT @ContainerId = t.ContainerId, @TrayLotId = COALESCE(t.FinishedGoodLotId, c.LotId), @TrayPieces = ISNULL(t.PartsClosedCount, 0),
            @TrayPos = t.TrayPosition, @ConStatus = cs.Code, @IsSerialized = ISNULL(cc.IsSerialized, 0), @ItemId = c.ItemId,
            @SrcPackOutId = cc.PackOutId
     FROM Lots.ContainerTray t
@@ -90,6 +94,11 @@ BEGIN
     WHERE c.Id = @ToContainerId;
     SET @ToAccum = ISNULL((SELECT SUM(t.PartsClosedCount) FROM Lots.ContainerTray t
                            WHERE t.ContainerId = @ToContainerId AND t.ClosedAt IS NOT NULL), 0);
+    -- container-as-LOT (review I1): the receiver's container LOT lives on, so a move back
+    -- into a container whose LOT is already an ANCESTOR of the donor LOT would make each
+    -- the parent of the other. Refused (checked below, before the transaction).
+    DECLARE @ToLotId BIGINT = (SELECT LotId FROM Lots.Container WHERE Id = @ToContainerId);
+    DECLARE @ToLotName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = @ToLotId);
     SET @ClosureMethod = (SELECT ClosureMethod FROM Lots.ContainerTray WHERE Id = @FromContainerTrayId);
     SET @ItemPart = (SELECT PartNumber FROM Parts.Item WHERE Id = @ItemId);
 
@@ -132,6 +141,12 @@ BEGIN
                         + N') -- pieces can only move between boxes of the same pack-out.';
         IF @Reject IS NULL AND (@ToTarget IS NOT NULL AND @ToAccum + @Quantity > @ToTarget)
             SET @Reject = N'Container ' + CAST(@ToContainerId AS NVARCHAR(20)) + N' has room for ' + CAST(@ToTarget - @ToAccum AS NVARCHAR(10)) + N' more pieces; ' + CAST(@Quantity AS NVARCHAR(10)) + N' is too many.';
+        IF @Reject IS NULL AND @ToLotId IS NOT NULL AND EXISTS (
+               SELECT 1 FROM Lots.LotGenealogyClosure gc
+               WHERE gc.AncestorLotId = @ToLotId AND gc.DescendantLotId = @TrayLotId AND gc.Depth > 0)
+            SET @Reject = N'Pieces of LOT ' + @LotName + N' cannot go back into container '
+                        + CAST(@ToContainerId AS NVARCHAR(20)) + N': its LOT ' + @ToLotName
+                        + N' already gave pieces to ' + @LotName + N'.';
 
         IF @Reject IS NOT NULL
         BEGIN
@@ -174,12 +189,29 @@ BEGIN
         IF @ToTarget IS NOT NULL AND @ToAccumNow + @Quantity > @ToTarget
             RAISERROR(N'REWORK_RACE: the destination no longer has room.', 16, 1);
 
-        -- ---- mint the receiving tray LOT. INLINED MIRROR of the tray mint in
-        --      Workorder.Assembly_CompleteTray (sequence 'Lot', logic of
-        --      Lots.IdentifierSequence_Next), minted INSIDE the tran so a rollback
-        --      un-burns the number. ----
+        -- ---- the receiving LOT (v2.0, container-as-LOT D6). The receiver's own
+        --      container LOT takes the pieces; only a receiver with no LOT yet (an
+        --      emptied container being refilled, or an old-shape container, which then
+        --      becomes MIXED) mints one -- INLINED MIRROR of the mint in
+        --      Workorder.Assembly_CompleteTray, INSIDE the tran so a rollback un-burns
+        --      the number. A CRT donor tags the receiver (raise only). ----
         DECLARE @SeqLast BIGINT, @SeqEnd BIGINT, @SeqFormat NVARCHAR(50), @SeqPrefix NVARCHAR(50), @SeqPad INT,
-                @MintedName NVARCHAR(50), @NewLotId BIGINT, @NewTrayPos INT;
+                @MintedName NVARCHAR(50), @NewLotId BIGINT, @NewTrayPos INT, @Minted BIT = 0;
+        SELECT @NewLotId = c.LotId FROM Lots.Container c WHERE c.Id = @ToContainerId;
+        IF @NewLotId IS NOT NULL
+        BEGIN
+            UPDATE r
+            SET r.PieceCount = r.PieceCount + @Quantity,
+                r.CrtActive = CASE WHEN d.CrtActive = 1 THEN 1 ELSE r.CrtActive END,
+                r.UpdatedAt = SYSUTCDATETIME(), r.UpdatedByUserId = @AppUserId
+            FROM Lots.Lot r WITH (UPDLOCK, HOLDLOCK)
+            CROSS JOIN Lots.Lot d
+            WHERE r.Id = @NewLotId AND d.Id = @TrayLotId;
+            SET @MintedName = (SELECT LotName FROM Lots.Lot WHERE Id = @NewLotId);
+        END
+        ELSE
+        BEGIN
+        SET @Minted = 1;
         SELECT @SeqLast = s.LastValue + 1, @SeqEnd = s.EndingValue, @SeqFormat = s.FormatString
         FROM Lots.IdentifierSequence s WITH (ROWLOCK, UPDLOCK, HOLDLOCK)
         WHERE s.Code = N'Lot';
@@ -211,16 +243,20 @@ BEGIN
                @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), d.BomId, d.CrtActive
         FROM Lots.Lot d WHERE d.Id = @TrayLotId;
         SET @NewLotId = CAST(SCOPE_IDENTITY() AS BIGINT);
+        UPDATE Lots.Container SET LotId = @NewLotId WHERE Id = @ToContainerId;
 
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
-        VALUES (@NewLotId, NULL, 4, N'Tray LOT minted closed by container repack.', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+        VALUES (@NewLotId, NULL, 4, N'Container LOT minted closed by container repack.', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
         INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth) VALUES (@NewLotId, @NewLotId, 0);
         INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
         VALUES (@NewLotId, NULL, @ToLocationId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+        END
 
         SET @NewTrayPos = ISNULL((SELECT MAX(TrayPosition) FROM Lots.ContainerTray WHERE ContainerId = @ToContainerId), 0) + 1;
+        -- v2.0: the tray carries no LOT (the container's LOT holds the pieces) and no
+        -- ShiftId / MintedPieceCount: a move is not production (D11).
         INSERT INTO Lots.ContainerTray (ContainerId, TrayPosition, PartsClosedCount, FinishedGoodLotId, ClosedAt, ClosedByUserId, ClosureMethod)
-        VALUES (@ToContainerId, @NewTrayPos, @Quantity, @NewLotId, SYSUTCDATETIME(), @AppUserId, @ClosureMethod);
+        VALUES (@ToContainerId, @NewTrayPos, @Quantity, NULL, SYSUTCDATETIME(), @AppUserId, @ClosureMethod);
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
         -- ---- the consumption: donor tray LOT -> new tray LOT, same Item. MIRROR of the
@@ -230,8 +266,12 @@ BEGIN
              PieceCount, LocationId, AppUserId, TerminalLocationId, TrayId, ProducedSerialNumber, ConsumedAt)
         VALUES (@TrayLotId, @NewLotId, @ToContainerId, @ItemId, @ItemId,
              @Quantity, @ToLocationId, @AppUserId, @TerminalLocationId, @NewId, @SerialNumber, SYSUTCDATETIME());
-        INSERT INTO Lots.LotGenealogy (ParentLotId, ChildLotId, RelationshipTypeId, PieceCount, EventUserId, TerminalLocationId)
-        VALUES (@TrayLotId, @NewLotId, 3, @Quantity, @AppUserId, @TerminalLocationId);
+        -- D4: one edge per (donor LOT, receiving LOT); a repeat move adds to it.
+        UPDATE Lots.LotGenealogy SET PieceCount = ISNULL(PieceCount, 0) + @Quantity
+        WHERE ParentLotId = @TrayLotId AND ChildLotId = @NewLotId AND RelationshipTypeId = 3;
+        IF @@ROWCOUNT = 0
+            INSERT INTO Lots.LotGenealogy (ParentLotId, ChildLotId, RelationshipTypeId, PieceCount, EventUserId, TerminalLocationId)
+            VALUES (@TrayLotId, @NewLotId, 3, @Quantity, @AppUserId, @TerminalLocationId);
         INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth)
         SELECT c.AncestorLotId, @NewLotId, c.Depth + 1
         FROM Lots.LotGenealogyClosure c
@@ -251,7 +291,10 @@ BEGIN
             WHERE Id = @ContainerSerialId;
         END
 
-        -- LOT birth audit, so the new LOT's own timeline starts with where it came from
+        -- LOT birth audit (only when this move minted the receiver's LOT), so the new
+        -- LOT's own timeline starts with where it came from
+        IF @Minted = 1
+        BEGIN
         SET @ActRaw = @MintedName + N' ' + Audit.ufn_MidDot() + N' Lot ' + Audit.ufn_MidDot()
                     + N' Minted by container repack from ' + @LotName + N' (' + @ItemPart + N', ' + CAST(@Quantity AS NVARCHAR(20)) + N' pcs)';
         SET @Act = Audit.ufn_TruncateActivity(@ActRaw);
@@ -265,6 +308,7 @@ BEGIN
             @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = @ToLocationId,
             @LogEntityTypeCode = N'Lot', @EntityId = @NewLotId, @LogEventTypeCode = N'LotCreated',
             @LogSeverityCode = N'Info', @Description = @Act, @OldValue = NULL, @NewValue = @NewValue;
+        END
 
         SET @ActRaw = N'Container ' + CAST(@ToContainerId AS NVARCHAR(20)) + N' ' + Audit.ufn_MidDot() + N' Rework ' + Audit.ufn_MidDot()
                     + N' + ' + CAST(@Quantity AS NVARCHAR(20)) + N' pcs from container ' + CAST(@ContainerId AS NVARCHAR(20))

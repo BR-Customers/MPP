@@ -123,8 +123,9 @@ EXEC test.Assert_IsEqual @TestName = N'[Pending] held container is listed for it
 
 -- one row per container, not one row per pending tray-LOT -- PendingLotCount carries the count
 DECLARE @Act5b NVARCHAR(10) = (SELECT CAST(PendingLotCount AS NVARCHAR(10)) FROM @L1 WHERE ContainerId = @Con);
-EXEC test.Assert_IsEqual @TestName = N'[Pending] PendingLotCount reflects all 4 tray LOTs',
-    @Expected = N'4', @Actual = @Act5b;
+-- container-as-LOT (0119): the 4 trays share ONE container LOT, so one pending LOT.
+EXEC test.Assert_IsEqual @TestName = N'[Pending] PendingLotCount = the one container LOT',
+    @Expected = N'1', @Actual = @Act5b;
 
 DECLARE @L2 TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
     PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, PendingLotCount INT);

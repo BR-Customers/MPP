@@ -35,8 +35,12 @@ EXEC test.Assert_IsEqual @TestName = N'[0124] key is (ClosedAt), the tally''s ra
 SET @S = ISNULL((SELECT STRING_AGG(c.name, N',') WITHIN GROUP (ORDER BY c.name)
                  FROM sys.index_columns ic JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
                  WHERE ic.object_id = OBJECT_ID(N'Lots.ContainerTray') AND ic.index_id = @IxId AND ic.is_included_column = 1), N'<none>');
-EXEC test.Assert_IsEqual @TestName = N'[0124] INCLUDE exactly (ContainerId, PartsClosedCount): covers the tally''s tray branch',
-    @Expected = N'ContainerId,PartsClosedCount', @Actual = @S;
+-- 2026-11-20 release: 0119 (container-as-LOT) creates this index first with a superset INCLUDE
+-- (ContainerId, ClosedAtTerminalId, PartsClosedCount); what the tally needs is that both its
+-- columns are covered.
+SET @S = CASE WHEN @S LIKE N'%ContainerId%' AND @S LIKE N'%PartsClosedCount%' THEN N'covers' ELSE @S END;
+EXEC test.Assert_IsEqual @TestName = N'[0124] INCLUDE covers (ContainerId, PartsClosedCount): the tally''s tray branch',
+    @Expected = N'covers', @Actual = @S;
 SET @S = CAST((SELECT COUNT(*) FROM dbo.SchemaVersion WHERE MigrationId = N'0124_containertray_closedat_index') AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[0124] migration recorded in dbo.SchemaVersion exactly once', @Expected = N'1', @Actual = @S;
 GO

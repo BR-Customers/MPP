@@ -96,7 +96,8 @@ CREATE TABLE #k1 (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(5
 INSERT INTO #k1 EXEC Workorder.FinishedGoods_GetProducedSummary @CellLocationId = @Cell, @ShiftStartUtc = @WinStart, @ShiftEndUtc = @WinEnd;
 
 DECLARE @Lc NVARCHAR(10) = (SELECT CAST(LotCount AS NVARCHAR(10)) FROM #k1 WHERE PartNumber = N'P6-KPI-OUT');
-EXEC test.Assert_IsEqual @TestName = N'[FgKpi] LotCount 2 for the FG part', @Expected = N'2', @Actual = @Lc;
+-- container-as-LOT (0119): both trays went into one container LOT, counted once.
+EXEC test.Assert_IsEqual @TestName = N'[FgKpi] LotCount 1 (the container LOT) for the FG part', @Expected = N'1', @Actual = @Lc;
 DECLARE @Pc NVARCHAR(10) = (SELECT CAST(PartCount AS NVARCHAR(10)) FROM #k1 WHERE PartNumber = N'P6-KPI-OUT');
 EXEC test.Assert_IsEqual @TestName = N'[FgKpi] PartCount 48 for the FG part', @Expected = N'48', @Actual = @Pc;
 DROP TABLE #k1;

@@ -3,6 +3,7 @@
 -- Object:      Oee.ufn_ShiftInputFingerprint
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-30
+-- Version:     1.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D5 / D11: M&A good is also read from container-shape TRAYS (ShiftId + fixed MintedPieceCount at the station); container LOTs are never stamped.
 -- Version:     1.0
 --
 -- Description:
@@ -93,6 +94,12 @@ RETURN
         FROM Lots.Lot l
         WHERE l.ShiftId = @ShiftId
     ),
+    Ct AS (   -- 0119: container-shape trays stamped with this shift (ufn_ShiftGood's tray branch)
+        SELECT COUNT(*) AS N, SUM(CAST(ISNULL(t.MintedPieceCount, 0) AS BIGINT)) AS Q,
+               CHECKSUM_AGG(CHECKSUM(t.Id, t.MintedPieceCount, t.ContainerId, t.ClosedAtTerminalId)) AS C
+        FROM Lots.ContainerTray t
+        WHERE t.ShiftId = @ShiftId
+    ),
     Ov AS (
         SELECT COUNT(*) AS N,
                CHECKSUM_AGG(CHECKSUM(o.Id, o.LocationId, o.StartTime, o.EndTime, o.DeprecatedAt)) AS C
@@ -114,12 +121,13 @@ RETURN
                N'|C', dc.N, N':', ISNULL(dc.Q, 0), N':', ISNULL(dc.C, 0),
                N'|T', tr.N, N':', ISNULL(tr.Q, 0), N':', ISNULL(tr.C, 0),
                N'|L', lt.N, N':', ISNULL(lt.Q, 0), N':', ISNULL(lt.C, 0),
+               N'|K', ct.N, N':', ISNULL(ct.Q, 0), N':', ISNULL(ct.C, 0),
                N'|O', ov.N, N':', ISNULL(ov.C, 0),
                N'|A', ta.N, N':', ISNULL(ta.C, 0))) AS Fingerprint
     FROM (SELECT 1 AS One) one
     LEFT JOIN Sh sh ON 1 = 1
     CROSS JOIN Dt dt CROSS JOIN Rj rj CROSS JOIN Dc dc CROSS JOIN Tr tr
-    CROSS JOIN Lt lt CROSS JOIN Ov ov CROSS JOIN Ta ta
+    CROSS JOIN Lt lt CROSS JOIN Ct ct CROSS JOIN Ov ov CROSS JOIN Ta ta
     WHERE sh.Id IS NOT NULL
     UNION ALL
     SELECT CAST(NULL AS VARBINARY(32))

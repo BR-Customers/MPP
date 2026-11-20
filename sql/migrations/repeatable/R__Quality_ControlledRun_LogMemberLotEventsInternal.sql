@@ -2,6 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_LogMemberLotEventsInternal.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-21
+-- Version:     1.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8 / D9: reads the container's LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers; a container LOT is in a time window by its TRAYS (ClosedAt, ClosedAtTerminalId), not Lot.CreatedAt.
 -- Version:     1.0
 -- Description: SILENT INTERNAL HELPER -- not called from Ignition. Super-lot
 --              piece 6: writes one Lots.LotEventLog row per LOT a super-lot event
@@ -48,8 +49,8 @@ BEGIN
     FROM OPENJSON(@MemberIdsJson) j
     INNER JOIN Quality.ControlledRunMember m ON m.Id = TRY_CONVERT(BIGINT, j.value)
     INNER JOIN Quality.ControlledRun r ON r.Id = m.ControlledRunId
-    INNER JOIN Lots.ContainerTray t ON t.ContainerId = m.ContainerId
-    INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
+    CROSS APPLY Lots.ufn_ContainerLots(m.ContainerId) cl   -- 0119: both shapes
+    INNER JOIN Lots.Lot l ON l.Id = cl.LotId
     WHERE m.ContainerId IS NOT NULL;
 
     DECLARE @LotId BIGINT, @LotName NVARCHAR(50), @RunId BIGINT, @RunNumber NVARCHAR(15), @ContainerId BIGINT;

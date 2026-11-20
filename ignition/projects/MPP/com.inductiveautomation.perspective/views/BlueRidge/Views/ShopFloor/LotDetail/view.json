@@ -16,6 +16,7 @@
       "ItemPartNumber": null,
       "OpenedAt": null,
       "TrayClosedAt": null,
+      "TrayCount": null,
       "TrayPosition": null
     },
     "history": [],
@@ -1436,6 +1437,16 @@
                               "basis": "150px",
                               "shrink": 0
                             },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if(isNull({view.custom.container.TrayPosition}), \"Trays\", \"Tray\")"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
                             "props": {
                               "style": {
                                 "color": "var(--mpp-text-secondary)",
@@ -1456,7 +1467,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "\"Tray \" + toStr({view.custom.container.TrayPosition}) + \"  (\" + coalesce({view.custom.container.ClosureMethod}, \"\") + \")\""
+                                    "expression": "if(isNull({view.custom.container.TrayPosition}), toStr({view.custom.container.TrayCount}) + \" trays (container LOT)\", \"Tray \" + toStr({view.custom.container.TrayPosition}) + \"  (\" + coalesce({view.custom.container.ClosureMethod}, \"\") + \")\")"
                                   },
                                   "type": "expr"
                                 }

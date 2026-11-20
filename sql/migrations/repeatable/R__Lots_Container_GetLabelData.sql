@@ -1,6 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Container_GetLabelData.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.1 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8: the container's finished-good LOT(s) are read in BOTH shapes through Lots.ufn_ContainerLots (tray LOTs before migration 0119, the container LOT after, both for a mixed container).
 -- Version:     1.0
 -- Description: Field data for the Honda container shipping label (first pass). Returns
 --              one row of the mappable fields for @ContainerId, as display strings:
@@ -32,10 +33,9 @@ BEGIN
         ISNULL(CONVERT(NVARCHAR(8),
                CAST(c.CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)), 1), N'') AS MfgDate,
         ISNULL((SELECT TOP 1 l.LotName
-                FROM Lots.ContainerTray t
-                INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
-                WHERE t.ContainerId = c.Id
-                ORDER BY t.TrayPosition), N'') AS MfgLotNumber,
+                FROM Lots.ufn_ContainerLots(c.Id) cl   -- 0119: representative LOT, both shapes
+                INNER JOIN Lots.Lot l ON l.Id = cl.LotId
+                ORDER BY cl.SortKey), N'') AS MfgLotNumber,
         ISNULL((SELECT TOP 1 sl.AimShipperId
                 FROM Lots.ShippingLabel sl
                 WHERE sl.ContainerId = c.Id AND sl.IsVoid = 0

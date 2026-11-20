@@ -2,6 +2,7 @@
 -- Repeatable:  R__Quality_ControlledRun_SyncInternal.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-12
+-- Version:     1.3 (2026-11-04, container-as-LOT spec docs/superpowers/specs/2026-11-04-container-as-lot-and-lot-volume-design.md) - D8 / D9: reads the container's LOT(s) in BOTH shapes through Lots.ufn_ContainerLots / ufn_LotContainers; a container LOT is in a time window by its TRAYS (ClosedAt, ClosedAtTerminalId), not Lot.CreatedAt.
 -- Version:     1.2
 -- Change Log:  2026-10-12 - 1.1 - Never re-adds a unit that was REMOVED from this
 --                                 super-lot by hand (final-review finding).
@@ -78,13 +79,22 @@ BEGIN
             FROM Lots.Lot l
             WHERE l.ItemId = @ItemId
               AND l.CrtActive = 1
-              AND l.CreatedAt >= @OpenedAt
-              AND (@EndedAt IS NULL OR l.CreatedAt < @EndedAt)
-              AND (@LocationId IS NULL OR l.CreatedAtTerminalId IN (SELECT Id FROM Descendants))
+              -- D9 (container-as-LOT 0119): a container LOT was born at its FIRST tray, so
+              -- it is in the window when ANY of its trays passed the camera inside it, on
+              -- a terminal under the selection location. Every other LOT keeps CreatedAt.
+              AND ( (NOT EXISTS (SELECT 1 FROM Lots.Container c0 WHERE c0.LotId = l.Id)
+                     AND l.CreatedAt >= @OpenedAt
+                     AND (@EndedAt IS NULL OR l.CreatedAt < @EndedAt)
+                     AND (@LocationId IS NULL OR l.CreatedAtTerminalId IN (SELECT Id FROM Descendants)))
+                 OR EXISTS (SELECT 1 FROM Lots.Container c1
+                            INNER JOIN Lots.ContainerTray t1 ON t1.ContainerId = c1.Id
+                            WHERE c1.LotId = l.Id
+                              AND t1.ClosedAt >= @OpenedAt
+                              AND (@EndedAt IS NULL OR t1.ClosedAt < @EndedAt)
+                              AND (@LocationId IS NULL OR t1.ClosedAtTerminalId IN (SELECT Id FROM Descendants))) )
               -- never bring back a unit Quality REMOVED from this super-lot (v1.1)
               AND NOT EXISTS (SELECT 1 FROM @Removed x WHERE x.LotId = l.Id)
-              AND NOT EXISTS (SELECT 1 FROM Lots.ContainerTray t JOIN @Removed x ON x.ContainerId = t.ContainerId
-                              WHERE t.FinishedGoodLotId = l.Id)
+              AND NOT EXISTS (SELECT 1 FROM Lots.ufn_LotContainers(l.Id) lc JOIN @Removed x ON x.ContainerId = lc.ContainerId)
             FOR JSON PATH)
         OPTION (MAXRECURSION 8);
 
@@ -105,8 +115,7 @@ BEGIN
             WHERE m.ControlledRunId = @ControlledRunId AND m.EndedAt IS NULL AND m.LotId IS NOT NULL
               AND d.CrtActive = 1
               AND NOT EXISTS (SELECT 1 FROM @Removed x WHERE x.LotId = d.Id)
-              AND NOT EXISTS (SELECT 1 FROM Lots.ContainerTray t JOIN @Removed x ON x.ContainerId = t.ContainerId
-                              WHERE t.FinishedGoodLotId = d.Id)
+              AND NOT EXISTS (SELECT 1 FROM Lots.ufn_LotContainers(d.Id) lc JOIN @Removed x ON x.ContainerId = lc.ContainerId)
             FOR JSON PATH);
 
         IF @Json IS NOT NULL
