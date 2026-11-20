@@ -40,7 +40,7 @@ BEGIN
     INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) VALUES (SCOPE_IDENTITY(), @Child, 1, 1, 1);
 END
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Fg AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Fg, 2, 1, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Fg, 2, 1, 0, N'ByCount', @Now);
 -- FG item eligible at the cell -- Assembly_CompleteTray mirrors Lot_Create's eligibility cascade
 -- and rejects "Finished-good Item is not eligible at this cell." without a Parts.ItemLocation row
 -- (same setup the sibling test sql/tests/0028_PlantFloor_Assembly/092_Assembly_CompleteTray.sql uses).

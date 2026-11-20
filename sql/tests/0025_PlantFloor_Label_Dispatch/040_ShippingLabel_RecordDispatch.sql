@@ -33,7 +33,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'RD-SHIP-TEST')
 DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'RD-SHIP-TEST');
 
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Item AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
     VALUES (@Item, 4, 25, 0, N'ByCount', @Now);
 DECLARE @Config BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @Item AND DeprecatedAt IS NULL);
 

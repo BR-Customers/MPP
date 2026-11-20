@@ -53,8 +53,8 @@ VALUES ((SELECT TOP 1 Id FROM Parts.ItemType ORDER BY Id), N'PN-SLR-TEST', N'SLR
         (SELECT TOP 1 Id FROM Parts.Uom ORDER BY Id), 1);
 SET @Item = SCOPE_IDENTITY();
 DECLARE @Cfg BIGINT;
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, ClosureMethod) VALUES (@Item, 1, 6, N'ByCount');
-SET @Cfg = SCOPE_IDENTITY();
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, ClosureMethod) VALUES (@Item, 1, 6, N'ByCount');
+SET @Cfg = (SELECT Id FROM Parts.ContainerConfig WHERE ItemId = @Item AND ClosureMethod = N'ByCount' AND DeprecatedAt IS NULL);
 
 DECLARE @Complete BIGINT = (SELECT Id FROM Lots.ContainerStatusCode WHERE Code = N'Complete');
 DECLARE @VoidSt   BIGINT = (SELECT Id FROM Lots.ContainerStatusCode WHERE Code = N'Void');

@@ -54,9 +54,9 @@ DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMP
 
 -- container config: 2 trays x 24 parts
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Out AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Out, 2, 24, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Out, 2, 24, 0, N'ByCount', @Now);
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Short AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Short, 1, 24, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Short, 1, 24, 0, N'ByCount', @Now);
 
 -- published BOM: OUT <- A x1 + B x2 ;  SHORT <- SC x1
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId = @Out AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)

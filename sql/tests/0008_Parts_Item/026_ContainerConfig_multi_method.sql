@@ -17,10 +17,10 @@ GO
 DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-MULTI');
 
 -- ByCount config
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
 VALUES (@Item, 1, 48, 0, N'ByCount', SYSUTCDATETIME());
 -- ByVision config for the SAME item (must be allowed)
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
 VALUES (@Item, 12, 8, 0, N'ByVision', SYSUTCDATETIME());
 
 DECLARE @N NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Parts.ContainerConfig WHERE ItemId = @Item AND DeprecatedAt IS NULL);
@@ -29,7 +29,7 @@ EXEC test.Assert_IsEqual @TestName = N'[CCMulti] two active configs, different m
 -- second ByCount must violate the (ItemId, ClosureMethod) unique index
 DECLARE @Err NVARCHAR(10) = N'0';
 BEGIN TRY
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
     VALUES (@Item, 1, 48, 0, N'ByCount', SYSUTCDATETIME());
 END TRY
 BEGIN CATCH

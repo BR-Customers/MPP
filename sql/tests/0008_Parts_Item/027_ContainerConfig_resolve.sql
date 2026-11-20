@@ -12,8 +12,8 @@ GO
 DECLARE @R TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO @R EXEC Parts.Item_Create @ItemTypeId = 4, @PartNumber = N'TEST-CC-RES', @Description = N'res', @UomId = 1, @AppUserId = 1;
 DECLARE @Item BIGINT = (SELECT NewId FROM @R);
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Item, 1, 48, 0, N'ByCount', SYSUTCDATETIME());
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Item, 12, 8, 0, N'ByVision', SYSUTCDATETIME());
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Item, 1, 48, 0, N'ByCount', SYSUTCDATETIME());
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Item, 12, 8, 0, N'ByVision', SYSUTCDATETIME());
 GO
 
 DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-RES');

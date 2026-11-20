@@ -33,7 +33,7 @@ DECLARE @A BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-CHILD-A')
 DECLARE @B BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-CHILD-B');
 
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Out AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Out, 2, 24, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Out, 2, 24, 0, N'ByCount', @Now);
 DECLARE @Config BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @Out AND DeprecatedAt IS NULL);
 
 -- published BOM exists (proves ContainerTray_Close still does NOT consume despite it)

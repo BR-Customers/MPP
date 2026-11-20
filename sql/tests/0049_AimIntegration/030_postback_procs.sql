@@ -33,7 +33,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-FK')
     VALUES (3, N'AIM-P1-FK', N'AIM plan-1 FK fixture part', 1, @Now, 1);
 DECLARE @FkItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-FK');
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @FkItem AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
     VALUES (@FkItem, 1, 15, 0, N'ByCount', @Now);
 DECLARE @FkConfig BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @FkItem AND DeprecatedAt IS NULL);
 DECLARE @FkCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
@@ -165,7 +165,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-HEAL')
     VALUES (3, N'AIM-P1-HEAL', N'AIM self-heal fixture part', 1, SYSUTCDATETIME(), 1);
 DECLARE @HealItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-HEAL');
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @HealItem AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
     VALUES (@HealItem, 1, 15, 0, N'ByCount', SYSUTCDATETIME());
 DECLARE @HealConfig BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @HealItem AND DeprecatedAt IS NULL);
 DECLARE @OH TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);

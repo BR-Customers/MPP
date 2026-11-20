@@ -56,8 +56,8 @@ SET @Item = SCOPE_IDENTITY();
 
 -- config: 1 tray x 6 parts = target 6
 DECLARE @Cfg BIGINT;
-INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, ClosureMethod) VALUES (@Item, 1, 6, N'ByCount');
-SET @Cfg = SCOPE_IDENTITY();
+INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, ClosureMethod) VALUES (@Item, 1, 6, N'ByCount');
+SET @Cfg = (SELECT Id FROM Parts.ContainerConfig WHERE ItemId = @Item AND ClosureMethod = N'ByCount' AND DeprecatedAt IS NULL);
 
 -- published BOM version 7 -- the FG LOT mints against this; {DcPartLevel} should
 -- render it zero-padded ('07') on the persisted label.

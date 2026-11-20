@@ -43,7 +43,7 @@ BEGIN
     INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) VALUES (SCOPE_IDENTITY(), @Mach, 1, 1, 1);
 END
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Asm AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Asm, 1, 24, 0, N'ByCount', @Now);
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Asm, 1, 24, 0, N'ByCount', @Now);
 
 DECLARE @MachCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');     -- where casting was machined
 DECLARE @AsmCell  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');  -- assembly cell
