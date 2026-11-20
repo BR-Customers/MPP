@@ -294,7 +294,8 @@ def _handle(instancePath, terminalLocationId, message):
     itemId = ctx["finishedGoodItemId"]
 
     verdict = BlueRidge.Parts.ContainerConfig.judgeWeight(
-        itemId, "ByWeight", parsed["net"], scaleFlags=parsed["flags"]) or {}
+        itemId, "ByWeight", parsed["net"], scaleFlags=parsed["flags"],
+        terminalLocationId=terminalLocationId) or {}
     agree = verdict.get("FlagsAgree")
     body.update({"verdict": verdict.get("Verdict"),
                  "low": _num(verdict.get("LowLimit")), "high": _num(verdict.get("HighLimit")),

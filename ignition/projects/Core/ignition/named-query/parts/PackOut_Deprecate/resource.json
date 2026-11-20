@@ -27,12 +27,17 @@
     ],
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-05-20T00:00:00Z"
+      "timestamp": "2026-11-20T00:00:00Z"
     },
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "itemId",
+        "identifier": "packOutId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
         "sqlType": 3
       }
     ]

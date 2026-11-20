@@ -1,3 +1,4 @@
 EXEC Parts.ContainerConfig_GetByItemAndMethod
     @ItemId = :itemId,
-    @ClosureMethod = :closureMethod
+    @ClosureMethod = :closureMethod,
+    @TerminalLocationId = :terminalLocationId

@@ -201,11 +201,13 @@ def resolvePlcCloseContext(terminalLocationId, closureMethod):
         fgItem = openRows[0].get("ItemId")
         containerId = openRows[0].get("Id")
     else:
-        fgItem = _recommendedWithPackout(cell, closureMethod)
+        fgItem = _recommendedWithPackout(cell, closureMethod, tid)
     if fgItem is None:
         return {"error": "No open %s box and no eligible finished good with a %s pack-out at cell %s."
                 % (closureMethod, closureMethod, cell)}
-    cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(fgItem, closureMethod) or {}
+    # 2026-11-20 named pack-outs: the pack-out IN FORCE at this terminal (the open
+    # box's own version, else the terminal's pick, else the default) -- SQL decides.
+    cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(fgItem, closureMethod, tid) or {}
     ppt = cfg.get("PartsPerTray")
     try:
         ppt = int(ppt) if ppt is not None else None
@@ -303,12 +305,12 @@ def getEligibleFinishedGoodsForDropdown(cellLocationId):
     return out
 
 
-def _recommendedWithPackout(cellLocationId, closureMethod):
+def _recommendedWithPackout(cellLocationId, closureMethod, terminalLocationId=None):
     """The highest-ranked eligible finished good at the cell that has a pack-out
        for closureMethod (ranking is SQL -- Item_ListEligibleFinishedGoodsRanked;
        this only skips parts that cannot be packed this way), or None."""
     for r in _rankedFinishedGoods(cellLocationId):
-        cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(r.get("Id"), closureMethod) or {}
+        cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(r.get("Id"), closureMethod, terminalLocationId) or {}
         if cfg.get("PartsPerTray"):
             return r.get("Id")
     return None

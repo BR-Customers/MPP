@@ -27,13 +27,28 @@
     ],
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-05-26T00:00:00Z"
+      "timestamp": "2026-11-20T00:00:00Z"
     },
     "parameters": [
       {
         "type": "Parameter",
+        "identifier": "packOutId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
         "identifier": "itemId",
         "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "closureMethod",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "name",
+        "sqlType": 7
       },
       {
         "type": "Parameter",
@@ -58,11 +73,6 @@
       {
         "type": "Parameter",
         "identifier": "customerCode",
-        "sqlType": 7
-      },
-      {
-        "type": "Parameter",
-        "identifier": "closureMethod",
         "sqlType": 7
       },
       {
