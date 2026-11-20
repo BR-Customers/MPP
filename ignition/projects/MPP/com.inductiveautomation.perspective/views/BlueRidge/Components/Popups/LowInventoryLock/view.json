@@ -25,7 +25,7 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Workorder.Assembly.getLowInventoryLock\", 30000, {view.params.locationId}, {view.params.finishedGoodItemId}, {view.params.closureMethod}, {view.custom.refreshToken})"
+          "expression": "runScript(\"BlueRidge.Workorder.Assembly.getLowInventoryLock\", 30000, {view.params.locationId}, {view.params.finishedGoodItemId}, {view.params.closureMethod}, {view.custom.refreshToken}, {session.custom.terminal.terminalLocationId})"
         }
       }
     },

@@ -115,17 +115,27 @@ GO
 -- ============================================================
 -- Parts.ContainerConfig -- one per finished good.
 -- ============================================================
-IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig cc INNER JOIN Parts.Item i ON i.Id = cc.ItemId WHERE i.PartNumber = N'5G0-FG' AND cc.DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, CreatedAt)
-    SELECT Id, 4, 12, 1, N'ByCount', NULL, SYSUTCDATETIME() FROM Parts.Item WHERE PartNumber = N'5G0-FG';
+-- Since 0136 a config row is a VERSION of a Parts.PackOut header: insert the
+-- header (named after the method, default) first, then version 1.
+DECLARE @Cfg TABLE (PartNumber NVARCHAR(50), Trays INT, Ppt INT, Ser BIT, Method NVARCHAR(20), Target DECIMAL(10,4));
+INSERT INTO @Cfg VALUES
+    (N'5G0-FG',           4, 12, 1, N'ByCount',  NULL),
+    (N'1223A-59B -A0002', 4, 15, 0, N'ByWeight', 75.0),
+    (N'12270-6NA -0001',  4,  6, 0, N'ByVision', NULL);
 
-IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig cc INNER JOIN Parts.Item i ON i.Id = cc.ItemId WHERE i.PartNumber = N'1223A-59B -A0002' AND cc.DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, CreatedAt)
-    SELECT Id, 4, 15, 0, N'ByWeight', 75.0, SYSUTCDATETIME() FROM Parts.Item WHERE PartNumber = N'1223A-59B -A0002';
+INSERT INTO Parts.PackOut (ItemId, ClosureMethod, Name, IsDefault, CreatedByUserId)
+SELECT i.Id, c.Method, m.Name, 1, 1
+FROM @Cfg c
+JOIN Parts.Item i ON i.PartNumber = c.PartNumber
+JOIN Parts.ClosureMethodCode m ON m.Code = c.Method
+WHERE NOT EXISTS (SELECT 1 FROM Parts.PackOut p WHERE p.ItemId = i.Id AND p.ClosureMethod = c.Method AND p.DeprecatedAt IS NULL);
 
-IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig cc INNER JOIN Parts.Item i ON i.Id = cc.ItemId WHERE i.PartNumber = N'12270-6NA -0001' AND cc.DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, CreatedAt)
-    SELECT Id, 4, 6, 0, N'ByVision', NULL, SYSUTCDATETIME() FROM Parts.Item WHERE PartNumber = N'12270-6NA -0001';
+INSERT INTO Parts.ContainerConfig (ItemId, ClosureMethod, PackOutId, VersionNumber, TraysPerContainer, PartsPerTray, IsSerialized, TargetWeight, CreatedAt, CreatedByUserId)
+SELECT i.Id, c.Method, p.Id, 1, c.Trays, c.Ppt, c.Ser, c.Target, SYSUTCDATETIME(), 1
+FROM @Cfg c
+JOIN Parts.Item i ON i.PartNumber = c.PartNumber
+JOIN Parts.PackOut p ON p.ItemId = i.Id AND p.ClosureMethod = c.Method AND p.IsDefault = 1 AND p.DeprecatedAt IS NULL
+WHERE NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig cc WHERE cc.PackOutId = p.Id AND cc.DeprecatedAt IS NULL);
 GO
 
 -- ============================================================

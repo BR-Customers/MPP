@@ -52,7 +52,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-T2')
     VALUES (3, N'AIM-P1-T2', N'AIM plan-1 claim fixture part', 1, @Now, 1);
 DECLARE @T2Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-T2');
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @T2Item AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    INSERT INTO test.ContainerConfigInsert (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
     VALUES (@T2Item, 1, 15, 0, N'ByCount', @Now);
 DECLARE @T2Config BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @T2Item AND DeprecatedAt IS NULL);
 DECLARE @T2Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');

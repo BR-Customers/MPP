@@ -72,9 +72,10 @@ class Recorder(object):
             Util=types.SimpleNamespace(log=lambda *a, **k: None))
         module.BlueRidge = BR
 
-    def _judge(self, itemId, method, weight, scaleFlags=None):
+    def _judge(self, itemId, method, weight, scaleFlags=None, terminalLocationId=None):
         self.judgeCalls.append({"itemId": itemId, "method": method,
-                                "weight": weight, "scaleFlags": scaleFlags})
+                                "weight": weight, "scaleFlags": scaleFlags,
+                                "terminal": terminalLocationId})
         return dict(self.judgeRow)
 
 
@@ -195,6 +196,12 @@ class HandleMessageTests(unittest.TestCase):
         rec.install(W)
         result = W.handleMessage("[MPP]PlcDevices/MPP_Scale", 106, message)
         return rec, result
+
+    def test_judged_against_this_terminals_pack_out(self):
+        # Named pack-outs (2026-11-20): the window is the pack-out in force AT
+        # THIS TERMINAL (its open box, pick or default), so the terminal is passed.
+        rec, result = self._run(T1, _row("Ok"))
+        self.assertEqual([c["terminal"] for c in rec.judgeCalls], [106])
 
     def test_flags_absent_closes_and_logs_none(self):
         rec, result = self._run(T1, _row("Ok"))
@@ -349,10 +356,12 @@ def _loadAssembly(runningPart, calls):
     BR.Workorder = types.SimpleNamespace(ScaleStation=types.SimpleNamespace(
         getRunningPartOrEmpty=lambda tid, _token=None: calls.append(tid) or dict(runningPart)))
     BR.Parts = types.SimpleNamespace(ContainerConfig=types.SimpleNamespace(
-        getByItemAndMethod=lambda item, method: {"PartsPerTray": 24}))
+        getByItemAndMethod=lambda item, method, terminalLocationId=None:
+            a.cfgTerminals.append(terminalLocationId) or {"PartsPerTray": 24}))
+    a.cfgTerminals = []
     a.BlueRidge = BR
     a.getStationContainerRows = lambda cell, tid, method: []
-    a._recommendedWithPackout = lambda cell, method: 555
+    a._recommendedWithPackout = lambda cell, method, terminalLocationId=None: 555
     return a
 
 
@@ -383,6 +392,26 @@ class CloseContextTests(unittest.TestCase):
         self.assertEqual(calls, [], "ByVision must not consult the scale station rule")
         self.assertEqual(ctx["finishedGoodItemId"], 555)
         self.assertEqual(ctx["pieceCount"], 24)
+        # Named pack-outs (2026-11-20): the piece count is the pack-out in force
+        # at THIS terminal, so the terminal reaches the pack-out read.
+        self.assertEqual(a.cfgTerminals, [106])
+
+
+
+class LowInventoryLockTests(unittest.TestCase):
+    """Named pack-outs (2026-11-20): the low-inventory lock's pieces per tray is
+       the pack-out in force AT THIS TERMINAL, so the terminal reaches the
+       Assembly_GetTraysRemaining named query (review finding I1)."""
+
+    def test_terminal_reaches_trays_remaining_query(self):
+        a = _loadAssembly({}, [])
+        seen = []
+        a.BlueRidge.Common.Db = types.SimpleNamespace(
+            execList=lambda nq, params: seen.append((nq, dict(params))) or [])
+        a._asId = lambda v: v
+        a.getLowInventoryLock(104, 555, "ByWeight", 7, 195)
+        self.assertEqual(seen[0][0], "workorder/Assembly_GetTraysRemaining")
+        self.assertEqual(seen[0][1].get("terminalLocationId"), 195)
 
 
 STATION = os.path.join(ROOT, "ignition", "projects", "Core", "ignition",

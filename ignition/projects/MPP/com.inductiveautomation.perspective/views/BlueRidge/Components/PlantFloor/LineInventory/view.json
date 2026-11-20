@@ -48,7 +48,7 @@
     "custom.lock": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Workorder.Assembly.getLowInventoryLock\", 30000, if({view.params.lockEnabled}, {view.custom.locationId}, null), {session.custom.selectedFinishedGoodItemId}, {session.custom.closureMethod}, {view.custom.refreshToken})"
+          "expression": "runScript(\"BlueRidge.Workorder.Assembly.getLowInventoryLock\", 30000, if({view.params.lockEnabled}, {view.custom.locationId}, null), {session.custom.selectedFinishedGoodItemId}, {session.custom.closureMethod}, {view.custom.refreshToken}, {session.custom.terminal.terminalLocationId})"
         },
         "type": "expr"
       }

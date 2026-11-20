@@ -515,6 +515,13 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tif BlueRidge.Workorder.ScaleStation.shouldRefresh(\"inventoryChanged\", payload, self.view.custom.tid, self.view.custom.cellId):\n\t\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
+        },
+        {
+          "messageType": "packOutChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# Named pack-outs (2026-11-20): the Pack-Out popup on this page saved or switched\n\t# the pack-out; re-read so the target / limits / parts per tray show the new one.\n\tself.view.custom.pressToken = (self.view.custom.pressToken or 0) + 1"
         }
       ]
     }

@@ -18,7 +18,8 @@ CREATE TABLE #R (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(50
                  PartsPerTray INT, TraysPerContainer INT, TargetWeight DECIMAL(10,4), ToleranceWeight DECIMAL(10,4),
                  LowLimit DECIMAL(10,4), HighLimit DECIMAL(10,4), EligibleCount INT, Message NVARCHAR(500),
                  OverrideItemId BIGINT, OverrideSetBy NVARCHAR(50), OverrideSetAtEt DATETIME2(3),
-                 OpenContainerId BIGINT, OpenTraysClosed INT, OpenPartsClosed INT);
+                 OpenContainerId BIGINT, OpenTraysClosed INT, OpenPartsClosed INT,
+                 PackOutId BIGINT, PackOutName NVARCHAR(50), PackOutSource NVARCHAR(10));
 GO
 
 -- Stock: FG-A eligible (4/7) and FG-B eligible (2/2, ranks first).

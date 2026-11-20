@@ -12,6 +12,7 @@
 |---|---|---|---|
 | 3.11.2 | 2026-11-10 | Blue Ridge Automation | **Not-closed LOT indexes (prod incident fix).** Migration `0118_lot_open_lot_indexes`: `IX_Lot_NotClosed_Location` and `IX_Lot_NotClosed_Item` on `Lots.Lot`, filtered `LotStatusId <> 4`. `Lots.Lot_GetWipQueueByLocation` v3.3 and `Lots.Lot_GetTrimStorageQueueForLine` v2.1 resolve their scope first and seek those indexes, and read each LOT's last movement by seek instead of aggregating all of `Lots.LotMovement`. Same rows, same order. See the Lot section note. |
 | 3.11.1 | 2026-11-03 | Blue Ridge Automation | **A shift schedule change is a line in the sand.** New `Oee.ufn_ShiftWindowForShift` resolves a recorded shift's window from its own `Oee.Shift` row (override for that day wins); `Oee.ufn_ShiftAvailability` v2.1 and `Oee.ufn_ShiftDowntimeEntries` v1.1 use it, so editing or deprecating a schedule no longer rewrites or hides past availability. `Oee.ShiftSchedule` removed from `Oee.ufn_ShiftSummaryConfigFingerprint` (v1.1). No schema change. |
+| 3.14 | 2026-11-20 | Blue Ridge Automation | **Named pack-outs, selectable per terminal (migration `0136_named_pack_outs`; spec `docs/superpowers/specs/2026-11-20-named-pack-outs-design.md`).** New `Parts.PackOut` (a named pack-out of a part for one closure method -- e.g. Cardboard vs Tote -- with one `IsDefault` per part + method) and `Location.TerminalPackOutSelection` (a terminal's pick, one per terminal + part + method). `Parts.ContainerConfig` rows become the pack-out's immutable **versions** (`PackOutId`, `VersionNumber`, `CreatedByUserId`); an edit retires the active version and saves the next, so `Lots.Container.ContainerConfigId` keeps the numbers each box was opened on. `UQ_ContainerConfig_ActiveItemMethod` dropped (several pack-outs per method now); `UQ_ContainerConfig_ActivePackOut` (one active version per pack-out) added. Backfill: every existing (item, method) became one default pack-out named after the method. The pack-out a terminal runs is `Parts.ufn_PackOutInForce`: the open box's own version, else the terminal's pick, else the default. Procs `Parts.PackOut_Save` / `_SetDefault` / `_Deprecate` / `_ListByItem`, `Location.Terminal_SetPackOut` (refused while a box is open); `ContainerConfig_Create` / `_Update` / `_Deprecate` / `_GetByItem` / `_ListHistory` dropped. Rework moves only between boxes of the same pack-out. |
 | 3.13 | 2026-11-20 | Blue Ridge Automation | **Learned scale part codes (migration `0135_scale_part_code_map`; spec `docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md` section 13).** New `Workorder.ScalePartCode` (per terminal, one active mapping per code); `Audit.LogEventType` += `ScalePartCodeLearned`, `ScalePartCodeRemoved`. New procs `Workorder.ScalePartCode_Resolve`, `_ListForTerminal`, `_Deprecate`; `Workorder.ScalePendingPress_Complete` v1.1 learns the code on a pick. |
 | 3.12 | 2026-11-19 | Blue Ridge Automation | **Assembly Out scales read through a Digi One SP (migration `0134_scale_digi_and_pending_press`; spec `docs/superpowers/specs/2026-11-19-digi-scale-feed-design.md`).** `Location.PlcDeviceType` += `ScaleStationDigi` (ByWeight): an IND570 running its TaskExpert program, read on its serial port; one record per good press, and the scale decides the part and whether the tray is good. New `Workorder.ScalePendingPressStatus` and `Workorder.ScalePendingPress` (a press whose part code is no MES part, held until the operator picks the part; one Pending per terminal). `Audit.LogEventType` += `ScalePressHeld`, `ScalePressPicked`, `ScalePressDiscarded`. New procs `Workorder.ScalePendingPress_Hold` / `_GetForTerminal` / `_Claim` / `_Release` / `_Complete` / `_Discard`. No existing proc changed. |
 | 3.11 | 2026-11-03 | Blue Ridge Automation | **OEE dashboard -- availability and quality, site to unit (migration `0117_oee_shift_summary`; spec `docs/superpowers/specs/2026-10-27-oee-dashboard-design.md` v1.0; plan `docs/superpowers/plans/2026-10-30-oee-dashboard-v03.md`).** `Lots.Lot` += `ShiftId` (FK `Oee.Shift`) and `MintedPieceCount`, stamped only by the consume-mints (`Workorder.Assembly_CompleteTray` / `Workorder.MachiningOut_Mint`), filtered index `IX_Lot_ShiftId`; one-time backfill `Lots.Lot_BackfillMintStamp @Commit`. New tables `Oee.ShiftSummary` (stored per-shift minutes and counts, one row per unit / station / area placement / area charge) and `Oee.ShiftSummaryConfig` (single row: the configuration fingerprint). Availability is now computed from entered DURATIONS (`Oee.ufn_DowntimeEventMinutes`, `Oee.ufn_ShiftAvailability`, `Oee.Shift_GetAvailability` v4.0). Compute / refresh procs `Oee.ShiftSummary_Compute`, `_ComputeCore`, `_RecomputeRange`, `_RefreshChanged`; dashboard reads `Oee.Dashboard_GetPeriod`, `_GetUnitSummary` (v2.1 `@ReadLive`), `_GetTrend`, `_GetBreakdown`, `_GetDowntimeByReason`, `_GetScrap`, `_GetDowntimeEntries` (v1.1). Rules in Section 6 "OEE dashboard". |
@@ -284,6 +285,24 @@ Event tables carry two location references when both operator position and machi
 - `TerminalLocationId` — FK → `Location.Id` where the definition is `Terminal` (where the operator is standing)
 - `LocationId` — FK → `Location.Id` where the definition is a machine kind (the active Cell context — either fixed by parent on Dedicated terminals or selected by scan/dropdown on Shared terminals)
 
+### TerminalPackOutSelection
+
+**Added migration `0136` (2026-11-20)** (schema `Location`). A terminal's pick of which pack-out it runs for a part + closure method. One row per (terminal, part, method), updated in place; the history is the `Audit.OperationLog` row (`PackOutSelected`).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| TerminalLocationId | BIGINT | NOT NULL, FK -> Location.Location | The terminal (LTD 7) |
+| ItemId | BIGINT | NOT NULL | Copied from the pack-out (no FK: avoids a second cascade path) |
+| ClosureMethod | NVARCHAR(20) | NOT NULL | Copied from the pack-out |
+| PackOutId | BIGINT | NOT NULL, FK -> Parts.PackOut.Id (ON DELETE CASCADE) | The pick. A pick on a removed pack-out is ignored (and deleted by `PackOut_Deprecate`). |
+| SetByUserId | BIGINT | NOT NULL, FK -> Location.AppUser | |
+| SetAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | UTC |
+
+**Index:** `UQ_TerminalPackOutSelection` UNIQUE `(TerminalLocationId, ItemId, ClosureMethod) INCLUDE (PackOutId)`.
+
+**Proc:** `Location.Terminal_SetPackOut` -- any PIN operator; refused while the box the next tray would go into is open.
+
 ### AppUser
 
 MES users in two classes (FDS §4):
@@ -541,9 +560,38 @@ Honda-specified packing rules per product.
 | ToleranceWeight | DECIMAL(10,4) | NULL | **Added 2026-08-27 (migration `0068`).** One symmetric tolerance around `TargetWeight`. `Parts.ContainerConfig_JudgeWeight` judges a scale's net weight against `TargetWeight - ToleranceWeight` to `TargetWeight + ToleranceWeight`, both ends inclusive. NULL is its own verdict (`NoTolerance`) and closes nothing, never a zero-width window. **This window is the only checkweigh verdict** (option C, v3.3): a scale printing its own UNDER / OVER / OK flags (IND570 Template 3) has them compared and logged as `ScaleVerdict` / `FlagsAgree`, but they never decide a close. |
 | DunnageCode | NVARCHAR(50) | NULL | Returnable dunnage identifier |
 | CustomerCode | NVARCHAR(50) | NULL | Honda customer code |
+| PackOutId | BIGINT | NOT NULL, FK -> PackOut.Id | **Added migration `0136` (2026-11-20).** The named pack-out this row is a version of. `ItemId` and `ClosureMethod` are copied from it and never change. |
+| VersionNumber | INT | NOT NULL | Version of the pack-out, 1..N. An edit to any pack value retires the active version and inserts N+1; rows are never updated in place, so a box keeps the numbers it was opened on. UNIQUE `(PackOutId, VersionNumber)`. |
+| CreatedByUserId | BIGINT | NULL, FK -> Location.AppUser | Who saved this version (NULL on rows older than `0136`). |
 | CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT GETDATE() | |
-| UpdatedAt | DATETIME2(3) | NULL | |
-| DeprecatedAt | DATETIME2(3) | NULL | |
+| UpdatedAt | DATETIME2(3) | NULL | No longer written (versions are immutable since `0136`). |
+| DeprecatedAt | DATETIME2(3) | NULL | Set when a newer version is saved or the pack-out is removed. |
+
+**Indexes (since `0136`):** `UQ_ContainerConfig_ActivePackOut` UNIQUE `(PackOutId) WHERE DeprecatedAt IS NULL` (covering the pack values) -- one active version per pack-out; `UQ_ContainerConfig_PackOutVersion` UNIQUE `(PackOutId, VersionNumber)`. The old one-per-(item, method) index is gone.
+
+### PackOut
+
+**Added migration `0136` (2026-11-20).** A named pack-out (container type) of a part for one closure method -- e.g. *Cardboard* and *Tote* for the same part, differing in parts per tray, trays per box and weight. Its values live in versioned `ContainerConfig` rows. One per (part, method) is the default: a terminal with no pick runs it.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| ItemId | BIGINT | NOT NULL, FK -> Item.Id (ON DELETE CASCADE) | |
+| ClosureMethod | NVARCHAR(20) | NOT NULL, FK -> ClosureMethodCode.Code | |
+| Name | NVARCHAR(50) | NOT NULL, CHECK not blank | What the operator sees on the pack-out button. Unique among the part's active pack-outs for the method. |
+| IsDefault | BIT | NOT NULL, DEFAULT 0 | The pack-out a terminal runs when it has no pick. At most one active default per (part, method). |
+| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | UTC |
+| CreatedByUserId | BIGINT | NOT NULL, FK -> Location.AppUser | |
+| UpdatedAt | DATETIME2(3) | NULL | Rename or default change (UTC) |
+| UpdatedByUserId | BIGINT | NULL, FK -> Location.AppUser | |
+| DeprecatedAt | DATETIME2(3) | NULL | Removed (UTC) |
+| DeprecatedByUserId | BIGINT | NULL, FK -> Location.AppUser | |
+
+**Indexes:** `UQ_PackOut_ActiveName` UNIQUE `(ItemId, ClosureMethod, Name) WHERE DeprecatedAt IS NULL`; `UQ_PackOut_ActiveDefault` UNIQUE `(ItemId, ClosureMethod) WHERE IsDefault = 1 AND DeprecatedAt IS NULL`.
+
+**Rule (one place):** `Parts.ufn_ResolvePackOut` = the terminal's active pick, else the active default; `Parts.ufn_PackOutInForce` = the open box the next tray would go into (`Lots.ufn_ContainerForNextTray`) -> that box's own version, else the resolver. Every reader (`Assembly_CompleteTray`, `ContainerConfig_JudgeWeight`, `ContainerConfig_GetByItemAndMethod`, `Assembly_GetTraysRemaining`, `ScaleStation_GetRunningPart`, `ufn_ScaleStationEligibleParts`) uses it.
+
+**Procs:** `Parts.PackOut_Save` (create / rename / new version), `_SetDefault`, `_Deprecate` (refuses the default while others exist), `_ListByItem` (read; `IsSelected` / `IsRunning` with a terminal). Audited to `Audit.ConfigLog`, entity `PackOut`.
 
 ### ✅ Resolved (v1.8 rev / FDS-05-033 v0.11m): Trim → Machining Part Identity Change → 1-line BOM
 

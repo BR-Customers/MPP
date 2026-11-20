@@ -1,6 +1,13 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_CompleteTray.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.7 (2026-11-20, named pack-outs, migration 0136) - the pack-out is the one
+--              IN FORCE at the station (Parts.ufn_PackOutInForce): the open box's OWN
+--              version when the next tray goes into an open box, else the terminal's pick,
+--              else the part's default. PartsPerTray (step 5), the over-fill target (8)
+--              and the full flag (B5) come from the box actually filled; a newly opened
+--              box is stamped with the resolved version (ufn_ResolvePackOut). The FIFO
+--              pick, the B2 box claim and its locking are unchanged.
 -- Version:     1.6 (2026-10-30, OEE dashboard spec v0.3.1 sec 7.4, D18, D21) - the minted
 --              tray LOT is STAMPED with ShiftId (Oee.ufn_ShiftIdForInstant(@CellLocationId,
 --              now), resolved before the transaction) and MintedPieceCount = @PieceCount.
@@ -136,6 +143,7 @@ BEGIN
     DECLARE @Repack BIT = 0;
     DECLARE @RepackAvail INT = 0;
 
+    DECLARE @NewBoxConfigId BIGINT;
     DECLARE @ContainerConfigId BIGINT, @PartsPerTray INT, @TraysPerContainer INT, @MaxLotSize INT;
     DECLARE @BomId BIGINT, @CellCode NVARCHAR(50), @PartNumber NVARCHAR(50);
     DECLARE @Accum INT, @Target INT, @TrayPosition INT;
@@ -208,14 +216,14 @@ BEGIN
             GOTO Reply;
         END
 
-        -- ---- 4b. Resolve the ContainerConfig for THIS (Item, closure method) ----
-        --      Terminal mode selects the pack-out; no TOP-1/COALESCE fallback.
-        SELECT @ContainerConfigId = cc.Id, @PartsPerTray = cc.PartsPerTray,
-               @TraysPerContainer = cc.TraysPerContainer
-        FROM Parts.ContainerConfig cc
-        WHERE cc.ItemId = @FinishedGoodItemId
-          AND cc.ClosureMethod = @ClosureMethod
-          AND cc.DeprecatedAt IS NULL;
+        -- ---- 4b. The pack-out IN FORCE for THIS (Item, closure method) at this station:
+        --      the open box's own version, else the terminal's pick, else the default
+        --      (1.7). A box opened below is stamped with the RESOLVED version. ----
+        SELECT @ContainerConfigId = f.ContainerConfigId, @PartsPerTray = f.PartsPerTray,
+               @TraysPerContainer = f.TraysPerContainer
+        FROM Parts.ufn_PackOutInForce(@FinishedGoodItemId, @ClosureMethod, @StationLocationId, @CellLocationId) f;
+        SELECT @NewBoxConfigId = r.ContainerConfigId
+        FROM Parts.ufn_ResolvePackOut(@FinishedGoodItemId, @ClosureMethod, @StationLocationId) r;
 
         IF @ContainerConfigId IS NULL
         BEGIN
@@ -455,13 +463,13 @@ BEGIN
         IF @ContainerId IS NULL
         BEGIN
             INSERT INTO Lots.Container (ItemId, ContainerConfigId, CurrentLocationId, ContainerStatusCodeId, OpenedAt, CreatedByUserId, StationLocationId)
-            VALUES (@FinishedGoodItemId, @ContainerConfigId, @CellLocationId, 1, SYSUTCDATETIME(), @AppUserId, @StationLocationId);
+            VALUES (@FinishedGoodItemId, ISNULL(@NewBoxConfigId, @ContainerConfigId), @CellLocationId, 1, SYSUTCDATETIME(), @AppUserId, @StationLocationId);
             SET @ContainerId = SCOPE_IDENTITY();
             SET @OpenedContainer = 1;
 
             SET @Activity = Audit.ufn_TruncateActivity(ISNULL(@CellCode, N'?') + N' ' + Audit.ufn_MidDot() + N' Container ' + Audit.ufn_MidDot() + N' Opened');
             SET @NewValue = (SELECT JSON_QUERY((SELECT i.Id, i.PartNumber AS Code, i.Description AS Name FROM Parts.Item i WHERE i.Id = @FinishedGoodItemId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Item,
-                    @ContainerConfigId AS ContainerConfigId,
+                    ISNULL(@NewBoxConfigId, @ContainerConfigId) AS ContainerConfigId,
                     JSON_QUERY((SELECT s.Id, s.Code, s.Name FROM Location.Location s WHERE s.Id = @StationLocationId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Station
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
             EXEC Audit.Audit_LogOperation @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = @CellLocationId,
@@ -565,6 +573,10 @@ BEGIN
         -- ---- B5. Container-full flag (delegation: DO NOT complete the container here;
         --      the view calls Lots.Container_Complete when @ContainerFull = 1) ----
         SET @Accum  = (SELECT SUM(PartsClosedCount) FROM Lots.ContainerTray WHERE ContainerId = @ContainerId AND ClosedAt IS NOT NULL);
+        -- 1.7: the target is the box actually filled (its own pack-out version).
+        SELECT @TraysPerContainer = cc.TraysPerContainer, @PartsPerTray = cc.PartsPerTray
+        FROM Lots.Container c JOIN Parts.ContainerConfig cc ON cc.Id = c.ContainerConfigId
+        WHERE c.Id = @ContainerId;
         SET @Target = CASE WHEN @TraysPerContainer IS NOT NULL AND @PartsPerTray IS NOT NULL
                            THEN @TraysPerContainer * @PartsPerTray ELSE NULL END;
         SET @ContainerFull = CASE WHEN @Target IS NOT NULL AND ISNULL(@Accum, 0) >= @Target THEN 1 ELSE 0 END;

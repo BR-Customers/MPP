@@ -1647,22 +1647,29 @@ def item_identity_source():
 def item_container_config_source():
     parts = []
     parts.append(_lead(
-        'Configure how this part packs out &ndash; by count, by weight, '
-        'or by vision. A part can have more than one method configured.'))
+        'Configure how this part packs out &ndash; by count, by weight, or by '
+        'vision. Each method can hold several <b>named</b> pack-outs (for '
+        'example Cardboard and Tote); one of them is the default.'))
 
-    parts.append(_step(1, 'Add or clear a method',
-        'Press %s for whichever methods apply, or %s to remove one.'
-        % (_b('Add By Count/Weight/Vision pack-out'), _b('Clear'))))
+    parts.append(_step(1, 'Pick or add a pack-out',
+        'Press a pack-out button to load it, or %s to create one. A part with '
+        'none for a method shows %s.'
+        % (_b('+ New'), _b('Add By Count/Weight/Vision pack-out'))))
 
     parts.append(_step(2, 'Fill in the numbers',
-        '%s, %s, %s, and %s. %s also needs a %s above zero.'
-        % (_b('Parts Per Tray'), _b('Trays Per Container'), _b('Dunnage Code'),
-           _b('Serialized'), _b('By Weight'), _b('Target Weight'))))
+        '%s, %s, %s, %s and %s. %s also needs a %s and a %s above zero.'
+        % (_b('Name'), _b('Parts Per Tray'), _b('Trays Per Container'),
+           _b('Dunnage Code'), _b('Serialized'), _b('By Weight'),
+           _b('Target Weight'), _b('Tolerance'))))
 
-    parts.append(_step(3, 'Save', 'Press %s.' % _b('Save')))
+    parts.append(_step(3, 'Save', 'Press %s. Changed numbers save as a new '
+        'version; boxes already opened keep the numbers they were opened on.'
+        % _b('Save')))
     parts.append(_note(
-        '%s greater than zero requires %s too, or Save will reject it.'
-        % (_b('Parts Per Tray'), _b('Trays Per Container'))))
+        '%s sets the pack-out a station runs when nobody has picked one there. '
+        '%s is refused for the default while other pack-outs exist. Stations '
+        'pick their pack-out from the Pack-Out button on the shop floor.'
+        % (_b('Make default'), _b('Remove'))))
 
     return ''.join(parts)
 

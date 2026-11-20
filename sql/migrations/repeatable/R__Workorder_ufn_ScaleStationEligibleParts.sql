@@ -2,7 +2,7 @@
 -- Function:    Workorder.ufn_ScaleStationEligibleParts
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-19
--- Version:     1.2
+-- Version:     1.3
 --
 -- Description:
 --   The finished goods a By Weight scale station may run right now, and how
@@ -46,6 +46,11 @@
 --                      index IX_Lot_NotClosed_Item serves them instead of a RID
 --                      lookup for every closed LOT of the part. Same rows: Closed
 --                      was already excluded by sc.Code NOT IN (N'Closed', ...).
+--   2026-11-20 - 1.3 - Named pack-outs (0136): the By Weight pack-out (PartsPerTray,
+--                      trays, target, tolerance) is the one this terminal would run
+--                      -- Parts.ufn_ResolvePackOut (its pick, else the default), one
+--                      CROSS APPLY per finished good before the stock aggregate.
+--                      Stock reads unchanged (keep v1.2's literal LotStatusId <> 4).
 -- =============================================
 CREATE OR ALTER FUNCTION Workorder.ufn_ScaleStationEligibleParts
 (
@@ -71,17 +76,26 @@ RETURN
         FROM Line ln
         CROSS APPLY Location.ufn_AncestorLocationIds(ln.LineId) a
     ),
-    Fg AS (
-        SELECT DISTINCT i.Id AS ItemId, i.PartNumber, i.Description,
-               cc.PartsPerTray, cc.TraysPerContainer, cc.TargetWeight, cc.ToleranceWeight,
-               anc.LineId
+    -- The distinct finished goods set up at the line; the pack-out this terminal
+    -- runs is resolved once per part below (resolving before the DISTINCT ran it
+    -- once per ancestor/eligibility row -- ~1,200 extra reads per call on the
+    -- bench). No EXISTS pre-filter on PackOut: it tipped the plan to nested loops
+    -- (+4 ms CPU per GetRunningPart); the resolver already drops parts without one.
+    -- notes/2026-11-20_packout-perf.md.
+    FgItem AS (
+        SELECT DISTINCT i.Id AS ItemId, i.PartNumber, i.Description, anc.LineId
         FROM Anc anc
         JOIN Parts.v_EffectiveItemLocation eil ON eil.LocationId = anc.LocationId
         JOIN Parts.Item i      ON i.Id = eil.ItemId AND i.DeprecatedAt IS NULL
         JOIN Parts.ItemType it ON it.Id = i.ItemTypeId AND it.Code = N'FinishedGood'
-        JOIN Parts.ContainerConfig cc
-          ON cc.ItemId = i.Id AND cc.ClosureMethod = N'ByWeight'
-         AND cc.DeprecatedAt IS NULL AND cc.PartsPerTray > 0
+    ),
+    Fg AS (
+        SELECT fi.ItemId, fi.PartNumber, fi.Description,
+               po.PartsPerTray, po.TraysPerContainer, po.TargetWeight, po.ToleranceWeight,
+               fi.LineId
+        FROM FgItem fi
+        CROSS APPLY Parts.ufn_ResolvePackOut(fi.ItemId, N'ByWeight', @TerminalLocationId) po
+        WHERE po.PartsPerTray > 0
     ),
     FgBom AS (
         SELECT f.*,

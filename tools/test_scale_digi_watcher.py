@@ -227,8 +227,9 @@ class Recorder(object):
             self.running = _running(itemId, "Override")
         return self.setResult
 
-    def _judge(self, itemId, method, weight, scaleFlags=None):
-        self.judgeCalls.append({"itemId": itemId, "method": method, "weight": weight})
+    def _judge(self, itemId, method, weight, scaleFlags=None, terminalLocationId=None):
+        self.judgeCalls.append({"itemId": itemId, "method": method, "weight": weight,
+                                "terminal": terminalLocationId})
         return dict(self.judgeRow)
 
     def payload(self, description="ByWeight tray close"):
@@ -257,6 +258,13 @@ class HandleMessageTests(unittest.TestCase):
         self.assertEqual((p["verdict"], p["scaleVerdict"], p["mesVerdict"], p["agree"]), ("Ok", "Ok", "Ok", True))
         close = [l for l in rec.logs if l["description"] == "ByWeight tray close"][0]
         self.assertEqual((close["locationId"], close["itemId"], close["lotId"], close["ok"]), (TERM, 110, 501, True))
+
+    def test_judged_against_this_terminals_pack_out(self):
+        # Named pack-outs (2026-11-20): the window is the pack-out in force AT
+        # THIS TERMINAL (its open box, pick or default), so the terminal is passed.
+        rec = Recorder(items={"TEST3": {"Id": 110}})
+        _run(rec)
+        self.assertEqual([c["terminal"] for c in rec.judgeCalls], [TERM])
 
     def test_match_other_part_switches_then_closes(self):
         rec = Recorder(items={"TEST3": {"Id": 222}})

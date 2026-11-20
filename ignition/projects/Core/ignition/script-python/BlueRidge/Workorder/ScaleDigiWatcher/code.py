@@ -274,7 +274,10 @@ def closeAs(device, terminalLocationId, body, itemId):
        live press and a held-press pick. Returns {Status, Message, ContainerId,
        FinishedGoodLotId}."""
     W = BlueRidge.Workorder.PlcWatcher
-    verdict = BlueRidge.Parts.ContainerConfig.judgeWeight(itemId, "ByWeight", body.get("net")) or {}
+    # Named pack-outs (2026-11-20): judged against the pack-out in force at this
+    # terminal (its open box's version, else its pick, else the default).
+    verdict = BlueRidge.Parts.ContainerConfig.judgeWeight(
+        itemId, "ByWeight", body.get("net"), terminalLocationId=terminalLocationId) or {}
     mes = verdict.get("Verdict")
     body.update({"verdict": "Ok", "scaleVerdict": "Ok", "mesVerdict": mes,
                  "low": _num(verdict.get("LowLimit")), "high": _num(verdict.get("HighLimit")),

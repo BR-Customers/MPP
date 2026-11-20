@@ -1,89 +1,113 @@
 {
   "custom": {
     "state": {
-      "editDraft": {
-        "ByCount": {
-          "Active": false,
-          "ClosureMethod": "ByCount",
-          "CustomerCode": "",
-          "DunnageCode": "",
-          "Id": null,
-          "IsSerialized": false,
-          "ItemId": null,
-          "PartsPerTray": "",
-          "TargetWeight": "",
-          "ToleranceWeight": "",
-          "TraysPerContainer": ""
-        },
-        "ByVision": {
-          "Active": false,
-          "ClosureMethod": "ByVision",
-          "CustomerCode": "",
-          "DunnageCode": "",
-          "Id": null,
-          "IsSerialized": false,
-          "ItemId": null,
-          "PartsPerTray": "",
-          "TargetWeight": "",
-          "ToleranceWeight": "",
-          "TraysPerContainer": ""
-        },
-        "ByWeight": {
-          "Active": false,
-          "ClosureMethod": "ByWeight",
-          "CustomerCode": "",
-          "DunnageCode": "",
-          "Id": null,
-          "IsSerialized": false,
-          "ItemId": null,
-          "PartsPerTray": "",
-          "TargetWeight": "",
-          "ToleranceWeight": "",
-          "TraysPerContainer": ""
-        }
-      },
       "selected": {
         "ByCount": {
-          "Active": false,
+          "PackOutId": null,
+          "ItemId": null,
           "ClosureMethod": "ByCount",
-          "CustomerCode": "",
-          "DunnageCode": "",
-          "Id": null,
-          "IsSerialized": false,
-          "ItemId": null,
-          "PartsPerTray": "",
-          "TargetWeight": "",
-          "ToleranceWeight": "",
-          "TraysPerContainer": ""
-        },
-        "ByVision": {
+          "Name": "",
           "Active": false,
-          "ClosureMethod": "ByVision",
-          "CustomerCode": "",
-          "DunnageCode": "",
-          "Id": null,
-          "IsSerialized": false,
-          "ItemId": null,
+          "IsDefault": false,
+          "VersionNumber": null,
           "PartsPerTray": "",
+          "TraysPerContainer": "",
           "TargetWeight": "",
           "ToleranceWeight": "",
-          "TraysPerContainer": ""
+          "DunnageCode": "",
+          "CustomerCode": "",
+          "IsSerialized": false
         },
         "ByWeight": {
-          "Active": false,
-          "ClosureMethod": "ByWeight",
-          "CustomerCode": "",
-          "DunnageCode": "",
-          "Id": null,
-          "IsSerialized": false,
+          "PackOutId": null,
           "ItemId": null,
+          "ClosureMethod": "ByWeight",
+          "Name": "",
+          "Active": false,
+          "IsDefault": false,
+          "VersionNumber": null,
           "PartsPerTray": "",
+          "TraysPerContainer": "",
           "TargetWeight": "",
           "ToleranceWeight": "",
-          "TraysPerContainer": ""
+          "DunnageCode": "",
+          "CustomerCode": "",
+          "IsSerialized": false
+        },
+        "ByVision": {
+          "PackOutId": null,
+          "ItemId": null,
+          "ClosureMethod": "ByVision",
+          "Name": "",
+          "Active": false,
+          "IsDefault": false,
+          "VersionNumber": null,
+          "PartsPerTray": "",
+          "TraysPerContainer": "",
+          "TargetWeight": "",
+          "ToleranceWeight": "",
+          "DunnageCode": "",
+          "CustomerCode": "",
+          "IsSerialized": false
+        }
+      },
+      "editDraft": {
+        "ByCount": {
+          "PackOutId": null,
+          "ItemId": null,
+          "ClosureMethod": "ByCount",
+          "Name": "",
+          "Active": false,
+          "IsDefault": false,
+          "VersionNumber": null,
+          "PartsPerTray": "",
+          "TraysPerContainer": "",
+          "TargetWeight": "",
+          "ToleranceWeight": "",
+          "DunnageCode": "",
+          "CustomerCode": "",
+          "IsSerialized": false
+        },
+        "ByWeight": {
+          "PackOutId": null,
+          "ItemId": null,
+          "ClosureMethod": "ByWeight",
+          "Name": "",
+          "Active": false,
+          "IsDefault": false,
+          "VersionNumber": null,
+          "PartsPerTray": "",
+          "TraysPerContainer": "",
+          "TargetWeight": "",
+          "ToleranceWeight": "",
+          "DunnageCode": "",
+          "CustomerCode": "",
+          "IsSerialized": false
+        },
+        "ByVision": {
+          "PackOutId": null,
+          "ItemId": null,
+          "ClosureMethod": "ByVision",
+          "Name": "",
+          "Active": false,
+          "IsDefault": false,
+          "VersionNumber": null,
+          "PartsPerTray": "",
+          "TraysPerContainer": "",
+          "TargetWeight": "",
+          "ToleranceWeight": "",
+          "DunnageCode": "",
+          "CustomerCode": "",
+          "IsSerialized": false
         }
       }
-    }
+    },
+    "packOuts": {
+      "ByCount": [],
+      "ByWeight": [],
+      "ByVision": []
+    },
+    "refreshToken": 0
   },
   "params": {
     "value": 0
@@ -96,7 +120,7 @@
         },
         "transforms": [
           {
-            "code": "\t# Property binding + transform, never runScript ARGS: a container passed\n\t# as a runScript arg arrives as a Perspective ImmutableMap that\n\t# extractQualifiedValues cannot unwrap, and the JSON compare then misfires\n\t# -- \u0027unsaved changes\u0027 with nothing edited (Plant Hierarchy, 2026-10-23).\n\ts \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\ttoJson \u003d BlueRidge.Common.Util.convertWrapperObjectToJson\n\treturn toJson(s.get(\"editDraft\")) !\u003d toJson(s.get(\"selected\"))",
+            "code": "\t# Property binding + transform, never runScript ARGS: a container passed\n\t# as a runScript arg arrives as a Perspective ImmutableMap that\n\t# extractQualifiedValues cannot unwrap, and the JSON compare then misfires\n\t# -- 'unsaved changes' with nothing edited (Plant Hierarchy, 2026-10-23).\n\ts = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\ttoJson = BlueRidge.Common.Util.convertWrapperObjectToJson\n\treturn toJson(s.get(\"editDraft\")) != toJson(s.get(\"selected\"))",
             "type": "script"
           }
         ],
@@ -104,7 +128,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload\u003d{\"section\": \"containerConfig\", \"isDirty\": bool(currentValue.value)}, scope\u003d\"page\")"
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"containerConfig\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
       }
     },
     "params.value": {
@@ -223,7 +247,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\u0027itemContainerConfigHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/ItemContainerConfigHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027itemContainerConfigHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
+                    "script": "\tsystem.perspective.openPopup('itemContainerConfigHowTo',\n\t\t'BlueRidge/Components/Popups/ItemContainerConfigHowTo',\n\t\tparams={'popupId': 'itemContainerConfigHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -282,40 +306,40 @@
                 "type": "ia.display.label"
               },
               {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnNew_ByCount"
+                },
+                "position": {
+                  "basis": "64px"
+                },
+                "props": {
+                  "text": "+ New",
+                  "style": {
+                    "classes": "btn btn-sm"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len({view.custom.packOuts.ByCount}) > 0"
+                      }
+                    }
+                  }
+                },
                 "events": {
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tself.view.rootContainer.clearMethod(\"ByCount\")"
+                        "script": "\tself.view.rootContainer.addMethod(\"ByCount\")"
                       },
                       "scope": "G",
                       "type": "script"
                     }
                   }
-                },
-                "meta": {
-                  "name": "Btn_Clear_ByCount"
-                },
-                "position": {
-                  "basis": "53px"
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "config": {
-                        "expression": "{view.custom.state.editDraft.ByCount.Active} \u003d true"
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "btn btn-sm"
-                  },
-                  "text": "Clear"
-                },
-                "type": "ia.input.button"
+                }
               }
             ],
             "meta": {
@@ -332,7 +356,108 @@
             "type": "ia.container.flex"
           },
           {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "PackOuts_ByCount"
+            },
+            "position": {
+              "basis": "56px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "BlueRidge/Components/PackOutButton",
+              "instances": [],
+              "direction": "row",
+              "alignItems": "stretch",
+              "justify": "flex-start",
+              "useDefaultViewWidth": false,
+              "useDefaultViewHeight": false,
+              "elementPosition": {
+                "basis": "210px",
+                "shrink": 0,
+                "grow": 0
+              },
+              "style": {
+                "gap": "8px",
+                "overflowX": "auto"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.packOuts.ByCount}) > 0"
+                  }
+                }
+              },
+              "props.instances": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Parts.PackOutPopup.buttonInstances\", 0, {view.params.value}, \"ByCount\", 0, {view.custom.refreshToken})"
+                  }
+                }
+              }
+            }
+          },
+          {
             "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Field_ByCount_Name"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "field",
+                    "gap": "2px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Label_ByCount_Name",
+                      "tooltip": {
+                        "enabled": true,
+                        "text": "What the operator sees on the pack-out button, e.g. Tote or Cardboard."
+                      }
+                    },
+                    "props": {
+                      "text": "Name",
+                      "style": {
+                        "classes": "field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "Input_ByCount_Name"
+                    },
+                    "props": {
+                      "placeholder": "e.g. Tote",
+                      "style": {
+                        "classes": "search-input",
+                        "width": "160px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.state.editDraft.ByCount.Name"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
               {
                 "children": [
                   {
@@ -448,7 +573,7 @@
                       "name": "Label_ByCount_DunnageCode",
                       "tooltip": {
                         "enabled": true,
-                        "text": "Returnable dunnage (packaging) identifier for this pack-out\u0027s container."
+                        "text": "Returnable dunnage (packaging) identifier for this pack-out's container."
                       }
                     },
                     "props": {
@@ -561,7 +686,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByCount.Active} \u003d true"
+                    "expression": "{view.custom.state.editDraft.ByCount.Active} = true"
                   },
                   "type": "expr"
                 }
@@ -574,6 +699,133 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ActionsRow_ByCount"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "8px",
+                "overflow": "visible"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.state.editDraft.ByCount.Active} = true"
+                  }
+                }
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Editing_ByCount"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "field-label",
+                    "opacity": "0.7"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(isNull({view.custom.state.editDraft.ByCount.PackOutId}), \"New pack-out: give it a name, then Save\", \"Editing \" + {view.custom.state.editDraft.ByCount.Name} + \" (v\" + toStr({view.custom.state.editDraft.ByCount.VersionNumber}) + if({view.custom.state.editDraft.ByCount.IsDefault}, \", default\", \"\") + \"). Changed numbers save as a new version; open boxes keep theirs.\")"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnDefault_ByCount"
+                },
+                "position": {
+                  "basis": "100px"
+                },
+                "props": {
+                  "text": "Make default",
+                  "style": {
+                    "classes": "btn btn-sm"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.state.editDraft.ByCount.PackOutId}) && !({view.custom.state.editDraft.ByCount.IsDefault} = true)"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.makeDefault(\"ByCount\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnRemove_ByCount"
+                },
+                "position": {
+                  "basis": "72px"
+                },
+                "props": {
+                  "text": "Remove",
+                  "style": {
+                    "classes": "btn btn-sm"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.state.editDraft.ByCount.PackOutId})"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.removePackOut(\"ByCount\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                }
+              }
+            ]
           },
           {
             "children": [
@@ -623,10 +875,10 @@
             "propConfig": {
               "position.display": {
                 "binding": {
+                  "type": "expr",
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByCount.Active} \u003d false"
-                  },
-                  "type": "expr"
+                    "expression": "!({view.custom.state.editDraft.ByCount.Active} = true) && len({view.custom.packOuts.ByCount}) = 0"
+                  }
                 }
               }
             },
@@ -673,40 +925,40 @@
                 "type": "ia.display.label"
               },
               {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnNew_ByWeight"
+                },
+                "position": {
+                  "basis": "64px"
+                },
+                "props": {
+                  "text": "+ New",
+                  "style": {
+                    "classes": "btn btn-sm"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len({view.custom.packOuts.ByWeight}) > 0"
+                      }
+                    }
+                  }
+                },
                 "events": {
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tself.view.rootContainer.clearMethod(\"ByWeight\")"
+                        "script": "\tself.view.rootContainer.addMethod(\"ByWeight\")"
                       },
                       "scope": "G",
                       "type": "script"
                     }
                   }
-                },
-                "meta": {
-                  "name": "Btn_Clear_ByWeight"
-                },
-                "position": {
-                  "basis": "53px"
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "config": {
-                        "expression": "{view.custom.state.editDraft.ByWeight.Active} \u003d true"
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "btn btn-sm"
-                  },
-                  "text": "Clear"
-                },
-                "type": "ia.input.button"
+                }
               }
             ],
             "meta": {
@@ -723,7 +975,108 @@
             "type": "ia.container.flex"
           },
           {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "PackOuts_ByWeight"
+            },
+            "position": {
+              "basis": "56px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "BlueRidge/Components/PackOutButton",
+              "instances": [],
+              "direction": "row",
+              "alignItems": "stretch",
+              "justify": "flex-start",
+              "useDefaultViewWidth": false,
+              "useDefaultViewHeight": false,
+              "elementPosition": {
+                "basis": "210px",
+                "shrink": 0,
+                "grow": 0
+              },
+              "style": {
+                "gap": "8px",
+                "overflowX": "auto"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.packOuts.ByWeight}) > 0"
+                  }
+                }
+              },
+              "props.instances": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Parts.PackOutPopup.buttonInstances\", 0, {view.params.value}, \"ByWeight\", 0, {view.custom.refreshToken})"
+                  }
+                }
+              }
+            }
+          },
+          {
             "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Field_ByWeight_Name"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "field",
+                    "gap": "2px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Label_ByWeight_Name",
+                      "tooltip": {
+                        "enabled": true,
+                        "text": "What the operator sees on the pack-out button, e.g. Tote or Cardboard."
+                      }
+                    },
+                    "props": {
+                      "text": "Name",
+                      "style": {
+                        "classes": "field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "Input_ByWeight_Name"
+                    },
+                    "props": {
+                      "placeholder": "e.g. Tote",
+                      "style": {
+                        "classes": "search-input",
+                        "width": "160px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.state.editDraft.ByWeight.Name"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
               {
                 "children": [
                   {
@@ -839,7 +1192,7 @@
                       "name": "Label_ByWeight_DunnageCode",
                       "tooltip": {
                         "enabled": true,
-                        "text": "Returnable dunnage (packaging) identifier for this pack-out\u0027s container."
+                        "text": "Returnable dunnage (packaging) identifier for this pack-out's container."
                       }
                     },
                     "props": {
@@ -1060,7 +1413,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByWeight.Active} \u003d true"
+                    "expression": "{view.custom.state.editDraft.ByWeight.Active} = true"
                   },
                   "type": "expr"
                 }
@@ -1073,6 +1426,133 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ActionsRow_ByWeight"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "8px",
+                "overflow": "visible"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.state.editDraft.ByWeight.Active} = true"
+                  }
+                }
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Editing_ByWeight"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "field-label",
+                    "opacity": "0.7"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(isNull({view.custom.state.editDraft.ByWeight.PackOutId}), \"New pack-out: give it a name, then Save\", \"Editing \" + {view.custom.state.editDraft.ByWeight.Name} + \" (v\" + toStr({view.custom.state.editDraft.ByWeight.VersionNumber}) + if({view.custom.state.editDraft.ByWeight.IsDefault}, \", default\", \"\") + \"). Changed numbers save as a new version; open boxes keep theirs.\")"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnDefault_ByWeight"
+                },
+                "position": {
+                  "basis": "100px"
+                },
+                "props": {
+                  "text": "Make default",
+                  "style": {
+                    "classes": "btn btn-sm"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.state.editDraft.ByWeight.PackOutId}) && !({view.custom.state.editDraft.ByWeight.IsDefault} = true)"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.makeDefault(\"ByWeight\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnRemove_ByWeight"
+                },
+                "position": {
+                  "basis": "72px"
+                },
+                "props": {
+                  "text": "Remove",
+                  "style": {
+                    "classes": "btn btn-sm"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.state.editDraft.ByWeight.PackOutId})"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.removePackOut(\"ByWeight\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                }
+              }
+            ]
           },
           {
             "children": [
@@ -1125,10 +1605,10 @@
             "propConfig": {
               "position.display": {
                 "binding": {
+                  "type": "expr",
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByWeight.Active} \u003d false"
-                  },
-                  "type": "expr"
+                    "expression": "!({view.custom.state.editDraft.ByWeight.Active} = true) && len({view.custom.packOuts.ByWeight}) = 0"
+                  }
                 }
               }
             },
@@ -1175,40 +1655,40 @@
                 "type": "ia.display.label"
               },
               {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnNew_ByVision"
+                },
+                "position": {
+                  "basis": "64px"
+                },
+                "props": {
+                  "text": "+ New",
+                  "style": {
+                    "classes": "btn btn-sm"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len({view.custom.packOuts.ByVision}) > 0"
+                      }
+                    }
+                  }
+                },
                 "events": {
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tself.view.rootContainer.clearMethod(\"ByVision\")"
+                        "script": "\tself.view.rootContainer.addMethod(\"ByVision\")"
                       },
                       "scope": "G",
                       "type": "script"
                     }
                   }
-                },
-                "meta": {
-                  "name": "Btn_Clear_ByVision"
-                },
-                "position": {
-                  "basis": "53px"
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "config": {
-                        "expression": "{view.custom.state.editDraft.ByVision.Active} \u003d true"
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "btn btn-sm"
-                  },
-                  "text": "Clear"
-                },
-                "type": "ia.input.button"
+                }
               }
             ],
             "meta": {
@@ -1225,7 +1705,108 @@
             "type": "ia.container.flex"
           },
           {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "PackOuts_ByVision"
+            },
+            "position": {
+              "basis": "56px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "BlueRidge/Components/PackOutButton",
+              "instances": [],
+              "direction": "row",
+              "alignItems": "stretch",
+              "justify": "flex-start",
+              "useDefaultViewWidth": false,
+              "useDefaultViewHeight": false,
+              "elementPosition": {
+                "basis": "210px",
+                "shrink": 0,
+                "grow": 0
+              },
+              "style": {
+                "gap": "8px",
+                "overflowX": "auto"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.packOuts.ByVision}) > 0"
+                  }
+                }
+              },
+              "props.instances": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Parts.PackOutPopup.buttonInstances\", 0, {view.params.value}, \"ByVision\", 0, {view.custom.refreshToken})"
+                  }
+                }
+              }
+            }
+          },
+          {
             "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Field_ByVision_Name"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "field",
+                    "gap": "2px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Label_ByVision_Name",
+                      "tooltip": {
+                        "enabled": true,
+                        "text": "What the operator sees on the pack-out button, e.g. Tote or Cardboard."
+                      }
+                    },
+                    "props": {
+                      "text": "Name",
+                      "style": {
+                        "classes": "field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "Input_ByVision_Name"
+                    },
+                    "props": {
+                      "placeholder": "e.g. Tote",
+                      "style": {
+                        "classes": "search-input",
+                        "width": "160px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.state.editDraft.ByVision.Name"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
               {
                 "children": [
                   {
@@ -1341,7 +1922,7 @@
                       "name": "Label_ByVision_DunnageCode",
                       "tooltip": {
                         "enabled": true,
-                        "text": "Returnable dunnage (packaging) identifier for this pack-out\u0027s container."
+                        "text": "Returnable dunnage (packaging) identifier for this pack-out's container."
                       }
                     },
                     "props": {
@@ -1454,7 +2035,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByVision.Active} \u003d true"
+                    "expression": "{view.custom.state.editDraft.ByVision.Active} = true"
                   },
                   "type": "expr"
                 }
@@ -1467,6 +2048,133 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ActionsRow_ByVision"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "8px",
+                "overflow": "visible"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.state.editDraft.ByVision.Active} = true"
+                  }
+                }
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Editing_ByVision"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "field-label",
+                    "opacity": "0.7"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(isNull({view.custom.state.editDraft.ByVision.PackOutId}), \"New pack-out: give it a name, then Save\", \"Editing \" + {view.custom.state.editDraft.ByVision.Name} + \" (v\" + toStr({view.custom.state.editDraft.ByVision.VersionNumber}) + if({view.custom.state.editDraft.ByVision.IsDefault}, \", default\", \"\") + \"). Changed numbers save as a new version; open boxes keep theirs.\")"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnDefault_ByVision"
+                },
+                "position": {
+                  "basis": "100px"
+                },
+                "props": {
+                  "text": "Make default",
+                  "style": {
+                    "classes": "btn btn-sm"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.state.editDraft.ByVision.PackOutId}) && !({view.custom.state.editDraft.ByVision.IsDefault} = true)"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.makeDefault(\"ByVision\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnRemove_ByVision"
+                },
+                "position": {
+                  "basis": "72px"
+                },
+                "props": {
+                  "text": "Remove",
+                  "style": {
+                    "classes": "btn btn-sm"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.state.editDraft.ByVision.PackOutId})"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.removePackOut(\"ByVision\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                }
+              }
+            ]
           },
           {
             "children": [
@@ -1519,10 +2227,10 @@
             "propConfig": {
               "position.display": {
                 "binding": {
+                  "type": "expr",
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByVision.Active} \u003d false"
-                  },
-                  "type": "expr"
+                    "expression": "!({view.custom.state.editDraft.ByVision.Active} = true) && len({view.custom.packOuts.ByVision}) = 0"
+                  }
                 }
               }
             },
@@ -1568,31 +2276,46 @@
         {
           "name": "load",
           "params": [],
-          "script": "\titemId \u003d self.view.params.value or 0\n\tmethods \u003d [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\trows \u003d []\n\tif itemId:\n\t\trows \u003d BlueRidge.Parts.ContainerConfig.getByItemAll(itemId) or []\n\tbyMethod \u003d {}\n\tfor r in rows:\n\t\tm \u003d r.get(\"ClosureMethod\")\n\t\tif m:\n\t\t\tbyMethod[m] \u003d r\n\tdef _build():\n\t\tout \u003d {}\n\t\tfor m in methods:\n\t\t\tr \u003d byMethod.get(m)\n\t\t\tif r:\n\t\t\t\tout[m] \u003d {\n\t\t\t\t\t\"Id\":                r.get(\"Id\"),\n\t\t\t\t\t\"ItemId\":            itemId,\n\t\t\t\t\t\"ClosureMethod\":     m,\n\t\t\t\t\t\"Active\":            True,\n\t\t\t\t\t\"PartsPerTray\":      _s(r.get(\"PartsPerTray\")),\n\t\t\t\t\t\"TraysPerContainer\": _s(r.get(\"TraysPerContainer\")),\n\t\t\t\t\t\"DunnageCode\":       _s(r.get(\"DunnageCode\")),\n\t\t\t\t\t\"CustomerCode\":      _s(r.get(\"CustomerCode\")),\n\t\t\t\t\t\"IsSerialized\":      bool(r.get(\"IsSerialized\", False)),\n\t\t\t\t\t\"TargetWeight\":      _s(r.get(\"TargetWeight\")),\n\t\t\t\t\t\"ToleranceWeight\":   _s(r.get(\"ToleranceWeight\")),\n\t\t\t\t}\n\t\t\telse:\n\t\t\t\tout[m] \u003d {\n\t\t\t\t\t\"Id\": None, \"ItemId\": itemId, \"ClosureMethod\": m,\n\t\t\t\t\t\"Active\": False,\n\t\t\t\t\t\"PartsPerTray\": \"\", \"TraysPerContainer\": \"\",\n\t\t\t\t\t\"DunnageCode\": \"\", \"CustomerCode\": \"\",\n\t\t\t\t\t\"IsSerialized\": False, \"TargetWeight\": \"\",\n\t\t\t\t\t\"ToleranceWeight\": \"\",\n\t\t\t\t}\n\t\treturn out\n\tself.view.custom.state \u003d {\"selected\": _build(), \"editDraft\": _build()}"
+          "script": "\t# Named pack-outs (0136): per method, the part's DEFAULT pack-out is loaded into\n\t# the form; the buttons above it load any other one. No terminal here: the Config\n\t# Tool edits pack-outs, it never selects what a station runs.\n\titemId = self.view.params.value or 0\n\tpackOuts = BlueRidge.Parts.ContainerConfig.listForItem(itemId)\n\tblocks = BlueRidge.Parts.PackOutPopup.draftForItem(itemId, packOuts)\n\tself.view.custom.packOuts = packOuts\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\tself.view.custom.state = {\"selected\": blocks, \"editDraft\": system.util.jsonDecode(system.util.jsonEncode(blocks))}"
+        },
+        {
+          "name": "pickPackOut",
+          "params": [
+            "method",
+            "packOutId"
+          ],
+          "script": "\trows = (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.packOuts) or {}).get(method) or []\n\trow = ([r for r in rows if r.get(\"PackOutId\") == packOutId] or [None])[0]\n\tif row is None:\n\t\treturn\n\tst = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)) or {}\n\tblock = BlueRidge.Parts.PackOutPopup.blockFromRow(self.view.params.value or 0, row)\n\tsel = st.get(\"selected\") or {}\n\tdraft = st.get(\"editDraft\") or {}\n\tsel[method] = block\n\tdraft[method] = dict(block)\n\tself.view.custom.state = {\"selected\": sel, \"editDraft\": draft}"
         },
         {
           "name": "handleSave",
           "params": [],
-          "script": "\titemId \u003d self.view.params.value or 0\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdraft \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tmethods \u003d [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _toNum(v):\n\t\tif v is None or v \u003d\u003d \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttoSave \u003d []\n\ttoDeprecate \u003d []\n\tfor m in methods:\n\t\tblock \u003d draft.get(m) or {}\n\t\tpriorId \u003d block.get(\"Id\")\n\t\tpartsPerTray \u003d _toNum(block.get(\"PartsPerTray\"))\n\t\tif partsPerTray is not None and partsPerTray \u003e 0:\n\t\t\ttrays \u003d _toNum(block.get(\"TraysPerContainer\"))\n\t\t\tif trays is None or trays \u003c\u003d 0:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive trays per container for the %s pack-out.\" % m, \"warning\")\n\t\t\t\treturn\n\t\t\ttargetWeight \u003d None\n\t\t\ttoleranceWeight \u003d None\n\t\t\tif m \u003d\u003d \"ByWeight\":\n\t\t\t\ttargetWeight \u003d _toNum(block.get(\"TargetWeight\"))\n\t\t\t\tif targetWeight is None or targetWeight \u003c\u003d 0:\n\t\t\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"The By Weight pack-out requires a positive target weight.\", \"warning\")\n\t\t\t\t\treturn\n\t\t\t\ttoleranceWeight \u003d _toNum(block.get(\"ToleranceWeight\"))\n\t\t\t\tif toleranceWeight is None or toleranceWeight \u003c\u003d 0:\n\t\t\t\t\tBlueRidge.Common.Notify.toast(\"Tolerance required\", \"The By Weight pack-out requires a positive tolerance - a zero-width window rejects every tray.\", \"warning\")\n\t\t\t\t\treturn\n\t\t\ttoSave.append({\"Id\": priorId, \"ItemId\": itemId, \"ClosureMethod\": m, \"TraysPerContainer\": trays, \"PartsPerTray\": partsPerTray, \"TargetWeight\": targetWeight, \"ToleranceWeight\": toleranceWeight, \"DunnageCode\": block.get(\"DunnageCode\"), \"CustomerCode\": block.get(\"CustomerCode\"), \"IsSerialized\": bool(block.get(\"IsSerialized\", False))})\n\t\telif priorId:\n\t\t\ttoDeprecate.append({\"Id\": priorId, \"ClosureMethod\": m})\n\tif not toSave and not toDeprecate:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Add at least one pack-out, or leave it cleared.\", \"info\")\n\t\treturn\n\tfailures \u003d []\n\tfor payload in toSave:\n\t\tif payload.get(\"Id\"):\n\t\t\tresult \u003d BlueRidge.Parts.ContainerConfig.update(payload, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\t\telse:\n\t\t\tresult \u003d BlueRidge.Parts.ContainerConfig.add(payload, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg \u003d (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (payload[\"ClosureMethod\"], msg))\n\tfor dep in toDeprecate:\n\t\tresult \u003d BlueRidge.Parts.ContainerConfig.deprecate(dep[\"Id\"], appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg \u003d (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (dep[\"ClosureMethod\"], msg))\n\tif failures:\n\t\tBlueRidge.Common.Notify.toast(\"Some pack-outs not saved\", \"; \".join(failures), \"error\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Container config saved\", \"Pack-out configuration saved.\", \"success\")\n\tself.load()"
+          "script": "\titemId = self.view.params.value or 0\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tres = BlueRidge.Parts.PackOutPopup.saveDraft(itemId, self.view.custom.state.editDraft, self.view.custom.state.selected, BlueRidge.Common.Session.currentAppUserId(self.session)) or {}\n\tif res.get(\"Status\"):\n\t\tBlueRidge.Common.Notify.toast(\"Container config saved\", res.get(\"Message\") or \"\", \"success\")\n\t\tself.load()\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Pack-out not saved\", res.get(\"Message\") or \"Unknown error\", \"error\")"
         },
         {
           "name": "handleDiscard",
           "params": [],
-          "script": "\tsel \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.selected))\n\tself.view.custom.state.editDraft \u003d sel"
+          "script": "\tsel = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.selected)) or {}\n\tself.view.custom.state = {\"selected\": sel, \"editDraft\": system.util.jsonDecode(system.util.jsonEncode(sel))}"
         },
         {
           "name": "addMethod",
           "params": [
             "method"
           ],
-          "script": "\tdraft \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tblock \u003d draft.get(method) or {}\n\tblock[\"Active\"] \u003d True\n\tif block.get(\"ClosureMethod\") is None:\n\t\tblock[\"ClosureMethod\"] \u003d method\n\tif block.get(\"ItemId\") is None:\n\t\tblock[\"ItemId\"] \u003d self.view.params.value or 0\n\tdraft[method] \u003d block\n\tself.view.custom.state.editDraft \u003d draft"
+          "script": "\t# + New / Add: a blank named pack-out for this method in the form (unsaved).\n\tst = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)) or {}\n\tdraft = st.get(\"editDraft\") or {}\n\tblock = BlueRidge.Parts.PackOutPopup.blankBlock(self.view.params.value or 0, method)\n\tblock[\"Active\"] = True\n\tdraft[method] = block\n\tself.view.custom.state = {\"selected\": st.get(\"selected\") or {}, \"editDraft\": draft}"
         },
         {
-          "name": "clearMethod",
+          "name": "makeDefault",
           "params": [
             "method"
           ],
-          "script": "\tst \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)) or {}\n\tsel \u003d st.get(\"selected\") or {}\n\tdraft \u003d st.get(\"editDraft\") or {}\n\tcur \u003d draft.get(method) or {}\n\tdraft[method] \u003d {\"Id\": cur.get(\"Id\"), \"ItemId\": self.view.params.value or 0, \"ClosureMethod\": method, \"Active\": False, \"PartsPerTray\": \"\", \"TraysPerContainer\": \"\", \"DunnageCode\": \"\", \"CustomerCode\": \"\", \"IsSerialized\": False, \"TargetWeight\": \"\", \"ToleranceWeight\": \"\"}\n\tself.view.custom.state \u003d {\"selected\": sel, \"editDraft\": draft}"
+          "script": "\tpid = self.view.custom.state.editDraft[method][\"PackOutId\"]\n\tres = BlueRidge.Parts.ContainerConfig.setDefault(pid, BlueRidge.Common.Session.currentAppUserId(self.session)) or {}\n\tok = bool(res.get(\"Status\"))\n\tBlueRidge.Common.Notify.toast(\"Default pack-out\" if ok else \"Default not changed\", res.get(\"Message\") or \"\", \"success\" if ok else \"warning\")\n\tif ok:\n\t\tself.load()"
+        },
+        {
+          "name": "removePackOut",
+          "params": [
+            "method"
+          ],
+          "script": "\tpid = self.view.custom.state.editDraft[method][\"PackOutId\"]\n\tres = BlueRidge.Parts.ContainerConfig.deprecate(pid, BlueRidge.Common.Session.currentAppUserId(self.session)) or {}\n\tok = bool(res.get(\"Status\"))\n\tBlueRidge.Common.Notify.toast(\"Pack-out removed\" if ok else \"Pack-out not removed\", res.get(\"Message\") or \"\", \"success\" if ok else \"warning\")\n\tif ok:\n\t\tself.load()"
         }
       ],
       "extensionFunctions": null,
@@ -1600,16 +2323,23 @@
         {
           "messageType": "sectionSaveRequested",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"section\") \u003d\u003d \"containerConfig\":\n\t\tself.handleSave()",
+          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleSave()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "sectionDiscardRequested",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"section\") \u003d\u003d \"containerConfig\":\n\t\tself.handleDiscard()",
+          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleDiscard()",
           "sessionScope": false,
           "viewScope": false
+        },
+        {
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "messageType": "packOutPicked",
+          "script": "\tif payload and payload.get(\"method\") and payload.get(\"packOutId\"):\n\t\tself.view.rootContainer.pickPackOut(payload.get(\"method\"), payload.get(\"packOutId\"))"
         }
       ]
     },
