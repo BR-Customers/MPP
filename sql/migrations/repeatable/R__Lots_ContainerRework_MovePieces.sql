@@ -2,7 +2,9 @@
 -- Repeatable:  R__Lots_ContainerRework_MovePieces.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-10-13
--- Version:     1.0
+-- Version:     1.1
+-- 1.1 (2026-11-20, named pack-outs 0136, D11): refuses a destination box on a
+--              different pack-out than the source box (no rework across pack-outs).
 -- Description: Moves loose pieces from a tray of one container under rework into
 --              another container that is REFILL-READY (spec D1 / D2): consolidation,
 --              and topping up from a finished container of new production. Moving a
@@ -60,9 +62,11 @@ BEGIN
 
     DECLARE @ContainerId BIGINT, @TrayLotId BIGINT, @TrayPieces INT, @TrayPos INT, @ConStatus NVARCHAR(50),
             @IsSerialized BIT, @ItemId BIGINT, @LotName NVARCHAR(50), @LotPieces INT, @LotCrt BIT,
-            @SerialContainerId BIGINT, @SerialTrayId BIGINT, @SerialRemoved DATETIME2(3), @SerialNumber NVARCHAR(100);
+            @SerialContainerId BIGINT, @SerialTrayId BIGINT, @SerialRemoved DATETIME2(3), @SerialNumber NVARCHAR(100),
+            @SrcPackOutId BIGINT, @ToPackOutId BIGINT, @ToPackOutName NVARCHAR(50);
     SELECT @ContainerId = t.ContainerId, @TrayLotId = t.FinishedGoodLotId, @TrayPieces = ISNULL(t.PartsClosedCount, 0),
-           @TrayPos = t.TrayPosition, @ConStatus = cs.Code, @IsSerialized = ISNULL(cc.IsSerialized, 0), @ItemId = c.ItemId
+           @TrayPos = t.TrayPosition, @ConStatus = cs.Code, @IsSerialized = ISNULL(cc.IsSerialized, 0), @ItemId = c.ItemId,
+           @SrcPackOutId = cc.PackOutId
     FROM Lots.ContainerTray t
     INNER JOIN Lots.Container c            ON c.Id = t.ContainerId
     INNER JOIN Lots.ContainerStatusCode cs ON cs.Id = c.ContainerStatusCodeId
@@ -77,10 +81,12 @@ BEGIN
     DECLARE @ToStatus NVARCHAR(50), @ToItemId BIGINT, @ToLocationId BIGINT, @ToTarget INT, @ToAccum INT,
             @ClosureMethod NVARCHAR(50), @ItemPart NVARCHAR(100);
     SELECT @ToStatus = cs.Code, @ToItemId = c.ItemId, @ToLocationId = c.CurrentLocationId,
-           @ToTarget = cc.TraysPerContainer * cc.PartsPerTray
+           @ToTarget = cc.TraysPerContainer * cc.PartsPerTray,
+           @ToPackOutId = cc.PackOutId, @ToPackOutName = po.Name
     FROM Lots.Container c
     INNER JOIN Lots.ContainerStatusCode cs ON cs.Id = c.ContainerStatusCodeId
     LEFT JOIN Parts.ContainerConfig cc     ON cc.Id = c.ContainerConfigId
+    LEFT JOIN Parts.PackOut po             ON po.Id = cc.PackOutId
     WHERE c.Id = @ToContainerId;
     SET @ToAccum = ISNULL((SELECT SUM(t.PartsClosedCount) FROM Lots.ContainerTray t
                            WHERE t.ContainerId = @ToContainerId AND t.ClosedAt IS NOT NULL), 0);
@@ -121,6 +127,9 @@ BEGIN
             SET @Reject = N'Container ' + CAST(@ToContainerId AS NVARCHAR(20)) + N' is not refill-ready.';
         IF @Reject IS NULL AND (@ToItemId <> @ItemId)
             SET @Reject = N'Container ' + CAST(@ToContainerId AS NVARCHAR(20)) + N' holds a different part.';
+        IF @Reject IS NULL AND (ISNULL(@ToPackOutId, -1) <> ISNULL(@SrcPackOutId, -1))
+            SET @Reject = N'Box #' + CAST(@ToContainerId AS NVARCHAR(20)) + N' is a different pack-out (' + ISNULL(@ToPackOutName, N'?')
+                        + N') -- pieces can only move between boxes of the same pack-out.';
         IF @Reject IS NULL AND (@ToTarget IS NOT NULL AND @ToAccum + @Quantity > @ToTarget)
             SET @Reject = N'Container ' + CAST(@ToContainerId AS NVARCHAR(20)) + N' has room for ' + CAST(@ToTarget - @ToAccum AS NVARCHAR(10)) + N' more pieces; ' + CAST(@Quantity AS NVARCHAR(10)) + N' is too many.';
 
