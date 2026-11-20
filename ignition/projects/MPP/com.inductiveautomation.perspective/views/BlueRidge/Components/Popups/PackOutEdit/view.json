@@ -469,7 +469,7 @@
                       "shrink": 0
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Popups/_PackOutEdit/PackOutButton",
+                      "path": "BlueRidge/Components/PackOutButton",
                       "instances": [],
                       "direction": "row",
                       "alignItems": "stretch",
@@ -1162,7 +1162,7 @@
                       "shrink": 0
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Popups/_PackOutEdit/PackOutButton",
+                      "path": "BlueRidge/Components/PackOutButton",
                       "instances": [],
                       "direction": "row",
                       "alignItems": "stretch",
@@ -2003,7 +2003,7 @@
                       "shrink": 0
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Popups/_PackOutEdit/PackOutButton",
+                      "path": "BlueRidge/Components/PackOutButton",
                       "instances": [],
                       "direction": "row",
                       "alignItems": "stretch",
