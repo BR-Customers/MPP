@@ -149,8 +149,23 @@ Python orchestrates 3.1-3.4 because `plcCompleteTray` is the existing Python ent
 - A press arriving while one is held is refused, not queued.
 - Held presses never expire.
 
+## 13. Learned scale codes (rev 2, approved by Jacques 2026-11-20)
+
+First real press on prod (terminal 215, 2026-11-20): the head sends `66V`, not a part number, so every press held for a tap. Jacques: remember the choice.
+
+- **What.** When the operator picks the part for a held press, the MES remembers **code -> part for that scale** (terminal). Later presses with that code resolve to that part with no tap.
+- **Per scale, not plant-wide.** Another head's target table can reuse a short code for another part. Overlapping codes on one scale (two parts, one code) are fixed at the scale (Tom, 2026-11-20); the mapping targets a PART, never a pack-out config.
+- **Lookup order:** exact active part number first, then this terminal's learned code (`Workorder.ScalePartCode_Resolve`). The rule lives in SQL; the watcher calls it.
+- **A learned part that is no longer eligible at the line** holds the press again; the operator's new pick replaces the mapping. A learned part that is eligible but refused (another part's box open) is refused, as a matched part number is.
+- **Empty codes are never learned.**
+- **Correction:** Config Tool PLC Devices lists a terminal's learned codes with Remove (`Workorder.ScalePartCode_Deprecate`). After a Remove the next press of that code holds again.
+- **Audit:** `ScalePartCodeLearned` (new or replaced mapping, written by `ScalePendingPress_Complete` v1.1 in the pick's transaction) and `ScalePartCodeRemoved`.
+- **Schema:** migration `0135_scale_part_code_map`: `Workorder.ScalePartCode` (Id, TerminalLocationId, ScalePartCode NVARCHAR(50), ItemId, LearnedAt, LearnedByAppUserId, DeprecatedAt, DeprecatedByAppUserId), filtered unique index on (TerminalLocationId, ScalePartCode) where DeprecatedAt IS NULL.
+- **Payload:** `partSource` gains `Learned`.
+
 ## Revision History
 
 | Rev | Date | Author | Change |
 |---|---|---|---|
+| 2 | 2026-11-20 | Blue Ridge / Claude | Section 13: learned scale codes per terminal (Jacques, 2026-11-20). |
 | 1 | 2026-11-19 | Blue Ridge / Claude | Initial design after Jacques's answers. |
